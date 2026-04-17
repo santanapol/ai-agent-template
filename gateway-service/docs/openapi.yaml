@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: gateway-service API
+  version: 0.1.1
+  description: |
+    **gateway-service** เป็น API Gateway (Fastify): verify **access JWT** แบบ **JWKS (RS256)** แล้ว **proxy** ไป upstream ตาม **`ROUTES_JSON` / `ROUTES_FILE`**
+    — inject headers ตาม SoT (**ไม่** forward `Authorization` ไป upstream)
+
+    ### ขอบเขตของไฟล์นี้ (minimal OpenAPI)
+    - ลงรายละเอียด path ที่ gateway **implement คงที่** ในโค้ด: **`GET /health`**
+    - เส้นทางอื่นเป็น **reverse proxy** ตาม config runtime — สเปก HTTP ของแต่ละ path อยู่ที่ **upstream** (เช่น `internal-api/docs/openapi.yaml`)
+
+    ### Normative sources (SoT)
+    - **Contract / env / errors / routing:** [`gateway-design.md`](../gateway-design.md)
+    - **Architecture / trust boundary:** [`gateway-architecture.md`](../gateway-architecture.md)
+    - **JWT issuance:** [`auth-login-design.md`](../../auth-service/auth-login-design.md)
+    - **Deploy — JWT / env คู่กัน:** [`deploy-jwt-env-checklist.md`](../../docs/deploy-jwt-env-checklist.md)
+
+    ### Versioning
+    `info.version` สอดคล้อง `package.json` ของ service — เมื่อมี breaking change ต่อ client ให้ bump SemVer และ sync SoT
+
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+externalDocs:
+  description: Production SoT — gateway contract
+  url: ../gateway-design.md
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local development (default from `PORT` env)
+    variables:
+      port:
+        default: '3002'
+        description: Listen port (`PORT` env)
+  - url: https://gateway.example.invalid
+    description: Production public origin (placeholder)
+
+tags:
+  - name: Health
+    description: |
+      **Liveness** — **ไม่** บังคับ JWT (`gateway-design.md` §12.1)
+  - name: Proxy
+    description: |
+      Request ที่ path ตรงกับ `ROUTES_JSON[].prefix` — บังคับ **`Authorization: Bearer`** (ยกเว้น SoT กำหนดเป็นอย่างอื่น)
+      Response status/body สำหรับ upstream 2xx/3xx/4xx/5xx ตาม §7 / §12.9 ของ SoT
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: |
+        คืน JSON แบบ minimal จาก Fastify route ในโค้ด — **ไม่** ใช้ envelope แบบ `internal-api`
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayHealthResponse'
+              examples:
+                ok:
+                  value:
+                    status: ok
+        '404':
+          description: Wrong method or path (Fastify default when applicable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+        '500':
+          description: Unhandled error (Fastify default serialization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+
+components:
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        **RS256 access JWT** ตรวจด้วย **`JWT_JWKS_URL`** (และ optional `JWT_ISSUER` / `JWT_AUDIENCE`) — ใช้กับ **proxied routes** เท่านั้น (ไม่ใช่ `/health`)
+
+  schemas:
+    GatewayHealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    FastifyJsonError:
+      type: object
+      description: Default Fastify error JSON (รายละเอียดขึ้นกับเวอร์ชันและสาเหตุ)
+      properties:
+        statusCode:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string

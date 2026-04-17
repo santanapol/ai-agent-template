@@ -1,0 +1,335 @@
+# API Gateway — System Design (Production SoT)
+
+## Metadata
+
+| Field | Value |
+|-------|-------|
+| **Filename** | `gateway-design.md` |
+| **Document index** | [README.md](../README.md) |
+| **Status** | Active — SoT ระดับ production ของ `gateway-service` (API Gateway) |
+| **Companion docs** | [`gateway-architecture.md`](../gateway-architecture.md) — ADR / overview · [`auth-login-design.md`](../auth-service/auth-login-design.md) — SoT ของ `auth-service` (Gateway **ไม่** ทำขั้นนี้) · เอกสารนี้ครอบคลุม contract, config, และ runtime ของ `gateway-service` |
+| **Document version** | `1.2.2` — bump ตาม [SemVer](https://semver.org/) เมื่อมี breaking change ต่อ implementer หรือ contract |
+| **Terms** | **ต้อง (MUST)** = บังคับ production · **ควร (SHOULD)** = default ยกเว้นมี ADR · **อาจ (MAY)** = optional |
+
+> **การเปลี่ยนแปลง:** หากแก้ **section 4 (headers), section 5 (env), section 7 (errors), section 8 (internal), sections 11–12 (decisions)** → ต้องมี **code review** + **bump เวอร์ชันเอกสาร** (อย่างน้อย minor) + อัปเดต `CHANGELOG.md` เมื่อ repo มีไฟล์นี้
+
+---
+
+## Contents
+
+สแกนตามเลขหมวดได้เลย — ใน VS Code / Cursor ใช้ outline หรือค้นหา `## N.`
+
+| # | Section |
+|---|---------|
+| **1** | Goals & non-goals |
+| **2** | Logical architecture |
+| **3** | Gateway (Fastify) — โครงสร้างและ lifecycle |
+| **4** | สัญญา header (contract) |
+| **5** | Configuration (environment) |
+| **6** | Routing config |
+| **7** | Error & status behavior |
+| **8** | Internal service |
+| **9** | Observability & operations |
+| **10** | Deployment & production checklist |
+| **11** | Architecture decisions |
+| **12** | Operational baseline |
+| **13** | Security |
+| **14** | CI/CD & quality gates |
+| **15** | Release & document versioning |
+| **16** | References |
+
+---
+
+## 1. Goals & non-goals
+
+### 1.1 Goals (production)
+
+- Client **ต้อง** ยืนยันตัวตนด้วย JWT ที่ **API Gateway เท่านั้น** — internal **ต้องไม่** verify JWT ซ้ำ
+- Gateway **ต้อง** inject user context + `x-gateway-secret` แล้ว **proxy** ไปยัง upstream ตาม route จาก config เท่านั้น
+- Internal **ต้อง** ตรวจ gateway secret ก่อนทำ authorization และ business logic
+
+### 1.2 Non-goals
+
+- ไม่รวม user management / **การออก (issuance) JWT** — อยู่ที่ **IdP ภายนอก** หรือ **[`auth-service`](../auth-service/auth-login-design.md)** แยกต่างหาก
+- ไม่กำหนด schema ธุรกิจของแต่ละ internal service
+- mTLS ระหว่าง gateway ↔ internal ยัง **ไม่** อยู่ใน baseline; current design **ต้อง** วิ่งบน private network + TLS ตาม `gateway-architecture.md` section 4
+- ไม่ใช้ TypeScript — รันเป็น **JavaScript ESM** เท่านั้น
+
+---
+
+## 2. Logical architecture
+
+| Layer | บทบาทหลัก |
+|-------|------------|
+| **Client** | `Authorization: Bearer <JWT>` ไป gateway เท่านั้น — **ห้าม** ส่ง `GATEWAY_SECRET` |
+| **API Gateway** | TLS (prod), verify JWT, inject headers, proxy, timeout, errors, observability |
+| **Internal** | Validate secret, RBAC จาก role, domain logic — **ต้องไม่** เปิด public โดยตรง |
+
+**หลาย upstream:** ตาราง route แบบ **`prefix` เท่านั้น** (section 6) จะชี้ไป base URL + optional rewrite — header หลัง inject **ควร** เหมือนกันทุก upstream เว้นแต่ ADR กำหนดเป็นอย่างอื่น
+
+---
+
+## 3. Gateway (Fastify) — โครงสร้างและ lifecycle
+
+### 3.1 ภาษาและโมดูล
+
+- **ต้อง:** JavaScript **ESM** (`import` / `export`), `"type": "module"`, ไฟล์ **`.js`**
+- **ต้องไม่:** TypeScript
+- Service อื่นของทีมอาจเป็น CJS — `gateway-service` นี้เป็น **ข้อยกเว้น**
+
+### 3.2 โครงสร้างไฟล์ (อ้างอิง)
+
+```text
+gateway-service/
+  package.json              # "type": "module"; engines; scripts
+  CHANGELOG.md              # กระทบ consumer / deploy
+  src/
+    app.js                  # Fastify + plugins + graceful shutdown
+    config/
+      env.js                # โหลด + validate — fail-fast
+      routes.js             # ตาราง proxy
+    plugins/
+      jwt-auth.js
+      inject-context.js
+    proxy/
+      register-proxies.js
+    lib/
+      errors.js
+```
+
+### 3.3 ลำดับ register
+
+1. Logger + **global error handler**
+2. `@fastify/jwt` (หรือชุด verify) จาก config ที่ validate แล้ว
+3. **preHandler** (route ที่ต้องมี user): verify JWT
+4. **preHandler** (proxy): inject headers ตาม section 4
+5. `@fastify/http-proxy` ต่อ route
+
+### 3.4 พฤติกรรม production
+
+| Topic | Requirement |
+|-------|-------------|
+| **Startup** | Validate env + routes ก่อน listen — ถ้าไม่ผ่านให้ exit code ≠ 0 |
+| **Shutdown** | **Graceful shutdown** (`SIGTERM` / `SIGINT`): หยุดรับ request ใหม่, รอ request ค้างให้จบภายใน deadline, แล้วค่อยปิด upstream |
+| **Authorization header** | **ต้องไม่** forward ไป upstream — section 11.2 |
+| **Body / timeout** | **ต้อง** ตั้ง `bodyLimit` + upstream timeout — section 5 + `gateway-architecture.md` |
+| **Correlation** | **ควร** สร้างหรือส่งต่อ `x-request-id` ไปยัง upstream — ดู section 4 |
+| **ESM** | **ต้อง** `import.meta.url` + `fileURLToPath` แทน `__dirname` |
+| **Lint** | **ต้อง** ESLint ใน CI — `engineering-standards/active/backend/code/` |
+
+### 3.5 Testing (Jest + ESM)
+
+- **ต้อง:** **Jest** สำหรับ unit/integration ของ `gateway-service` นี้
+- **ต้อง:** `NODE_OPTIONS=--experimental-vm-modules` ใน `test` / `test:unit` และ **CI**
+- **ควร:** `jest.config.cjs` หรือ `jest.config.mjs` เมื่อ `"type": "module"`
+- **ควร:** pattern `*.test.js` / `__tests__/` ตามมาตรฐานทีม
+
+---
+
+## 4. สัญญา header (contract) — normative
+
+ชื่อ header ด้านล่างถือเป็น **canonical** — **ต้อง** ใช้ constant ชุดเดียวกันใน gateway และ package กลางฝั่ง internal (ถ้ามี)
+
+| Header | ตั้งโดย | อ่านโดย | ข้อกำหนด |
+|--------|---------|---------|----------|
+| `x-gateway-secret` | Gateway | ทุก service | constant-time compare · **ห้าม** log |
+| `x-user-id` | Gateway | identity | จาก `JWT_CLAIM_USER_ID` · ASCII printable **ควร** · ≤ **128** chars — เกิน → **`400`** |
+| `x-user-role` | Gateway | RBAC | section 12.2 |
+| `x-request-id` | Gateway / client | logs, trace | **ควร** ทุก request · client ไม่ส่ง → gateway **ควร** สร้าง UUID |
+
+**JWT → claim mapping**
+
+- **ต้อง** กำหนดผ่าน `JWT_CLAIM_USER_ID`, `JWT_CLAIM_ROLE` (section 5)
+- ถ้า production ไม่ตั้งค่า → **ต้อง** ตรงกับ default ใน `.env.example` และเอกสารนี้
+- producer ของ JWT **ควร** รับประกันว่า claim ที่แมปไป `x-user-id` เป็น ASCII printable และยาวไม่เกิน **128** ตัวอักษร เพื่อไม่ให้ gateway ปฏิเสธด้วย `400`
+
+**Strip / override**
+
+- gateway **ต้อง** strip หรือ override `x-user-*` จาก client ก่อน inject ค่าใหม่
+
+---
+
+## 5. Configuration (environment)
+
+ค่าจริง **ห้าม** commit — ให้ใช้ secret manager / CI ตามนโยบาย
+
+| Variable | Prod | Description |
+|----------|------|-------------|
+| `PORT` | Yes | พอร์ต HTTP |
+| `JWT_JWKS_URL` | Yes | เอกสารนี้ล็อกให้ใช้ asymmetric + JWKS เท่านั้น (section 11.3) — URL **ต้อง** ตรงกับ JWKS ของ `auth-service` |
+| `JWT_ISSUER` | Recommended | ถ้าตั้ง → **ต้อง** ตรวจ `iss` |
+| `JWT_AUDIENCE` | Recommended | ถ้าตั้ง → **ต้อง** ตรวจ `aud` |
+| `JWT_CLAIM_USER_ID` | Recommended | default **`sub`** |
+| `JWT_CLAIM_ROLE` | Recommended | default ชัดใน `.env.example` เช่น `role` |
+| `GATEWAY_SECRET` | Yes | inject `x-gateway-secret` · **ควร** ≥ 32 octets random |
+| `UPSTREAM_TIMEOUT_MS` | Yes | upstream timeout (ms) |
+| `ROUTES_JSON` หรือ path | Yes | section 6 |
+| `TRUST_PROXY` | Recommended | `true` หลัง LB — section 12.6 |
+| `MAX_BODY_BYTES` | Recommended | default **1048576** (1 MiB) — section 12.5 |
+| `JWT_LEEWAY_SECONDS` | Optional | default **60** — section 12.3 |
+| `CORS_ORIGINS` | Optional | เมื่อเปิด CORS — section 12.4 |
+| `SHUTDOWN_TIMEOUT_MS` | Optional | graceful deadline เช่น **10000** |
+| `LOG_LEVEL` | Recommended | `info` / `warn` / `error` |
+
+**`env.js`**
+
+- **ต้อง** reject ชุดค่าที่ขัดกับ section 5 / section 11 เช่น ไม่มี `JWT_JWKS_URL` หรือยังตั้ง `JWT_SECRET` ใน current design นี้
+
+---
+
+## 6. Routing config
+
+**Schema ตัวอย่าง**
+
+```json
+[
+  {
+    "prefix": "/api/orders",
+    "upstream": "http://orders-svc:3001",
+    "stripPrefix": true
+  },
+  {
+    "prefix": "/api/users",
+    "upstream": "http://users-svc:3002",
+    "stripPrefix": true
+  }
+]
+```
+
+| Topic | Rule |
+|-------|------|
+| **`stripPrefix`** | **ต้อง** ตกลงกับ upstream ว่า path ที่เห็นคืออะไร |
+| **URL** | upstream **ต้อง** มาจาก config เท่านั้น |
+| **Host-based** | MVP ใช้ **`prefix`** เท่านั้น; ถ้าจะเพิ่ม `host` → ต้องอัปเดต schema + โค้ด + เวอร์ชันเอกสาร |
+
+---
+
+## 7. Error & status behavior — normative
+
+| Scenario | HTTP | Layer |
+|----------|------|-------|
+| JWT หมดอายุ / ลายเซ็นผิด / ไม่มี Bearer | `401` | gateway |
+| claim/header ไม่พร้อม หรือเกินความยาว (section 4, section 12.2) | `400` | gateway |
+| ไม่มี / ผิด route | `404` | gateway |
+| upstream connection/DNS/incomplete | `502` | gateway |
+| upstream ช้าเกิน `UPSTREAM_TIMEOUT_MS` | `504` | gateway |
+| upstream ตอบ HTTP **5xx** ครบ response | **passthrough** ทั้ง body + status | section 12.9 |
+
+---
+
+## 8. Internal service — normative
+
+1. **ต้อง:** ให้ middleware แรกตรวจ `x-gateway-secret` (constant-time compare กับ env)
+2. **ต้อง:** ถ้าไม่ผ่าน → **`403 Forbidden`** (ไม่ใช้ `401` — section 12.9)
+3. **ต้อง:** ทำ authorization จาก `x-user-role` ก่อนเข้า business logic ที่ต้องใช้สิทธิ์
+4. **ต้อง:** รับ inbound เฉพาะจากเครือข่าย trust — ดู `gateway-architecture.md`
+
+**ควร:** มี package กลางสำหรับ middleware ที่ใช้ร่วมกัน
+
+---
+
+## 9. Observability & operations — production
+
+| Topic | Rule |
+|-------|------|
+| **Logs** | structured (**ควร** JSON) · **ห้าม** JWT, `Authorization`, `x-gateway-secret` · **ควร** `x-request-id`, route, upstream, `duration_ms`, status |
+| **Log level** | **ต้อง** `LOG_LEVEL` ใน production |
+| **Metrics** | **ควร** ใช้ Prometheus บน **internal interface** เท่านั้น — ไม่เปิด public โดยไม่มี auth (section 12.1) |
+| **Metrics ขั้นต่ำ** | rate `400`/`401`/`502`/`504` + upstream status ต่อ route + latency |
+| **Health** | `GET /health` — **ต้องไม่** บังคับ JWT |
+| **Ready** | ยัง **ไม่** อยู่ใน baseline; ถ้าจะเปิด `GET /ready` ต้องทำ ADR/อัปเดต SoT เพิ่มเติม |
+
+---
+
+## 10. Deployment & production checklist
+
+- [ ] **TLS** ที่ขอบ public (gateway หรือ LB)
+- [ ] **Internal** ไม่รับ traffic จาก internet โดยตรง และรับจาก private network ของ gateway เท่านั้น
+- [ ] **Firewall / SG** — inbound upstream เฉพาะ gateway
+- [ ] **TLS** ระหว่าง gateway ↔ internal ตาม baseline ใน `gateway-architecture.md`
+- [ ] **`GATEWAY_SECRET`** จาก secret manager + แผน **rotation** (`gateway-architecture.md` section 4)
+- [ ] **`TRUST_PROXY`** ตรงสภาพจริงหลัง LB
+- [ ] **Timeout / `MAX_BODY_BYTES`** สอดคล้องกับ SLO (**ควร** review เป็นระยะ)
+- [ ] **Error mapping** section 7 + section 12.9
+- [ ] **Graceful shutdown** ทดสอบใน staging
+- [ ] **Rollback / handover** — **ควร** `engineering-standards/active/deployment/`
+
+---
+
+## 11. Architecture decisions — locked
+
+| ID | Decision | Value |
+|----|----------|-------|
+| **11.1** | Secret ต่อ upstream | ใช้ **หนึ่งค่า** ร่วมกันทุก upstream (เปลี่ยนได้ด้วย ADR + bump doc) |
+| **11.2** | Forward `Authorization` | **ไม่ forward** |
+| **11.3** | JWT | เอกสารนี้ใช้เฉพาะ **(B) asymmetric + JWKS** ผ่าน `JWT_JWKS_URL`; **ไม่ใช้** `(A) JWT_SECRET / HS256` ใน doc set นี้ |
+| **11.3b** | JWKS | **ต้อง** key rotation (cache + refresh เมื่อ `kid` ไม่รู้จัก) |
+| **11.4** | Tests | Jest + ESM — section 3.5 |
+
+---
+
+## 12. Operational baseline — locked defaults
+
+ข้อในหมวดนี้คือ default สำหรับ production จนกว่าจะมี ADR เปลี่ยน
+
+| ID | Topic | Value |
+|----|-------|-------|
+| **12.1** | ไม่บังคับ JWT | เฉพาะ `GET /health` — **ไม่** ผ่าน JWT middleware · ส่วน proxy **ต้อง** ผ่าน JWT |
+| **12.2** | `x-user-role` | string เดียวหรือ comma หลัง trim · max **256** — เกิน **`400`** |
+| **12.3** | JWT leeway | default **60** s (`JWT_LEEWAY_SECONDS`) · มี `nbf` → **ต้อง** ตรวจ + leeway |
+| **12.4** | CORS | default **ปิด** · browser → ADR + `CORS_ORIGINS` |
+| **12.5** | Transport | `gateway-service` → internal **ต้อง** ใช้ private network + TLS · WS/SSE **นอก spec** · body default **1 MiB** |
+| **12.6** | Trust proxy | `TRUST_PROXY=true` → `trustProxy: true` · forward `x-request-id`, `X-Forwarded-*` ถ้ามี — **ห้าม** ใช้แทนการยืนยันตัวตน |
+| **12.7** | Node | `"node": ">=24"` ใน `package.json` + CI |
+| **12.8** | Error body | ใช้ default ของ Fastify จนกว่าจะมี envelope ระดับองค์กร |
+| **12.9** | 5xx / secret | upstream HTTP 5xx ครบ → **passthrough** · secret ผิดที่ internal → **`403` เท่านั้น** |
+
+### Bootstrap (แนะนำ)
+
+เริ่มจากหนึ่ง upstream + หนึ่ง prefix + `/health` ที่ไม่ต้องใช้ JWT
+
+---
+
+## 13. Security — production requirements
+
+| Topic | Rule |
+|-------|------|
+| Secrets | **ห้าม** อยู่ใน repo · **ต้อง** มาจาก env ของระบบที่ approved |
+| Dependencies | **ต้อง** `npm audit` หรือ `audit:check` ใน CI |
+| Rate limit | **ควร** ที่ขอบ gateway เมื่อ public client — `engineering-standards/.../api-rate-limit-standard.md` + trust proxy |
+| Response headers | **ควร** ใส่ `X-Content-Type-Options: nosniff` บน response ที่ gateway สร้างเอง |
+
+---
+
+## 14. CI/CD & quality gates
+
+| Gate | Rule |
+|------|------|
+| PR | **ต้อง** lint + unit tests |
+| Main / release | **ควร** มี integration tests (proxy + JWT) |
+| Node | **ต้อง** ตรง `engines` |
+| Docs | แก้ contract / env / error → **ต้อง** อัปเดตเอกสารนี้ + `CHANGELOG.md` |
+
+---
+
+## 15. Release & document versioning
+
+- **ต้อง:** ใช้ SemVer บน **artifact** (tag / image)
+- **ต้อง:** bump **เวอร์ชันเอกสาร** (metadata ด้านบน) เมื่อมี normative breaking change ต่อ implementer / internal consumers
+- **ควร:** มี release note ควบคู่กับ `engineering-standards/active/deployment/release-handover-template.md`
+
+---
+
+## 16. References — workspace
+
+| Path | Notes |
+|------|-------|
+| [`auth-login-design.md`](../auth-service/auth-login-design.md) | ออก access/refresh JWT — Gateway verify เท่านั้น |
+| `engineering-standards/active/backend/architecture/architecture-standard.md` | ทีม = Express — `gateway-service` นี้เป็น exception (`gateway-architecture.md`) |
+| `engineering-standards/active/backend/api/api-rate-limit-standard.md` | trust proxy, rate limit |
+| `engineering-standards/active/backend/code/` | ESLint, security rules |
+| `engineering-standards/active/deployment/` | rollback, handover |
+
+---
+
+_Document version **1.2.2** — production SoT (lifecycle, security gates, change control)._

@@ -1,0 +1,944 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "auth-service API",
+    "version": "0.1.0",
+    "contact": {
+      "name": "Platform / Security",
+      "email": "platform@example.invalid",
+      "url": "https://example.invalid/contact"
+    },
+    "license": {
+      "name": "LicenseRef-Proprietary",
+      "url": "https://example.invalid/license"
+    },
+    "description": "**auth-service** เป็น self-hosted Identity Provider สำหรับระบบ authorization-gateway:\nออก **access JWT (RS256)** ให้ client นำไปเรียก **gateway-service** และจัดการ **opaque refresh token**\n(rotation + reuse detection ตาม SoT)\n\n### Normative sources (SoT)\n- **Login / token contract / errors / MongoDB:** [`auth-login-design.md`](../auth-login-design.md) (เทียบ path จาก `docs/openapi.yaml`)\n- **JWT verify, JWKS URL, header contract ฝั่ง Gateway:** [`gateway-design.md`](../../gateway-service/gateway-design.md) (เทียบ path จาก `docs/openapi.yaml`)\n\n### Security & transport\n- **Production:** ต้องใช้ **HTTPS** end-to-end; ห้ามส่ง `password` ใน query string\n- **Logging:** ห้าม log password, refresh เต็ม, หรือ access JWT เต็มในระดับ info (SoT §7)\n- **Refresh channel (O-04):** default **browser** = HttpOnly cookie; **native** (mobile/CLI) = `refresh_token` ใน JSON\n\n### Error model (RFC 7807)\nข้อผิดพลาดใช้ **`application/problem+json`** อย่างน้อย `type` (URI), `title`, `status`\nกรณี **`429`** มีหลายสาเหตุ — client และ observability **ต้องแยกจาก `type`** (rate-limit vs ip-throttle)\n\n### Versioning\n`info.version` สอดคล้อง artifact `package.json` ของ service — เมื่อมี breaking change ต่อ client ให้ bump ตาม SemVer และ sync เอกสาร SoT\n"
+  },
+  "externalDocs": {
+    "description": "SoT — login / token / Mongo (ไฟล์ใน repo เดียวกับโฟลเดอร์ `docs/`)",
+    "url": "../auth-login-design.md"
+  },
+  "servers": [
+    {
+      "url": "https://auth.example.invalid",
+      "description": "Production public origin ของ auth-service (placeholder).\nค่า `JWKS_PUBLIC_URL` ต้องชี้ origin เดียวกันและ path `/.well-known/jwks.json`\n"
+    },
+    {
+      "url": "http://127.0.0.1:{port}",
+      "description": "Local development (default port 3001)",
+      "variables": {
+        "port": {
+          "default": "3001",
+          "description": "Listen port (`PORT` env)"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "**Credential และ token lifecycle** — login, refresh (rotation), logout (revoke family).\nไม่มี Bearer บนเส้นทางเหล่านี้ (ยกเว้น client อาจส่ง header อื่นตามนโยบายของคุณ — service ไม่บังคับ Authorization สำหรับ auth endpoints)\n"
+    },
+    {
+      "name": "Discovery",
+      "description": "**JWKS** สำหรับให้ **gateway-service** (และ client ที่ต้องการ) ดึง public key ตรวจ RS256 access JWT.\nPath **ล็อก**ที่ `/.well-known/jwks.json` (SoT P2)\n"
+    },
+    {
+      "name": "Health",
+      "description": "**Liveness** — ไม่ต้อง auth; ใช้สำหรับ orchestrator / load balancer.\nไม่แทน readiness แยกใน baseline SoT ของชุดเอกสารนี้\n"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Liveness probe",
+        "description": "คืนสถานะว่า process ทำงานและ bind port ได้\n\n**ไม่** ตรวจ MongoDB หรือ dependency ลึก — ถ้าต้องการ readiness แยกให้นิยาม ADR เพิ่ม\n",
+        "operationId": "getHealth",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service process is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "examples": {
+                  "ok": {
+                    "summary": "Healthy",
+                    "value": {
+                      "status": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ไม่พบ route สำหรับ path หรือ HTTP method ที่ขอ (เช่น `POST /health` ขณะที่ลงทะเบียนแค่ `GET`) หรือ base URL / prefix ของ reverse proxy ไม่ตรง\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastifyJsonError"
+                },
+                "examples": {
+                  "wrongMethod": {
+                    "summary": "Method หรือ path ไม่ตรง (รูปแบบจาก Fastify — ข้อความจริงขึ้นกับเวอร์ชัน)",
+                    "value": {
+                      "message": "Route POST:/health not found",
+                      "error": "Not Found",
+                      "statusCode": 404
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error ภายใน process ที่ไม่ได้จับใน route handler (พึ่ง default error serialization ของ Fastify)\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastifyJsonError"
+                },
+                "examples": {
+                  "unhandled": {
+                    "summary": "ตัวอย่าง placeholder (รายละเอียดจริงขึ้นกับสาเหตุ)",
+                    "value": {
+                      "statusCode": 500,
+                      "error": "Internal Server Error",
+                      "message": "Example internal error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/jwks.json": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "JSON Web Key Set (JWKS)",
+        "description": "เผยแพร่ **public JWK(s)** สำหรับ algorithm **RS256** ที่ใช้ sign access JWT\n\n**Contract**\n- Path ต้องตรง SoT: `GET /.well-known/jwks.json`\n- ค่า env **`JWKS_PUBLIC_URL`** (เต็ม รวม path) ต้องตรงกับ **`JWT_JWKS_URL`** บน gateway-service\n- Access JWT **ควร** ใส่ `kid` ใน header เมื่อมี rotation / หลายคีย์ (SoT §5)\n\n**Caching:** implementation ตั้ง `Cache-Control` แนะนำให้ downstream cache สั้นๆ แล้ว refresh JWKS เมื่อพบ `kid` ไม่รู้จัก (ดู gateway-design §11.3b)\n",
+        "operationId": "getJwks",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "JWKS document สำหรับ verify signature",
+            "headers": {
+              "Cache-Control": {
+                "description": "Hint สำหรับ CDN / gateway เมื่อดึง JWKS ซ้ำ",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "public, max-age=300"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwksDocument"
+                },
+                "examples": {
+                  "singleKey": {
+                    "summary": "Single signing key (typical dev)",
+                    "value": {
+                      "keys": [
+                        {
+                          "kty": "RSA",
+                          "use": "sig",
+                          "kid": "default",
+                          "alg": "RS256",
+                          "n": "xGOk3wxydB-julNR8kLZvNvUWHOlJOs1bGvGJDqC72M8mQW9x9OMZPBAstU8I6T_JRYb7EXKwfQCXUubW-7MciTQ",
+                          "e": "AQAB"
+                        }
+                      ]
+                    }
+                  },
+                  "rotationStub": {
+                    "summary": "Two keys during rotation (illustrative)",
+                    "description": "ค่า `n`/`e` เป็นตัวอย่างเท่านั้น — ของจริงมาจากคีย์จริงของ runtime",
+                    "value": {
+                      "keys": [
+                        {
+                          "kty": "RSA",
+                          "use": "sig",
+                          "kid": "default",
+                          "alg": "RS256",
+                          "n": "xGOk3wxydB-julNR8kLZvNvUWHOlJOs1bGvGJDqC72M8mQW9x9OMZPBAstU8I6T_JRYb7EXKwfQCXUubW-7MciTQ",
+                          "e": "AQAB"
+                        },
+                        {
+                          "kty": "RSA",
+                          "use": "sig",
+                          "kid": "previous",
+                          "alg": "RS256",
+                          "n": "yHp4xxyeC-ksmQS9lMawOvVXIPmKTt2cHwHKe0PNZQCPbuV9J7T0NQCBtuV9K8U_SZFc8FYLxgDYVvcX-8NdjUR",
+                          "e": "AQAB"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ไม่พบ route สำหรับ path หรือ HTTP method ที่ขอ (เช่น `POST /.well-known/jwks.json`) หรือ base URL / prefix ของ reverse proxy ไม่ตรง\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastifyJsonError"
+                },
+                "examples": {
+                  "wrongMethod": {
+                    "summary": "Method หรือ path ไม่ตรง (รูปแบบจาก Fastify — ข้อความจริงขึ้นกับเวอร์ชัน)",
+                    "value": {
+                      "message": "Route POST:/.well-known/jwks.json not found",
+                      "error": "Not Found",
+                      "statusCode": 404
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error ภายใน process ที่ไม่ได้จับใน route handler (เช่น โหลดคีย์ล้มเหลวระหว่าง startup — พึ่ง default error serialization ของ Fastify)\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastifyJsonError"
+                },
+                "examples": {
+                  "unhandled": {
+                    "summary": "ตัวอย่าง placeholder (รายละเอียดจริงขึ้นกับสาเหตุ)",
+                    "value": {
+                      "statusCode": 500,
+                      "error": "Internal Server Error",
+                      "message": "Example internal error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Authenticate with username and password",
+        "description": "ตรวจ credential กับ MongoDB (`users.password_hash` แบบ **Argon2id**) แล้วออกคู่ **access JWT + refresh**\n\n**Throttle / lockout (O-12, P1, P4)**\n- นับความพยายามผิดแยก bucket **`user:<id>`** และ **`ip:<ip>`** (rolling window ตาม SoT)\n- Username ไม่พบ: นับเฉพาะ IP และตอบ **401** แบบเดียวกับรหัสผิด (ไม่ leak enumeration — P1)\n- User bucket ถึง threshold: **423 Locked**\n- IP-only bucket ถึง threshold: **429** + `type` ip-throttle\n\n**Response shape (O-05)**\n- ไม่มี envelope ชั้นนอก\n- `refresh_token` ใน body **เฉพาะ** `client_kind: native`\n- Browser: ตั้ง **Set-Cookie** HttpOnly, SameSite=Lax; `Secure` ตาม env production\n",
+        "operationId": "postAuthLogin",
+        "requestBody": {
+          "required": true,
+          "description": "**ต้องมี JSON body** — ตั้ง header `Content-Type: application/json`\nห้ามส่ง password ใน query string\n\n**ตัวอย่างค่า**\n- Browser: `client_kind` เป็น `browser` หรือ omit (default browser) → refresh ใน cookie\n- Native: `client_kind: native` → `refresh_token` ใน response JSON\n- หลัง `npm run seed:example`: `demo` / `DevExample-demo-1`, `admin` / `DevExample-admin-1`, `viewer` / `DevExample-viewer-1` (override ด้วย env `EXAMPLE_*_PASSWORD` ได้)\n",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "username": "demo",
+                "password": "DevExample-demo-1",
+                "client_kind": "native"
+              },
+              "examples": {
+                "nativeDemo": {
+                  "summary": "Native — refresh ใน JSON (seed `demo`)",
+                  "value": {
+                    "username": "demo",
+                    "password": "DevExample-demo-1",
+                    "client_kind": "native"
+                  }
+                },
+                "nativeAdmin": {
+                  "summary": "Native — seed `admin`",
+                  "value": {
+                    "username": "admin",
+                    "password": "DevExample-admin-1",
+                    "client_kind": "native"
+                  }
+                },
+                "nativeViewer": {
+                  "summary": "Native — seed `viewer`",
+                  "value": {
+                    "username": "viewer",
+                    "password": "DevExample-viewer-1",
+                    "client_kind": "native"
+                  }
+                },
+                "browserDefault": {
+                  "summary": "Browser — omit client_kind (default browser, refresh ใน cookie)",
+                  "value": {
+                    "username": "demo",
+                    "password": "DevExample-demo-1"
+                  }
+                },
+                "browserExplicit": {
+                  "summary": "Browser — `client_kind` ชัดเจน",
+                  "value": {
+                    "username": "admin",
+                    "password": "DevExample-admin-1",
+                    "client_kind": "browser"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login สำเร็จ — ได้ access JWT ใหม่\n\n**Set-Cookie:** มีเมื่อใช้ channel แบบ browser (รวม `client_kind` ถูก omit ซึ่ง default เป็น browser)\n",
+            "headers": {
+              "Set-Cookie": {
+                "description": "`refresh_token=<opaque>` — **HttpOnly**, **Path=/**, **SameSite=Lax**\nProduction: ควรมี **Secure** เมื่อตั้ง `COOKIE_SECURE=true` หลัง TLS\n",
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "refreshCookie": {
+                    "summary": "Set-Cookie หลัง login แบบ browser (ค่า opaque เป็นตัวอย่าง)",
+                    "value": "refresh_token=eyJhbGciOiJIUzI1NiJ9.not-a-jwt-opaque-token; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000"
+                  }
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSuccessResponse"
+                },
+                "examples": {
+                  "nativeWithRefresh": {
+                    "summary": "Native — refresh ใน body",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2OWUwNzA1YjZhMDgwYjg0YzU3ZTE3NWMiLCJyb2xlIjoiYWRtaW4iLCJpc3MiOiJodHRwczovL2F1dGgudGVzdC5pbnZhbGlkIiwiYXVkIjoiZ2F0ZXdheSIsImlhdCI6MTcxNjMxNjAwMCwiZXhwIjoxNzE2MzE2OTAwfQ.signature-placeholder",
+                      "expires_in": 900,
+                      "token_type": "Bearer",
+                      "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+                    }
+                  },
+                  "nativeViewerWithRefresh": {
+                    "summary": "Native — role `viewer` (sub เป็น ObjectId จริงหลัง seed)",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2NzRhMWIyYzNkZTRmNTY3ODlhMGJjZGUiLCJyb2xlIjoidmlld2VyIiwiaXNzIjoiaHR0cHM6Ly9hdXRoLnRlc3QuaW52YWxpZCIsImF1ZCI6ImdhdGV3YXkiLCJpYXQiOjE3MTYzMTYwMDAsImV4cCI6MTcxNjMxNjkwMH0.signature-placeholder-viewer",
+                      "expires_in": 900,
+                      "token_type": "Bearer",
+                      "refresh_token": "vW9kLm3QExampleOpaqueRefresh_ViewerOnly"
+                    }
+                  },
+                  "browserNoRefreshField": {
+                    "summary": "Browser — ไม่มีฟิลด์ refresh_token",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2OWUwNzA1YjZhMDgwYjg0YzU3ZTE3NWMiLCJyb2xlIjoiYWRtaW4iLCJpc3MiOiJodHRwczovL2F1dGgudGVzdC5pbnZhbGlkIiwiYXVkIjoiZ2F0ZXdheSIsImlhdCI6MTcxNjMxNjAwMCwiZXhwIjoxNzE2MzE2OTAwfQ.signature-placeholder",
+                      "expires_in": 900,
+                      "token_type": "Bearer"
+                    }
+                  },
+                  "nativeUserWithRefresh": {
+                    "summary": "Native — seed `demo` (role `user`) + refresh ใน body",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiJhMWIyYzNkZTRmNTY3ODlhMGJjZGVmMTIzNDU2Nzg5YWFiY2RlZjAxIiwicm9sZSI6InVzZXIiLCJpc3MiOiJodHRwczovL2F1dGgudGVzdC5pbnZhbGlkIiwiYXVkIjoiZ2F0ZXdheSIsImlhdCI6MTcxNjMxNjAwMCwiZXhwIjoxNzE2MzE2OTAwfQ.signature-placeholder-user",
+                      "expires_in": 900,
+                      "token_type": "Bearer",
+                      "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemValidation"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemInvalidCredentials"
+          },
+          "423": {
+            "$ref": "#/components/responses/ProblemAccountLocked"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProblemRateLimitOrThrottle"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Exchange refresh token for new access JWT (rotation)",
+        "description": "**One-time refresh (O-13):** แต่ละ refresh ใช้ได้ครั้งเดียว — สำเร็จแล้วได้ access ใหม่ + refresh ใหม่ (native ได้ใน body; browser อาจได้ Set-Cookie)\n\n**ส่ง refresh ได้สองทาง (ลำดับความสำคัญใน implementation)**\n1. Cookie ชื่อ `refresh_token` (browser)\n2. JSON field `refresh_token` (native)\n\n**ความล้มเหลว**\n- ไม่มี token / ไม่พบ hash / หมดอายุ: **401** + `type` …/invalid-token (นับ throttle ฝั่ง `ip:` ตาม SoT §7)\n- Reuse หลัง rotate หรือ revoked: **401** + `type` …/token-reuse และ **revoke ทั้ง `family_id`**\n\n**Rate limit:** middleware แยกจาก credential throttle — ทั้งคู่อาจตอบ **429** ด้วย `type` คนละค่า\n",
+        "operationId": "postAuthRefresh",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CookieHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "สำหรับ **native** ต้องมี `refresh_token` ใน body เมื่อไม่ส่ง cookie\nสำหรับ **browser** มักไม่ต้องมี body\n",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              },
+              "example": {
+                "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+              },
+              "examples": {
+                "nativeWithToken": {
+                  "summary": "Native — ส่ง refresh จาก login/refresh ครั้งก่อน",
+                  "value": {
+                    "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+                  }
+                },
+                "browserNoBody": {
+                  "summary": "Browser — ไม่มี body (ใช้ cookie `refresh_token` จาก login)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rotation สำเร็จ — access JWT ชุดใหม่พร้อม refresh ชุดใหม่ (channel ตามที่ใช้ตอนเรียก)\n",
+            "headers": {
+              "Set-Cookie": {
+                "description": "เมื่อใช้ cookie channel — อาจส่ง cookie refresh ตัวใหม่แทนที่ของเก่า\n",
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "rotated": {
+                    "summary": "Set-Cookie หลัง rotation แบบ browser (ค่า opaque เป็นตัวอย่าง)",
+                    "value": "refresh_token=NewOpaqueTokenExample_Value; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000"
+                  }
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSuccessResponse"
+                },
+                "examples": {
+                  "nativeRotated": {
+                    "summary": "Native — refresh ใหม่อยู่ใน body",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2OWUwNzA1YjZhMDgwYjg0YzU3ZTE3NWMiLCJyb2xlIjoiYWRtaW4iLCJpc3MiOiJodHRwczovL2F1dGgudGVzdC5pbnZhbGlkIiwiYXVkIjoiZ2F0ZXdheSIsImlhdCI6MTcxNjMxNjkwMCwiZXhwIjoxNzE2MzE3ODAwfQ.signature-placeholder-2",
+                      "expires_in": 900,
+                      "token_type": "Bearer",
+                      "refresh_token": "NEW_OpaqueRefresh_AfterRotation_Example"
+                    }
+                  },
+                  "browserRotated": {
+                    "summary": "Browser — ไม่มี refresh_token ใน body",
+                    "value": {
+                      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2OWUwNzA1YjZhMDgwYjg0YzU3ZTE3NWMiLCJyb2xlIjoiYWRtaW4iLCJpc3MiOiJodHRwczovL2F1dGgudGVzdC5pbnZhbGlkIiwiYXVkIjoiZ2F0ZXdheSIsImlhdCI6MTcxNjMxNjkwMCwiZXhwIjoxNzE2MzE3ODAwfQ.signature-placeholder-2",
+                      "expires_in": 900,
+                      "token_type": "Bearer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemValidation"
+          },
+          "401": {
+            "description": "Refresh ไม่สำเร็จ — ดู **`type`** แยกระหว่าง invalid vs reuse (ทั้งคู่ HTTP 401)\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "invalidOrMissing": {
+                    "summary": "Missing / unknown / expired refresh (invalid-token)",
+                    "value": {
+                      "type": "https://example.invalid/auth/problems/invalid-token",
+                      "title": "Unauthorized",
+                      "status": 401,
+                      "detail": "Refresh failed."
+                    }
+                  },
+                  "reuseRevokedFamily": {
+                    "summary": "Reuse detected — family revoked (token-reuse)",
+                    "value": {
+                      "type": "https://example.invalid/auth/problems/token-reuse",
+                      "title": "Unauthorized",
+                      "status": 401,
+                      "detail": "Refresh failed."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ProblemRateLimitOrThrottle"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Revoke refresh token and entire rotation family",
+        "description": "หา refresh จาก cookie หรือ body แล้ว **revoke ทั้ง `family_id`** ที่เกี่ยวข้อง (O-03)\n\n**Idempotency:** ถ้า token ไม่พบหรือถูก revoke ไปแล้ว — implementation ยังตอบ **204** และ clear cookie\n(ไม่ leak ว่ามี session เดิมหรือไม่ — เหมาะกับ client ที่เรียก logout ซ้ำ)\n",
+        "operationId": "postAuthLogout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CookieHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Native อาจส่ง `refresh_token` ใน body; browser ใช้ cookie อย่างเดียวก็ได้",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              },
+              "example": {
+                "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+              },
+              "examples": {
+                "nativeWithToken": {
+                  "summary": "Native — revoke ด้วย refresh ใน body",
+                  "value": {
+                    "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+                  }
+                },
+                "browserNoBody": {
+                  "summary": "Browser — ไม่มี body (ใช้ cookie หรือ logout หลังขาด cookie ก็ได้ 204 + clear cookie)",
+                  "value": {}
+                },
+                "nativeOmitRefresh": {
+                  "summary": "ไม่มี refresh ใน cookie/body — **204** + clear cookie (idempotent)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Logout สำเร็จ — **ไม่มี response body**\n\nClient ควรลบ access JWT ฝั่ง client และหยุดใช้ refresh เดิม\n",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Clear cookie refresh — ค่าที่ส่งขึ้นกับ implementation (เช่น Max-Age=0 หรือ expiry ในอดีต)\n",
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "cleared": {
+                    "value": "refresh_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemValidation"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProblemRateLimitOrThrottle"
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "CookieHeader": {
+        "name": "Cookie",
+        "in": "header",
+        "required": false,
+        "description": "สำหรับ browser flow ส่ง `refresh_token=<opaque>` ตามชื่อ cookie ที่ตั้งใน env (`REFRESH_COOKIE_NAME`, default `refresh_token`)\n",
+        "schema": {
+          "type": "string"
+        },
+        "examples": {
+          "withRefresh": {
+            "summary": "Cookie มี refresh หลัง login แบบ browser",
+            "value": "refresh_token=dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+          },
+          "withoutRefresh": {
+            "summary": "ไม่มี cookie (เช่น native client หรือครั้งแรก)",
+            "value": ""
+          }
+        }
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "description": "Liveness payload — ขั้นต่ำสำหรับ orchestration",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ],
+            "description": "ค่าคงที่เมื่อ process พร้อมรับ request"
+          }
+        }
+      },
+      "JwksDocument": {
+        "type": "object",
+        "description": "RFC 7517 JWK Set — ใช้ verify access JWT (RS256)",
+        "required": [
+          "keys"
+        ],
+        "properties": {
+          "keys": {
+            "type": "array",
+            "description": "รายการ public JWK อย่างน้อยหนึ่งคีย์สำหรับ `kid` ที่ sign JWT อยู่",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/RsaPublicJwk"
+            }
+          }
+        }
+      },
+      "RsaPublicJwk": {
+        "type": "object",
+        "description": "RSA public key ในรูป JWK (ไม่มีส่วน private)",
+        "required": [
+          "kty",
+          "n",
+          "e",
+          "kid",
+          "use",
+          "alg"
+        ],
+        "properties": {
+          "kty": {
+            "type": "string",
+            "enum": [
+              "RSA"
+            ],
+            "description": "Key type"
+          },
+          "use": {
+            "type": "string",
+            "enum": [
+              "sig"
+            ],
+            "description": "ใช้สำหรับ signature verify"
+          },
+          "kid": {
+            "type": "string",
+            "description": "ตรงกับ JWT header `kid` — สำคัญตอน key rotation"
+          },
+          "alg": {
+            "type": "string",
+            "enum": [
+              "RS256"
+            ],
+            "description": "Algorithm ที่ access JWT ใช้ (ล็อกโหมด B asymmetric กับ Gateway)"
+          },
+          "n": {
+            "type": "string",
+            "description": "RSA modulus (Base64URL)"
+          },
+          "e": {
+            "type": "string",
+            "description": "RSA exponent (Base64URL; มักเป็น AQAB)"
+          }
+        }
+      },
+      "FastifyJsonError": {
+        "type": "object",
+        "description": "JSON error จาก **Fastify** เมื่อ route ไม่พบหรือ error ที่ serialize เป็น JSON (ฟิลด์อาจเพิ่มลดตามเวอร์ชัน — ใช้ `statusCode` / `message` เป็นหลัก)\n",
+        "additionalProperties": true,
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP status ซ้ำกับ response"
+          },
+          "error": {
+            "type": "string",
+            "description": "ชื่อ error สั้นๆ"
+          },
+          "message": {
+            "type": "string",
+            "description": "ข้อความอธิบายสำหรับมนุษย์ / client"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "description": "Credential สำหรับ MVP (O-01) — body ของ `POST /auth/login` (อ้างอิงจาก operation; มี `example` / `examples` ระดับ `application/json` เพื่อ tooling ที่ไม่ดึงตัวอย่างจาก `$ref` อย่างเดียว)\n",
+        "example": {
+          "username": "demo",
+          "password": "DevExample-demo-1",
+          "client_kind": "browser"
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "ค่าดิบจาก client — server จะ normalize (trim + lowercase) ก่อน match `users.username_normalized`\n"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "format": "password",
+            "description": "Plaintext ชั่วคราวบน TLS — ห้าม log หรือเก็บนอก Argon2id hash"
+          },
+          "client_kind": {
+            "type": "string",
+            "enum": [
+              "browser",
+              "native"
+            ],
+            "default": "browser",
+            "description": "- **browser** (default): refresh ออกเป็น HttpOnly cookie — **ไม่** ใส่ `refresh_token` ใน response body\n- **native**: refresh อยู่ใน JSON body สำหรับ mobile/CLI\n"
+          }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "description": "Optional JSON body สำหรับ **`POST /auth/refresh`** และ **`POST /auth/logout`** เมื่อใช้ native channel (opaque `refresh_token`).\nBrowser channel มักส่งผ่าน cookie แทน — body ว่าง `{}` ได้ (logout ยัง idempotent **204**)\n",
+        "example": {
+          "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+        },
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 512,
+            "description": "Opaque refresh ที่ได้จาก login/refresh ครั้งก่อน (native).\nต้องไม่ log ค่านี้ในระดับ info\n"
+          }
+        }
+      },
+      "TokenSuccessResponse": {
+        "type": "object",
+        "description": "O-05 success payload — ไม่มี envelope ชั้นนอก\n\n**ความสัมพันธ์กับ Gateway:** นำ `access_token` ไปใส่ `Authorization: Bearer` เมื่อเรียก gateway-service\n",
+        "required": [
+          "access_token",
+          "expires_in",
+          "token_type"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "RS256 JWT (compact serialization). Claims ต้องสอดคล้อง gateway env (`JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_CLAIM_USER_ID` default `sub`, `JWT_CLAIM_ROLE`).\n"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "วินาทีจน access หมดอายุ — ตรงกับ `ACCESS_TOKEN_TTL_SECONDS` (default 900s)",
+            "example": 900
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ],
+            "description": "ค่าคงที่ Bearer (RFC 6750)"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "Opaque refresh รอบใหม่ — **มีเฉพาะ** เมื่อ `client_kind: native` ตอน login/refresh สำเร็จ\n"
+          }
+        },
+        "example": {
+          "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJzdWIiOiI2OWUwNzA1YjZhMDgwYjg0YzU3ZTE3NWMiLCJyb2xlIjoidXNlciIsImlzcyI6Imh0dHBzOi8vYXV0aC50ZXN0LmludmFsaWQiLCJhdWQiOiJnYXRld2F5IiwiaWF0IjoxNzE2MzE2MDAwLCJleHAiOjE3MTYzMTY5MDB9.signature-placeholder",
+          "expires_in": 900,
+          "token_type": "Bearer",
+          "refresh_token": "dBjfx2nP9KQsExampleOpaqueRefreshToken_Base64url"
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "description": "RFC 7807 Problem Details สำหรับข้อผิดพลาดทั้งหมดของ auth endpoints\n\n**Client guidance:** ใช้ `type` (URI stable) เป็น primary key สำหรับ i18n / alerting — อย่า branch จาก `detail` อย่างเดียว\n",
+        "required": [
+          "type",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI แยกประเภทปัญหา — prefix มาจาก env `PROBLEM_TYPE_BASE` + suffix path\n(เช่น `/invalid-credentials`, `/rate-limit`, `/ip-throttle`, `/token-reuse`)\n"
+          },
+          "title": {
+            "type": "string",
+            "description": "หัวข้อสั้นมนุษย์อ่าน (อาจซ้ำกับ HTTP reason แต่ไม่ guaranteed stable)"
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP status code ซ้ำกับ response status (ช่วย client ที่อ่านแค่ body)"
+          },
+          "detail": {
+            "type": "string",
+            "description": "รายละเอียดเพิ่มเติมที่ปลอดภัยต่อ public — **ห้าม** leak ว่า username มีในระบบหรือไม่ (login ผิด)\n"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional — RFC 7807 instance URI (ถ้า implementation เพิ่มในอนาคต)"
+          }
+        },
+        "example": {
+          "type": "https://example.invalid/auth/problems/validation-error",
+          "title": "Bad Request",
+          "status": 400,
+          "detail": "Request body failed validation."
+        }
+      }
+    },
+    "responses": {
+      "ProblemValidation": {
+        "description": "Request ไม่ผ่าน validation (เช่น body ไม่ใช่ JSON, field ขาด, ชนิดผิด)\n\n**Client:** แก้ payload แล้ว retry — ไม่ใช่ปัญหา credential\n",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "generic": {
+                "summary": "Joi / schema validation failure (field ขาด, ชนิดผิด, `client_kind` ไม่ถูกต้อง — `detail` เดียวกันจาก server)",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/validation-error",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Request body failed validation."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProblemInvalidCredentials": {
+        "description": "Login ไม่สำเร็จ — username/password ไม่ตรง **หรือ** user ไม่พบ (ตอบเทียบเท่าเพื่อ anti-enumeration — P1)\n\n**Client:** อย่าแสดงข้อความที่บอกว่า user มีหรือไม่ — ใช้ข้อความ generic เดียวกัน\n",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "wrongPassword": {
+                "summary": "รหัสผิด (user มีในระบบ)",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/invalid-credentials",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication failed."
+                }
+              },
+              "unknownUserSameEnvelope": {
+                "summary": "Username ไม่พบ — envelope **เดียวกับรหัสผิด** (anti-enumeration P1)",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/invalid-credentials",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication failed."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProblemAccountLocked": {
+        "description": "บัญชีถูกล็อกชั่วคราวจาก credential throttle ฝั่ง **user:** bucket (O-12 / P4)\n\n**Client:** แสดง UX ว่าบัญชีถูกล็อกชั่วคราว — ไม่ใช่ generic rate limit\n",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "locked": {
+                "summary": "User throttle lock",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/account-locked",
+                  "title": "Locked",
+                  "status": 423,
+                  "detail": "Authentication failed."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProblemRateLimitOrThrottle": {
+        "description": "**HTTP 429** — มีได้อย่างน้อยสองกรณีที่ **ต้องแยกด้วย `type` URI**\n\n| `type` suffix | ความหมาย |\n|----------------|-----------|\n| `/rate-limit` | Global / middleware rate limit (แยกจาก credential throttle) |\n| `/ip-throttle` | Credential throttle ฝั่ง `ip:` เมื่อ user bucket ยังไม่ 423 |\n\n**Client:** backoff + exponential retry; ถ้ามี `Retry-After` header ให้เคารพ (ถ้า middleware ส่ง)\n",
+        "headers": {
+          "Retry-After": {
+            "description": "อาจปรากฏเมื่อ rate limiter รองรับ — วินาทีจนกว่าจะ retry ได้",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "examples": {
+              "seconds": {
+                "value": 42
+              }
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "rateLimit": {
+                "summary": "Global API rate limit (middleware)",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/rate-limit",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Rate limit exceeded, retry in 42 seconds."
+                }
+              },
+              "ipThrottle": {
+                "summary": "IP credential throttle (abuse / brute-force mitigation)",
+                "value": {
+                  "type": "https://example.invalid/auth/problems/ip-throttle",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Authentication failed."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

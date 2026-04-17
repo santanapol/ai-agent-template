@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: internal-api — client ผ่าน gateway
+  version: 0.1.1
+  description: |
+    **มุมมอง client → gateway-service เท่านั้น** (ไม่ใช่ request ที่ถึง internal-api โดยตรง)
+
+    - ส่ง **`Authorization: Bearer`** + access JWT จาก **auth-service** — ดู [`auth-service/docs/openapi.yaml`](../../auth-service/docs/openapi.yaml)
+    - **ห้าม** ส่ง `x-gateway-secret` จาก client (gateway inject ให้ upstream)
+
+    **Response body** หลังผ่าน proxy ตรงกับ [`openapi.yaml`](./openapi.yaml) (`MeEnvelope` ฯลฯ)
+
+    **Deploy:** จับคู่ env JWT ระหว่าง auth กับ gateway — [`deploy-jwt-env-checklist.md`](../../docs/deploy-jwt-env-checklist.md)
+
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+externalDocs:
+  description: SoT gateway (routing, JWT, headers)
+  url: ../../gateway-service/gateway-design.md
+
+servers:
+  - url: http://127.0.0.1:{gatewayPort}
+    description: gateway-service (`PORT` env)
+    variables:
+      gatewayPort:
+        default: '3002'
+
+tags:
+  - name: ClientViaGateway
+    description: ยิง path เดียวกับ upstream แต่ที่ host ของ gateway
+
+paths:
+  /api/v1/me:
+    get:
+      tags: [ClientViaGateway]
+      summary: GET /api/v1/me — ผ่าน gateway (Bearer เท่านั้น)
+      description: |
+        **1 request** หลังมี access token แล้ว — ยิงที่ **gateway** (ไม่ใช่พอร์ต internal-api)
+
+        แทนที่ `ACCESS_TOKEN` ด้วยค่าจาก auth-service:
+
+        `curl -sS "http://127.0.0.1:3002/api/v1/me" -H "Authorization: Bearer ACCESS_TOKEN"`
+
+        **เงื่อนไข:** `ROUTES_JSON` บน gateway ชี้ internal-api + `stripPrefix: false`; `GATEWAY_SECRET` / `JWT_JWKS_URL` ตั้งตาม `.env.example`
+
+        **Dev:** จาก `gateway-service` รัน `npm run try:proxy`
+      operationId: getMeThroughGateway
+      security:
+        - BearerJwt: []
+      responses:
+        '200':
+          description: OK (รูปแบบเดียวกับ upstream — ดู `openapi.yaml`)
+          content:
+            application/json:
+              schema:
+                $ref: './openapi.yaml#/components/schemas/MeEnvelope'
+              examples:
+                demo:
+                  $ref: '#/components/examples/MeOkExample'
+        '400':
+          description: |
+            **สองกรณี (HTTP เดียวกัน — body ต่างกัน):**
+
+            1. **Gateway** (`gateway-service` ก่อน proxy): JWT ผ่าน verify แต่ claim ไม่ผ่านการ normalize/validate
+               (ดู `inject-context.js`) — มัก **ไม่มี JSON body** / body ว่าง ไม่ใช่ `ErrorEnvelope`
+            2. **Upstream** (internal-api หลัง proxy สำเร็จ): header context ไม่ถูก — **`application/json`**
+               ตาม [`ErrorEnvelope`](./openapi.yaml#/components/schemas/ErrorEnvelope) (เช่น `INVALID_PARAM`)
+
+            ไม่ใส่ `content`/`schema` ที่ระดับ response เดียว เพราะ **ไม่บังคับเป็น JSON เสมอ**
+        '401':
+          description: JWT ไม่ถูกต้อง / หมดอายุ / ไม่มี Bearer (gateway) — มักไม่มี JSON envelope
+        '403':
+          description: |
+            มักมาจาก **upstream** เมื่อ `x-gateway-secret` ไม่ตรง (ไม่ควรเกิดถ้า gateway ตั้งถูก) —
+            body เป็น `ErrorEnvelope` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: './openapi.yaml#/components/schemas/ErrorEnvelope'
+        '500':
+          description: |
+            **Upstream** internal error — gateway proxy ตอบกลับตาม internal-api (มักเป็น `ErrorEnvelope` + `INTERNAL_ERROR`)
+          content:
+            application/json:
+              schema:
+                $ref: './openapi.yaml#/components/schemas/ErrorEnvelope'
+        '502':
+          description: Gateway — upstream ต่อไม่ได้ (มักไม่มี JSON body)
+        '504':
+          description: Gateway — upstream timeout (มักไม่มี JSON body)
+
+components:
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        RS256 access JWT ที่ออกจาก **auth-service** — **gateway-service** verify แล้วค่อย proxy
+
+  examples:
+    MeOkExample:
+      summary: หลัง proxy สำเร็จ
+      value:
+        success: true
+        code: SUCCESS
+        message: null
+        data:
+          userId: '507f1f77bcf86cd799439011'
+          role: user
+        requestId: 826f9b0a-49b5-40c3-88d5-2e12d3f73a97
