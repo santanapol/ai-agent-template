@@ -1,0 +1,348 @@
+openapi: 3.1.0
+info:
+  title: gateway API
+  version: 0.2.1
+  contact:
+    name: engineering
+    email: engineering@example.invalid
+    url: https://example.invalid/gateway
+  description: |
+    **gateway** เป็น API Gateway (Fastify): verify **access JWT** แบบ **JWKS (RS256)** แล้ว **proxy** ไป upstream ตาม **`ROUTES_JSON` / `ROUTES_FILE`**
+    — inject headers ตาม SoT (**ไม่** forward `Authorization` ไป upstream)
+
+    ### ขอบเขตของไฟล์นี้
+    - Path ที่ gateway **implement คงที่** ในโค้ด: **`GET /healthz`**, **`GET /readyz`**
+    - **`POST /auth/login`**, **`POST /auth/refresh`**, **`POST /auth/logout`** — สรุป request body แบบ **inline** สำหรับ client import (Bruno/Postman); สัญญาเต็มอยู่ที่ [`../../auth/docs/openapi.yaml`](../../auth/docs/openapi.yaml)
+    - เส้นทาง proxy อื่น ๆ ตาม **`ROUTES_JSON`** — รายละเอียดอยู่ที่ upstream (เช่น [`reference/openapi.yaml`](../../reference/openapi.yaml))
+
+    ### Normative sources (SoT)
+    - **Contract / env / errors / routing:** [`docs/architecture.md`](./architecture.md)
+    - **Architecture / trust boundary:** [`ARCHITECTURE.md`](../../../ARCHITECTURE.md)
+    - **Edge codes / headers:** [`_coding-standards/gateway`](../../../_coding-standards/gateway/README.md)
+    - **JWT issuance:** [`auth` SoT](../../auth/docs/architecture.md)
+    - **Deploy — JWT / env คู่กัน:** [RUNBOOK §6](../../../RUNBOOK.md#deploy-jwt-env)
+
+    ### Versioning
+    `info.version` สอดคล้อง `package.json` ของ service — เมื่อมี breaking change ต่อ client ให้ bump SemVer และ sync SoT
+
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+externalDocs:
+  description: Production SoT — gateway contract (repo `docs/architecture.md`)
+  url: https://example.invalid/gateway/docs-architecture
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local
+    variables:
+      port:
+        default: '3002'
+        description: Listen port (`PORT` env)
+  - url: https://gateway.example.invalid
+    description: Production public origin (placeholder)
+
+tags:
+  - name: health
+    description: |
+      **Liveness / readiness** — **ไม่** บังคับ JWT (gateway SoT §12.1; [`docs/architecture.md`](./architecture.md))
+  - name: proxy
+    description: |
+      Request ที่ path ตรงกับ `ROUTES_JSON[].prefix` — บังคับ **`Authorization: Bearer`** (ยกเว้น SoT กำหนดเป็นอย่างอื่น)
+      Response status/body สำหรับ upstream 2xx/3xx/4xx/5xx ตาม §7 / §12.9 ของ SoT
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness
+      description: |
+        คืน JSON liveness จาก Fastify route — **ไม่** ใช้ backend `Envelope` แบบ upstream mesh
+      operationId: getHealthz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayHealthzResponse'
+        '404':
+          description: Wrong method or path (Fastify default when applicable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+        '500':
+          description: Unhandled error (Fastify default serialization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness
+      description: |
+        ตรวจอย่างน้อยว่า **`JWT_JWKS_URL`** โหลดได้ — ถ้าไม่ผ่านคืน **`503`** พร้อม **`application/problem+json`** (`code`: **`GATEWAY_NOT_READY`**)
+      operationId: getReadyz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: Dependencies ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayReadyzResponse'
+        '503':
+          description: Readiness check failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/GatewayProblem'
+        '404':
+          description: Wrong method or path (Fastify default when applicable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+        '500':
+          description: Unhandled error (Fastify default serialization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FastifyJsonError'
+
+  /auth/login:
+    post:
+      tags: [proxy]
+      summary: Login
+      description: |
+        **Proxied** to **auth** when `ROUTES_JSON` maps this prefix (typical public credential route — **no** Bearer JWT).
+
+        Normative contract, error `type` URIs, and cookie behaviour: [`../../auth/docs/openapi.yaml`](../../auth/docs/openapi.yaml) (`postAuthLogin`).
+      operationId: postAuthLoginViaGateway
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Credential JSON (TLS in production). Inline schema so API clients populate body on import.
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                  default: demo
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 4096
+                  format: password
+                client_kind:
+                  type: string
+                  enum: [browser, native]
+                  default: native
+              example:
+                username: demo
+                password: "<password-placeholder>"
+                client_kind: native
+            example:
+              username: demo
+              password: "<password-placeholder>"
+              client_kind: native
+            examples:
+              default:
+                summary: Default JSON body (Bruno / Postman import)
+                value:
+                  username: demo
+                  password: "<password-placeholder>"
+                  client_kind: native
+      responses:
+        '200':
+          description: Success — JSON token payload and/or `Set-Cookie` per auth docs.
+        '400':
+          description: Validation — `application/problem+json` per auth docs.
+        '401':
+          description: Invalid credentials — `application/problem+json`.
+        '403':
+          description: Account locked — `application/problem+json`.
+        '423':
+          description: User bucket lockout — `application/problem+json`.
+        '429':
+          description: Rate limit / IP throttle — `application/problem+json`.
+
+  /auth/refresh:
+    post:
+      tags: [proxy]
+      summary: Refresh token
+      description: |
+        **Proxied** to auth. Normative: [`../../auth/docs/openapi.yaml`](../../auth/docs/openapi.yaml) (`postAuthRefresh`).
+      operationId: postAuthRefreshViaGateway
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Optional — native sends opaque `refresh_token`; browser often sends `{}` or omits body (cookie).
+              properties:
+                refresh_token:
+                  type: string
+                  minLength: 10
+                  maxLength: 512
+              example:
+                refresh_token: "<opaque-refresh-placeholder>"
+            example:
+              refresh_token: "<opaque-refresh-placeholder>"
+            examples:
+              default:
+                summary: Native refresh in JSON
+                value:
+                  refresh_token: "<opaque-refresh-placeholder>"
+              emptyBody:
+                summary: Browser — empty object
+                value: {}
+      responses:
+        '200':
+          description: New tokens — see auth docs.
+        '400':
+          description: Validation — problem+json.
+        '401':
+          description: Invalid or reused refresh — problem+json.
+        '429':
+          description: Rate limit — problem+json.
+
+  /auth/logout:
+    post:
+      tags: [proxy]
+      summary: Logout
+      description: |
+        **Proxied** to auth. Normative: [`../../auth/docs/openapi.yaml`](../../auth/docs/openapi.yaml) (`postAuthLogout`).
+      operationId: postAuthLogoutViaGateway
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  minLength: 10
+                  maxLength: 512
+              example:
+                refresh_token: "<opaque-refresh-placeholder>"
+            example:
+              refresh_token: "<opaque-refresh-placeholder>"
+            examples:
+              default:
+                summary: Native logout body
+                value:
+                  refresh_token: "<opaque-refresh-placeholder>"
+              emptyBody:
+                summary: No body (browser cookie)
+                value: {}
+      responses:
+        '204':
+          description: Logged out (often no body).
+        '400':
+          description: Validation — problem+json.
+        '429':
+          description: Rate limit — problem+json.
+
+components:
+  parameters:
+    AcceptJson:
+      name: Accept
+      in: header
+      required: false
+      description: Optional; successful JSON responses use `application/json` (or `application/problem+json` for errors).
+      schema:
+        type: string
+      example: application/json
+
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        **RS256 access JWT** ตรวจด้วย **`JWT_JWKS_URL`** (และ optional `JWT_ISSUER` / `JWT_AUDIENCE`) — ใช้กับ **proxied routes** เท่านั้น (ไม่ใช่ `/healthz` หรือ `/readyz`)
+
+  schemas:
+    GatewayHealthzResponse:
+      type: object
+      required: [status, timestamp, uptime]
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: integer
+          minimum: 0
+
+    GatewayReadyzResponse:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+
+    GatewayProblem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          description: Registry key จาก `_coding-standards/gateway/codes.yaml`
+
+    FastifyJsonError:
+      type: object
+      description: Default Fastify error JSON (รายละเอียดขึ้นกับเวอร์ชันและสาเหตุ)
+      properties:
+        statusCode:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string

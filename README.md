@@ -1,23 +1,27 @@
-# authorization-gateway — document set
+# access-platform
 
-เอกสารในโฟลเดอร์นี้เป็นชุดอ้างอิงเดียวกันสำหรับ **services ใน repo เดียว** (`gateway-service`, `auth-service`, `internal-api`) — อ่าน **gateway-architecture.md** ก่อน แล้วค่อยตามด้วย SoT ตามบทบาท
+เอกสารในโฟลเดอร์นี้เป็นชุดอ้างอิงสำหรับ **บริการที่เกี่ยวข้องกันในระดับ repo** (`access/gateway`, `access/auth`, และ **`access/reference`** — upstream อ้างอิงหลัง gateway: **`GET /api/v1/me`** + CRUD **`/api/v1/items`**)
 
-Release notes ระดับ repo: [`CHANGELOG.md`](./CHANGELOG.md)
+> **TL;DR:** Client รับ JWT จาก **auth** แล้วเรียก **gateway** ด้วย Bearer token; **gateway** verify JWT, inject headers และ proxy ไป upstream (**[`reference`](./access/reference/README.md)**, [`smart-report`](../smart-report/) ตาม `ROUTES_JSON`)
 
-## วิธีอ่านชุดเอกสารนี้
+---
 
-| Step | Read | Outcome |
-|------|------|---------|
-| **1. ภาพรวมระบบ** | [gateway-architecture.md](./gateway-architecture.md) | architecture, trust boundary, system flow, diagrams |
-| **2. Gateway SoT** | [gateway-design.md](./gateway-service/gateway-design.md) | contract, env, runtime, lifecycle, deployment ของ Gateway |
-| **3. Login / Auth SoT** | [auth-login-design.md](./auth-service/auth-login-design.md) | login, refresh, JWT issuance, token storage, security |
-| **4. Deploy / env คู่กัน** | [docs/deploy-jwt-env-checklist.md](./docs/deploy-jwt-env-checklist.md) | `JWT_JWKS_URL`, `JWT_ISSUER` / `JWT_AUDIENCE`, `JWT_KID`, claims, `GATEWAY_SECRET` |
+## 🗺️ โครงสร้างเอกสาร (Document Map)
 
-**TL;DR:** Client ได้ JWT จาก **auth-service** แล้วเรียก **gateway-service** ด้วย Bearer token; `gateway-service` เป็นจุด verify JWT, inject headers, และ proxy ไปยัง internal services
+คำแนะนำ: ควรอ่าน **ARCHITECTURE.md** ก่อน เพื่อให้เข้าใจภาพรวม จากนั้นจึงเลือกอ่าน Source of Truth (SoT) ตามบทบาทที่เกี่ยวข้อง
 
-| File | Role |
-|------|------|
-| [gateway-architecture.md](./gateway-architecture.md) | ADR, flow, trust boundary, diagrams |
-| [gateway-design.md](./gateway-service/gateway-design.md) | `gateway-service` — production SoT |
-| [auth-login-design.md](./auth-service/auth-login-design.md) | `auth-service` (Login / Auth) — JWT issuance |
-| [docs/deploy-jwt-env-checklist.md](./docs/deploy-jwt-env-checklist.md) | Checklist ก่อน deploy: JWT + gateway + internal secret |
+| ลำดับ / เอกสาร | บทบาทและรายละเอียด (Role & Outcome) |
+|---|---|
+| **1. ภาพรวมระบบ**<br/>[ARCHITECTURE.md](./ARCHITECTURE.md) | Architecture, ADR, trust boundary, system flow และ diagrams |
+| **2. Gateway SoT**<br/>[`access/gateway/docs/architecture.md`](./access/gateway/docs/architecture.md) | Contract, env, runtime, lifecycle และ deployment ของ Gateway (Production SoT) |
+| **3. Login / Auth SoT**<br/>[`access/auth/docs/architecture.md`](./access/auth/docs/architecture.md) | JWT issuance, login, refresh token, token storage และ security |
+| **4. Reference upstream (`reference`)**<br/>[`access/reference/README.md`](./access/reference/README.md) | ตัวอย่าง Express + Mongo หลัง gateway — **`/api/v1/me`**, **`/api/v1/items`**, และ catch-all **`/api`** → upstream `:3003` (ดู [`access/gateway/.env.example`](./access/gateway/.env.example) `ROUTES_JSON`) |
+| **5. คู่มือปฏิบัติการ**<br/>[RUNBOOK.md](./RUNBOOK.md) | การปฏิบัติงานระดับ Monorepo: ตั้งค่า E2E, รันบริการ, Troubleshooting และ [ChecklistDeploy JWT/Env](./RUNBOOK.md#deploy-jwt-env) |
+| **6. บันทึกการอัปเดต**<br/>[CHANGELOG.md](./CHANGELOG.md) | Release notes ระดับ Repository |
+
+---
+
+## 🔗 การเชื่อมโยงกับโปรเจกต์อื่นใน Workspace
+
+- **Internal Mesh:** บริการอื่นๆ ที่ทำงานอยู่หลัง Gateway เช่น [`smart-report`](../smart-report/) ให้ยึดมาตรฐานตาม [`_coding-standards/backend/`](./_coding-standards/backend/README.md)
+- **กฎการอ้างอิงมาตรฐาน:** ดูกฎการเลือก SoT (Source of Truth) สั้นๆ ได้ที่ [`_coding-standards/README.md`](./_coding-standards/README.md)

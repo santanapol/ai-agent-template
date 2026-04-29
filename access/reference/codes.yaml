@@ -1,0 +1,99 @@
+# Reference internal API — codes emitted by this service (backend envelope)
+# SoT: ../../_coding-standards/backend/codes.yaml — แก้ registry ที่ org; ไฟล์นี้ snapshot สำหรับ service / เอกสาร
+version: 1
+
+codes:
+  SUCCESS:
+    httpStatus: 200
+    message: Operation successful
+    owner: backend
+
+  CREATED:
+    httpStatus: 201
+    message: Resource created successfully
+    owner: backend
+
+  INVALID_HEADER:
+    httpStatus: 400
+    message: Invalid or duplicate request header
+    owner: backend
+
+  INVALID_JSON_BODY:
+    httpStatus: 400
+    message: Request body is not valid JSON
+    owner: backend
+
+  INVALID_PARAM:
+    httpStatus: 400
+    message: Request validation failed
+    owner: backend
+
+  MISSING_CONTENT_TYPE:
+    httpStatus: 400
+    message: Request body present but Content-Type header missing
+    owner: backend
+
+  GATEWAY_SECRET_REJECTED:
+    httpStatus: 401
+    message: Authentication failed
+    owner: backend
+
+  INVALID_USER_CONTEXT:
+    httpStatus: 403
+    message: User or tenant context is invalid
+    owner: backend
+
+  MISSING_GATEWAY_USER_CONTEXT:
+    httpStatus: 403
+    message: Required user context is missing
+    owner: backend
+
+  NO_MATCHING_API_PATH:
+    httpStatus: 404
+    message: No matching resource for this path
+    owner: backend
+
+  RESOURCE_NOT_FOUND:
+    httpStatus: 404
+    message: The requested resource was not found
+    owner: backend
+
+  DUPLICATE:
+    httpStatus: 409
+    message: A resource with this identifier already exists
+    owner: backend
+
+  VERSION_CONFLICT:
+    httpStatus: 412
+    message: Resource was modified by another request. Refresh and retry.
+    owner: backend
+
+  UNSUPPORTED_MEDIA_TYPE:
+    httpStatus: 415
+    message: Request Content-Type is not supported
+    owner: backend
+
+  PRECONDITION_REQUIRED:
+    httpStatus: 428
+    message: If-Match header is required for this operation.
+    owner: backend
+
+  TOO_MANY_REQUESTS:
+    httpStatus: 429
+    message: Too many requests, please try again later.
+    owner: backend
+
+  DATASTORE_CREDENTIAL_REJECTED:
+    httpStatus: 500
+    message: Data store credentials rejected or misconfigured
+    owner: backend
+
+  INTERNAL_ERROR:
+    httpStatus: 500
+    message: An internal error occurred
+    owner: backend
+
+  SERVICE_UNAVAILABLE:
+    httpStatus: 503
+    message: Service is temporarily unavailable
+    owner: backend

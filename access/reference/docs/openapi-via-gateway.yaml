@@ -1,0 +1,393 @@
+openapi: 3.1.0
+info:
+  title: api-example — client via gateway
+  version: 0.1.0
+  description: |
+    **Client → gateway-service only** (not a direct `reference` contract on :3003).
+
+    - Send **`Authorization: Bearer`** with an access JWT from **auth-service** — see
+      [`../../auth/docs/openapi.yaml`](../../auth/docs/openapi.yaml)
+    - **Do not** send `x-gateway-secret` from the browser or public client; the gateway injects it to the upstream
+    - **Do not** set `x-user-id` / `x-user-ou` / `x-user-branch` yourself in normal use; the gateway derives and injects
+      them from the verified JWT (see [`../../gateway/docs/architecture.md`](../../gateway/docs/architecture.md))
+
+    Upstream item paths and response shapes match [`../openapi.yaml`](../openapi.yaml) after a successful proxy. This
+    file is the import target for **Bruno/Postman** when you call the **gateway host** (e.g. `PORT` **3002**), not `reference` directly.
+
+    **Routing:** monorepo default `ROUTES_JSON` sends **`/api/v1/items`** and the catch-all **`/api`** → `http://127.0.0.1:3003` (same **api-example** process; longer prefixes such as **`/api/v1/reports`** must be listed first).
+
+    **`PUT` note:** upstream allows full replace — see [`./adrs/001-put-full-replace.md`](./adrs/001-put-full-replace.md).
+
+    **Deploy / JWT:** align auth + gateway env — [`../../RUNBOOK.md#deploy-jwt-env`](../../RUNBOOK.md#deploy-jwt-env)
+  contact:
+    name: engineering
+    url: https://example.invalid/api-example-via-gateway
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+servers:
+  - url: http://127.0.0.1:{gatewayPort}
+    description: gateway-service (`PORT` env)
+    variables:
+      gatewayPort:
+        default: "3002"
+        description: Local gateway listen port — see `gateway/.env.example`
+
+security: []
+
+externalDocs:
+  description: Gateway routing, JWT verification, upstream injection — `gateway-service/docs/architecture.md`
+  url: https://example.invalid/gateway-architecture
+
+tags:
+  - name: ClientViaGateway
+    description: Same URL paths as upstream api-example; executed on the gateway host with Bearer JWT only
+
+paths:
+  /api/v1/me:
+    get:
+      tags: [ClientViaGateway]
+      summary: Current user context — via gateway (Bearer only)
+      description: |
+        Returns gateway-injected identity (`x-user-*` on the upstream). Call the gateway with **`Authorization: Bearer`**
+        only; do not send mesh headers from the client.
+      operationId: getMeThroughGateway
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          description: OK (same envelope as upstream [`../openapi.yaml`](../openapi.yaml))
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/MeEnvelope"
+        "401":
+          description: Invalid/expired/missing Bearer JWT at gateway.
+        "403":
+          description: Upstream missing user context — JSON `ErrorEnvelope`.
+
+  /api/v1/items:
+    get:
+      tags: [ClientViaGateway]
+      summary: List items — via gateway (Bearer only)
+      description: |
+        **`curl`** (gateway มี JWT จาก auth):
+
+        `curl -sS "http://127.0.0.1:3002/api/v1/items?page=1&limit=20" -H "Authorization: Bearer ACCESS_TOKEN" -H "Accept: application/json"`
+
+        **`x-gateway-secret` และ `x-user-*`:** อย่าใส่จาก client — gateway ส่งให้ upstream หลัง verify JWT
+      operationId: listItemsThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: 1-indexed page (default 1).
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Page size (default 20, max 100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - $ref: "#/components/parameters/AcceptJson"
+      responses:
+        "200":
+          description: OK (same envelope as upstream [`../openapi.yaml`](../openapi.yaml))
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ListItemsEnvelope"
+        "400":
+          description: Gateway or upstream validation/header issues — JSON `ErrorEnvelope` when body is JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Invalid/expired/missing Bearer JWT at gateway — often non-JSON.
+        "403":
+          description: Upstream missing user context after proxy — JSON `ErrorEnvelope` (e.g. `MISSING_GATEWAY_USER_CONTEXT`).
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "429":
+          description: Rate limited (upstream JSON `ErrorEnvelope` possible).
+        "500":
+          description: Upstream error — JSON `ErrorEnvelope` possible.
+        "502":
+          description: Gateway cannot reach upstream — often non-JSON.
+        "504":
+          description: Gateway upstream timeout — often non-JSON.
+
+    post:
+      tags: [ClientViaGateway]
+      summary: Create item — via gateway (Bearer only)
+      operationId: createItemThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptJson"
+        - $ref: "#/components/parameters/ContentTypeJson"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/CreateItem"
+      responses:
+        "201":
+          description: Created (same as upstream)
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ItemEnvelope"
+        "400":
+          description: Validation or invalid JSON — see upstream error codes.
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "401":
+          description: JWT at gateway — often non-JSON.
+        "403":
+          description: Upstream user context — JSON `ErrorEnvelope`.
+        "409":
+          description: Duplicate code — JSON `ErrorEnvelope`.
+        "415":
+          description: Unsupported Content-Type — JSON `ErrorEnvelope`.
+        "429":
+          description: Rate limited.
+        "500":
+          description: Internal error — JSON possible.
+        "502":
+          description: Bad gateway — often non-JSON.
+        "504":
+          description: Gateway timeout — often non-JSON.
+
+  /api/v1/items/{itemId}:
+    parameters:
+      - in: path
+        name: itemId
+        required: true
+        description: Item id (24-char hex ObjectId string).
+        schema:
+          type: string
+        example: "<item-id>"
+    get:
+      tags: [ClientViaGateway]
+      summary: Get item by id — via gateway (Bearer only)
+      operationId: getItemByIdThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptJson"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ItemEnvelope"
+        "401":
+          description: JWT at gateway — often non-JSON.
+        "403":
+          description: Upstream user context.
+        "404":
+          description: Not found — JSON `ErrorEnvelope`.
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "429":
+          description: Rate limited.
+        "500":
+          description: Internal error.
+        "502":
+          description: Bad gateway.
+        "504":
+          description: Gateway timeout.
+
+    put:
+      tags: [ClientViaGateway]
+      summary: Replace item — via gateway (Bearer + If-Match)
+      description: Client must send **If-Match** (weak ETag) — gateway forwards it upstream. See ADR for `PUT` policy.
+      operationId: replaceItemThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptJson"
+        - $ref: "#/components/parameters/ContentTypeJson"
+        - $ref: "#/components/parameters/IfMatchClient"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ReplaceItem"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ItemEnvelope"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "401":
+          description: JWT at gateway.
+        "403":
+          description: User context upstream.
+        "404":
+          description: Not found.
+        "412":
+          description: Version conflict — JSON `ErrorEnvelope`.
+        "415":
+          description: Unsupported media type.
+        "428":
+          description: Precondition required — JSON `ErrorEnvelope`.
+        "429":
+          description: Rate limited.
+        "500":
+          description: Internal error.
+        "502":
+          description: Bad gateway.
+        "504":
+          description: Gateway timeout.
+
+    patch:
+      tags: [ClientViaGateway]
+      summary: Update item — via gateway (Bearer + If-Match)
+      operationId: updateItemThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptJson"
+        - $ref: "#/components/parameters/ContentTypeJson"
+        - $ref: "#/components/parameters/IfMatchClient"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/PatchItem"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ItemEnvelope"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/ErrorEnvelope"
+        "401":
+          description: JWT at gateway.
+        "403":
+          description: User context upstream.
+        "404":
+          description: Not found.
+        "412":
+          description: Version conflict.
+        "415":
+          description: Unsupported media type.
+        "428":
+          description: Precondition required.
+        "429":
+          description: Rate limited.
+        "500":
+          description: Internal error.
+        "502":
+          description: Bad gateway.
+        "504":
+          description: Gateway timeout.
+
+    delete:
+      tags: [ClientViaGateway]
+      summary: Delete item — via gateway (Bearer + If-Match)
+      operationId: deleteItemThroughGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptJson"
+        - $ref: "#/components/parameters/IfMatchClient"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "../openapi.yaml#/components/schemas/DeleteEnvelope"
+        "401":
+          description: JWT at gateway.
+        "403":
+          description: User context upstream.
+        "404":
+          description: Not found.
+        "412":
+          description: Version conflict.
+        "428":
+          description: Precondition required.
+        "429":
+          description: Rate limited.
+        "500":
+          description: Internal error.
+        "502":
+          description: Bad gateway.
+        "504":
+          description: Gateway timeout.
+
+components:
+  parameters:
+    AcceptJson:
+      name: Accept
+      in: header
+      required: false
+      description: Optional; JSON envelope responses use `application/json`.
+      schema:
+        type: string
+      example: application/json
+
+    ContentTypeJson:
+      name: Content-Type
+      in: header
+      required: true
+      description: Required for JSON body — must be `application/json` (see upstream contract).
+      schema:
+        type: string
+      example: application/json
+
+    IfMatchClient:
+      name: If-Match
+      in: header
+      required: true
+      description: |
+        Weak ETag from last successful read (gateway forwards to upstream). Same semantics as
+        [`../openapi.yaml`](../openapi.yaml) `IfMatch` parameter.
+      schema:
+        type: string
+      example: "<if-match>"
+
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        RS256 access JWT from **auth-service** — verified by **gateway-service** before proxying to `reference`.
