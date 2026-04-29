@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Consolidate service layout under `access/*` and remove legacy top-level paths (`auth-service`, `gateway-service`, `internal-api`).
 - Introduce `access/reference` as the maintained internal API reference service with OpenAPI, middleware, tests, and runbook docs.
 - Refresh root docs (`README.md`, `ARCHITECTURE.md`, `RUNBOOK.md`) and add `services/README.md` to reflect the new structure.
+- Convert `_coding-standards` from embedded gitlink to regular tracked repository files to keep standards versioned directly in this monorepo snapshot.
 
 ### access/auth
 

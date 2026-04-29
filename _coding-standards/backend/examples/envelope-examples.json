@@ -1,0 +1,30 @@
+{
+  "_comment": "Reference shapes for api.md → API response. Not a runtime contract file.",
+  "listSuccess200": {
+    "success": true,
+    "code": "SUCCESS",
+    "message": null,
+    "data": [{ "id": "usr_001", "name": "Alice" }],
+    "pagination": { "page": 1, "limit": 20, "total": 150, "totalPages": 8 }
+  },
+  "detailNotFound404": {
+    "success": false,
+    "code": "USER_NOT_FOUND",
+    "message": "User not found",
+    "data": null,
+    "requestId": "3b5d9c7e-1a4f-4c2e-9f8a-12ab34cd56ef"
+  },
+  "validation400": {
+    "success": false,
+    "code": "INVALID_PARAM",
+    "message": "Request validation failed",
+    "data": {
+      "errors": [
+        { "path": "body.email", "code": "INVALID_FORMAT", "message": "Must be a valid email address" },
+        { "path": "body.age", "code": "OUT_OF_RANGE", "message": "Must be between 0 and 150" },
+        { "path": "body.name", "code": "REQUIRED", "message": "Field is required" }
+      ]
+    },
+    "requestId": "3b5d9c7e-1a4f-4c2e-9f8a-12ab34cd56ef"
+  }
+}

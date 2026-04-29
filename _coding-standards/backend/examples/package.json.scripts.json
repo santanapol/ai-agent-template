@@ -1,0 +1,23 @@
+{
+  "_comment": "Required scripts per runtime.md → package.json scripts. Copy 'scripts' block ลง package.json จริง.",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "format": "prettier --write \"src/**/*.{js,json,md}\" \"test/**/*.{js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,json,md}\" \"test/**/*.{js,json}\"",
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml --fail-severity=error",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "audit:check": "npm audit --omit=dev --audit-level=high",
+    "prepare": "husky install",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run test:coverage && npm run audit:check"
+  },
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yaml,yml}": ["prettier --write"],
+    "openapi.yaml": ["spectral lint --ruleset .spectral.yaml"]
+  }
+}

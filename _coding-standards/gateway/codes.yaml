@@ -1,0 +1,52 @@
+# Gateway Problem Details codes
+version: 1
+
+codes:
+  GATEWAY_CLAIM_REJECTED:
+    httpStatus: 401
+    message: Invalid authentication token
+    owner: gateway
+
+  GATEWAY_JWT_MISSING:
+    httpStatus: 401
+    message: Authentication required
+    owner: gateway
+
+  GATEWAY_JWT_REJECTED:
+    httpStatus: 401
+    message: Authentication failed
+    owner: gateway
+
+  GATEWAY_ROUTE_NOT_CONFIGURED:
+    httpStatus: 502
+    message: Gateway routing is misconfigured
+    owner: gateway
+
+  GATEWAY_UPSTREAM_UNAVAILABLE:
+    httpStatus: 502
+    message: Upstream service is unavailable
+    owner: gateway
+
+  GATEWAY_NOT_READY:
+    httpStatus: 503
+    message: Gateway is not ready
+    owner: gateway
+
+  GATEWAY_UPSTREAM_TIMEOUT:
+    httpStatus: 504
+    message: Upstream request timed out
+    owner: gateway
+
+  GATEWAY_JWT_INVALID:
+    deprecated: true
+    replacedBy: GATEWAY_JWT_REJECTED
+    httpStatus: 401
+    message: Authentication failed
+    owner: gateway
+
+  GATEWAY_JWT_EXPIRED:
+    deprecated: true
+    replacedBy: GATEWAY_JWT_REJECTED
+    httpStatus: 401
+    message: Authentication failed
+    owner: gateway

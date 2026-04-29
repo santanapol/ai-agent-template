@@ -1,0 +1,128 @@
+# Fragment — paste/adapt into service openapi.yaml (api.md → OpenAPI contract).
+# Not a standalone spec; merge under components: / security: / servers: as needed.
+
+components:
+  schemas:
+    Envelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success: { type: boolean }
+        code: { type: string }
+        message: { type: [string, "null"] }
+        data: {}
+        pagination: { $ref: "#/components/schemas/Pagination" }
+        requestId: { type: string, format: uuid }
+
+    Pagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+
+    ErrorEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, requestId]
+          properties:
+            success: { const: false }
+
+    ValidationErrorItem:
+      type: object
+      required: [path, code, message]
+      properties:
+        path: { type: string }
+        code:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_]{1,39}$"
+          description: >
+            Validation sub-code registered in codes.yaml (category: validation).
+        message: { type: string, maxLength: 500 }
+
+  securitySchemes:
+    GatewaySecret:
+      type: apiKey
+      in: header
+      name: x-gateway-secret
+      description: |
+        Non-secret placeholder for API clients: `<GATEWAY_SECRET>`.
+        Replace with the real shared secret from env (must match gateway / service; validated by middleware, constant-time compare).
+
+  # Optional: reuse on operations as $ref (api.md → Header parameters [Required]).
+  parameters:
+    XUserOu:
+      name: x-user-ou
+      in: header
+      required: true
+      description: Gateway-injected organizational unit id.
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-ou>"
+    XUserBranch:
+      name: x-user-branch
+      in: header
+      required: true
+      description: Gateway-injected branch id.
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-branch>"
+    XUserId:
+      name: x-user-id
+      in: header
+      required: true
+      description: Gateway-injected user id (replace placeholder before call).
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-id>"
+    XUserRole:
+      name: x-user-role
+      in: header
+      required: false
+      description: Optional gateway-injected role.
+      schema:
+        type: string
+        maxLength: 256
+      example: "<x-user-role>"
+    XRequestId:
+      name: x-request-id
+      in: header
+      required: false
+      description: Optional client-supplied request id.
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-request-id>"
+
+# Typical top-level security (repeat in openapi.yaml root):
+# security:
+#   - GatewaySecret: []
+
+# servers: first entry MUST be Local (api.md §1.1 [Required]); additional mesh URLs after it.
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local
+    variables:
+      port:
+        default: "3000"
+        description: Direct service listen port (PORT env)
+  - url: https://{service}.internal.example.com
+    description: Production (internal mesh only)
+    variables:
+      service: { default: user-service }
+
+# Deprecation example (path item):
+# /api/v1/users/{userId}/legacy-profile:
+#   get:
+#     operationId: getLegacyProfile
+#     deprecated: true
+#     x-deprecated-sunset: "2026-07-17T00:00:00Z"
+#     description: |
+#       Deprecated 2026-04-17. Sunset 2026-07-17.
+#       Use GET /api/v1/users/{userId} instead.

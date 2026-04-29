@@ -1,0 +1,22 @@
+# Organization-wide baseline Spectral ruleset for OpenAPI (internal API, gateway, auth edge).
+# Single shared file — services extend from per-repo `.spectral.yaml`:
+#   extends:
+#     - ../../_coding-standards/spectral/org-api.yaml
+# See backend/api.md → Drift prevention (CI gate).
+extends:
+  - spectral:oas
+
+functionsDir: ./functions
+functions:
+  - trustedHeaderParameterOrder
+
+rules:
+  org-trusted-header-parameter-order:
+    message: >-
+      Trusted gateway header parameters must follow:
+      x-user-ou → x-user-branch → x-user-id → x-user-role → If-Match → x-request-id
+      (omit unused; see _coding-standards/backend/api.md → Canonical trusted header order).
+    severity: error
+    given: '$'
+    then:
+      function: 'trustedHeaderParameterOrder'

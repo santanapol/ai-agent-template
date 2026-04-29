@@ -1,0 +1,24 @@
+{
+  "_comment": "Reference envelopes for /healthz and /readyz per api.md → Health and readiness endpoints.",
+  "healthzHealthy200": {
+    "success": true,
+    "code": "SUCCESS",
+    "message": null,
+    "data": {
+      "status": "ok",
+      "timestamp": "2026-04-17T03:31:51.000Z",
+      "uptime": 1234
+    }
+  },
+  "readyzDegraded503": {
+    "success": false,
+    "code": "SERVICE_UNAVAILABLE",
+    "message": "Readiness check failed",
+    "data": {
+      "status": "not_ready",
+      "timestamp": "2026-04-17T03:31:51.000Z",
+      "dependencies": [{ "name": "mongo", "status": "fail", "latencyMs": 1001 }]
+    },
+    "requestId": "018f3c2e-0000-7000-8000-000000000000"
+  }
+}

@@ -1,0 +1,386 @@
+openapi: 3.1.0
+info:
+  title: auth-service
+  version: 1.0.0
+  description: |
+    OpenAPI Contract สำหรับ Auth Edge Service (Reference Template)
+
+    Error responses ใช้ **RFC 7807 Problem Details** (`application/problem+json`) พร้อมฟิลด์ `code`
+    ที่ลงทะเบียนไว้ใน `_coding-standards/auth/codes.yaml`
+servers:
+  - url: "http://127.0.0.1:{port}"
+    description: Local
+    variables:
+      port:
+        default: "3000"
+        description: ENV PORT
+tags:
+  - name: health
+    description: Liveness and readiness probes
+  - name: auth
+    description: Login and token lifecycle
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      description: Liveness probe สำหรับตรวจสอบว่า Process ยังทำงานอยู่หรือไม่
+      operationId: getLiveness
+      tags:
+        - health
+      security: []
+      responses:
+        '200':
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, timestamp, uptime]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: integer
+                    minimum: 0
+  /readyz:
+    get:
+      summary: Readiness
+      description: Readiness probe สำหรับตรวจสอบว่า Dependencies ต่างๆ พร้อมรับ Traffic
+      operationId: getReadiness
+      tags:
+        - health
+      security: []
+      responses:
+        '200':
+          description: Dependencies are ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, dependencies]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  dependencies:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, status]
+                      properties:
+                        name:
+                          type: string
+                        status:
+                          type: string
+        '503':
+          description: Service Unavailable — dependency check failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/not-ready
+                title: Service Unavailable
+                status: 503
+                detail: Readiness check failed.
+                code: AUTH_NOT_READY
+  /auth/login:
+    post:
+      summary: Login
+      description: Exchange username + password for access JWT and refresh channel
+      operationId: login
+      tags:
+        - auth
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 30
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeJson'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: demo
+              password: "<password-placeholder>"
+              client_kind: native
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Bad Request — request validation failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/invalid-request
+                title: Bad Request
+                status: 400
+                detail: Request validation failed.
+                code: AUTH_INVALID_REQUEST
+        '401':
+          description: Unauthorized — invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/invalid-credentials
+                title: Unauthorized
+                status: 401
+                detail: Invalid username or password.
+                code: LOGIN_INVALID_CREDENTIALS
+        '423':
+          description: Locked — account temporarily locked
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/account-locked
+                title: Locked
+                status: 423
+                detail: This account is temporarily locked.
+                code: LOGIN_ACCOUNT_LOCKED
+        '429':
+          description: Too Many Requests — rate limit exceeded
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/too-many-attempts
+                title: Too Many Requests
+                status: 429
+                detail: Too many login attempts. Please try again later.
+                code: AUTH_TOO_MANY_ATTEMPTS
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      description: Rotate session — validate current refresh token and issue a new access JWT
+      operationId: refreshToken
+      tags:
+        - auth
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 120
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refresh_token: "<opaque-refresh-placeholder>"
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshSuccess'
+        '400':
+          description: Bad Request — malformed body
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/invalid-request
+                title: Bad Request
+                status: 400
+                code: AUTH_INVALID_REQUEST
+        '401':
+          description: Unauthorized — invalid or expired refresh token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/refresh-rejected
+                title: Unauthorized
+                status: 401
+                detail: Refresh token is invalid or expired.
+                code: TOKEN_REFRESH_REJECTED
+        '429':
+          description: Too Many Requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/too-many-attempts
+                title: Too Many Requests
+                status: 429
+                code: AUTH_TOO_MANY_ATTEMPTS
+  /auth/logout:
+    post:
+      summary: Logout
+      description: Revoke refresh token family and clear session cookie
+      operationId: logout
+      tags:
+        - auth
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+            example:
+              refresh_token: "<opaque-refresh-placeholder>"
+      responses:
+        '204':
+          description: Logout accepted — no response body
+        '400':
+          description: Bad Request — malformed optional body
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/invalid-request
+                title: Bad Request
+                status: 400
+                code: AUTH_INVALID_REQUEST
+        '429':
+          description: Too Many Requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://example.invalid/auth/problems/too-many-attempts
+                title: Too Many Requests
+                status: 429
+                code: AUTH_TOO_MANY_ATTEMPTS
+components:
+  parameters:
+    ContentTypeJson:
+      name: Content-Type
+      in: header
+      required: true
+      description: Required on every POST /auth/* request
+      schema:
+        type: string
+      example: application/json
+    CookieRefresh:
+      name: Cookie
+      in: header
+      required: false
+      description: Browser flow — HttpOnly refresh_token cookie
+      schema:
+        type: string
+      example: refresh_token=<opaque-refresh-placeholder>
+  schemas:
+    Problem:
+      description: RFC 7807 Problem Details (application/problem+json)
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI identifying the problem type
+          example: https://example.invalid/auth/problems/invalid-credentials
+        title:
+          type: string
+          description: Short human-readable summary
+          example: Unauthorized
+        status:
+          type: integer
+          description: HTTP status code (mirrors the response status)
+          example: 401
+        detail:
+          type: string
+          description: Human-readable explanation (optional)
+        code:
+          type: string
+          description: Machine-readable code from codes.yaml (required for auth errors)
+          example: LOGIN_INVALID_CREDENTIALS
+    LoginRequest:
+      type: object
+      required: [username, password, client_kind]
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          format: password
+          minLength: 1
+        client_kind:
+          type: string
+          enum: [native, web]
+          description: |
+            `native` — refresh_token returned in JSON body.
+            `web` — refresh issued as HttpOnly cookie.
+    LoginSuccess:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: RS256 JWT access token
+        refresh_token:
+          type: string
+          description: Opaque refresh token (native client_kind only)
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          minimum: 1
+          description: Access token lifetime in seconds
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          minLength: 10
+          maxLength: 512
+    RefreshSuccess:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+          description: New opaque refresh token (native only)
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          minimum: 1
+    LogoutRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          minLength: 10
+          maxLength: 512
+          description: Opaque refresh token to revoke (family-wide)
