@@ -17,6 +17,7 @@ const enforceContentType = require("./middlewares/content-type.middleware");
 const errorHandler = require("./middlewares/error-handler.middleware");
 const itemsRouter = require("./modules/items/items.route");
 const meRouter = require("./modules/me/me.route");
+const membersRouter = require("./modules/members/members.route");
 const {
   httpMetricsMiddleware,
   metricsHandler,
@@ -101,6 +102,7 @@ function createApp(env) {
 
   apiV1.use("/me", meRouter);
   apiV1.use("/items", itemsRouter);
+  apiV1.use("/ou/:ouId/branches/:branchId/members", membersRouter);
 
   apiV1.use((req, res) => {
     res.status(404).json(
