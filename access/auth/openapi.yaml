@@ -7,6 +7,8 @@ info:
 
     All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
 
+    This API does **not** expose public signup/invite endpoints; user provisioning is admin-managed via internal branch-scoped member APIs.
+
     Responses use RFC 7807 Problem Details (`application/problem+json`) with required `code` aligned to `_coding-standards/auth/codes.yaml`. Readiness uses **GET /readyz** (Mongo ping).
   contact:
     name: engineering

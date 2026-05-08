@@ -41,6 +41,8 @@ tags:
     description: Internal mesh endpoints (`/metrics`)
   - name: me
     description: Trusted caller profile from gateway-injected headers (`/api/v1/me`)
+  - name: members
+    description: Branch-scoped member management (`create/edit/remove`, no invite flow)
   - name: items
     description: Example item resource (`/api/v1/items`)
 
@@ -193,6 +195,196 @@ paths:
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
           $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ou/{ouId}/branches/{branchId}/members:
+    parameters:
+      - in: path
+        name: ouId
+        required: true
+        description: OU scope in path.
+        schema:
+          type: string
+      - in: path
+        name: branchId
+        required: true
+        description: Branch scope in path.
+        schema:
+          type: string
+    get:
+      tags: [members]
+      summary: List members by branch
+      description: Returns members in the requested branch scope. Direct management model (no invite flow).
+      operationId: listMembers
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListMembersEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [members]
+      summary: Create member in branch
+      description: Direct member provisioning in branch scope. No invite/signup flow.
+      operationId: createMember
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMember"
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "409":
+          $ref: "#/components/responses/ItemDuplicate"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ou/{ouId}/branches/{branchId}/members/{userId}:
+    parameters:
+      - in: path
+        name: ouId
+        required: true
+        description: OU scope in path.
+        schema:
+          type: string
+      - in: path
+        name: branchId
+        required: true
+        description: Branch scope in path.
+        schema:
+          type: string
+      - in: path
+        name: userId
+        required: true
+        description: Member user id.
+        schema:
+          type: string
+    patch:
+      tags: [members]
+      summary: Update member in branch
+      description: Update member profile/role/status in branch scope (direct management).
+      operationId: updateMember
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchMember"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/MemberNotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [members]
+      summary: Remove member from branch
+      description: Removes member from branch scope (hard remove or logical remove by policy).
+      operationId: removeMember
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/MemberNotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -688,6 +880,65 @@ components:
           items:
             type: string
 
+    Member:
+      type: object
+      required: [userId, username, displayName, role, status]
+      properties:
+        userId:
+          type: string
+          maxLength: 128
+        username:
+          type: string
+          maxLength: 128
+        displayName:
+          type: string
+          maxLength: 200
+        email:
+          type: ["string", "null"]
+          format: email
+        role:
+          type: string
+          enum: [owner, admin, manager, member, billing]
+        status:
+          type: string
+          enum: [active, suspended]
+
+    MemberEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              $ref: "#/components/schemas/Member"
+
+    ListMembersEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data, pagination]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Member"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
     ItemEnvelope:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -782,6 +1033,52 @@ components:
           items:
             type: string
 
+    CreateMember:
+      type: object
+      additionalProperties: false
+      required: [username, password, displayName, role]
+      properties:
+        username:
+          type: string
+          maxLength: 128
+        password:
+          type: string
+          minLength: 8
+          maxLength: 200
+        displayName:
+          type: string
+          maxLength: 200
+        email:
+          type: ["string", "null"]
+          format: email
+        role:
+          type: string
+          enum: [manager, member, billing]
+        status:
+          type: string
+          enum: [active, suspended]
+
+    PatchMember:
+      type: object
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          maxLength: 200
+        email:
+          type: ["string", "null"]
+          format: email
+        role:
+          type: string
+          enum: [manager, member, billing]
+        status:
+          type: string
+          enum: [active, suspended]
+        password:
+          type: string
+          minLength: 8
+          maxLength: 200
+
   responses:
     InvalidParam:
       description: Request validation failed
@@ -862,6 +1159,24 @@ components:
                 message: Example item not found
                 data: null
                 requestId: 018f3c2e-0000-7000-8000-000000000003
+
+    MemberNotFound:
+      description: Member not found in the requested branch scope
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          examples:
+            notFound:
+              value:
+                success: false
+                code: RESOURCE_NOT_FOUND
+                message: Member not found
+                data: null
+                requestId: 018f3c2e-0000-7000-8000-000000000031
 
     ItemDuplicate:
       description: Unique index conflict (same code for this OU and branch)
