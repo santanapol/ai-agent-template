@@ -296,6 +296,14 @@ auth/
 - หนึ่ง `auth_users._id` (user) **ต้อง** ผูกได้แค่หนึ่งคู่ `ou_id` + `branch_id` เท่านั้น
 - ถ้าต้องการรองรับหลาย OU/Branch ต่อผู้ใช้ในอนาคต ถือเป็น breaking architecture change และต้องทำ ADR ก่อน
 
+**Role scope policy (contract lock):**
+
+- บทบาท OU-level: `Owner`, `Admin` (เข้าถึง OU-level routes และงานกำกับระดับองค์กร)
+- บทบาท Branch-level: `Manager`, `Member`, `Billing` (ทำงานเฉพาะ branch ที่ผูกกับผู้ใช้นั้น)
+- สิทธิ์ลบ Branch แบบถาวร (`branch:delete`) จำกัด `Owner` เท่านั้น
+- `Admin` สามารถจัดการ Branch (create/update/deactivate) และมีสิทธิ์ `billing:manage` เป็นค่า default ทุก OU
+- User provisioning ใช้ direct management โดยผู้ดูแลระบบ (create/edit/remove) เท่านั้น — ไม่มี self-signup และไม่มี invite flow ในขอบเขตระบบนี้
+
 **Index (ต้องสร้าง)**
 
 | Index           | Spec                             | Purpose                                 |
