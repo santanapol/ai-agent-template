@@ -291,6 +291,11 @@ auth/
 | `upd_date`      | Date     | Yes      | วันที่แก้ไขล่าสุด (UTC) — refresh ทุก update; ใช้สร้าง ETag                                             |
 | `upd_prog`      | string   | Yes      | route template ที่แก้ไขล่าสุด — refresh ทุก update                                                      |
 
+**Membership policy (contract lock):**
+
+- หนึ่ง `auth_users._id` (user) **ต้อง** ผูกได้แค่หนึ่งคู่ `ou_id` + `branch_id` เท่านั้น
+- ถ้าต้องการรองรับหลาย OU/Branch ต่อผู้ใช้ในอนาคต ถือเป็น breaking architecture change และต้องทำ ADR ก่อน
+
 **Index (ต้องสร้าง)**
 
 | Index           | Spec                             | Purpose                                 |
