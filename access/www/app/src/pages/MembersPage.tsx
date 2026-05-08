@@ -103,7 +103,7 @@ export function MembersPage() {
             <option value="member">member</option>
             <option value="billing">billing</option>
           </select>
-          <button type="button" onClick={() => void submitCreate()}>
+          <button className="btn btn-primary" type="button" onClick={() => void submitCreate()}>
             Add member
           </button>
         </div>
@@ -122,15 +122,15 @@ export function MembersPage() {
               </p>
             </div>
             {editingId === member.userId ? (
-              <button type="button" onClick={() => void submitPatch(member)}>
+              <button className="btn btn-secondary" type="button" onClick={() => void submitPatch(member)}>
                 Save
               </button>
             ) : (
-              <button type="button" onClick={() => setEditingId(member.userId)}>
+              <button className="btn btn-ghost" type="button" onClick={() => setEditingId(member.userId)}>
                 Edit
               </button>
             )}
-            <button type="button" onClick={() => void removeMember(member.userId)}>
+            <button className="btn btn-destructive" type="button" onClick={() => void removeMember(member.userId)}>
               Remove
             </button>
           </div>

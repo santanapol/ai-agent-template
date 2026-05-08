@@ -41,7 +41,11 @@ export function BillingPage() {
                 value={nextPlanCode}
                 onChange={(event) => setNextPlanCode(event.target.value)}
               />
-              <button type="button" onClick={() => void updatePlan(nextPlanCode)}>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => void updatePlan(nextPlanCode)}
+              >
                 Update plan
               </button>
             </div>

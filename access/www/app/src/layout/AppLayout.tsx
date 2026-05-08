@@ -13,6 +13,10 @@ export function AppLayout() {
       <aside className="sidebar">
         <h1>Access Platform</h1>
         <p className="muted">Signed in as `{session.role}`</p>
+        <div className="search-wrap">
+          <input aria-label="Search menu" placeholder="Search docs or menu" />
+          <span className="kbd">Ctrl+K</span>
+        </div>
         <label className="label" htmlFor="role-selector">
           Switch role
         </label>
