@@ -39,10 +39,10 @@ function buildMeFromTrustedHeaders(headers) {
   }
 
   return {
-    userId,
-    role: role.length > 0 ? role : null,
     ou,
     branch,
+    userId,
+    role: role.length > 0 ? role : null,
   };
 }
 

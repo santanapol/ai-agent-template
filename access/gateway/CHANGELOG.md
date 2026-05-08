@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Gateway fallback 404:** unknown path ที่ไม่ match route table ตอบเป็น **`application/problem+json`** พร้อม `code` **`GATEWAY_ROUTE_NOT_FOUND`** และ header `x-gateway-hit: true` (แทน JSON แบบ Fastify default/legacy fallback)
+- **Registry update:** เพิ่ม `GATEWAY_ROUTE_NOT_FOUND` ใน [`_coding-standards/gateway/codes.yaml`](../../_coding-standards/gateway/codes.yaml)
+- **Docs sync:** อัปเดต `docs/architecture.md` §7 และ `docs/openapi.yaml` ให้ตรงกับ fallback behavior ใหม่
+
 ## 0.2.1
 
 - **HTTP / registry alignment ([`CODE_MATRIX_TARGET.md`](../../../CODE_MATRIX_TARGET.md)):** Problem **`GATEWAY_CLAIM_REJECTED`** ใช้ **HTTP 401** (เดิม 400) ใน `src/lib/gateway-problems.js` + อัปเดต `docs/architecture.md` §7 · JWT verify ล้มเหลว → **`GATEWAY_JWT_REJECTED`** (รวมเคสเดิม `GATEWAY_JWT_INVALID` / `GATEWAY_JWT_EXPIRED`) ใน `jwt-auth.js` / `inject-context.js`

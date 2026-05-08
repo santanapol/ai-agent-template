@@ -137,9 +137,13 @@ export async function buildApp (env = loadEnv(), options = {}) {
 
   await registerProxies(fastify, { env, routes })
 
-  // Approach A (`_coding-standards/gateway` + `docs/architecture.md` §7): path ที่ไม่ match route table = **404** (client / wrong URL) — ไม่ใช้ `GATEWAY_ROUTE_NOT_CONFIGURED`
+  // Route miss fallback: respond from gateway directly so callers can distinguish
+  // "hit gateway but no route matched" from upstream failures.
   fastify.setNotFoundHandler((_request, reply) => {
-    reply.code(404).send()
+    reply.header('x-gateway-hit', 'true')
+    return fastify.gatewayProblem.send(reply, 'GATEWAY_ROUTE_NOT_FOUND', {
+      detail: 'Reached gateway, no route matched'
+    })
   })
 
   fastify.decorate('gatewayRoutePrefixes', routes.map((r) => r.prefix))

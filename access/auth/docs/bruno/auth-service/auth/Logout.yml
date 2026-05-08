@@ -1,0 +1,42 @@
+info:
+  name: Logout
+  type: http
+  seq: 3
+  tags:
+    - auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/logout"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Cookie
+      value: refresh_token=<opaque-refresh-placeholder>
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": "UBfsQ4Ntb8ULx-TzLUgx71UhM8K3M6Le66c6Ja6kq0g"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  **Purpose:** End the refresh **family** for the presented refresh token — revokes active refresh tokens tied to that family (SoT logout semantics).
+
+  **Token source:** Same as refresh — cookie channel and/or JSON `refresh_token` for native. **`Content-Type: application/json` required** on every `POST` (use body `{}` for cookie-only logout if your client omits an empty body).
+
+  **Success (`204`):** **No response body.** Client should discard cached access JWTs and stop using the old refresh. Response may clear the refresh cookie (implementation-specific `Set-Cookie`).
+
+  **Idempotency:** Missing or already-revoked refresh still yields **`204`** where implemented (do not infer session existence from status alone).
+
+  **Errors:** `400` validation; `429` throttles. Problem details use `application/problem+json` when returned.
+
+  **Auth:** No Bearer JWT on this route.

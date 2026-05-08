@@ -1,0 +1,366 @@
+info:
+  name: Create item
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/items"
+  headers:
+    - name: x-user-id
+      value: 69e988b8e9e5870b957e51ee
+    - name: x-user-ou
+      value: 69e988b8e9e5870b957e51ec
+    - name: x-user-branch
+      value: 69e988b8e9e5870b957e51ed
+    - name: x-gateway-secret
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "code" : "FRT-APP-03",
+        "name" : "Envy Apple",
+        "description" : "แอปเปิ้ลเอ็นวี่ เนื้อกรอบ รสหวานฉ่ำ มีกลิ่นหอมเฉพาะตัว นำเข้าจากนิวซีแลนด์",
+        "status" : "active",
+        "tags" : [ "imported", "crunchy", "sweet" ]
+      }
+  auth:
+    type: apikey
+    key: x-gateway-secret
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": {
+              "id": "",
+              "code": "",
+              "name": "",
+              "description": "",
+              "status": "draft",
+              "tags": []
+            }
+          }
+  - name: 400 Response
+    description: Request validation failed
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 401 Response
+    description: Missing or invalid gateway secret
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 403 Response
+    description: Required user context is missing
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 409 Response
+    description: Unique index conflict (same code for this OU and branch)
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 415 Response
+    description: Missing/unsupported content-type
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 415
+      statusText: Unsupported Media Type
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 429 Response
+    description: Request rate exceeded
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 500 Response
+    description: Internal server error
+    request:
+      url: "{{baseUrl}}/api/v1/items"
+      method: POST
+      headers:
+        - name: x-user-id
+          value: <x-user-id>
+        - name: x-user-ou
+          value: <x-user-ou>
+        - name: x-user-branch
+          value: <x-user-branch>
+        - name: x-gateway-secret
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "code": "",
+            "name": "",
+            "description": "",
+            "status": "draft",
+            "tags": []
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }

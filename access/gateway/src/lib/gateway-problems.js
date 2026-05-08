@@ -38,6 +38,11 @@ export const GATEWAY_ERROR_DEF = {
     title: 'Gateway routing is misconfigured',
     typeKey: 'gatewayRoute'
   },
+  GATEWAY_ROUTE_NOT_FOUND: {
+    status: 404,
+    title: 'Route not found',
+    typeKey: 'gatewayRoute'
+  },
   GATEWAY_NOT_READY: {
     status: 503,
     title: 'Gateway is not ready',

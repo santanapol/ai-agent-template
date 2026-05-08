@@ -1,0 +1,44 @@
+info:
+  name: Refresh token
+  type: http
+  seq: 2
+  tags:
+    - auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/refresh"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Cookie
+      value: refresh_token=<opaque-refresh-placeholder>
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": "Ss5RwXp-pf5rVsOa7a5T1iHcYd9ZfOT1HkjNFeso258"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  **Purpose:** Rotate the session — validate the current opaque refresh, issue a **new access JWT**, and (for native) a **new opaque refresh**; browser clients may receive a rotated refresh via **`Set-Cookie`**.
+
+  **Refresh source (priority):** (1) HttpOnly cookie named by env (default `refresh_token`) when present; (2) JSON field `refresh_token` for native clients when not using the cookie channel.
+
+  **Request body:** Optional. Native clients should send `{"refresh_token":"<opaque>"}` when not relying on the cookie. Browser clients should still send **`Content-Type: application/json`** and may use body `{}` when using cookie-only refresh.
+
+  **Headers:** **`Content-Type: application/json` required** (same as other `POST /auth/*`). Optional `Cookie` (see `CookieRefresh`). No `Accept` required.
+
+  **Success (`200`):** Same token shape as login (`RefreshSuccess`). Native responses may include `refresh_token`; browser responses may omit it from JSON when rotation is cookie-only.
+
+  **Errors:** `400` malformed body; `401` invalid, expired, missing, or **reused** refresh (distinguish via **`type`** in problem body — includes reuse / family revocation per SoT); `429` throttles.
+
+  **Auth:** No Bearer JWT on this route.

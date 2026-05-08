@@ -1,0 +1,35 @@
+info:
+  name: Readiness
+  type: http
+  seq: 2
+  tags:
+    - health
+
+http:
+  method: GET
+  url: "{{baseUrl}}/readyz"
+  headers:
+    - name: Accept
+      value: application/json
+      description: |
+        Optional; JSON responses use `application/json` where applicable.
+
+        Used on **GET** (`/healthz`, `/readyz`, `/.well-known/jwks.json`). Success prefers `application/json`; errors may be `application/problem+json` (RFC 7807).
+
+        **POST `/auth/*`:** use **`#/components/parameters/ContentTypeApplicationJson`** (required) — not this parameter.
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  **Purpose:** Readiness probe before sending user traffic — verifies critical dependencies (at minimum MongoDB connectivity for this service).
+
+  **Behaviour:** On success, returns JSON with `status` and a `dependencies` array (name + status per probed dependency). If the database check fails, returns **`503`** with **`application/problem+json`** (`Problem` schema) and optional registry `code` (e.g. `AUTH_NOT_READY`).
+
+  **Auth:** None.
+
+  **Contract note:** This operation exists on the **root** service OpenAPI (`openapi.yaml`); the `docs/openapi.yaml` bundle may omit it when documenting only public auth/discovery paths.

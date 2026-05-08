@@ -22,6 +22,11 @@ codes:
     message: Gateway routing is misconfigured
     owner: gateway
 
+  GATEWAY_ROUTE_NOT_FOUND:
+    httpStatus: 404
+    message: Route not found
+    owner: gateway
+
   GATEWAY_UPSTREAM_UNAVAILABLE:
     httpStatus: 502
     message: Upstream service is unavailable

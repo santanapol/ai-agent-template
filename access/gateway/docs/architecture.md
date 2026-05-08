@@ -212,7 +212,7 @@ gateway/
 |----------|------|-------|
 | JWT หมดอายุ / ลายเซ็นผิด / ไม่มี Bearer | `401` | gateway — **`application/problem+json`** + `code` (`GATEWAY_JWT_*`) ตาม `_coding-standards/gateway/codes.yaml` |
 | claim/header ไม่พร้อม หรือเกินความยาว (section 4, section 12.2) | `401` | gateway — **`application/problem+json`** + `code` **`GATEWAY_CLAIM_REJECTED`** (authentication failure — [`CODE_MATRIX_TARGET.md`](../../../../CODE_MATRIX_TARGET.md)) |
-| Path ไม่ match **ตาราง route ที่ deploy** (client ยิง URL ผิด / ไม่มี resource ที่ gateway รู้จัก) | `404` | gateway — **ไม่** ใช้ `GATEWAY_ROUTE_NOT_CONFIGURED` (แนว **Approach A** — ลดการเปิดเผย topology) |
+| Path ไม่ match **ตาราง route ที่ deploy** (client ยิง URL ผิด / ไม่มี resource ที่ gateway รู้จัก) | `404` | gateway — ตอบ **`application/problem+json`** + `code` **`GATEWAY_ROUTE_NOT_FOUND`** พร้อม header `x-gateway-hit: true` (แนว **Approach A** — แยกจาก `GATEWAY_ROUTE_NOT_CONFIGURED`) |
 | **Routing misconfiguration** ระดับ operator (เช่น deploy ผิด ทำให้ path ที่ **ควร** มี upstream กลับไม่มี / upstream ว่างหลัง validate ตาม SoT — ไม่ใช่แค่ client พิมพ์ผิด) | `502` | gateway — **`application/problem+json`** + `code` **`GATEWAY_ROUTE_NOT_CONFIGURED`** |
 | upstream connection/DNS/incomplete | `502` | gateway — **`application/problem+json`** + `code` **`GATEWAY_UPSTREAM_UNAVAILABLE`** |
 | upstream ช้าเกิน `UPSTREAM_TIMEOUT_MS` | `504` | gateway — **`application/problem+json`** + `code` **`GATEWAY_UPSTREAM_TIMEOUT`** |

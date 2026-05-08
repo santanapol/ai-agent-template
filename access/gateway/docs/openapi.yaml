@@ -71,11 +71,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/GatewayHealthzResponse'
         '404':
-          description: Wrong method or path (Fastify default when applicable)
+          description: Path ไม่ match route table ของ gateway
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/FastifyJsonError'
+                $ref: '#/components/schemas/GatewayProblem'
         '500':
           description: Unhandled error (Fastify default serialization)
           content:
@@ -107,11 +107,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/GatewayProblem'
         '404':
-          description: Wrong method or path (Fastify default when applicable)
+          description: Path ไม่ match route table ของ gateway
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/FastifyJsonError'
+                $ref: '#/components/schemas/GatewayProblem'
         '500':
           description: Unhandled error (Fastify default serialization)
           content:

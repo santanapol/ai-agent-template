@@ -66,5 +66,14 @@ describe('GET /healthz and GET /readyz', () => {
   test('unknown path returns 404 (no GATEWAY_ROUTE_NOT_CONFIGURED)', async () => {
     const res = await app.inject({ method: 'GET', url: '/no-such-route' })
     expect(res.statusCode).toBe(404)
+    expect(res.headers['x-gateway-hit']).toBe('true')
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/u)
+    expect(JSON.parse(res.body)).toEqual({
+      type: 'https://example.invalid/gateway/problems/gateway-route',
+      title: 'Route not found',
+      status: 404,
+      detail: 'Reached gateway, no route matched',
+      code: 'GATEWAY_ROUTE_NOT_FOUND'
+    })
   })
 })

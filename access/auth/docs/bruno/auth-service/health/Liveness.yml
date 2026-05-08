@@ -1,0 +1,35 @@
+info:
+  name: Liveness
+  type: http
+  seq: 1
+  tags:
+    - health
+
+http:
+  method: GET
+  url: "{{baseUrl}}/healthz"
+  headers:
+    - name: Accept
+      value: application/json
+      description: |
+        Optional; JSON responses use `application/json` where applicable.
+
+        Used on **GET** (`/healthz`, `/readyz`, `/.well-known/jwks.json`). Success prefers `application/json`; errors may be `application/problem+json` (RFC 7807).
+
+        **POST `/auth/*`:** use **`#/components/parameters/ContentTypeApplicationJson`** (required) — not this parameter.
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  **Purpose:** Cheap process check for orchestrators, load balancers, and k8s-style probes.
+
+  **Behaviour:** Returns JSON with `status`, `timestamp`, and process `uptime` in seconds. Does **not** open MongoDB or call upstream services — a passing `200` only means the Node process accepted the connection.
+
+  **Auth:** None. No `Authorization` or cookie required.
+
+  **Client hints:** Use `GET /readyz` when you need dependency health (MongoDB). Wrong HTTP method or unknown path may yield `404` (Fastify default).
