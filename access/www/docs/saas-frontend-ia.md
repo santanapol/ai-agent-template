@@ -71,7 +71,8 @@ Identity scope ที่แนะนำใน Frontend state:
 ## Branch Members IA
 
 - `/ou/:ouId/branches/:branchId/members` - list members ใน branch
-- `/ou/:ouId/branches/:branchId/members/invite` - invite member เข้า branch
+- `/ou/:ouId/branches/:branchId/members/create` - เพิ่มสมาชิกเข้า branch โดยตรง (ไม่ใช้ invite flow)
+- `/ou/:ouId/branches/:branchId/members/:userId/edit` - แก้ไขข้อมูล/บทบาทสมาชิกโดยตรง
 - `/ou/:ouId/branches/:branchId/members/:userId` - remove/suspend member ใน branch
 
 ## Billing IA
@@ -93,7 +94,6 @@ Identity scope ที่แนะนำใน Frontend state:
 ### Public routes
 
 - `/login`
-- `/signup`
 - `/forgot-password`
 
 ### Authenticated routes
@@ -108,12 +108,46 @@ Identity scope ที่แนะนำใน Frontend state:
 - `Member`
 - `Billing`
 
+### Role scope policy (ล็อกใช้งาน)
+
+- OU-level routes เข้าได้เฉพาะ `Owner` และ `Admin`
+- ผู้ใช้ทั่วไปอยู่ Branch-level (`Manager`, `Member`, `Billing`)
+- ผู้ใช้ 1 คนผูกกับ 1 `branchId` และจัดการได้เฉพาะ branch ของตัวเอง
+
+### Owner/Admin capabilities (Branch management)
+
+| Action | Owner | Admin | หมายเหตุ |
+| --- | --- | --- | --- |
+| สร้าง Branch (`branch:create`) | ✅ | ✅ | ภายใต้ OU ที่มีสิทธิ์ |
+| แก้ไข Branch (`branch:update`) | ✅ | ✅ | เช่น name/status/config พื้นฐาน |
+| ปิดใช้งาน Branch (`branch:deactivate`) | ✅ | ✅ | แนะนำเป็น default ก่อนลบจริง |
+| ลบ Branch แบบถาวร (`branch:delete`) | ✅ | ❌ | จำกัด Owner เท่านั้น |
+| จัดการสมาชิกใน Branch (`branch:member:manage`) | ✅ | ✅ | create/edit/remove/suspend ตาม policy |
+| จัดการ Billing ของ Branch (`billing:manage`) | ✅ | ✅ | เปิดเป็น default สำหรับ `Admin` ทุก OU |
+
+### Role Matrix (OU-level vs Branch-level)
+
+| Role | Scope | Dashboard | Items | Members (branch) | Billing (branch) | OU Settings/Roles | Audit Logs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Owner` | OU | ✅ | ✅ (ทุก branch ใน OU) | ✅ | ✅ | ✅ | ✅ |
+| `Admin` | OU | ✅ | ✅ (ทุก branch ใน OU) | ✅ | ✅ | ✅ | ✅ |
+| `Manager` | Branch | ✅ (branch ตัวเอง) | ✅ Read/Write | ✅ Create/Edit/Remove | ✅ Read | ❌ | ❌ |
+| `Member` | Branch | ✅ (branch ตัวเอง) | ✅ Read/Write | ❌ | ❌ | ❌ | ❌ |
+| `Billing` | Branch | ✅ (branch ตัวเอง) | ✅ Read | ❌ | ✅ Read | ❌ | ❌ |
+
+หมายเหตุ:
+
+- `Reports` ใน MVP เป็น placeholder menu ยังไม่ผูก API จริง
+- `Admin` มี `billing:manage` เป็นค่า default ทุก OU
+- Members ใช้ direct management (`create/edit/remove`) และไม่มี invite flow
+
 ### Permission examples
 
 - `ou:read`, `ou:manage`
 - `branch:read`, `branch:manage`
+- `branch:create`, `branch:update`, `branch:deactivate`, `branch:delete`
 - `items:read`, `items:write`
-- `branch:member:invite`, `branch:member:remove`
+- `branch:member:create`, `branch:member:update`, `branch:member:remove`
 - `billing:read`, `billing:manage`
 - `audit:read`
 - `apikeys:manage`
@@ -143,7 +177,8 @@ Identity scope ที่แนะนำใน Frontend state:
 | `Items` (list) | `/ou/:ouId/branches/:branchId/items` | `GET /api/v1/ou/:ouId/branches/:branchId/items` | `items:read` |
 | `Items` (detail) | `/ou/:ouId/branches/:branchId/items/:itemId` | `GET /api/v1/ou/:ouId/branches/:branchId/items/:itemId` | `items:read` |
 | `Members` | `/ou/:ouId/branches/:branchId/members` | `GET /api/v1/ou/:ouId/branches/:branchId/members` | `branch:member:read` |
-| `Members` (invite) | `/ou/:ouId/branches/:branchId/members/invite` | `POST /api/v1/ou/:ouId/branches/:branchId/members/invite` | `branch:member:invite` |
+| `Members` (create) | `/ou/:ouId/branches/:branchId/members/create` | `POST /api/v1/ou/:ouId/branches/:branchId/members` | `branch:member:create` |
+| `Members` (edit) | `/ou/:ouId/branches/:branchId/members/:userId/edit` | `PATCH /api/v1/ou/:ouId/branches/:branchId/members/:userId` | `branch:member:update` |
 | `Members` (remove) | `/ou/:ouId/branches/:branchId/members/:userId` | `DELETE /api/v1/ou/:ouId/branches/:branchId/members/:userId` | `branch:member:remove` |
 | `Billing` (plan) | `/ou/:ouId/branches/:branchId/billing/plan` | `GET /api/v1/ou/:ouId/branches/:branchId/billing/plan` | `billing:read` |
 | `Billing` (invoices) | `/ou/:ouId/branches/:branchId/billing/invoices` | `GET /api/v1/ou/:ouId/branches/:branchId/billing/invoices` | `billing:read` |
@@ -177,7 +212,7 @@ Identity scope ที่แนะนำใน Frontend state:
 - Branch switcher
 - Tenant-scoped dashboard
 - Items list/detail
-- Branch-level member management (invite/list/remove)
+- Branch-level member management (create/edit/list/remove)
 - Basic RBAC guard
 - Branch-level billing read-only pages
 
@@ -213,7 +248,7 @@ Checklist นี้ใช้ตรวจความพร้อมของ API
   - `ou:read`, `ou:manage`
   - `branch:read`, `branch:manage`
   - `items:read`, `items:write`
-  - `branch:member:invite`, `branch:member:remove`
+  - `branch:member:create`, `branch:member:update`, `branch:member:remove`
   - `billing:read`, `billing:manage`
   - `audit:read`
 
@@ -241,7 +276,7 @@ Checklist นี้ใช้ตรวจความพร้อมของ API
 ### 7) Observability และ Audit
 
 - ทุก request ควรมี `requestId`/`traceId` สำหรับ tracing
-- งานสำคัญด้านสิทธิ์ (เช่น invite/remove member, role change) ต้องมี audit log
+- งานสำคัญด้านสิทธิ์ (เช่น create/edit/remove member, role change) ต้องมี audit log
 - Audit event ควรเก็บอย่างน้อย: `userId`, `ouId`, `branchId` (ถ้ามี), action, timestamp
 
 ### 8) Frontend Integration Readiness
