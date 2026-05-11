@@ -36,6 +36,37 @@ function hasDuplicateHeader (raw, headers, headerName) {
 }
 
 /**
+ * Safe, operator-oriented hint for clients when the proxy cannot reach upstream.
+ * @param {unknown} err
+ * @returns {string}
+ */
+function upstreamProblemDetail (err) {
+  let code = ''
+  /** @type {unknown} */
+  let cur = err
+  for (let i = 0; i < 6 && cur && typeof cur === 'object'; i++) {
+    const c = 'code' in cur && cur.code != null ? String(cur.code) : ''
+    if (c) {
+      code = c
+      break
+    }
+    cur = 'cause' in cur ? cur.cause : null
+  }
+  const base =
+    'The gateway could not reach the upstream HTTP service for this route (see gateway route table / ROUTES_JSON).'
+  if (code === 'ECONNREFUSED') {
+    return `${base} Connection refused—start the upstream process (e.g. \`reference\` on port 3003 per gateway/.env.example) and ensure MongoDB is up if that service needs it.`
+  }
+  if (code === 'ENOTFOUND') {
+    return `${base} Hostname not found—check \`upstream\` URLs in gateway routes.`
+  }
+  if (code) {
+    return `${base} (proxy error code: ${code})`
+  }
+  return base
+}
+
+/**
  * @param {ReturnType<typeof loadEnv>} [env]
  * @param {{ logger?: boolean }} [options]
  */
@@ -97,7 +128,9 @@ export async function buildApp (env = loadEnv(), options = {}) {
   fastify.setErrorHandler((err, request, reply) => {
     const mapped = mapGatewayClientStatus(err)
     if (mapped === 502) {
-      return fastify.gatewayProblem.send(reply, 'GATEWAY_UPSTREAM_UNAVAILABLE')
+      return fastify.gatewayProblem.send(reply, 'GATEWAY_UPSTREAM_UNAVAILABLE', {
+        detail: upstreamProblemDetail(err)
+      })
     }
     if (mapped === 504) {
       return fastify.gatewayProblem.send(reply, 'GATEWAY_UPSTREAM_TIMEOUT')

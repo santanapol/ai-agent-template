@@ -12,6 +12,9 @@ export function mapGatewayClientStatus (err) {
   const status =
     'statusCode' in err && typeof err.statusCode === 'number' ? err.statusCode : undefined
 
+  // Undici / Node: connection never established (nothing listening, wrong host/port).
+  if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') return 502
+
   if (status === 502 || status === 504) return status
 
   // reply-from maps DNS issues to 503 — contract expects 502 for DNS/connection failures.

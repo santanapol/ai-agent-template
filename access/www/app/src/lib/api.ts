@@ -61,9 +61,20 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
+    const errorBody = (await response.json().catch(() => null)) as {
+      message?: string;
+      detail?: string;
+      title?: string;
+      code?: string;
+    } | null;
+    const detail =
+      typeof errorBody?.detail === "string" ? errorBody.detail.trim() : "";
+    const code =
+      typeof errorBody?.code === "string" ? errorBody.code.trim() : "";
     const message =
-      errorBody?.message || errorBody?.code || "Request failed unexpectedly";
+      detail && code
+        ? `${code}: ${detail}`
+        : detail || code || errorBody?.message || errorBody?.title || "Request failed unexpectedly";
     throw new Error(message);
   }
 
