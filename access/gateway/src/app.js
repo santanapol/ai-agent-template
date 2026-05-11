@@ -119,7 +119,7 @@ export async function buildApp (env = loadEnv(), options = {}) {
     .map((s) => s.trim())
     .filter(Boolean)
   if (corsOrigins.length > 0) {
-    await fastify.register(cors, { origin: corsOrigins })
+    await fastify.register(cors, { origin: corsOrigins, credentials: true })
   }
 
   await fastify.register(jwtAuthPlugin, { env })
