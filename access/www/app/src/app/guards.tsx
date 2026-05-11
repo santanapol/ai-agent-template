@@ -1,8 +1,7 @@
 import { Navigate, Outlet, useParams } from "react-router-dom";
 import { useAuth } from "./use-auth";
+import { isOuLevelRole } from "./permissions";
 import type { UserRole } from "./auth-context";
-
-const OU_LEVEL_ROLES: UserRole[] = ["owner", "admin"];
 
 export function RoleGuard({ allow }: { allow: UserRole[] }) {
   const { session } = useAuth();
@@ -24,7 +23,7 @@ export function ScopeGuard() {
     return <Navigate to="/forbidden" replace />;
   }
 
-  if (OU_LEVEL_ROLES.includes(session.role)) {
+  if (isOuLevelRole(session.role)) {
     return <Outlet />;
   }
 

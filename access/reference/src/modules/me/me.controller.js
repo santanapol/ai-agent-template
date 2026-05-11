@@ -3,6 +3,7 @@
 const HttpError = require("../../utils/http-error");
 const CODES = require("../../utils/error-codes");
 const { successEnvelope } = require("../../utils/envelope");
+const { readErrorCode } = require("../../utils/error-code");
 const { buildMeFromTrustedHeaders } = require("./me.service");
 
 function getMe(req, res, next) {
@@ -10,10 +11,7 @@ function getMe(req, res, next) {
     const data = buildMeFromTrustedHeaders(req.headers);
     return res.status(200).json(successEnvelope(data));
   } catch (err) {
-    const code =
-      err && typeof err === "object" && "code" in err
-        ? String(err.code)
-        : "";
+    const code = readErrorCode(err);
     if (code === "MISSING_GATEWAY_USER_CONTEXT") {
       return next(
         new HttpError(

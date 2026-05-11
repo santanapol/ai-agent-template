@@ -3,19 +3,20 @@ info:
   title: reference
   version: 0.1.0
   description: |
-    Reference backend for the `access-platform` monorepo: **CRUD items**, **`GET /api/v1/me`**
-    (trusted user context from gateway headers), optimistic concurrency (`If-Match`), and the mesh contract
-    (`x-gateway-secret` + gateway-injected `x-user-*` headers).
+    Reference backend for the `access-platform` monorepo.
 
-    **Direct listen port:** default **`3003`** (`PORT` env).
+    Includes:
+    - CRUD for `/api/v1/items`
+    - Trusted user profile endpoint `GET /api/v1/me`
+    - Branch-scoped members, billing, and dashboard endpoints
+    - Optimistic concurrency via `If-Match`
+    - Mesh headers: `x-gateway-secret` and gateway-injected `x-user-*`
 
-    **Clients via gateway (Bruno / Postman):** import **[`docs/openapi-via-gateway.yaml`](./docs/openapi-via-gateway.yaml)**
-    — call **`gateway`** (default **`3002`**), send only **`Authorization: Bearer`**; do not send
-    `x-gateway-secret` or `x-user-*` from the client (gateway injects upstream). Paths stay **`/api/v1/items`** (see
-    `gateway` `ROUTES_JSON`).
+    Direct listen port: `3003` (`PORT` env).
 
-    **`PUT` full replace:** allowed here only as an intentional teaching pattern for “replace resource”
-    semantics — see [`docs/adrs/001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md).
+    For gateway clients (Bruno/Postman), import [`docs/openapi-via-gateway.yaml`](./docs/openapi-via-gateway.yaml), call gateway default `3002`, and send only `Authorization: Bearer`.
+
+    `PUT` full replace is an intentional teaching pattern; see [`docs/adrs/001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md).
   contact:
     name: engineering
     url: https://example.invalid/reference
@@ -399,11 +400,13 @@ paths:
       - in: path
         name: ouId
         required: true
+        description: OU scope in path.
         schema:
           type: string
       - in: path
         name: branchId
         required: true
+        description: Branch scope in path.
         schema:
           type: string
     get:
@@ -484,11 +487,13 @@ paths:
       - in: path
         name: ouId
         required: true
+        description: OU scope in path.
         schema:
           type: string
       - in: path
         name: branchId
         required: true
+        description: Branch scope in path.
         schema:
           type: string
     get:
@@ -529,11 +534,13 @@ paths:
       - in: path
         name: ouId
         required: true
+        description: OU scope in path.
         schema:
           type: string
       - in: path
         name: branchId
         required: true
+        description: Branch scope in path.
         schema:
           type: string
     get:

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
+import { canManageBillingPlan } from "../app/permissions";
 import { useBilling } from "../features/billing/useBilling";
 
 export function BillingPage() {
@@ -20,7 +21,7 @@ export function BillingPage() {
     void load();
   }, [load]);
 
-  const canManagePlan = session.role === "owner" || session.role === "admin";
+  const canManagePlan = canManageBillingPlan(session.role);
 
   return (
     <section>

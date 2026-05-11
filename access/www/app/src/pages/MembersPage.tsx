@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
+import { canManageMembers } from "../app/permissions";
 import { useMembers, type Member } from "../features/members/useMembers";
 
 const EMPTY_FORM = {
@@ -13,8 +14,7 @@ const EMPTY_FORM = {
 
 export function MembersPage() {
   const { session } = useAuth();
-  const canManageMembers =
-    session.role === "owner" || session.role === "admin" || session.role === "manager";
+  const canManageMembersAccess = canManageMembers(session.role);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const {
@@ -60,7 +60,7 @@ export function MembersPage() {
       <h2>Members</h2>
       <p>Direct management flow: add, edit, remove (no invite/signup).</p>
       {error ? <p className="error">{error}</p> : null}
-      {canManageMembers ? (
+      {canManageMembersAccess ? (
         <div className="panel">
           <h3>Add member</h3>
           <div className="grid">
@@ -133,7 +133,7 @@ export function MembersPage() {
                 {member.username} ({member.role})
               </p>
             </div>
-            {canManageMembers ? (
+            {canManageMembersAccess ? (
               <>
                 {editingId === member.userId ? (
                   <button
