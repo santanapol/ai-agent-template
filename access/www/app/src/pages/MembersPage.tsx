@@ -13,6 +13,8 @@ const EMPTY_FORM = {
 
 export function MembersPage() {
   const { session } = useAuth();
+  const canManageMembers =
+    session.role === "owner" || session.role === "admin" || session.role === "manager";
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const {
@@ -58,56 +60,66 @@ export function MembersPage() {
       <h2>Members</h2>
       <p>Direct management flow: add, edit, remove (no invite/signup).</p>
       {error ? <p className="error">{error}</p> : null}
-      <div className="panel">
-        <h3>Add member</h3>
-        <div className="grid">
-          <input
-            placeholder="username"
-            value={form.username}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, username: event.target.value }))
-            }
-          />
-          <input
-            placeholder="password"
-            type="password"
-            value={form.password}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, password: event.target.value }))
-            }
-          />
-          <input
-            placeholder="display name"
-            value={form.displayName}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, displayName: event.target.value }))
-            }
-          />
-          <input
-            placeholder="email"
-            value={form.email}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, email: event.target.value }))
-            }
-          />
-          <select
-            value={form.role}
-            onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                role: event.target.value as Member["role"],
-              }))
-            }
-          >
-            <option value="manager">manager</option>
-            <option value="member">member</option>
-            <option value="billing">billing</option>
-          </select>
-          <button className="btn btn-primary" type="button" onClick={() => void submitCreate()}>
-            Add member
-          </button>
+      {canManageMembers ? (
+        <div className="panel">
+          <h3>Add member</h3>
+          <div className="grid">
+            <input
+              placeholder="username"
+              value={form.username}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, username: event.target.value }))
+              }
+            />
+            <input
+              placeholder="password"
+              type="password"
+              value={form.password}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, password: event.target.value }))
+              }
+            />
+            <input
+              placeholder="display name"
+              value={form.displayName}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, displayName: event.target.value }))
+              }
+            />
+            <input
+              placeholder="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, email: event.target.value }))
+              }
+            />
+            <select
+              value={form.role}
+              onChange={(event) =>
+                setForm((prev) => ({
+                  ...prev,
+                  role: event.target.value as Member["role"],
+                }))
+              }
+            >
+              <option value="manager">manager</option>
+              <option value="member">member</option>
+              <option value="billing">billing</option>
+            </select>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => void submitCreate()}
+            >
+              Add member
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="panel">
+          <p className="muted">Read-only for this role.</p>
+        </div>
+      )}
 
       <div className="panel">
         <h3>Branch members</h3>
@@ -121,18 +133,34 @@ export function MembersPage() {
                 {member.username} ({member.role})
               </p>
             </div>
-            {editingId === member.userId ? (
-              <button className="btn btn-secondary" type="button" onClick={() => void submitPatch(member)}>
-                Save
-              </button>
-            ) : (
-              <button className="btn btn-ghost" type="button" onClick={() => setEditingId(member.userId)}>
-                Edit
-              </button>
-            )}
-            <button className="btn btn-destructive" type="button" onClick={() => void removeMember(member.userId)}>
-              Remove
-            </button>
+            {canManageMembers ? (
+              <>
+                {editingId === member.userId ? (
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={() => void submitPatch(member)}
+                  >
+                    Save
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-ghost"
+                    type="button"
+                    onClick={() => setEditingId(member.userId)}
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  className="btn btn-destructive"
+                  type="button"
+                  onClick={() => void removeMember(member.userId)}
+                >
+                  Remove
+                </button>
+              </>
+            ) : null}
           </div>
         ))}
       </div>
