@@ -2,6 +2,7 @@
 
 const request = require("supertest");
 const createApp = require("../../../../app");
+const { formatLatencyReport } = require("../../latency-report");
 
 function percentile(values, p) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -51,10 +52,11 @@ describe("time-metric verification (p95)", () => {
     "x-user-role": "admin",
   };
 
-  it("keeps p95 below agreed threshold for dashboard and members list", async () => {
+  it("keeps p95 below agreed threshold for dashboard, items and error paths", async () => {
     const app = createApp(env);
     const dashboardLatencies = [];
-    const membersLatencies = [];
+    const itemsLatencies = [];
+    const errorLatencies = [];
 
     for (let i = 0; i < 30; i += 1) {
       let start = process.hrtime.bigint();
@@ -66,18 +68,53 @@ describe("time-metric verification (p95)", () => {
       expect(dashboardRes.status).toBe(200);
 
       start = process.hrtime.bigint();
-      const membersRes = await request(app)
-        .get("/api/v1/ou/ou-001/branches/bkk-01/members")
+      const membersRes = await request(app).get("/api/v1/items").set(headers);
+      elapsed = Number(process.hrtime.bigint() - start) / 1_000_000;
+      itemsLatencies.push(elapsed);
+      expect(membersRes.status).toBe(200);
+
+      start = process.hrtime.bigint();
+      const errorRes = await request(app)
+        .get("/api/v1/items/not-an-object-id")
         .set(headers);
       elapsed = Number(process.hrtime.bigint() - start) / 1_000_000;
-      membersLatencies.push(elapsed);
-      expect(membersRes.status).toBe(200);
+      errorLatencies.push(elapsed);
+      expect(errorRes.status).toBe(400);
     }
 
     const dashboardP95 = percentile(dashboardLatencies, 95);
-    const membersP95 = percentile(membersLatencies, 95);
+    const itemsP95 = percentile(itemsLatencies, 95);
+    const errorP95 = percentile(errorLatencies, 95);
+
+    const report = formatLatencyReport({
+      generatedAt: new Date().toISOString(),
+      metrics: [
+        {
+          key: "dashboard",
+          label: "Dashboard summary",
+          p95Ms: dashboardP95,
+          thresholdMs: 400,
+        },
+        {
+          key: "items",
+          label: "Items list",
+          p95Ms: itemsP95,
+          thresholdMs: 500,
+        },
+        {
+          key: "errors",
+          label: "Error response",
+          p95Ms: errorP95,
+          thresholdMs: 250,
+        },
+      ],
+    });
 
     expect(dashboardP95).toBeLessThan(400);
-    expect(membersP95).toBeLessThan(400);
+    expect(itemsP95).toBeLessThan(500);
+    expect(errorP95).toBeLessThan(250);
+    expect(report).toContain("| Dashboard summary |");
+    expect(report).toContain("| Items list |");
+    expect(report).toContain("| Error response |");
   });
 });

@@ -43,6 +43,10 @@ tags:
     description: Trusted caller profile from gateway-injected headers (`/api/v1/me`)
   - name: members
     description: Branch-scoped member management (`create/edit/remove`, no invite flow)
+  - name: billing
+    description: Branch-scoped billing read/manage endpoints
+  - name: dashboard
+    description: Branch dashboard summary with role-based visibility
   - name: items
     description: Example item resource (`/api/v1/items`)
 
@@ -385,6 +389,181 @@ paths:
           $ref: "#/components/responses/MissingUserContext"
         "404":
           $ref: "#/components/responses/MemberNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ou/{ouId}/branches/{branchId}/billing/plan:
+    parameters:
+      - in: path
+        name: ouId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: branchId
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [billing]
+      summary: Get billing plan
+      description: Returns billing plan for the requested branch scope.
+      operationId: getBillingPlan
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlanEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags: [billing]
+      summary: Update billing plan
+      description: Updates billing plan in branch scope. Manage action is role-restricted by policy.
+      operationId: updateBillingPlan
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchBillingPlan"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlanEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ou/{ouId}/branches/{branchId}/billing/invoices:
+    parameters:
+      - in: path
+        name: ouId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: branchId
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [billing]
+      summary: List invoices by branch
+      description: Returns branch-scoped invoices with pagination envelope.
+      operationId: listBillingInvoices
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListInvoicesEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ou/{ouId}/branches/{branchId}/dashboard/summary:
+    parameters:
+      - in: path
+        name: ouId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: branchId
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [dashboard]
+      summary: Get branch dashboard summary
+      description: Returns role-aware summary widgets for the requested branch scope.
+      operationId: getDashboardSummary
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummaryEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -903,6 +1082,52 @@ components:
           type: string
           enum: [active, suspended]
 
+    BillingPlan:
+      type: object
+      required: [planCode, status, updatedAt]
+      properties:
+        planCode:
+          type: string
+          maxLength: 64
+        status:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    Invoice:
+      type: object
+      required: [invoiceId, amount, currency, status, issuedAt, dueAt]
+      properties:
+        invoiceId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        dueAt:
+          type: string
+          format: date-time
+
+    DashboardSummary:
+      type: object
+      required: [visibility, refreshedAt, widgets]
+      properties:
+        visibility:
+          type: string
+          enum: [full, limited]
+        refreshedAt:
+          type: string
+          format: date-time
+        widgets:
+          type: object
+          additionalProperties: true
+
     MemberEnvelope:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -918,6 +1143,58 @@ components:
               type: ["string", "null"]
             data:
               $ref: "#/components/schemas/Member"
+
+    BillingPlanEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              $ref: "#/components/schemas/BillingPlan"
+
+    ListInvoicesEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data, pagination]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Invoice"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+    DashboardSummaryEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              $ref: "#/components/schemas/DashboardSummary"
 
     ListMembersEnvelope:
       allOf:
@@ -1078,6 +1355,16 @@ components:
           type: string
           minLength: 8
           maxLength: 200
+
+    PatchBillingPlan:
+      type: object
+      additionalProperties: false
+      required: [planCode]
+      properties:
+        planCode:
+          type: string
+          minLength: 1
+          maxLength: 64
 
   responses:
     InvalidParam:
