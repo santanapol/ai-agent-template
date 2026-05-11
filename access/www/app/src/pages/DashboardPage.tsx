@@ -1,18 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAuth } from "../app/use-auth";
 import { useDashboard } from "../features/dashboard/useDashboard";
 import { sessionToApiHeaders } from "../lib/api";
 
 export function DashboardPage() {
   const { session } = useAuth();
+  const effectRun = useRef(0);
+  const apiHeaders = useMemo(() => sessionToApiHeaders(session), [session]);
   const { summary, loading, error, load } = useDashboard({
     ouId: session.ouId,
     branchId: session.branchId,
-    headers: sessionToApiHeaders(session),
+    headers: apiHeaders,
   });
 
   useEffect(() => {
+    effectRun.current += 1;
+    // #region agent log
+    fetch("http://127.0.0.1:7873/ingest/e25c6966-fe95-43b5-a10f-c2d30ea4e4a5", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "6021c2",
+      },
+      body: JSON.stringify({
+        sessionId: "6021c2",
+        location: "DashboardPage.tsx:useEffect",
+        message: "useEffect([load]) fired",
+        data: {
+          effectCount: effectRun.current,
+          role: session.role,
+        },
+        timestamp: Date.now(),
+        hypothesisId: "A",
+        runId: "post-fix",
+      }),
+    }).catch(() => {});
+    // #endregion
     void load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load reflects memoized headers; avoid effect on every session.role log
   }, [load]);
 
   return (

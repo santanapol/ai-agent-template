@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../app/use-auth";
 import { canManageMembers } from "../app/permissions";
 import { sessionToApiHeaders } from "../lib/api";
@@ -18,6 +18,7 @@ export function MembersPage() {
   const canManageMembersAccess = canManageMembers(session.role);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const apiHeaders = useMemo(() => sessionToApiHeaders(session), [session]);
   const {
     members,
     loading,
@@ -29,7 +30,7 @@ export function MembersPage() {
   } = useMembers({
     ouId: session.ouId,
     branchId: session.branchId,
-    headers: sessionToApiHeaders(session),
+    headers: apiHeaders,
   });
 
   useEffect(() => {
