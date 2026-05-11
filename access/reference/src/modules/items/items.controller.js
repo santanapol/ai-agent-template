@@ -21,7 +21,11 @@ function getRouteTemplate(req) {
 }
 
 function sendItemResponse(res, statusCode, result, location) {
-  if (result.etag != null && String(result.etag).length > 0) {
+  if (
+    result.etag !== null &&
+    result.etag !== undefined &&
+    String(result.etag).length > 0
+  ) {
     res.setHeader("etag", String(result.etag));
   }
   if (location) {

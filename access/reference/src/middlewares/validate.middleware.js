@@ -2,22 +2,12 @@
 
 const HttpError = require("../utils/http-error");
 const CODES = require("../utils/error-codes");
-
-function formatJoiErrors(error) {
-  return error.details.map((detail) => {
-    const field = detail.path.join(".");
-    return {
-      field,
-      message: detail.message,
-      type: detail.type,
-    };
-  });
-}
+const { formatValidationErrors } = require("../utils/validation-error");
 
 function validate(schema) {
   return (req, _res, next) => {
     req.validated = {};
-    const parts = ["params", "query", "body"];
+    const parts = ["params", "query", "body", "headers"];
 
     for (const part of parts) {
       if (!schema[part]) {
@@ -26,13 +16,18 @@ function validate(schema) {
 
       const { value, error } = schema[part].validate(req[part], {
         abortEarly: false,
+        convert: true,
         stripUnknown: false,
+        errors: {
+          wrap: { label: "" },
+          label: "path",
+        },
       });
 
       if (error) {
         return next(
           new HttpError(400, CODES.INVALID_PARAM, "Request validation failed", {
-            errors: formatJoiErrors(error),
+            errors: formatValidationErrors(part, error.details),
           }),
         );
       }

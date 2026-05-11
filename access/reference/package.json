@@ -12,13 +12,17 @@
     "dev": "TZ=UTC node --watch --enable-source-maps src/server.js",
     "start": "TZ=UTC node --enable-source-maps src/server.js",
     "test": "NODE_ENV=test TZ=UTC jest --runInBand",
+    "test:unit": "NODE_ENV=test TZ=UTC jest --testPathPatterns=unit-test --passWithNoTests --runInBand",
+    "test:integration": "NODE_ENV=test TZ=UTC jest --testPathPatterns=integration-test --runInBand",
+    "test:coverage": "NODE_ENV=test TZ=UTC jest --coverage --runInBand",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run format:check && npm run lint && npm run spec:lint && npm test && npm run audit:check"
+    "prepare": "husky",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm test && npm run audit:check"
   },
   "dependencies": {
     "express": "^5.1.0",
@@ -34,10 +38,24 @@
     "@eslint/js": "^9.25.1",
     "@stoplight/spectral-cli": "^6.15.0",
     "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-boundaries": "^6.0.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jest": "^29.15.2",
+    "eslint-plugin-n": "^18.0.1",
+    "eslint-plugin-security": "^4.0.0",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.0",
+    "lint-staged": "^17.0.4",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.5.0",
     "supertest": "^7.1.0"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
