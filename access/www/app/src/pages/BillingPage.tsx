@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
+import { useSessionApiHeaders } from "../app/use-session-api-headers";
 import { canManageBillingPlan } from "../app/permissions";
 import { useBilling } from "../features/billing/useBilling";
-import { sessionToApiHeaders } from "../lib/api";
 
 export function BillingPage() {
   const { session } = useAuth();
   const [nextPlanCode, setNextPlanCode] = useState("growth");
-  const apiHeaders = useMemo(() => sessionToApiHeaders(session), [session]);
+  const apiHeaders = useSessionApiHeaders(session);
   const { plan, invoices, loading, error, load, updatePlan } = useBilling({
     ouId: session.ouId,
     branchId: session.branchId,

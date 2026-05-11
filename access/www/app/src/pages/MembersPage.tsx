@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
+import { useSessionApiHeaders } from "../app/use-session-api-headers";
 import { canManageMembers } from "../app/permissions";
-import { sessionToApiHeaders } from "../lib/api";
 import { useMembers, type Member } from "../features/members/useMembers";
 
 const EMPTY_FORM = {
@@ -18,7 +18,7 @@ export function MembersPage() {
   const canManageMembersAccess = canManageMembers(session.role);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const apiHeaders = useMemo(() => sessionToApiHeaders(session), [session]);
+  const apiHeaders = useSessionApiHeaders(session);
   const {
     members,
     loading,

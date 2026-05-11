@@ -1,11 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useAuth } from "../app/use-auth";
+import { useSessionApiHeaders } from "../app/use-session-api-headers";
 import { useDashboard } from "../features/dashboard/useDashboard";
-import { sessionToApiHeaders } from "../lib/api";
 
 export function DashboardPage() {
   const { session } = useAuth();
-  const apiHeaders = useMemo(() => sessionToApiHeaders(session), [session]);
+  const apiHeaders = useSessionApiHeaders(session);
   const { summary, loading, error, load } = useDashboard({
     ouId: session.ouId,
     branchId: session.branchId,
