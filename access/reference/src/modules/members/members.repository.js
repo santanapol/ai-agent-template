@@ -48,7 +48,12 @@ async function listMembers({ ouId, branchId, page, limit }) {
   const skip = (page - 1) * limit;
   const [total, docs] = await Promise.all([
     collection().countDocuments(filter),
-    collection().find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+    collection()
+      .find(filter)
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
   ]);
 
   return {
@@ -62,7 +67,13 @@ async function listMembers({ ouId, branchId, page, limit }) {
   };
 }
 
-async function createMember({ ouId, branchId, body, actorUserId, routeTemplate }) {
+async function createMember({
+  ouId,
+  branchId,
+  body,
+  actorUserId,
+  routeTemplate,
+}) {
   const current = now();
   const doc = {
     _id: new ObjectId(),

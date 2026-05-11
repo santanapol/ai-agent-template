@@ -34,7 +34,9 @@ async function list(req, res, next) {
     });
     return res
       .status(200)
-      .json(successEnvelope(result.members, null, CODES.SUCCESS, result.pagination));
+      .json(
+        successEnvelope(result.members, null, CODES.SUCCESS, result.pagination),
+      );
   } catch (error) {
     return next(error);
   }

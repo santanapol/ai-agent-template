@@ -34,7 +34,9 @@ function invoicesCollection() {
 }
 
 async function getPlan(ouId, branchId) {
-  const existing = await profilesCollection().findOne(scopeFilter(ouId, branchId));
+  const existing = await profilesCollection().findOne(
+    scopeFilter(ouId, branchId),
+  );
   if (existing) {
     return {
       planCode: existing.plan_code,

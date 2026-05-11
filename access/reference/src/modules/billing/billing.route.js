@@ -9,6 +9,10 @@ const router = express.Router({ mergeParams: true });
 
 router.get("/plan", validate(validators.getPlan), controller.getPlan);
 router.patch("/plan", validate(validators.updatePlan), controller.updatePlan);
-router.get("/invoices", validate(validators.listInvoices), controller.listInvoices);
+router.get(
+  "/invoices",
+  validate(validators.listInvoices),
+  controller.listInvoices,
+);
 
 module.exports = router;

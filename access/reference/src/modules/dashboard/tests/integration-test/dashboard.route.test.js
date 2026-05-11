@@ -26,7 +26,8 @@ jest.mock("../../../../config/database", () => ({
     collection: jest.fn((name) => {
       if (name === "items") return mockCountCollection(state.items);
       if (name === "members") return mockCountCollection(state.members);
-      if (name === "billing_invoices") return mockCountCollection(state.invoices);
+      if (name === "billing_invoices")
+        return mockCountCollection(state.invoices);
       if (name === "billing_profiles") {
         return {
           findOne: async () => null,
@@ -35,7 +36,11 @@ jest.mock("../../../../config/database", () => ({
       }
       return {
         countDocuments: async () => 0,
-        find: () => ({ sort: () => ({ skip: () => ({ limit: () => ({ toArray: async () => [] }) }) }) }),
+        find: () => ({
+          sort: () => ({
+            skip: () => ({ limit: () => ({ toArray: async () => [] }) }),
+          }),
+        }),
       };
     }),
   })),
@@ -68,10 +73,12 @@ describe("reference dashboard summary", () => {
 
   it("returns full dashboard for billing role", async () => {
     const app = createApp(env);
-    const response = await request(app).get(path).set({
-      ...headers,
-      "x-user-role": "billing",
-    });
+    const response = await request(app)
+      .get(path)
+      .set({
+        ...headers,
+        "x-user-role": "billing",
+      });
 
     expect(response.status).toBe(200);
     expect(response.body.data.visibility).toBe("full");
@@ -81,10 +88,12 @@ describe("reference dashboard summary", () => {
 
   it("returns limited dashboard for member role", async () => {
     const app = createApp(env);
-    const response = await request(app).get(path).set({
-      ...headers,
-      "x-user-role": "member",
-    });
+    const response = await request(app)
+      .get(path)
+      .set({
+        ...headers,
+        "x-user-role": "member",
+      });
 
     expect(response.status).toBe(200);
     expect(response.body.data.visibility).toBe("limited");

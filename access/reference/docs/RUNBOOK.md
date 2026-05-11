@@ -27,7 +27,7 @@
 
 | รายการ      | ค่า                                                         |
 | :---------- | :---------------------------------------------------------- |
-| Service     | `reference`                                               |
+| Service     | `reference`                                                 |
 | Node.js     | `>=24 <25`                                                  |
 | Database    | MongoDB ชื่อ `api_example`                                  |
 | Development | `npm run dev` — ดู [Development](#development)              |
@@ -253,14 +253,14 @@ curl -i "${COMMON_HEADERS[@]}" \
 
 ## แก้ปัญหา (Troubleshooting)
 
-| อาการ                       | สิ่งที่ตรวจ                                                                                                                                                                                                                                         |
-| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/readyz` = `503`           | MongoDB รันอยู่หรือไม่; `MONGODB_URI` / `DB_NAME` / user / `authSource`                                                                                                                                                                             |
-| CRUD = `401` / `403`        | ครบ headers หรือไม่; `x-gateway-secret` ตรง `GATEWAY_SHARED_SECRET`                                                                                                                                                                                 |
-| `PATCH` / `DELETE` = `412`  | ดึง `ETag` ใหม่จาก `GET` แล้วส่ง `If-Match` ใหม่                                                                                                                                                                                                    |
-| `429`                       | รอ reset window; write จำกัดเข้มกว่า read                                                                                                                                                                                                           |
+| อาการ                              | สิ่งที่ตรวจ                                                                                                                                                                                                                                                                                                                                       |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/readyz` = `503`                  | MongoDB รันอยู่หรือไม่; `MONGODB_URI` / `DB_NAME` / user / `authSource`                                                                                                                                                                                                                                                                           |
+| CRUD = `401` / `403`               | ครบ headers หรือไม่; `x-gateway-secret` ตรง `GATEWAY_SHARED_SECRET`                                                                                                                                                                                                                                                                               |
+| `PATCH` / `DELETE` = `412`         | ดึง `ETag` ใหม่จาก `GET` แล้วส่ง `If-Match` ใหม่                                                                                                                                                                                                                                                                                                  |
+| `429`                              | รอ reset window; write จำกัดเข้มกว่า read                                                                                                                                                                                                                                                                                                         |
 | `GET /api/v1/items` ได้ `data: []` | แอปอ่าน MongoDB ตาม **`DB_NAME`** (ค่าเริ่มต้น `api_example`) และ collection **`items`** — ตรวจใน Compass ว่าเอกสารอยู่ database เดียวกัน; ถ้าข้อมูลอยู่ database อื่น ให้ตั้ง `DB_NAME` / URI ให้ตรง หรือย้ายข้อมูลเข้า `api_example`. ส่ง **`x-user-ou`** / **`x-user-branch`** เป็น **สตริง hex 24 ตัว** ให้ตรง `ou_id` / `branch_id` ในเอกสาร |
-| `MODULE_NOT_FOUND` ตอน boot | รัน `npm ci` ที่ root ของ repo; ตรวจว่ามี `node_modules/pino`; ถ้า `NODE_ENV` ไม่ใช่ `production` แต่ติดตั้งแบบ `--omit=dev` โค้ดจะข้าม `pino-pretty` ถ้าไม่มีแพ็กเกจ — บน server ให้ยึด [Production](#production) (`NODE_ENV=production` ผ่าน PM2) |
+| `MODULE_NOT_FOUND` ตอน boot        | รัน `npm ci` ที่ root ของ repo; ตรวจว่ามี `node_modules/pino`; ถ้า `NODE_ENV` ไม่ใช่ `production` แต่ติดตั้งแบบ `--omit=dev` โค้ดจะข้าม `pino-pretty` ถ้าไม่มีแพ็กเกจ — บน server ให้ยึด [Production](#production) (`NODE_ENV=production` ผ่าน PM2)                                                                                               |
 
 ---
 

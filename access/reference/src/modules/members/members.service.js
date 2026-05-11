@@ -55,7 +55,13 @@ async function listMembers({ params, query, userContext, role }) {
   });
 }
 
-async function createMember({ params, body, userContext, role, routeTemplate }) {
+async function createMember({
+  params,
+  body,
+  userContext,
+  role,
+  routeTemplate,
+}) {
   const normalizedRole = normalizeRole(role);
   authorizeMembersAccess({
     role: normalizedRole,

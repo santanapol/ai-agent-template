@@ -61,7 +61,11 @@ jest.mock("../../../../config/database", () => ({
       if (name === "members") return mockBuildMembersCollection();
       return {
         countDocuments: async () => 0,
-        find: () => ({ sort: () => ({ skip: () => ({ limit: () => ({ toArray: async () => [] }) }) }) }),
+        find: () => ({
+          sort: () => ({
+            skip: () => ({ limit: () => ({ toArray: async () => [] }) }),
+          }),
+        }),
       };
     }),
   })),
@@ -92,14 +96,17 @@ describe("reference members CRUD", () => {
     const app = createApp(env);
     const managerHeaders = { ...baseHeaders, "x-user-role": "manager" };
 
-    const createRes = await request(app).post(basePath).set(managerHeaders).send({
-      username: "member01",
-      password: "password123",
-      displayName: "Member One",
-      email: "member01@example.com",
-      role: "member",
-      status: "active",
-    });
+    const createRes = await request(app)
+      .post(basePath)
+      .set(managerHeaders)
+      .send({
+        username: "member01",
+        password: "password123",
+        displayName: "Member One",
+        email: "member01@example.com",
+        role: "member",
+        status: "active",
+      });
     expect(createRes.status).toBe(201);
     expect(createRes.body.data.username).toBe("member01");
 
@@ -124,15 +131,18 @@ describe("reference members CRUD", () => {
 
   it("rejects member role from managing members", async () => {
     const app = createApp(env);
-    const res = await request(app).post(basePath).set({
-      ...baseHeaders,
-      "x-user-role": "member",
-    }).send({
-      username: "member02",
-      password: "password123",
-      displayName: "Member Two",
-      role: "member",
-    });
+    const res = await request(app)
+      .post(basePath)
+      .set({
+        ...baseHeaders,
+        "x-user-role": "member",
+      })
+      .send({
+        username: "member02",
+        password: "password123",
+        displayName: "Member Two",
+        role: "member",
+      });
 
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("INVALID_USER_CONTEXT");

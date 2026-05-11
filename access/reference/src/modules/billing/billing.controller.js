@@ -40,7 +40,12 @@ async function listInvoices(req, res, next) {
     return res
       .status(200)
       .json(
-        successEnvelope(result.invoices, null, CODES.SUCCESS, result.pagination),
+        successEnvelope(
+          result.invoices,
+          null,
+          CODES.SUCCESS,
+          result.pagination,
+        ),
       );
   } catch (error) {
     return next(error);

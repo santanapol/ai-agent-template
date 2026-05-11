@@ -23,6 +23,35 @@ export async function buildApp(env = loadEnv(), options = {}) {
   })
   fastify.decorate('problemTypes', types)
 
+  // [Forbidden] Duplicate Headers check (api.md § 3.1)
+  fastify.addHook('onRequest', async (request, reply) => {
+    const forbiddenDuplicates = [
+      'x-gateway-secret',
+      'x-user-ou',
+      'x-user-branch',
+      'x-user-id',
+      'x-user-role',
+      'x-request-id'
+    ]
+    for (const header of forbiddenDuplicates) {
+      const value = request.headers[header]
+      if (Array.isArray(value)) {
+        return reply
+          .code(400)
+          .type('application/problem+json')
+          .send(
+            problemPayload({
+              type: types.validation,
+              title: 'Bad Request',
+              status: 400,
+              detail: `Duplicate header not allowed: ${header}`,
+              code: 'AUTH_INVALID_REQUEST'
+            })
+          )
+      }
+    }
+  })
+
   await fastify.register(cookie)
 
   const corsOrigins = String(env.CORS_ORIGINS ?? '')

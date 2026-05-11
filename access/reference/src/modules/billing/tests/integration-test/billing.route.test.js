@@ -48,7 +48,9 @@ function mockInvoicesCollection() {
     countDocuments: async (filter) =>
       state.billingInvoices.filter((row) => matchFilter(row, filter)).length,
     find: (filter) => {
-      const docs = state.billingInvoices.filter((row) => matchFilter(row, filter));
+      const docs = state.billingInvoices.filter((row) =>
+        matchFilter(row, filter),
+      );
       return {
         sort: () => ({
           skip: (skip) => ({
@@ -72,12 +74,20 @@ jest.mock("../../../../config/database", () => ({
       if (name === "members") {
         return {
           countDocuments: async () => 0,
-          find: () => ({ sort: () => ({ skip: () => ({ limit: () => ({ toArray: async () => [] }) }) }) }),
+          find: () => ({
+            sort: () => ({
+              skip: () => ({ limit: () => ({ toArray: async () => [] }) }),
+            }),
+          }),
         };
       }
       return {
         countDocuments: async () => 0,
-        find: () => ({ sort: () => ({ skip: () => ({ limit: () => ({ toArray: async () => [] }) }) }) }),
+        find: () => ({
+          sort: () => ({
+            skip: () => ({ limit: () => ({ toArray: async () => [] }) }),
+          }),
+        }),
       };
     }),
   })),

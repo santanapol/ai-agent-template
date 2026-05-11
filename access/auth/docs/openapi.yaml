@@ -1,0 +1,291 @@
+openapi: 3.1.0
+info:
+  title: auth-service (Expanded)
+  version: 0.1.1
+  description: |
+    # Auth Edge Service Contract
+
+    เอกสารนี้เป็น **Expanded OpenAPI Spec** สำหรับบริการ Auth Edge ซึ่งทำหน้าที่เป็น Identity Provider (IdP) สำหรับระบบ SaaS
+
+    ## 🔐 บทบาทและความรับผิดชอบ (Role & Responsibility)
+    - รับผิดชอบการยืนยันตัวตน (Authentication) ผ่าน Username/Password
+    - ออก Access JWT (RS256) สำหรับใช้กับ Gateway
+    - จัดการวงจรชีวิตของ Refresh Token (Rotation, Revocation, Family-wide logout)
+    - เผยแพร่ JWKS สำหรับการตรวจสอบ Signature ของ JWT
+
+    ## 🛡️ มาตรฐานความปลอดภัย (Security Standards)
+    - **RFC 7807 (Problem Details):** ทุก Error Response ต้องใช้ `application/problem+json`
+    - **Rate Limiting:** มีการจำกัดความถี่แยกตาม Route (Login, Refresh, Logout)
+    - **Duplicate Headers:** [Forbidden] ห้ามส่ง Header สำคัญซ้ำซ้อน (เช่น `x-user-id`)
+    - **TLS:** ต้องใช้งานผ่าน HTTPS ในสภาพแวดล้อม Production เสมอ
+
+    ## 📝 หมายเหตุการใช้งาน
+    - ไม่รองรับ Public Signup; การสร้างผู้ใช้ต้องทำผ่าน Admin API ภายในเท่านั้น
+    - ข้อมูลผู้ใช้ถูก Normalize (Trim + Lowercase) ก่อนประมวลผล
+    - รองรับทั้ง Native Client (Token ใน Body) และ Browser Client (HttpOnly Cookie)
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local Development
+    variables:
+      port:
+        default: '3001'
+        description: Listen port (`PORT` env)
+
+tags:
+  - name: auth
+    description: Login and token lifecycle management
+  - name: discovery
+    description: Public metadata and JWKS for token verification
+  - name: health
+    description: Service health and dependency readiness probes
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness
+      description: |
+        **Purpose:** ตรวจสอบว่า Process ของ Node.js ยังทำงานอยู่ (Liveness probe)
+        **Behaviour:** ตอบกลับ 200 OK พร้อม Uptime โดยไม่ตรวจสอบ Dependency ภายนอก
+      operationId: getHealthz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness
+      description: |
+        **Purpose:** ตรวจสอบความพร้อมก่อนรับ Traffic (Readiness probe)
+        **Behaviour:** ตรวจสอบการเชื่อมต่อกับ MongoDB; หากล้มเหลวตอบ 503
+      operationId: getReadyz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: All dependencies are ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+        '503':
+          description: Service Unavailable — dependency check failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /.well-known/jwks.json:
+    get:
+      tags: [discovery]
+      summary: JWKS document
+      description: |
+        **Purpose:** เผยแพร่ Public Keys (RS256) สำหรับให้ Gateway หรือ Consumer อื่นๆ ใช้ตรวจสอบ JWT
+      operationId: getJwks
+      security: []
+      responses:
+        '200':
+          description: JWKS document (RFC 7517)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwksResponse'
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login
+      description: |
+        **Purpose:** แลกเปลี่ยน Username + Password เป็น Access JWT และ Refresh Token
+        **Rate Limit:** 30 requests/min ต่อ IP
+      operationId: login
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 30
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Bad Request (Validation failed)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized (Invalid credentials)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '423':
+          description: Locked (Account temporarily locked)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Too Many Requests (Rate limit or throttle)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Refresh token
+      description: |
+        **Purpose:** หมุน (Rotate) Session เพื่อรับ Access JWT ใหม่
+        **Rate Limit:** 120 requests/min ต่อ IP
+      operationId: refreshToken
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 120
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token rotated successfully
+        '401':
+          description: Unauthorized (Invalid or reused token)
+        '429':
+          description: Too Many Requests
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      description: |
+        **Purpose:** ยกเลิก (Revoke) Refresh Token ทั้งกลุ่ม (Family)
+        **Rate Limit:** 60 requests/min ต่อ IP
+      operationId: logout
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Logout accepted
+
+components:
+  parameters:
+    AcceptJson:
+      name: Accept
+      in: header
+      required: false
+      schema:
+        type: string
+        default: application/json
+    ContentTypeApplicationJson:
+      name: Content-Type
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^[Aa]pplication/[Jj]son(;\\s*charset=[^;\\s]+)?$'
+    CookieRefresh:
+      name: Cookie
+      in: header
+      required: false
+      description: Browser flow cookie (e.g. `refresh_token=<opaque>`)
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, timestamp, uptime]
+      properties:
+        status: { type: string, example: ok }
+        timestamp: { type: string, format: date-time }
+        uptime: { type: integer, minimum: 0 }
+    ReadyResponse:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status: { type: string, example: ok }
+        dependencies:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name: { type: string }
+              status: { type: string }
+    JwksResponse:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:
+          type: string
+          description: Machine-readable code from codes.yaml
+          enum: [AUTH_INVALID_REQUEST, LOGIN_INVALID_CREDENTIALS, TOKEN_REFRESH_REJECTED, LOGIN_ACCOUNT_LOCKED, AUTH_TOO_MANY_ATTEMPTS, AUTH_NOT_READY]
+    LoginRequest:
+      type: object
+      required: [username, password, client_kind]
+      properties:
+        username: { type: string, minLength: 1, maxLength: 256 }
+        password: { type: string, format: password }
+        client_kind: { type: string, enum: [native, web] }
+    LoginSuccess:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, enum: [Bearer] }
+        expires_in: { type: integer }
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token: { type: string, minLength: 10 }
+    LogoutRequest:
+      type: object
+      properties:
+        refresh_token: { type: string, minLength: 10 }
