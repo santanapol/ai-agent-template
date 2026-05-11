@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
 import { canManageMembers } from "../app/permissions";
+import { sessionToApiHeaders } from "../lib/api";
 import { useMembers, type Member } from "../features/members/useMembers";
 
 const EMPTY_FORM = {
@@ -26,15 +27,10 @@ export function MembersPage() {
     patchMember,
     removeMember,
   } = useMembers({
-      ouId: session.ouId,
-      branchId: session.branchId,
-      headers: {
-        userId: session.userId,
-        ouId: session.ouId,
-        branchId: session.branchId,
-        role: session.role,
-      },
-    });
+    ouId: session.ouId,
+    branchId: session.branchId,
+    headers: sessionToApiHeaders(session),
+  });
 
   useEffect(() => {
     void fetchMembers();
@@ -83,7 +79,10 @@ export function MembersPage() {
               placeholder="display name"
               value={form.displayName}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, displayName: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  displayName: event.target.value,
+                }))
               }
             />
             <input

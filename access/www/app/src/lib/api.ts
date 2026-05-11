@@ -1,11 +1,30 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+import type { UserRole } from "../app/auth-context";
+import { API_BASE_URL } from "../config/public-env";
 
 export type SessionHeaders = {
   userId: string;
   ouId: string;
   branchId: string;
   role: string;
+  /** When set, sent as `Authorization: Bearer` to the gateway. */
+  accessToken?: string | null;
 };
+
+export function sessionToApiHeaders(session: {
+  userId: string;
+  ouId: string;
+  branchId: string;
+  role: UserRole | string;
+  accessToken?: string | null;
+}): SessionHeaders {
+  return {
+    userId: session.userId,
+    ouId: session.ouId,
+    branchId: session.branchId,
+    role: session.role,
+    accessToken: session.accessToken ?? null,
+  };
+}
 
 export async function apiRequest<T>(
   path: string,
@@ -13,16 +32,31 @@ export async function apiRequest<T>(
   init?: RequestInit,
 ): Promise<T> {
   const method = (init?.method || "GET").toUpperCase();
-  const shouldSetJsonContentType = method === "POST" || method === "PUT" || method === "PATCH";
+  const shouldSetJsonContentType =
+    method === "POST" || method === "PUT" || method === "PATCH";
+  const bearerToken =
+    typeof headers.accessToken === "string" && headers.accessToken.trim() !== ""
+      ? headers.accessToken.trim()
+      : undefined;
+
+  const requestHeaders: Record<string, string> = {
+    "x-user-id": headers.userId,
+    "x-user-ou": headers.ouId,
+    "x-user-branch": headers.branchId,
+    "x-user-role": headers.role,
+  };
+  if (shouldSetJsonContentType) {
+    requestHeaders["content-type"] = "application/json";
+  }
+  if (bearerToken) {
+    requestHeaders.authorization = `Bearer ${bearerToken}`;
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      ...(shouldSetJsonContentType ? { "content-type": "application/json" } : {}),
-      "x-user-id": headers.userId,
-      "x-user-ou": headers.ouId,
-      "x-user-branch": headers.branchId,
-      "x-user-role": headers.role,
-      ...(init?.headers || {}),
+      ...requestHeaders,
+      ...(init?.headers as Record<string, string> | undefined),
     },
   });
 

@@ -1,18 +1,14 @@
 import { useEffect } from "react";
 import { useAuth } from "../app/use-auth";
 import { useDashboard } from "../features/dashboard/useDashboard";
+import { sessionToApiHeaders } from "../lib/api";
 
 export function DashboardPage() {
   const { session } = useAuth();
   const { summary, loading, error, load } = useDashboard({
     ouId: session.ouId,
     branchId: session.branchId,
-    headers: {
-      userId: session.userId,
-      ouId: session.ouId,
-      branchId: session.branchId,
-      role: session.role,
-    },
+    headers: sessionToApiHeaders(session),
   });
 
   useEffect(() => {

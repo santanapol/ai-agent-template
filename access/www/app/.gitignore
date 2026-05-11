@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Env (Vite); keep secrets out of git
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

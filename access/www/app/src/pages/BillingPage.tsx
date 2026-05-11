@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../app/use-auth";
 import { canManageBillingPlan } from "../app/permissions";
 import { useBilling } from "../features/billing/useBilling";
+import { sessionToApiHeaders } from "../lib/api";
 
 export function BillingPage() {
   const { session } = useAuth();
@@ -9,12 +10,7 @@ export function BillingPage() {
   const { plan, invoices, loading, error, load, updatePlan } = useBilling({
     ouId: session.ouId,
     branchId: session.branchId,
-    headers: {
-      userId: session.userId,
-      ouId: session.ouId,
-      branchId: session.branchId,
-      role: session.role,
-    },
+    headers: sessionToApiHeaders(session),
   });
 
   useEffect(() => {
@@ -26,7 +22,9 @@ export function BillingPage() {
   return (
     <section>
       <h2>Billing</h2>
-      <p>Branch-level billing data with Admin default `billing:manage` behavior.</p>
+      <p>
+        Branch-level billing data with Admin default `billing:manage` behavior.
+      </p>
       {loading ? <p>Loading billing...</p> : null}
       {error ? <p className="error">{error}</p> : null}
       {plan ? (

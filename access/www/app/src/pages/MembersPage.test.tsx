@@ -20,7 +20,11 @@ function mockSession(role: UserRole) {
       ouId: "ou-001",
       branchId: "bkk-01",
       role,
+      accessToken: null,
     },
+    switchRole: vi.fn(),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
   };
 }
 
@@ -54,16 +58,24 @@ describe("MembersPage role permissions", () => {
     mockUseAuth.mockReturnValue(mockSession("member"));
     render(<MembersPage />);
 
-    expect(screen.queryByRole("button", { name: "Add member" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add member" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows direct-management actions for manager role", () => {
     mockUseAuth.mockReturnValue(mockSession("manager"));
     render(<MembersPage />);
 
-    expect(screen.getByRole("button", { name: "Add member" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add member" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });

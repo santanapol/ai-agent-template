@@ -16,7 +16,11 @@ function mockSession(role: UserRole, ouId = "ou-001", branchId = "bkk-01") {
       ouId,
       branchId,
       role,
+      accessToken: null,
     },
+    switchRole: vi.fn(),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
   };
 }
 

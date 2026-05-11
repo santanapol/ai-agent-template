@@ -26,7 +26,11 @@ describe("DashboardPage render performance", () => {
         ouId: "ou-001",
         branchId: "bkk-01",
         role: "billing",
+        accessToken: null,
       },
+      switchRole: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
     });
     mockUseDashboard.mockReturnValue({
       summary: {
