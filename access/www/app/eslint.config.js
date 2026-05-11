@@ -9,6 +9,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['playwright.config.ts', 'e2e/**/*.ts'],
+    extends: [tseslint.configs.recommended],
     languageOptions: {
       globals: globals.node,
     },
