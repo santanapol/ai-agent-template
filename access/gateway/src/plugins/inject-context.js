@@ -50,6 +50,11 @@ export default fp(
           incomingRid.length <= 128
             ? incomingRid.trim()
             : randomUUID()
+        const incomingIfMatch = request.headers['if-match']
+        const ifMatch =
+          typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== ''
+            ? incomingIfMatch.trim()
+            : ''
 
         request.gatewayUpstreamHeaders = {
           'x-gateway-secret': env.GATEWAY_SECRET,
@@ -59,6 +64,7 @@ export default fp(
         }
         if (ouId) request.gatewayUpstreamHeaders['x-user-ou'] = ouId
         if (branchId) request.gatewayUpstreamHeaders['x-user-branch'] = branchId
+        if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
       }
     )
   },

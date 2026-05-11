@@ -13,6 +13,8 @@ function stripDangerousInboundHeaders (headers) {
     if (lower === 'x-user-ou') delete out[key]
     if (lower === 'x-user-branch') delete out[key]
     if (lower === 'x-gateway-secret') delete out[key]
+    if (lower === 'if-match') delete out[key]
+    if (lower === 'x-request-id') delete out[key]
   }
   return out
 }
@@ -32,14 +34,18 @@ export async function registerProxies (fastify, opts) {
       if (!ctx) {
         return base
       }
-      return {
-        ...base,
+      const trustedHeaders = {
         'x-gateway-secret': ctx['x-gateway-secret'],
+        ...(ctx['x-user-ou'] ? { 'x-user-ou': ctx['x-user-ou'] } : {}),
+        ...(ctx['x-user-branch'] ? { 'x-user-branch': ctx['x-user-branch'] } : {}),
         'x-user-id': ctx['x-user-id'],
         'x-user-role': ctx['x-user-role'],
-        'x-request-id': ctx['x-request-id'],
-        ...(ctx['x-user-ou'] ? { 'x-user-ou': ctx['x-user-ou'] } : {}),
-        ...(ctx['x-user-branch'] ? { 'x-user-branch': ctx['x-user-branch'] } : {})
+        ...(ctx['if-match'] ? { 'if-match': ctx['if-match'] } : {}),
+        'x-request-id': ctx['x-request-id']
+      }
+      return {
+        ...trustedHeaders,
+        ...base
       }
     }
   }

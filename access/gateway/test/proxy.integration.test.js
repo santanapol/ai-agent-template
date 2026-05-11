@@ -37,18 +37,28 @@ describe('gateway proxy (JWKS + upstream)', () => {
     upstreamServer = createServer((req, res) => {
       res.setHeader('content-type', 'application/json')
       const secret = req.headers['x-gateway-secret']
+      const ou = req.headers['x-user-ou']
+      const branch = req.headers['x-user-branch']
       const uid = req.headers['x-user-id']
       const role = req.headers['x-user-role']
+      const ifMatch = req.headers['if-match']
       const rid = req.headers['x-request-id']
       const auth = req.headers.authorization
+      const rawHeaderNames = req.rawHeaders
+        .filter((_v, idx) => idx % 2 === 0)
+        .map((name) => String(name).toLowerCase())
       res.end(
         JSON.stringify({
           url: req.url,
           hasAuthorization: Boolean(auth),
           secret,
+          ou,
+          branch,
           uid,
           role,
-          rid
+          ifMatch,
+          rid,
+          rawHeaderNames
         })
       )
     })
@@ -62,7 +72,12 @@ describe('gateway proxy (JWKS + upstream)', () => {
     const jwksUrl = `http://127.0.0.1:${jwksPort}/.well-known/jwks.json`
     const upstreamBase = `http://127.0.0.1:${upstreamPort}`
 
-    accessToken = await new jose.SignJWT({ sub: 'user-1', role: 'admin' })
+    accessToken = await new jose.SignJWT({
+      sub: 'user-1',
+      role: 'admin',
+      ou_id: 'ou-1',
+      branch_id: 'branch-1'
+    })
       .setProtectedHeader({ alg: 'RS256', kid })
       .setIssuedAt()
       .setExpirationTime('2h')
@@ -100,17 +115,39 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
   test('proxies with injected trusted headers and strips Authorization', async () => {
     const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'If-Match': 'W/"etag-123"'
+      }
     })
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.url).toBe('/ping')
     expect(body.hasAuthorization).toBe(false)
+    expect(body.ou).toBe('ou-1')
+    expect(body.branch).toBe('branch-1')
     expect(body.uid).toBe('user-1')
     expect(body.role).toBe('admin')
+    expect(body.ifMatch).toBe('W/"etag-123"')
     expect(body.secret).toBe('gateway-secret-32-chars-minimum-ok!!')
     expect(typeof body.rid).toBe('string')
     expect(body.rid.length).toBeGreaterThan(0)
+
+    const names = /** @type {string[]} */ (body.rawHeaderNames)
+    const iSecret = names.indexOf('x-gateway-secret')
+    const iOu = names.indexOf('x-user-ou')
+    const iBranch = names.indexOf('x-user-branch')
+    const iUserId = names.indexOf('x-user-id')
+    const iRole = names.indexOf('x-user-role')
+    const iIfMatch = names.indexOf('if-match')
+    const iRequestId = names.indexOf('x-request-id')
+    expect(iSecret).toBeGreaterThanOrEqual(0)
+    expect(iOu).toBeGreaterThan(iSecret)
+    expect(iBranch).toBeGreaterThan(iOu)
+    expect(iUserId).toBeGreaterThan(iBranch)
+    expect(iRole).toBeGreaterThan(iUserId)
+    expect(iIfMatch).toBeGreaterThan(iRole)
+    expect(iRequestId).toBeGreaterThan(iIfMatch)
   })
 
   test('401 without bearer token (problem+json)', async () => {
@@ -121,4 +158,5 @@ describe('gateway proxy (JWKS + upstream)', () => {
     expect(body.code).toBe('GATEWAY_JWT_MISSING')
     expect(body.status).toBe(401)
   })
+
 })

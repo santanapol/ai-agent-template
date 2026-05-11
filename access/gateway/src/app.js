@@ -10,6 +10,31 @@ import jwtAuthPlugin from './plugins/jwt-auth.js'
 import injectContextPlugin from './plugins/inject-context.js'
 import { registerProxies } from './proxy/register-proxies.js'
 
+const TRUSTED_HEADER_KEYS = [
+  'x-gateway-secret',
+  'x-user-ou',
+  'x-user-branch',
+  'x-user-id',
+  'x-user-role',
+  'if-match',
+  'x-request-id'
+]
+
+/**
+ * Node exposes duplicated inbound headers via `raw.headersDistinct` (array values).
+ * Fallback to `request.headers` array shape for test/inject environments.
+ * @param {import('node:http').IncomingMessage} raw
+ * @param {Record<string, unknown>} headers
+ * @param {string} headerName
+ */
+function hasDuplicateHeader (raw, headers, headerName) {
+  const distinct = /** @type {Record<string, unknown> | undefined} */ (raw.headersDistinct)
+  if (distinct && Array.isArray(distinct[headerName]) && distinct[headerName].length > 1) {
+    return true
+  }
+  return Array.isArray(headers[headerName]) && headers[headerName].length > 1
+}
+
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
  * @param {{ logger?: boolean }} [options]
@@ -49,6 +74,16 @@ export async function buildApp (env = loadEnv(), options = {}) {
      */
     send (reply, codeKey, opts) {
       return sendGatewayProblem(reply, problemTypeUris, codeKey, opts)
+    }
+  })
+
+  fastify.addHook('onRequest', async (request, reply) => {
+    for (const headerName of TRUSTED_HEADER_KEYS) {
+      if (hasDuplicateHeader(request.raw, request.headers, headerName)) {
+        return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED', {
+          detail: `Duplicate header not allowed: ${headerName}`
+        })
+      }
     }
   })
 
