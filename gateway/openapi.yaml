@@ -12,15 +12,15 @@ info:
 
     ### ขอบเขตของไฟล์นี้
     - Path ที่ gateway **implement คงที่** ในโค้ด: **`GET /healthz`**, **`GET /readyz`**
-    - **`POST /auth/login`**, **`POST /auth/refresh`**, **`POST /auth/logout`** — สรุป request body แบบ **inline** สำหรับ client import (Bruno/Postman); สัญญาเต็มอยู่ที่ [`../../auth/openapi.yaml`](../../auth/openapi.yaml)
-    - เส้นทาง proxy อื่น ๆ ตาม **`ROUTES_JSON`** — รายละเอียดอยู่ที่ upstream (เช่น [`crud-service/openapi.yaml`](../../.demo/crud-service/openapi.yaml))
+    - **`POST /auth/login`**, **`POST /auth/refresh`**, **`POST /auth/logout`** — สรุป request body แบบ **inline** สำหรับ client import (Bruno/Postman); สัญญาเต็มอยู่ที่ [`../auth/openapi.yaml`](../auth/openapi.yaml)
+    - เส้นทาง proxy อื่น ๆ ตาม **`ROUTES_JSON`** — รายละเอียดอยู่ที่ upstream (เช่น [`crud-service/openapi.yaml`](../.demo/crud-service/openapi.yaml))
 
     ### Normative sources (SoT)
-    - **Contract / env / errors / routing:** [`docs/architecture.md`](./architecture.md)
-    - **Architecture / trust boundary:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md)
-    - **Edge codes / headers:** [`_coding-standards/gateway`](../../../../_coding-standards/gateway/README.md)
-    - **JWT issuance:** [`auth` SoT](../../auth/docs/architecture.md)
-    - **Deploy — JWT / env คู่กัน:** [RUNBOOK §6](../../RUNBOOK.md#deploy-jwt-env)
+    - **Contract / env / errors / routing:** [`docs/architecture.md`](./docs/architecture.md)
+    - **Architecture / trust boundary:** [`ARCHITECTURE.md`](../ARCHITECTURE.md)
+    - **Edge codes / headers:** [`_coding-standards/gateway`](../../../_coding-standards/gateway/README.md)
+    - **JWT issuance:** [`auth` SoT](../auth/docs/architecture.md)
+    - **Deploy — JWT / env คู่กัน:** [RUNBOOK §6](../RUNBOOK.md#deploy-jwt-env)
 
     ### Versioning
     `info.version` สอดคล้อง `package.json` ของ service — เมื่อมี breaking change ต่อ client ให้ bump SemVer และ sync SoT
@@ -46,7 +46,7 @@ servers:
 tags:
   - name: health
     description: |
-      **Liveness / readiness** — **ไม่** บังคับ JWT (gateway SoT §12.1; [`docs/architecture.md`](./architecture.md))
+      **Liveness / readiness** — **ไม่** บังคับ JWT (gateway SoT §12.1; [`docs/architecture.md`](./docs/architecture.md))
   - name: proxy
     description: |
       Request ที่ path ตรงกับ `ROUTES_JSON[].prefix` — บังคับ **`Authorization: Bearer`** (ยกเว้น SoT กำหนดเป็นอย่างอื่น)
@@ -126,7 +126,7 @@ paths:
       description: |
         **Proxied** to **auth** when `ROUTES_JSON` maps this prefix (typical public credential route — **no** Bearer JWT).
 
-        Normative contract, error `type` URIs, and cookie behaviour: [`../../auth/openapi.yaml`](../../auth/openapi.yaml) (`login`).
+        Normative contract, error `type` URIs, and cookie behaviour: [`../auth/openapi.yaml`](../auth/openapi.yaml) (`login`).
       operationId: postAuthLoginViaGateway
       security: []
       parameters:
@@ -188,7 +188,7 @@ paths:
       tags: [proxy]
       summary: Refresh token
       description: |
-        **Proxied** to auth. Normative: [`../../auth/openapi.yaml`](../../auth/openapi.yaml) (`refreshToken`).
+        **Proxied** to auth. Normative: [`../auth/openapi.yaml`](../auth/openapi.yaml) (`refreshToken`).
       operationId: postAuthRefreshViaGateway
       security: []
       parameters:
@@ -232,7 +232,7 @@ paths:
       tags: [proxy]
       summary: Logout
       description: |
-        **Proxied** to auth. Normative: [`../../auth/openapi.yaml`](../../auth/openapi.yaml) (`logout`).
+        **Proxied** to auth. Normative: [`../auth/openapi.yaml`](../auth/openapi.yaml) (`logout`).
       operationId: postAuthLogoutViaGateway
       security: []
       parameters:

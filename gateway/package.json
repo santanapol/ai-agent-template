@@ -12,7 +12,7 @@
     "start": "TZ=UTC node --enable-source-maps --env-file=.env src/server.js",
     "dev": "TZ=UTC node --enable-source-maps --watch --env-file=.env src/server.js",
     "lint": "eslint .",
-    "spec:lint": "npx -y @stoplight/spectral-cli lint docs/openapi.yaml --ruleset ../../../_coding-standards/spectral/org-api.yaml",
+    "spec:lint": "npx -y @stoplight/spectral-cli lint openapi.yaml --ruleset ../../../_coding-standards/spectral/org-api.yaml",
     "ci": "npm run lint && npm run spec:lint && npm test",
     "test": "TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest",
     "test:unit": "TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest",

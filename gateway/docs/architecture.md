@@ -309,7 +309,7 @@ gateway/
 
 | Gate | Rule |
 |------|------|
-| PR | **ต้อง** lint + unit tests + **`npm run spec:lint`** (Spectral บน `docs/openapi.yaml`) — รวมอยู่ใน **`npm run ci`** ของแพ็กเกจ |
+| PR | **ต้อง** lint + unit tests + **`npm run spec:lint`** (Spectral บน `openapi.yaml` ที่ root แพ็กเกจ) — รวมอยู่ใน **`npm run ci`** ของแพ็กเกจ |
 | Main / release | **ควร** มี integration tests (proxy + JWT) |
 | Node | **ต้อง** ตรง `engines` |
 | Docs | แก้ contract / env / error → **ต้อง** อัปเดตเอกสารนี้ + `CHANGELOG.md` |
