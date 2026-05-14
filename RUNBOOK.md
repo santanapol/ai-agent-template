@@ -1,12 +1,14 @@
 # 📘 Authorization Gateway System Runbook
 
-เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`reference`** / **`smart-report`**)
+เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `.demo/`) / **`smart-report`**)
+
+**ดัชนีพอร์ต local (อัปเดตเมื่อเพิ่ม service):** [`docs/local-ports.md`](./docs/local-ports.md)
 
 ---
 
 ## 1. ⚙️ การตั้งค่า Environment & RSA Keys (Setup)
 
-ระบบต้องการตัวแปรแวดล้อมหลัก ได้แก่ Private Key (สำหรับ `auth` ใช้เซ็น JWT) และ `GATEWAY_SECRET` สำหรับการสื่อสารระหว่าง `gateway` และ upstream ที่ตรวจ `x-gateway-secret` / `GATEWAY_SHARED_SECRET` (เช่น **`reference`**, **`smart-report`** — ค่าเดียวกันใน dev ตาม template)
+ระบบต้องการตัวแปรแวดล้อมหลัก ได้แก่ Private Key (สำหรับ `auth` ใช้เซ็น JWT) และ `GATEWAY_SECRET` สำหรับการสื่อสารระหว่าง `gateway` และ upstream ที่ตรวจ `x-gateway-secret` / `GATEWAY_SHARED_SECRET` (เช่น **`crud-service`**, **`smart-report`** — ค่าเดียวกันใน dev ตาม template)
 
 ### 1.1 `auth`
 
@@ -78,14 +80,14 @@ npm run dev
 
 ### 📺 Upstream เสริม (เมื่อใช้ default `ROUTES_JSON` จาก `gateway/.env.example`)
 
-รันเพิ่มตามต้องการ — **`GATEWAY_SECRET` (gateway) ต้องตรงกับ `GATEWAY_SHARED_SECRET` / secret ฝั่ง upstream** ที่เกี่ยวข้อง
+รันเพิ่มตามต้องการ — **`GATEWAY_SECRET` (gateway) ต้องตรงกับ `GATEWAY_SHARED_SECRET` / secret ฝั่ง upstream** ที่เกี่ยวข้อง — สรุปพอร์ตแบบตารางเต็มอยู่ที่ [`docs/local-ports.md`](./docs/local-ports.md)
 
 | Terminal | Service | พอร์ต (ค่าเริ่มต้นใน repo) | โฟลเดอร์ |
 |----------|---------|---------------------------|----------|
-| 3 | **`reference`** | **`3003`** | **`api-example/`** |
+| 3 | **`crud-service`** | **`3003`** | **`.demo/crud-service/`** |
 | 4 | `smart-report` (workspace) | `3000` | `../smart-report/` |
 
-เส้นทาง gateway ที่ไป **`reference`**: prefix **`/api/v1/items`** และ catch-all **`/api`** (เช่น **`/api/v1/me`**) → `http://127.0.0.1:3003` (ดู [`gateway/.env.example`](gateway/.env.example))
+เส้นทาง gateway ที่ไป **`crud-service`** (`:3003`): prefix **`/api/v1/items`** และ catch-all **`/api`** (เช่น **`/api/v1/me`**) → `http://127.0.0.1:3003` (ดู [`gateway/.env.example`](gateway/.env.example))
 
 ---
 
@@ -102,12 +104,12 @@ curl -X POST http://127.0.0.1:3001/auth/login \
 > 📌 ก๊อปปี้ค่าที่ได้ในฟิลด์ `"access_token"` เก็บไว้
 
 ### Step 2: เรียกใช้งานระบบผ่าน Gateway
-*(ตัวอย่าง: path ที่ proxy ไป **`reference`** ตาม default — เช่น `/api/v1/me`)*
+*(ตัวอย่าง: path ที่ proxy ไป **`crud-service`** ตาม default — เช่น `/api/v1/me`)*
 ```bash
 curl -X GET http://127.0.0.1:3002/api/v1/me \
   -H "Authorization: Bearer <วาง access_token ที่นี่>"
 ```
-> ✅ หากทุกอย่างถูกต้อง Gateway จะดึงข้อมูลใส่ `x-user-*` headers และแนบ `x-gateway-secret` ส่งไปให้ upstream (**`reference`**) อัตโนมัติ
+> ✅ หากทุกอย่างถูกต้อง Gateway จะดึงข้อมูลใส่ `x-user-*` headers และแนบ `x-gateway-secret` ส่งไปให้ upstream (**`crud-service`**) อัตโนมัติ
 
 ---
 
@@ -166,7 +168,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 ### 6.5 `GATEWAY_SECRET` (Gateway + upstream ที่ไว้ใจ gateway)
 
 - ความยาว **ต้องไม่ต่ำกว่า 32 ตัวอักษร** (มีเช็คใน Joi)
-- `GATEWAY_SECRET` ของ gateway ต้อง **ตรงกับ** secret ที่ upstream ใช้ตรวจแนว mesh (เช่น **`reference`** (`GATEWAY_SHARED_SECRET`) / `smart-report` — ตามที่แต่ละ service กำหนด)
+- `GATEWAY_SECRET` ของ gateway ต้อง **ตรงกับ** secret ที่ upstream ใช้ตรวจแนว mesh (เช่น **`crud-service`** (`GATEWAY_SHARED_SECRET`) / `smart-report` — ตามที่แต่ละ service กำหนด)
 - ห้ามส่งค่านี้มาจากฝั่ง Client เด็ดขาด; Gateway จะเป็นคน Inject ใส่ Header ในชื่อ `x-gateway-secret` ด้วยตัวเองตอน Proxy
 
 ### 6.6 เอกสารอ้างอิง API (OpenAPI / SoT)
@@ -175,8 +177,8 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 |---|---|
 | [auth-service/docs/openapi.yaml](auth-service/docs/openapi.yaml) | การ Login / Refresh / Logout และ Token Issuance |
 | [gateway-service/docs/openapi.yaml](gateway-service/docs/openapi.yaml) | ข้อมูล `GET /healthz`, `GET /readyz` และ SoT Links |
-| [api-example/docs/openapi-via-gateway.yaml](api-example/docs/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
-| [api-example/openapi.yaml](api-example/openapi.yaml) | Mesh contract ตรง **`reference`** (`x-gateway-secret` + `x-user-*`) |
+| [.demo/crud-service/openapi-via-gateway.yaml](.demo/crud-service/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
+| [.demo/crud-service/openapi.yaml](.demo/crud-service/openapi.yaml) | Mesh contract ตรง **`crud-service`** (`x-gateway-secret` + `x-user-*`) |
 | [gateway-service/docs/architecture.md](gateway-service/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ภาพรวม trust boundary และ routing แบบหลาย upstream |
 
