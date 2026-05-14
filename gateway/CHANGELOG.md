@@ -6,6 +6,7 @@
 - **Upstream client `detail`:** ข้อความ **`GATEWAY_UPSTREAM_UNAVAILABLE`** ไม่ใส่ path workspace / ชื่อ demo service — ย้ายไป `src/lib/upstream-problem-detail.js`
 - **Proxy header merge:** trusted headers **ทับ** inbound หลัง strip (`register-proxies.js`) เพื่อทนต่อการขยาย whitelist
 - **CI:** `npm run ci` รวม **`spec:lint`**
+- **Docs:** `docs/openapi.yaml` — ลิงก์ normative ของ `/auth/*` ชี้ไป **`auth/openapi.yaml`** (ฉบับเดียวหลังรวม spec ที่ `auth`)
 - **Docs:** `docs/architecture.md` — แก้ §4 / §12.2 ให้ตรง behavior 401 claim validation; §7 หมายเหตุ **`GATEWAY_ROUTE_NOT_CONFIGURED`** กับ startup fail-fast; §9 readyz `routes`; §14 PR gates; bump doc **1.3.2**
 
 ## 0.2.1

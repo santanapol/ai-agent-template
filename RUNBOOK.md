@@ -175,8 +175,8 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 
 | เอกสาร | หน้าที่ |
 |---|---|
-| [auth-service/docs/openapi.yaml](auth-service/docs/openapi.yaml) | การ Login / Refresh / Logout และ Token Issuance |
-| [gateway-service/docs/openapi.yaml](gateway-service/docs/openapi.yaml) | ข้อมูล `GET /healthz`, `GET /readyz` และ SoT Links |
+| [auth/openapi.yaml](auth/openapi.yaml) | การ Login / Refresh / Logout และ Token Issuance |
+| [gateway/docs/openapi.yaml](gateway/docs/openapi.yaml) | ข้อมูล `GET /healthz`, `GET /readyz` และ SoT Links |
 | [.demo/crud-service/openapi-via-gateway.yaml](.demo/crud-service/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
 | [.demo/crud-service/openapi.yaml](.demo/crud-service/openapi.yaml) | Mesh contract ตรง **`crud-service`** (`x-gateway-secret` + `x-user-*`) |
 | [gateway-service/docs/architecture.md](gateway-service/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
