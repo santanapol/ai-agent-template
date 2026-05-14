@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs), **`.demo/crud-service/`** gateway mesh demo upstream, and **`www/`** Vite client workspace (`node_modules` / build outputs remain gitignored).
 - Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional members/smart-report, Vite); links from [`README.md`](./README.md), [`RUNBOOK.md`](./RUNBOOK.md), and [`PROJECT_TREE.md`](./PROJECT_TREE.md).
 - Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
 - Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
@@ -24,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Update gateway code matrix behavior: `GATEWAY_CLAIM_REJECTED` now maps to HTTP `401`, and JWT verify failures map to `GATEWAY_JWT_REJECTED`.
 - Update `crud-service` `/api/v1/me` payload key order to `ou`, `branch`, `userId`, `role`.
 - Refresh repository docs (`README.md`, `ARCHITECTURE.md`, `RUNBOOK.md`) and gateway docs/spec to match new route-miss behavior.
+- **`ARCHITECTURE.md`:** companion SoT / demo links use root layout paths (`gateway/`, `auth/`, `.demo/crud-service/`) instead of legacy `access/` prefixes.
 
 ### Fixed
 

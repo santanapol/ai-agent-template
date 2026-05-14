@@ -9,7 +9,7 @@
 | **Filename** | `ARCHITECTURE.md` |
 | **Document index** | [README.md](./README.md) |
 | **Status** | **Active** — ADR / Architecture overview, trust boundary, และ system flow |
-| **Companion docs** | [`gateway` SoT](./access/gateway/docs/architecture.md) · [`001-gateway-esm-fastify.md`](./access/gateway/docs/adrs/001-gateway-esm-fastify.md) · [`auth` SoT](./access/auth/docs/architecture.md) |
+| **Companion docs** | [`gateway` SoT](./gateway/docs/architecture.md) · [`001-gateway-esm-fastify.md`](./gateway/docs/adrs/001-gateway-esm-fastify.md) · [`auth` SoT](./auth/docs/architecture.md) |
 | **Scope** | ภาพรวมเชิงสถาปัตยกรรม, Trust boundary, และเหตุผลเชิงระบบ (ไม่แทนที่ SoT เชิง Contract ของแต่ละ Service) |
 | **Document version** | `1.0.9` |
 | **Terms** | **ต้อง (MUST)** = บังคับ · **ควร (SHOULD)** = แนะนำ (Default) · **อาจ (MAY)** = ทางเลือก |
@@ -18,12 +18,12 @@
 
 ---
 
-*(หมายเหตุ: ชุดเอกสารในโฟลเดอร์นี้อ้างอิงร่วมกันระหว่าง `gateway`, `auth`, และตัวอย่าง upstream **[`reference`](./access/reference/README.md)** (`/api/v1/me`, `/api/v1/items`, และ catch-all `/api` ผ่าน gateway) — ดูเอกสารที่เกี่ยวข้องได้ที่ [README.md](./README.md))*
+*(หมายเหตุ: ชุดเอกสารในโฟลเดอร์นี้อ้างอิงร่วมกันระหว่าง `gateway`, `auth`, และตัวอย่าง upstream **[`crud-service`](./.demo/crud-service/README.md)** (อยู่ใต้ `.demo/` — `/api/v1/me`, `/api/v1/items`, และ catch-all `/api` ผ่าน gateway) — ดูเอกสารที่เกี่ยวข้องได้ที่ [README.md](./README.md))*
 
 
 ## 1. System Flow
 
-**ก่อนเริ่ม Flow:** Client ขอรับ **Access JWT** จาก **[`auth`](./access/auth/docs/architecture.md)** (ในกรณีที่เป็น Self-hosted IdP)
+**ก่อนเริ่ม Flow:** Client ขอรับ **Access JWT** จาก **[`auth`](./auth/docs/architecture.md)** (ในกรณีที่เป็น Self-hosted IdP)
 
 1. **Client** ส่ง Request พร้อม `Authorization: Bearer <JWT>`
 2. **`gateway`** ตรวจสอบ (Verify) JWT Signature แบบ Stateless
@@ -43,13 +43,13 @@
   - Header Injection (User Context + Gateway Secret)
   - Reverse Proxy / Routing แบบ **Path-based (`prefix`)** ไปยัง Internal Upstream ต่างๆ
 
-### 2.1 MVP Decisions (อ้างอิง [Gateway SoT](./access/gateway/docs/architecture.md) section 11)
+### 2.1 MVP Decisions (อ้างอิง [Gateway SoT](./gateway/docs/architecture.md) section 11)
 
 - **Gateway Secret:** ใช้ค่าเดียวกันกับทุก Upstream (ในระยะเริ่มต้น)
 - **ไม่ Forward Header:** จะไม่ส่ง `Authorization` ไปที่ Internal API; ยืนยัน Identity ผ่าน Headers ที่ Gateway Inject ให้เท่านั้น
 - **JWT:** **ต้อง** Verify Access JWT ด้วยโหมด **Asymmetric + JWKS** (`JWT_JWKS_URL`) และตรวจสอบ `aud` / `iss` (โหมด `HS256` ไม่รองรับในปัจจุบัน)
 
-### 2.2 Operational Baseline (อ้างอิง [Gateway SoT](./access/gateway/docs/architecture.md) section 12)
+### 2.2 Operational Baseline (อ้างอิง [Gateway SoT](./gateway/docs/architecture.md) section 12)
 
 - **Public Routes:** เปิดเฉพาะ **`GET /healthz`** และ **`GET /readyz`** (ตรวจสอบ JWKS เบื้องต้น)
 - **`x-user-id`:** Map จาก `JWT_CLAIM_USER_ID` — ความยาวสูงสุด 128 ตัวอักษร (เกินกำหนดตอบ `400`)
@@ -69,7 +69,7 @@
 
 ## 3. Internal API Component
 
-Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`reference`](./access/reference/README.md)**; บริการอื่นใน workspace (เช่น smart-report) ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
+Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`crud-service`](./.demo/crud-service/README.md)** (แพ็กเกจใต้ `.demo/`); บริการอื่นใน workspace (เช่น smart-report) ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
 
 - **Responsibilities:** มุ่งเน้นไปที่ Business Logic เป็นหลัก
 - **Security Rules:**
@@ -91,7 +91,7 @@ Upstream ภายในหมายถึงบริการหลัง `gat
 
 ### JWT stateless (ข้อจำกัด)
 
-- การ revoke token ทันที (logout / compromise) ทำได้ยากถ้าใช้แค่ stateless JWT — ความสามารถ revocation เพิ่มเติม **ยังไม่ถูกล็อกใน ADR นี้**; หาก requirement ต้อง revoke ได้ทันที **ต้อง** ทำ ADR/SoT เพิ่มเติม โดยอ้างอิงรายละเอียดการออก token / refresh ที่ [`auth` SoT](./access/auth/docs/architecture.md)
+- การ revoke token ทันที (logout / compromise) ทำได้ยากถ้าใช้แค่ stateless JWT — ความสามารถ revocation เพิ่มเติม **ยังไม่ถูกล็อกใน ADR นี้**; หาก requirement ต้อง revoke ได้ทันที **ต้อง** ทำ ADR/SoT เพิ่มเติม โดยอ้างอิงรายละเอียดการออก token / refresh ที่ [`auth` SoT](./auth/docs/architecture.md)
 
 ## 5. Diagrams
 
@@ -183,7 +183,7 @@ sequenceDiagram
   G-->>-C: Response
 ```
 
-รายละเอียด API และความปลอดภัยของ `auth` ดูต่อที่ [`auth` SoT](./access/auth/docs/architecture.md)
+รายละเอียด API และความปลอดภัยของ `auth` ดูต่อที่ [`auth` SoT](./auth/docs/architecture.md)
 
 ---
 

@@ -1,0 +1,653 @@
+openapi: 3.1.0
+info:
+  title: auth
+  version: 0.1.2
+  description: |
+    Edge identity API (login, refresh, logout) and JWKS for access-token verification.
+
+    All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
+
+    This API does **not** expose public signup/invite endpoints; user provisioning is admin-managed via internal branch-scoped member APIs.
+
+    Responses use RFC 7807 Problem Details (`application/problem+json`) with required `code` aligned to `_coding-standards/auth/codes.yaml`. Readiness uses **GET /readyz** (Mongo ping).
+  contact:
+    name: engineering
+    email: engineering@example.invalid
+    url: https://example.invalid/auth
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local
+    variables:
+      port:
+        default: '3001'
+        description: Listen port (`PORT` env)
+
+security: []
+
+tags:
+  - name: auth
+    description: Login and token lifecycle
+  - name: discovery
+    description: JWKS and metadata
+  - name: health
+    description: Liveness and readiness
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness
+      description: |
+        **Purpose:** Cheap process check for orchestrators, load balancers, and k8s-style probes.
+
+        **Behaviour:** Returns JSON with `status`, `timestamp`, and process `uptime` in seconds. Does **not** open MongoDB or call upstream services — a passing `200` only means the Node process accepted the connection.
+
+        **Auth:** None. No `Authorization` or cookie required.
+
+        **Client hints:** Use `GET /readyz` when you need dependency health (MongoDB). Wrong HTTP method or unknown path may yield `404` (Fastify default).
+      operationId: getHealthz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: |
+            Liveness OK — JSON includes `status`, ISO `timestamp`, and process `uptime` seconds.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, timestamp, uptime]
+                properties:
+                  status:
+                    type: string
+                    description: Always `ok` when the process responds.
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: ISO-8601 UTC timestamp from the service clock.
+                  uptime:
+                    type: integer
+                    minimum: 0
+                    description: Process uptime in seconds.
+              examples:
+                ok:
+                  summary: Liveness payload
+                  value:
+                    status: ok
+                    timestamp: '2026-04-16T12:00:00.000Z'
+                    uptime: 42
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness
+      description: |
+        **Purpose:** Readiness probe before sending user traffic — verifies critical dependencies (at minimum MongoDB connectivity for this service).
+
+        **Behaviour:** On success, returns JSON with `status` and a `dependencies` array (name + status per probed dependency). If the database check fails, returns **`503`** with **`application/problem+json`** (`Problem` schema) and required registry `code` (e.g. `AUTH_NOT_READY`).
+
+        **Auth:** None.
+      operationId: getReadyz
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: |
+            Readiness OK — JSON lists probed dependencies (e.g. MongoDB) with per-entry status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, dependencies]
+                properties:
+                  status:
+                    type: string
+                    description: Typically `ok` when all probed dependencies pass.
+                  dependencies:
+                    type: array
+                    description: One entry per dependency (e.g. MongoDB).
+                    items:
+                      type: object
+                      required: [name, status]
+                      properties:
+                        name:
+                          type: string
+                        status:
+                          type: string
+              examples:
+                ready:
+                  summary: Mongo reachable
+                  value:
+                    status: ok
+                    dependencies:
+                      - name: mongodb
+                        status: ok
+        '503':
+          description: |
+            At least one readiness dependency failed (e.g. MongoDB unreachable). RFC 7807 problem body with required `code`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                degraded:
+                  value:
+                    type: https://example.invalid/auth/problems/not-ready
+                    title: Service Unavailable
+                    status: 503
+                    detail: Readiness check failed.
+                    code: AUTH_NOT_READY
+  /.well-known/jwks.json:
+    get:
+      tags: [discovery]
+      summary: JWKS document
+      description: |
+        **Purpose:** Publish the **public** JSON Web Key Set (RFC 7517) used to verify **RS256** access JWTs minted by this service.
+
+        **Consumers:** Primarily **gateway** (`JWT_JWKS_URL` must match this document’s URL), and optionally other verifiers. Align `JWKS_PUBLIC_URL` in auth env with the URL gateway fetches.
+
+        **Response:** `200` + `application/json` body with `keys[]` (RSA public JWKs). Implementations may send **`Cache-Control`**; gateways should refresh when encountering an unknown `kid` (key rotation).
+
+        **Auth:** None. Path is fixed per SoT — do not rely on query parameters for behaviour.
+
+        **Errors:** Wrong method or path typically `404` (Fastify); rare internal failures `500` (Fastify JSON error shape — not RFC 7807).
+      operationId: getJwks
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptJson'
+      responses:
+        '200':
+          description: |
+            JWKS document — JSON with `keys` array of public JWKs for RS256 verification (`kid` aligns with JWT header).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    description: JWK Set members used to verify RS256 access JWTs (`kid` matches JWT header).
+                    items:
+                      type: object
+                      description: Public JWK (RFC 7517) — shape varies by key material.
+              examples:
+                minimal:
+                  summary: Single RSA signing key (placeholder values)
+                  value:
+                    keys:
+                      - kty: RSA
+                        use: sig
+                        kid: default
+                        alg: RS256
+                        n: placeholder-modulus-base64url
+                        e: AQAB
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login
+      description: |
+        **Purpose:** Exchange **username + password** (over TLS in production) for a new **access JWT** (RS256) and a **refresh** channel (opaque token and/or HttpOnly cookie) per SoT ([`docs/architecture.md`](./docs/architecture.md)).
+
+        **Request:** JSON body — **`Content-Type: application/json` is required** on every call (see parameters). Values such as `application/json; charset=utf-8` are accepted. You do not need **`Accept`**; responses are JSON or `application/problem+json` by status.
+        - **`client_kind: native`** — expect `refresh_token` in the **JSON** body on `200` when the server returns it.
+        - **`client_kind: web`** — refresh is issued as an **HttpOnly** cookie; success JSON typically **omits** `refresh_token`.
+
+        **Success (`200`):** JSON with `access_token`, `token_type: Bearer`, `expires_in` (seconds). May include **`Set-Cookie`** for web flows. No outer envelope.
+
+        **Errors (RFC 7807 `application/problem+json`):** `400` validation; `401` invalid credentials (same envelope when user is unknown — anti-enumeration); `423` account locked where applicable; `429` throttling / rate limits — **branch on `type` URI**, not only HTTP status.
+
+        **Security:** Never send `password` in query strings. Do not log passwords, full refresh values, or full JWTs at info level.
+      operationId: login
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 30
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: demo
+              password: '<password-placeholder>'
+              client_kind: native
+            examples:
+              default:
+                summary: Default body for client import (Bruno / Postman)
+                value:
+                  username: demo
+                  password: '<password-placeholder>'
+                  client_kind: native
+      responses:
+        '200':
+          description: |
+            Login succeeded — access JWT and metadata; native may include `refresh_token` in JSON; web may rely on `Set-Cookie` for refresh.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+              examples:
+                nativeWithRefresh:
+                  summary: Native — refresh token in JSON body
+                  value:
+                    access_token: '<access-jwt-placeholder>'
+                    token_type: Bearer
+                    expires_in: 900
+                    refresh_token: '<opaque-refresh-placeholder>'
+                browserNoRefreshField:
+                  summary: Browser — refresh only in HttpOnly cookie (no `refresh_token` field)
+                  value:
+                    access_token: '<access-jwt-placeholder>'
+                    token_type: Bearer
+                    expires_in: 900
+        '400':
+          description: |
+            Request validation failed (JSON shape, missing fields, invalid `client_kind`, etc.). RFC 7807 problem body.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                invalidRequest:
+                  value:
+                    type: https://example.invalid/auth/problems/invalid-request
+                    title: Bad Request
+                    status: 400
+                    detail: Request validation failed.
+                    code: AUTH_INVALID_REQUEST
+        '401':
+          description: |
+            Authentication failed — wrong password or unknown user (same problem envelope to avoid user enumeration).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                invalidCredentials:
+                  value:
+                    type: https://example.invalid/auth/problems/invalid-credentials
+                    title: Unauthorized
+                    status: 401
+                    detail: Invalid username or password.
+                    code: LOGIN_INVALID_CREDENTIALS
+        '423':
+          description: |
+            Account temporarily locked or forbidden login state per SoT. RFC 7807 problem body.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                accountLocked:
+                  value:
+                    type: https://example.invalid/auth/problems/account-locked
+                    title: Locked
+                    status: 423
+                    detail: This account is temporarily locked.
+                    code: LOGIN_ACCOUNT_LOCKED
+        '429':
+          description: |
+            Too many requests — credential throttle or API rate limit; use `type` URI to disambiguate.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                tooManyAttempts:
+                  value:
+                    type: https://example.invalid/auth/problems/too-many-attempts
+                    title: Too Many Requests
+                    status: 429
+                    detail: Too many login attempts. Please try again later.
+                    code: AUTH_TOO_MANY_ATTEMPTS
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Refresh token
+      description: |
+        **Purpose:** Rotate the session — validate the current opaque refresh, issue a **new access JWT**, and (for native) a **new opaque refresh**; browser clients may receive a rotated refresh via **`Set-Cookie`**.
+
+        **Refresh source (priority):** (1) HttpOnly cookie named by env (default `refresh_token`) when present; (2) JSON field `refresh_token` for native clients when not using the cookie channel.
+
+        **Request body:** Optional. Native clients should send `{"refresh_token":"<opaque>"}` when not relying on the cookie. Browser clients should still send **`Content-Type: application/json`** and may use body `{}` when using cookie-only refresh.
+
+        **Headers:** **`Content-Type: application/json` required** (same as other `POST /auth/*`). Optional `Cookie` (see `CookieRefresh`). No `Accept` required.
+
+        **Success (`200`):** Same token shape as login (`RefreshSuccess`). Native responses may include `refresh_token`; browser responses may omit it from JSON when rotation is cookie-only.
+
+        **Errors:** `400` malformed body; `401` invalid, expired, missing, or **reused** refresh (distinguish via **`type`** in problem body — includes reuse / family revocation per SoT); `429` throttles.
+
+        **Auth:** No Bearer JWT on this route.
+      operationId: refreshToken
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 120
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        description: |
+          **Native:** send `refresh_token` in JSON when not using the HttpOnly cookie.
+          **Browser:** send **`Content-Type: application/json`**; body may be `{}` or omitted per client — refresh is read from the `refresh_token` cookie set at login when present.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refresh_token: '<opaque-refresh-placeholder>'
+            examples:
+              default:
+                summary: Default native refresh body (import)
+                value:
+                  refresh_token: '<opaque-refresh-placeholder>'
+              native:
+                summary: Native client sends opaque refresh
+                value:
+                  refresh_token: '<opaque-refresh-placeholder>'
+              emptyBrowser:
+                summary: Browser — empty object when cookie carries refresh
+                value: {}
+      responses:
+        '200':
+          description: |
+            Refresh/rotation succeeded — new access JWT; native may receive new opaque `refresh_token` in JSON; browser may get cookie rotation (`Set-Cookie`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshSuccess'
+              examples:
+                rotatedNative:
+                  summary: Native — new access + rotated refresh in body
+                  value:
+                    access_token: '<access-jwt-placeholder>'
+                    token_type: Bearer
+                    expires_in: 900
+                    refresh_token: '<new-opaque-refresh-placeholder>'
+                browserNoRefreshBody:
+                  summary: Browser — access only; new refresh in Set-Cookie (not modeled here)
+                  value:
+                    access_token: '<access-jwt-placeholder>'
+                    token_type: Bearer
+                    expires_in: 900
+        '400':
+          description: |
+            Malformed or invalid refresh request body when present. RFC 7807 problem body.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                invalidRequest:
+                  value:
+                    type: https://example.invalid/auth/problems/invalid-request
+                    title: Bad Request
+                    status: 400
+                    detail: Request validation failed.
+                    code: AUTH_INVALID_REQUEST
+        '401':
+          description: |
+            Refresh rejected — missing/invalid/expired token, or reuse/family revocation; distinguish using **`type`** on the problem document.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                refreshRejected:
+                  value:
+                    type: https://example.invalid/auth/problems/refresh-rejected
+                    title: Unauthorized
+                    status: 401
+                    detail: Refresh token is invalid or expired.
+                    code: TOKEN_REFRESH_REJECTED
+        '429':
+          description: |
+            Too many requests — rate limit or throttle; use `type` URI on the problem body to classify.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                tooManyAttempts:
+                  value:
+                    type: https://example.invalid/auth/problems/too-many-attempts
+                    title: Too Many Requests
+                    status: 429
+                    detail: Too many authentication attempts, please try again later.
+                    code: AUTH_TOO_MANY_ATTEMPTS
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      description: |
+        **Purpose:** End the refresh **family** for the presented refresh token — revokes active refresh tokens tied to that family (SoT logout semantics).
+
+        **Token source:** Same as refresh — cookie channel and/or JSON `refresh_token` for native. **`Content-Type: application/json` required** on every `POST` (use body `{}` for cookie-only logout if your client omits an empty body).
+
+        **Success (`204`):** **No response body.** Client should discard cached access JWTs and stop using the old refresh. Response may clear the refresh cookie (implementation-specific `Set-Cookie`).
+
+        **Idempotency:** Missing or already-revoked refresh still yields **`204`** where implemented (do not infer session existence from status alone).
+
+        **Errors:** `400` validation; `429` throttles. Problem details use `application/problem+json` when returned.
+
+        **Auth:** No Bearer JWT on this route.
+      operationId: logout
+      security: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: false
+        description: |
+          **Native:** optional `refresh_token` in JSON.
+          **Browser:** send **`Content-Type: application/json`**; use `{}` or omit body per client — refresh is revoked from cookie when present.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+            example:
+              refresh_token: '<opaque-refresh-placeholder>'
+            examples:
+              default:
+                summary: Default native logout body (import)
+                value:
+                  refresh_token: '<opaque-refresh-placeholder>'
+              native:
+                summary: Native — revoke by opaque refresh in body
+                value:
+                  refresh_token: '<opaque-refresh-placeholder>'
+              empty:
+                summary: Browser or idempotent logout without body
+                value: {}
+      responses:
+        '204':
+          description: |
+            Logout accepted — **no JSON body**. Client should clear local tokens; server may clear refresh cookie.
+        '400':
+          description: |
+            Malformed optional body when sent. RFC 7807 problem body.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                invalidRequest:
+                  value:
+                    type: https://example.invalid/auth/problems/invalid-request
+                    title: Bad Request
+                    status: 400
+                    detail: Request validation failed.
+                    code: AUTH_INVALID_REQUEST
+        '429':
+          description: |
+            Too many requests — rate limit or throttle; use `type` URI on the problem body to classify.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                tooManyAttempts:
+                  value:
+                    type: https://example.invalid/auth/problems/too-many-attempts
+                    title: Too Many Requests
+                    status: 429
+                    detail: Too many authentication attempts, please try again later.
+                    code: AUTH_TOO_MANY_ATTEMPTS
+components:
+  parameters:
+    AcceptJson:
+      name: Accept
+      in: header
+      required: false
+      description: |
+        Optional; JSON responses use `application/json` where applicable.
+
+        Used on **GET** (`/healthz`, `/readyz`, `/.well-known/jwks.json`). Success prefers `application/json`; errors may be `application/problem+json` (RFC 7807).
+
+        **POST `/auth/*`:** use **`#/components/parameters/ContentTypeApplicationJson`** (required) — not this parameter.
+      schema:
+        type: string
+      example: application/json
+
+    ContentTypeApplicationJson:
+      name: Content-Type
+      in: header
+      required: true
+      description: |
+        **Required on every `POST /auth/login`, `POST /auth/refresh`, and `POST /auth/logout`.** Identifies the request entity as JSON (RFC 7231). Use `application/json` or `application/json; charset=utf-8` (case-insensitive parameter names are fine).
+
+        Cookie-only browser flows must still send this header; use a JSON body of `{}` if the client cannot send `Content-Type` without a body.
+      schema:
+        type: string
+        pattern: '^[Aa]pplication/[Jj]son(;\\s*charset=[^;\\s]+)?$'
+      example: application/json
+
+    CookieRefresh:
+      name: Cookie
+      in: header
+      required: false
+      description: Browser flow — `refresh_token=<opaque>` when using HttpOnly cookie channel (cookie name from env; default `refresh_token`).
+      schema:
+        type: string
+      example: refresh_token=<opaque-refresh-placeholder>
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          description: Registry code from auth/codes.yaml only
+          enum:
+            - AUTH_INVALID_REQUEST
+            - LOGIN_INVALID_CREDENTIALS
+            - TOKEN_REFRESH_REJECTED
+            - LOGIN_ACCOUNT_LOCKED
+            - AUTH_TOO_MANY_ATTEMPTS
+            - AUTH_NOT_READY
+    LoginRequest:
+      type: object
+      description: Credential payload for `POST /auth/login` (TLS required in production).
+      example:
+        username: demo
+        password: '<password-placeholder>'
+        client_kind: native
+      required: [username, password, client_kind]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Login identifier (normalized server-side per SoT).
+        password:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          format: password
+          description: Plain password over TLS — never log at info level.
+        client_kind:
+          type: string
+          enum: [native, web]
+          description: |
+            `native` — expect `refresh_token` in JSON on success.
+            `web` — refresh issued as HttpOnly cookie (no `refresh_token` in body).
+    LoginSuccess:
+      type: object
+      description: Successful login — O-05 style success (no outer envelope).
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: RS256 JWT access token; send in the HTTP Authorization header as Bearer (gateway routes).
+        refresh_token:
+          type: string
+          description: Opaque refresh token in JSON only for native client_kind (omitted for web cookie flow).
+        token_type:
+          type: string
+          enum: [Bearer]
+          description: OAuth 2.0 token type (RFC 6750).
+        expires_in:
+          type: integer
+          minimum: 1
+          description: Access token lifetime in seconds.
+    RefreshRequest:
+      type: object
+      description: Optional body for refresh when not using cookie channel.
+      example:
+        refresh_token: '<opaque-refresh-placeholder>'
+      properties:
+        refresh_token:
+          type: string
+          minLength: 10
+          maxLength: 512
+          description: Opaque refresh from prior login/refresh (native).
+    RefreshSuccess:
+      type: object
+      description: Successful rotation — same shape as login success.
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+          description: New opaque refresh for native channel when returned in body.
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          minimum: 1
+    LogoutRequest:
+      type: object
+      description: Optional body for logout on native channel.
+      example:
+        refresh_token: '<opaque-refresh-placeholder>'
+      properties:
+        refresh_token:
+          type: string
+          minLength: 10
+          maxLength: 512
+          description: Opaque refresh to revoke (family-wide per SoT).

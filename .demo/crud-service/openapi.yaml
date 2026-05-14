@@ -1,0 +1,922 @@
+openapi: 3.1.0
+info:
+  title: crud-service
+  version: 0.1.0
+  description: |
+    Sample upstream backend for the `access-platform` monorepo (lives under `.demo/crud-service/`).
+
+    Includes:
+    - CRUD for `/api/v1/items`
+    - Trusted user profile endpoint `GET /api/v1/me`
+    - Optimistic concurrency via `If-Match`
+    - Mesh headers: `x-gateway-secret` and gateway-injected `x-user-*`
+
+    Service design / ERD: [`docs/architecture.md`](./docs/architecture.md).
+
+    Direct listen port: `3003` (`PORT` env).
+
+    For gateway clients (Bruno/Postman), import [`openapi-via-gateway.yaml`](./openapi-via-gateway.yaml), call gateway default `3002`, and send only `Authorization: Bearer`.
+
+    `PUT` full replace is an intentional teaching pattern; see [`docs/adrs/001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md).
+  contact:
+    name: engineering
+    url: https://example.invalid/crud-service
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local
+    variables:
+      port:
+        default: "3003"
+        description: Direct service listen port (`PORT` env; monorepo default avoids :3000).
+
+security:
+  - GatewaySecret: []
+
+tags:
+  - name: health
+    description: Liveness and readiness (exempt `x-gateway-secret` at runtime)
+  - name: internal
+    description: Internal mesh endpoints (`/metrics`)
+  - name: me
+    description: Trusted caller profile from gateway-injected headers (`/api/v1/me`)
+  - name: items
+    description: Example item resource (`/api/v1/items`)
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness
+      description: Process liveness (`status`, ISO `timestamp`, `uptime` seconds).
+      operationId: getHealthz
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+              examples:
+                ok:
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: null
+                    data:
+                      status: ok
+                      timestamp: "2026-04-24T12:00:00.000Z"
+                      uptime: 12.34
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness
+      description: Readiness with dependency checks (MongoDB ping).
+      operationId: getReadyz
+      security: []
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+              examples:
+                ready:
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: null
+                    data:
+                      status: ready
+        "503":
+          description: Dependency unavailable
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+              examples:
+                notReady:
+                  value:
+                    success: false
+                    code: SERVICE_UNAVAILABLE
+                    message: Service dependencies are not ready
+                    data:
+                      dependencies:
+                        - name: mongodb
+                          status: unavailable
+                    requestId: 018f3c2e-0000-7000-8000-000000000001
+
+  /metrics:
+    get:
+      tags: [internal]
+      summary: Prometheus metrics
+      description: Prometheus text exposition; secured with `GatewaySecret` (`x-gateway-secret`).
+      operationId: getMetrics
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptMetrics"
+      responses:
+        "200":
+          description: Prometheus text exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          description: Missing/invalid gateway secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+              examples:
+                missingSecret:
+                  value:
+                    success: false
+                    code: GATEWAY_SECRET_REJECTED
+                    message: Authentication failed
+                    data: null
+                    requestId: 018f3c2e-0000-7000-8000-000000000002
+
+  /api/v1/me:
+    get:
+      tags: [me]
+      summary: Current user context (from trusted headers)
+      description: |
+        Returns **`userId`**, **`ou`**, **`branch`**, and optional **`role`** parsed only from gateway-injected
+        **`x-user-*`** headers — never from the request body.
+      operationId: getMe
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeEnvelope"
+              examples:
+                ok:
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: null
+                    data:
+                      userId: user-001
+                      ou: ou-001
+                      branch: bkk-01
+                      role: analyst
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/items:
+    get:
+      tags: [items]
+      summary: List items
+      description: Paginated list of items scoped to the caller tenant (`ou_id` + `branch_id`).
+      operationId: listItems
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListItemsEnvelope"
+              examples:
+                ok:
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: null
+                    data:
+                      - id: 507f1f77bcf86cd799439011
+                        code: ITEM-001
+                        name: Demo
+                        description: null
+                        status: draft
+                        tags: []
+                    pagination:
+                      page: 1
+                      limit: 20
+                      total: 1
+                      totalPages: 1
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [items]
+      summary: Create item
+      description: Creates a new item with server-side audit fields and weak ETag (`upd_date`).
+      operationId: createItem
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItem"
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            Location:
+              $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "409":
+          $ref: "#/components/responses/ItemDuplicate"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/items/{itemId}:
+    parameters:
+      - in: path
+        name: itemId
+        required: true
+        description: Item id (24-char hex ObjectId string).
+        schema:
+          type: string
+        example: "<item-id>"
+    get:
+      tags: [items]
+      summary: Get item by id
+      description: Returns one item when it exists within the caller tenant scope.
+      operationId: getItemById
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/ItemNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [items]
+      summary: Replace item
+      description: |
+        Full document replace (not JSON Merge Patch). Documented exception to the default “no `PUT`”
+        policy — see [`docs/adrs/001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md).
+      operationId: replaceItem
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceItem"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/ItemNotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [items]
+      summary: Update item
+      description: Partial update with optimistic concurrency (`If-Match` weak ETag required).
+      operationId: updateItem
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchItem"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/ItemNotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [items]
+      summary: Delete item
+      description: Deletes an item when `If-Match` matches the current weak ETag.
+      operationId: deleteItem
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "200":
+          description: Deleted
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteEnvelope"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+        "404":
+          $ref: "#/components/responses/ItemNotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewaySecret:
+      type: apiKey
+      in: header
+      name: x-gateway-secret
+      description: |
+        Non-secret placeholder for API clients: `<GATEWAY_SECRET>`.
+        Replace with the real shared secret from env (must match gateway / service config).
+
+  parameters:
+    AcceptMetrics:
+      name: Accept
+      in: header
+      required: false
+      description: Prometheus scrape clients often send `*/*` or `text/plain`.
+      schema:
+        type: string
+      example: text/plain
+    XUserOu:
+      name: x-user-ou
+      in: header
+      required: true
+      description: Gateway-injected organizational unit id.
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-ou>"
+    XUserBranch:
+      name: x-user-branch
+      in: header
+      required: true
+      description: Gateway-injected branch id.
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-branch>"
+    XUserId:
+      name: x-user-id
+      in: header
+      required: true
+      description: Gateway-injected user id (replace placeholder before call).
+      schema:
+        type: string
+        maxLength: 128
+      example: "<x-user-id>"
+    XUserRole:
+      name: x-user-role
+      in: header
+      required: false
+      description: Gateway-injected role (optional).
+      schema:
+        type: string
+        maxLength: 256
+      example: analyst
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Weak ETag from last read (optimistic concurrency).
+      schema:
+        type: string
+      example: "<if-match>"
+
+  headers:
+    XRequestId:
+      description: Request correlation id
+      schema:
+        type: string
+    ETag:
+      description: Weak ETag from upd_date
+      schema:
+        type: string
+    Location:
+      description: Location of newly created resource
+      schema:
+        type: string
+
+  schemas:
+    MeData:
+      type: object
+      required: [userId, ou, branch]
+      properties:
+        userId:
+          type: string
+          maxLength: 128
+        ou:
+          type: string
+          maxLength: 128
+        branch:
+          type: string
+          maxLength: 128
+        role:
+          type: ["string", "null"]
+
+    MeEnvelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: ["string", "null"]
+        data:
+          $ref: "#/components/schemas/MeData"
+        requestId:
+          type: string
+
+    Envelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: ["string", "null"]
+        data: {}
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        requestId:
+          type: string
+
+    Pagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    ErrorEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, requestId]
+          properties:
+            success:
+              const: false
+            data:
+              type: ["object", "null"]
+              properties:
+                errors:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ValidationErrorItem"
+                dependencies:
+                  type: array
+                  items:
+                    type: object
+            requestId:
+              type: string
+
+    ValidationErrorItem:
+      type: object
+      required: [path, code, message]
+      properties:
+        path:
+          type: string
+        code:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_]{1,39}$"
+        message:
+          type: string
+          maxLength: 500
+
+    Item:
+      type: object
+      required: [id, code, name, description, status, tags]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        tags:
+          type: array
+          items:
+            type: string
+
+    ItemEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              $ref: "#/components/schemas/Item"
+
+    ListItemsEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data, pagination]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Item"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+    DeleteEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          required: [success, code, message, data]
+          properties:
+            success:
+              const: true
+            code:
+              type: string
+              const: SUCCESS
+            message:
+              type: ["string", "null"]
+            data:
+              type: object
+              required: [deleted]
+              properties:
+                deleted:
+                  type: boolean
+                  const: true
+
+    CreateItem:
+      type: object
+      required: [code, name, status]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        tags:
+          type: array
+          items:
+            type: string
+
+    ReplaceItem:
+      $ref: "#/components/schemas/CreateItem"
+
+    PatchItem:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        tags:
+          type: array
+          items:
+            type: string
+
+  responses:
+    InvalidParam:
+      description: Request validation failed
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          examples:
+            invalid:
+              value:
+                success: false
+                code: INVALID_PARAM
+                message: Validation failed
+                data:
+                  errors:
+                    - path: code
+                      code: REQUIRED
+                      message: Field is required
+                requestId: 018f3c2e-0000-7000-8000-000000000004
+
+    InvalidHeader:
+      description: Invalid or duplicate request header
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    GatewayAuthFailed:
+      description: Missing or invalid gateway secret
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    MissingUserContext:
+      description: Required user context is missing
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    UnsupportedMediaType:
+      description: Missing/unsupported content-type
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    ItemNotFound:
+      description: Example item not found
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          examples:
+            notFound:
+              value:
+                success: false
+                code: RESOURCE_NOT_FOUND
+                message: Example item not found
+                data: null
+                requestId: 018f3c2e-0000-7000-8000-000000000003
+
+    ItemDuplicate:
+      description: Unique index conflict (same code for this OU and branch)
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          examples:
+            dup:
+              value:
+                success: false
+                code: DUPLICATE
+                message: Example item code already exists for this tenant
+                data: null
+                requestId: 018f3c2e-0000-7000-8000-000000000005
+
+    VersionConflict:
+      description: If-Match value is stale
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    PreconditionRequired:
+      description: Missing If-Match header
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+    TooManyRequests:
+      description: Request rate exceeded
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          examples:
+            rateLimited:
+              value:
+                success: false
+                code: TOO_MANY_REQUESTS
+                message: Too many requests, please try again later.
+                data: null
+                requestId: 018f3c2e-0000-7000-8000-000000000006
+
+    InternalError:
+      description: Internal server error
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
