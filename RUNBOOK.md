@@ -2,7 +2,7 @@
 
 เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `.demo/`) / **`smart-report`**)
 
-**ดัชนีพอร์ต local (อัปเดตเมื่อเพิ่ม service):** [`docs/local-ports.md`](./docs/local-ports.md)
+**ดัชนีพอร์ต local (อัปเดตเมื่อเพิ่ม service):** [`local-ports.md`](./local-ports.md)
 
 ---
 
@@ -80,7 +80,7 @@ npm run dev
 
 ### 📺 Upstream เสริม (เมื่อใช้ default `ROUTES_JSON` จาก `gateway/.env.example`)
 
-รันเพิ่มตามต้องการ — **`GATEWAY_SECRET` (gateway) ต้องตรงกับ `GATEWAY_SHARED_SECRET` / secret ฝั่ง upstream** ที่เกี่ยวข้อง — สรุปพอร์ตแบบตารางเต็มอยู่ที่ [`docs/local-ports.md`](./docs/local-ports.md)
+รันเพิ่มตามต้องการ — **`GATEWAY_SECRET` (gateway) ต้องตรงกับ `GATEWAY_SHARED_SECRET` / secret ฝั่ง upstream** ที่เกี่ยวข้อง — สรุปพอร์ตแบบตารางเต็มอยู่ที่ [`local-ports.md`](./local-ports.md)
 
 | Terminal | Service | พอร์ต (ค่าเริ่มต้นใน repo) | โฟลเดอร์ |
 |----------|---------|---------------------------|----------|

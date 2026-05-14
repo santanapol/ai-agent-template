@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Add [`docs/local-ports.md`](./docs/local-ports.md): central index of **default local HTTP ports** per service (`auth`, `gateway`, demo upstream, optional members/smart-report, Vite); link from [`README.md`](./README.md), [`RUNBOOK.md`](./RUNBOOK.md), and [`PROJECT_TREE.md`](./PROJECT_TREE.md).
+- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional members/smart-report, Vite); links from [`README.md`](./README.md), [`RUNBOOK.md`](./RUNBOOK.md), and [`PROJECT_TREE.md`](./PROJECT_TREE.md).
 - Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
 - Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
 - Add gateway `spec:lint` script for OpenAPI linting with org Spectral rules.

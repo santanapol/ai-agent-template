@@ -4,9 +4,9 @@
 
 ไฟล์นี้อยู่ที่ **root ของ repo `access-platform`** (track ใน Git ของ repo นี้)
 
-อัปเดต: **2026-05-14** — บันทึก **legacy `access/`** (§1.2); layout รากยังเป็น **`auth/`**, **`gateway/`**, **`.demo/crud-service/`**, **`www/`** เหมือนเดิม · **2026-05-12** — โฟลเดอร์ **`services/`** อยู่ใน workspace แต่ **ไม่ถูก track** โดย Git ของ repo นี้ (ดู [`.gitignore`](./.gitignore))
+อัปเดต: **2026-05-14** — [`local-ports.md`](./local-ports.md) อยู่ที่ root (ดัชนี PORT local dev) · บันทึก **legacy `access/`** (§1.2); layout รากยังเป็น **`auth/`**, **`gateway/`**, **`.demo/crud-service/`**, **`www/`** เหมือนเดิม · **2026-05-12** — โฟลเดอร์ **`services/`** อยู่ใน workspace แต่ **ไม่ถูก track** โดย Git ของ repo นี้ (ดู [`.gitignore`](./.gitignore))
 
-เอกสารอื่นใน repo เดียวกัน: [`README.md`](./README.md) · [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`RUNBOOK.md`](./RUNBOOK.md) · [`docs/local-ports.md`](./docs/local-ports.md) (ดัชนี **PORT** สำหรับ local dev)
+เอกสารอื่นใน repo เดียวกัน: [`README.md`](./README.md) · [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`RUNBOOK.md`](./RUNBOOK.md) · [`local-ports.md`](./local-ports.md) (ดัชนี **PORT** สำหรับ local dev)
 
 ## 1. Layout (relative to repo root)
 
@@ -14,8 +14,7 @@
 .
 ├── README.md              # ภาพรวม repo, document map, ลิงก์ SoT ต่อบทบาท
 ├── PROJECT_TREE.md        # เอกสารนี้ — SoT โครงสร้างโฟลเดอร์หลัก
-├── docs/                  # ดัชนี repo ข้ามแพ็กเกจ (เช่น พอร์ต local dev)
-│   └── local-ports.md     # ตาราง default PORT — อัปเดตเมื่อเพิ่มบริการ
+├── local-ports.md         # ดัชนี default PORT (local dev) — อัปเดตเมื่อเพิ่มบริการ
 ├── ARCHITECTURE.md        # ภาพรวมระบบ, ADR, trust boundary, diagrams
 ├── RUNBOOK.md             # ปฏิบัติการ monorepo, E2E, deploy checklist
 ├── CHANGELOG.md           # release notes ระดับ repo

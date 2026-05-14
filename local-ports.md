@@ -12,17 +12,17 @@
 
 | Service / role | Default `PORT` | Package / path | Notes |
 |----------------|----------------|----------------|-------|
-| **auth** | **3001** | [`auth/`](../auth/) | JWKS: `http://127.0.0.1:3001/.well-known/jwks.json` — `gateway` ตั้ง `JWT_JWKS_URL` ให้ตรง |
-| **gateway** | **3002** | [`gateway/`](../gateway/) | Entry สำหรับ client ที่ยิง API ผ่าน proxy |
-| **crud-service** (demo upstream) | **3003** | [`.demo/crud-service/`](../.demo/crud-service/) | ตัวอย่างใน [`gateway/.env.example`](../gateway/.env.example) `ROUTES_JSON` / [`gateway/routes.json`](../gateway/routes.json) |
-| **members** (optional workspace) | **3004** | [`services/members/`](../services/members/) (ถ้ามีบนเครื่อง) | ตัวอย่างใน `ROUTES_JSON` ชี้ `/api/v1/members` → `:3004` |
-| **smart-report** (optional) | **3000** | workspace นอก template (เช่น `services/smart-report/`) | อ้างอิงใน [`gateway/.env.example`](../gateway/.env.example) คอมเมนต์ — ไม่บังคับเปิด |
+| **auth** | **3001** | [`auth/`](./auth/) | JWKS: `http://127.0.0.1:3001/.well-known/jwks.json` — `gateway` ตั้ง `JWT_JWKS_URL` ให้ตรง |
+| **gateway** | **3002** | [`gateway/`](./gateway/) | Entry สำหรับ client ที่ยิง API ผ่าน proxy |
+| **crud-service** (demo upstream) | **3003** | [`.demo/crud-service/`](./.demo/crud-service/) | ตัวอย่างใน [`gateway/.env.example`](./gateway/.env.example) `ROUTES_JSON` / [`gateway/routes.json`](./gateway/routes.json) |
+| **members** (optional workspace) | **3004** | [`services/members/`](./services/members/) (ถ้ามีบนเครื่อง) | ตัวอย่างใน `ROUTES_JSON` ชี้ `/api/v1/members` → `:3004` |
+| **smart-report** (optional) | **3000** | workspace นอก template (เช่น `services/smart-report/`) | อ้างอิงใน [`gateway/.env.example`](./gateway/.env.example) คอมเมนต์ — ไม่บังคับเปิด |
 
 ## Browser / frontend (dev)
 
 | Artifact | Default | Path | Notes |
 |----------|---------|------|-------|
-| **Vite dev** (www app) | **5173** | [`www/app/`](../www/app/) | ค่า `CORS_ORIGINS` บน `auth` / `gateway` มักใส่ `http://localhost:5173` และ `http://127.0.0.1:5173` — ดู [`www/app/.env.example`](../www/app/.env.example) |
+| **Vite dev** (www app) | **5173** | [`www/app/`](./www/app/) | ค่า `CORS_ORIGINS` บน `auth` / `gateway` มักใส่ `http://localhost:5173` และ `http://127.0.0.1:5173` — ดู [`www/app/.env.example`](./www/app/.env.example) |
 
 ## Dependencies (not repo HTTP services)
 
@@ -34,5 +34,5 @@
 
 ## Related
 
-- [RUNBOOK.md](../RUNBOOK.md) — ลำดับรัน terminal และ smoke `curl`
-- [PROJECT_TREE.md](../PROJECT_TREE.md) — layout monorepo
+- [RUNBOOK.md](./RUNBOOK.md) — ลำดับรัน terminal และ smoke `curl`
+- [PROJECT_TREE.md](./PROJECT_TREE.md) — layout monorepo
