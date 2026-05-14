@@ -1,0 +1,17 @@
+[
+  {
+    "prefix": "/api/v1/members",
+    "upstream": "http://127.0.0.1:3004",
+    "stripPrefix": false
+  },
+  {
+    "prefix": "/api/v1/items",
+    "upstream": "http://127.0.0.1:3003",
+    "stripPrefix": false
+  },
+  {
+    "prefix": "/api/v1/me",
+    "upstream": "http://127.0.0.1:3003",
+    "stripPrefix": false
+  }
+]
