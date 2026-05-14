@@ -15,6 +15,16 @@ export function createAuthController({ service, env, types }) {
       .type('application/problem+json')
       .send(problemPayload({ type, title, status, detail, code }))
 
+  const sendRequestBodyValidationFailed = (reply) =>
+    sendProblem(
+      reply,
+      400,
+      types.validation,
+      'Bad Request',
+      'Request body failed validation.',
+      'AUTH_INVALID_REQUEST'
+    )
+
   const applyCookie = (reply, cookie) => {
     if (!cookie) return
     reply.setCookie(cookie.name, cookie.value, {
@@ -39,14 +49,7 @@ export function createAuthController({ service, env, types }) {
     async login(request, reply) {
       const { error, value } = loginBodySchema.validate(request.body ?? {})
       if (error) {
-        return sendProblem(
-          reply,
-          400,
-          types.validation,
-          'Bad Request',
-          'Request body failed validation.',
-          'AUTH_INVALID_REQUEST'
-        )
+        return sendRequestBodyValidationFailed(reply)
       }
       const ip = request.ip
       const result = await service.login({
@@ -66,14 +69,7 @@ export function createAuthController({ service, env, types }) {
     async refresh(request, reply) {
       const { error, value } = refreshBodySchema.validate(request.body ?? {})
       if (error) {
-        return sendProblem(
-          reply,
-          400,
-          types.validation,
-          'Bad Request',
-          'Request body failed validation.',
-          'AUTH_INVALID_REQUEST'
-        )
+        return sendRequestBodyValidationFailed(reply)
       }
       const { raw, channel } = service.pickRefreshToken({
         cookies: request.cookies ?? {},
@@ -105,14 +101,7 @@ export function createAuthController({ service, env, types }) {
     async logout(request, reply) {
       const { error, value } = logoutBodySchema.validate(request.body ?? {})
       if (error) {
-        return sendProblem(
-          reply,
-          400,
-          types.validation,
-          'Bad Request',
-          'Request body failed validation.',
-          'AUTH_INVALID_REQUEST'
-        )
+        return sendRequestBodyValidationFailed(reply)
       }
       const { raw } = service.pickRefreshToken({
         cookies: request.cookies ?? {},
