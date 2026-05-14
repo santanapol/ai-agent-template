@@ -30,6 +30,11 @@ function isTransactionUnsupportedOnTopology(err) {
   )
 }
 
+/** Envelope for login/refresh outcomes that surface as HTTP 401 + RFC 7807 type. */
+function unauthorizedServiceOutcome(type) {
+  return { ok: false, status: 401, type, body: null, cookie: null }
+}
+
 export class AuthService {
   /**
    * @param {{
@@ -138,13 +143,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidCredentials,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidCredentials)
     }
 
     let valid = false
@@ -169,13 +168,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidCredentials,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidCredentials)
     }
 
     await this.clearThrottleKeys([ipKey, userThrottleKey(user._id)])
@@ -265,13 +258,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'missing_token' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidToken,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     const hash = hashRefreshToken(rawRefresh)
@@ -287,13 +274,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'not_found' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidToken,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     if (row.revoked_at) {
@@ -307,13 +288,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'token_reuse' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.tokenReuse,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.tokenReuse)
     }
 
     if (row.expires_at <= now) {
@@ -326,25 +301,13 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'expired' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidToken,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     const u = await this.repo.findUserById(row.user_id)
     if (!u) {
       await this.recordFailures([ipThrottleKey(ip)], now)
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidToken,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     const newPlain = generateOpaqueRefresh()
@@ -374,13 +337,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'concurrent_or_invalid' }
       })
-      return {
-        ok: false,
-        status: 401,
-        type: this.types.invalidToken,
-        body: null,
-        cookie: null
-      }
+      return unauthorizedServiceOutcome(this.types.invalidToken)
     } finally {
       await session.endSession()
     }
