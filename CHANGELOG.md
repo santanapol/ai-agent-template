@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
+- Remove vendored **`_coding-standards/`** at access-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../../_coding-standards/...`).
 - Remove broad gateway catch-all routing in favor of explicit allowlisted prefixes.
 
 ## [0.1.1] - 2026-04-17
