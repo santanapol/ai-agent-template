@@ -1,24 +1,24 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
 _(none)_
 
-## 0.2.3
+## [0.2.3] - 2026-05-15
 
 - **Review fixes (D3):** `REDIS_URL` **required** เมื่อ `NODE_ENV=production` (สอดคล้อง org `gateway/api.md`)
 - **Tests:** Redis `get` throw → `401`; `readyz` 503 เมื่อ Redis `ping` fail; `env-redis-production.test.js`
 - **CI:** `audit:check` ใน `npm run ci`
 - **Docs/OpenAPI:** `architecture.md` v1.3.4 — prod MUST `REDIS_URL`; §10 rollout checklist
 
-## 0.2.2
+## [0.2.2] - 2026-05-14
 
 - **D3 — `token_gen` at edge:** หลัง JWKS verify เทียบ JWT claim **`token_gen`** กับ Redis **`user:{sub}:token_gen`** (สัญญา auth D1) — stale / missing claim / Redis error (เมื่อ client เปิด) → **`401`** + **`GATEWAY_JWT_REJECTED`** (`jwt-auth.js`, `redis-token-gen.js`)
 - **`REDIS_URL`:** optional — ว่างข้าม Redis check; ตั้งแล้ว connect + **`readyz`** ping Redis
 - **Tests:** `test/lib/redis-token-gen.test.js`, `test/plugins/jwt-auth-token-gen.test.js`; proxy tests ใส่ `token_gen` ใน JWT
 - **Docs:** `docs/architecture.md` v1.3.3 (§5, §7, §9, §11.5); `docs/session-revoke-token-gen-changes.md` → implemented
 
-## 0.2.1
+## [0.2.1] - 2026-05-13
 
 - **Tenant claims at edge:** JWT ที่ proxy ต้องมี claim ที่แมปเป็น **`x-user-ou`** และ **`x-user-branch`** แบบ non-empty — ถ้าไม่ครบ → **`401`** + **`GATEWAY_CLAIM_REJECTED`** (`inject-context.js`) สอดคล้อง `_coding-standards/gateway/api.md` trusted headers **[Required]**
 - **Upstream client `detail`:** ข้อความ **`GATEWAY_UPSTREAM_UNAVAILABLE`** ไม่ใส่ path workspace / ชื่อ demo service — ย้ายไป `src/lib/upstream-problem-detail.js`
@@ -33,7 +33,7 @@ _(none)_
 - **ADR:** [`docs/adrs/001-gateway-esm-fastify.md`](./docs/adrs/001-gateway-esm-fastify.md) + [`README.md`](./README.md) ชี้ SoT/ADR; [`ARCHITECTURE.md`](../../ARCHITECTURE.md) อ้าง ADR ใน companion table
 - **OpenAPI:** `docs/openapi.yaml` → **OpenAPI 3.1.0**; `npm run ci` (`lint` + `test`)
 
-## 0.2.0
+## [0.2.0] - 2026-05-12
 
 - **Breaking:** ลบ `GET /health` — ใช้ **`GET /healthz`** (liveness) และ **`GET /readyz`** (readiness: ตรวจ JWKS) แทน สอดคล้อง `_coding-standards/gateway/api.md`
 - **Breaking:** ข้อผิดพลาดขอบ gateway (JWT / claim / upstream ที่ gateway map / readiness ล้มเหลว) ตอบ **`application/problem+json`** พร้อม **`code`** ตาม `_coding-standards/gateway/codes.yaml`
@@ -41,14 +41,14 @@ _(none)_
 - Env: **`PROBLEM_TYPE_BASE`**, **`READY_CHECK_TIMEOUT_MS`** (defaults ใน `src/config/env.js`)
 - Docs: อัปเดต `docs/architecture.md`, `ARCHITECTURE.md`, `docs/openapi.yaml`
 
-## 0.1.1
+## [0.1.1] - 2026-05-11
 
 - Hardening: `GATEWAY_SECRET` must be at least 32 characters (`src/config/env.js`).
 - Security: default error handler no longer forwards raw `Error` objects to clients for non-proxy failures; server logs full error only (`src/app.js`).
 - Observability: on JWT verify failure, log at `debug` with `jwtVerifyFailedCode` (no token / no PII) (`src/plugins/jwt-auth.js`).
 - Docs: deploy JWT/env checklist in [RUNBOOK](../RUNBOOK.md#deploy-jwt-env); OpenAPI description links to it.
 
-## 0.1.0
+## [0.1.0] - 2026-05-10
 
 - Initial `gateway` implementation aligned with `docs/architecture.md` (JWKS verify, header contract, prefix proxy routes, `/health`, graceful shutdown).
 - Minimal `docs/openapi.yaml` (`GET /health`, SoT links, Bearer JWT described for proxied routes).
