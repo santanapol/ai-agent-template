@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
 const schema = Joi.object({
+  NODE_ENV: Joi.string().valid('production', 'development', 'test').default('development'),
   TZ: Joi.string().valid('UTC').default('UTC'),
   PORT: Joi.number().integer().min(1).max(65535).default(3001),
   DATABASE_URI: Joi.string().required(),
@@ -28,7 +29,17 @@ const schema = Joi.object({
   COOKIE_SECURE: Joi.boolean().truthy('true').falsy('false').default(false),
   LOG_LEVEL: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error', 'fatal').default('info'),
   LOG_PRETTY: Joi.boolean().truthy('true').falsy('false').optional(),
-  SHUTDOWN_TIMEOUT_MS: Joi.number().integer().positive().max(120_000).default(10_000)
+  SHUTDOWN_TIMEOUT_MS: Joi.number().integer().positive().max(120_000).default(10_000),
+  AUTH_INTERNAL_SERVICE_SECRET: Joi.string().min(16).required(),
+  /**
+   * When set, auth publishes `user:{sub}:token_gen` after internal revoke (D1).
+   * Required in production (org gateway `token_gen` gate).
+   */
+  REDIS_URL: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().min(1).required(),
+    otherwise: Joi.string().allow('').default('')
+  })
 }).unknown(true)
 
 export function loadEnv(env = process.env) {

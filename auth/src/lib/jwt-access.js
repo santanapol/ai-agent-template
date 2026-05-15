@@ -28,6 +28,7 @@ export async function signAccessJwt({
   roleClaim,
   ouId,
   branchId,
+  tokenGen,
   issuer,
   audience,
   ttlSeconds
@@ -35,7 +36,8 @@ export async function signAccessJwt({
   const builder = new SignJWT({
     [roleClaim]: role,
     ou_id: ouId,
-    branch_id: branchId
+    branch_id: branchId,
+    token_gen: tokenGen
   })
     .setProtectedHeader({ alg: 'RS256', kid })
     .setSubject(sub)

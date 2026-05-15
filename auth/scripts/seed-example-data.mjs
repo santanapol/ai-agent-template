@@ -94,6 +94,7 @@ for (const row of examples) {
       $setOnInsert: {
         ou_id: SEED_OU_ID,
         branch_id: SEED_BRANCH_ID,
+        access_token_gen: 0,
         cr_by: 'seed_script',
         cr_date: now,
         cr_prog: SEED_PROG

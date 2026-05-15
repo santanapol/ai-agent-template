@@ -102,6 +102,15 @@ console.log('  ✔ auth_credential_throttle: uniq_throttle_key')
 console.log('  ✔ auth_audit_events: by_request_id, ttl_retention_until')
 console.log('')
 
+// ─── 1b. Backfill access_token_gen (O-16) ───────────────────────
+
+const backfill = await db
+  .collection(AUTH_COLLECTIONS.USERS)
+  .updateMany({ access_token_gen: { $exists: false } }, { $set: { access_token_gen: 0 } })
+if (backfill.modifiedCount > 0) {
+  console.log(`▶ backfill access_token_gen: ${backfill.modifiedCount} user(s)`)
+}
+
 // ─── 2. Admin user ──────────────────────────────────────────────
 
 console.log('▶ สร้าง admin user...')
@@ -125,6 +134,7 @@ if (existing) {
       $set: {
         password_hash,
         role: adminRole,
+        access_token_gen: existing.access_token_gen ?? 0,
         upd_by: 'init_db',
         upd_date: now,
         upd_prog: INIT_PROG
@@ -141,6 +151,7 @@ if (existing) {
     username: adminUsername,
     password_hash,
     role: adminRole,
+    access_token_gen: 0,
     cr_by: 'init_db',
     cr_date: now,
     cr_prog: INIT_PROG,

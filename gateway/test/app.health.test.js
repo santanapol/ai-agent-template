@@ -8,6 +8,21 @@ describe('GET /healthz and GET /readyz', () => {
   let app
   /** @type {import('node:http').Server | undefined} */
   let jwksServer
+  let redisPingFails = false
+
+  const mockRedis = {
+    async get () {
+      return null
+    },
+    async ping () {
+      if (redisPingFails) throw new Error('redis PING failed (test)')
+      return 'PONG'
+    },
+    get isOpen () {
+      return true
+    },
+    async quit () {}
+  }
 
   beforeAll(async () => {
     jwksServer = createServer((req, res) => {
@@ -32,7 +47,7 @@ describe('GET /healthz and GET /readyz', () => {
       ROUTES_JSON: '[{"prefix":"/api","upstream":"http://127.0.0.1:9","stripPrefix":true}]',
       ROUTES_FILE: ''
     })
-    app = await buildApp(env, { logger: false })
+    app = await buildApp(env, { logger: false, redisClient: mockRedis })
   })
 
   afterAll(async () => {
@@ -49,13 +64,22 @@ describe('GET /healthz and GET /readyz', () => {
     expect(typeof body.uptime).toBe('number')
   })
 
-  test('GET /readyz returns 200 when JWKS is reachable', async () => {
+  test('GET /readyz returns 200 when JWKS and Redis are reachable', async () => {
     const res = await app.inject({ method: 'GET', url: '/readyz' })
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.status).toBe('ok')
     expect(Array.isArray(body.dependencies)).toBe(true)
-    expect(body.dependencies.map((d) => d.name).sort()).toEqual(['jwks', 'routes'].sort())
+    expect(body.dependencies.map((d) => d.name).sort()).toEqual(['jwks', 'redis', 'routes'].sort())
+  })
+
+  test('GET /readyz returns 503 when Redis ping fails', async () => {
+    redisPingFails = true
+    const res = await app.inject({ method: 'GET', url: '/readyz' })
+    redisPingFails = false
+    expect(res.statusCode).toBe(503)
+    const body = JSON.parse(res.body)
+    expect(body.code).toBe('GATEWAY_NOT_READY')
   })
 
   test('GET /legacy /health is not served', async () => {

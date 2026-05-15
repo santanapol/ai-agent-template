@@ -7,6 +7,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
+import { decodeJwt } from 'jose'
 import { buildApp } from '../src/app.js'
 import { loadEnv } from '../src/config/env.js'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
@@ -33,7 +34,9 @@ function testEnv(databaseUri, jwtPrivateKeyPem) {
     TRUST_PROXY: false,
     PROBLEM_TYPE_BASE: 'https://example.invalid/auth/problems',
     ACCESS_TOKEN_TTL_SECONDS: 900,
-    REFRESH_TOKEN_TTL_SECONDS: 86_400
+    REFRESH_TOKEN_TTL_SECONDS: 86_400,
+    AUTH_INTERNAL_SERVICE_SECRET: 'test-internal-service-secret-32chars',
+    REDIS_URL: ''
   }
 }
 
@@ -57,6 +60,7 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
       parallelism: 4
     }),
     role: 'admin',
+    access_token_gen: 0,
     cr_by: 'test_seed',
     cr_date: now,
     cr_prog: 'test/auth.integration.test.js',
@@ -163,6 +167,10 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
     assert.equal(body.expires_in, 900)
     assert.ok(body.refresh_token)
     assert.match(body.access_token, /^[\w-]+\.[\w-]+\.[\w-]+$/u)
+
+    const user = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ username: TEST_USER })
+    const claims = decodeJwt(body.access_token)
+    assert.equal(claims.token_gen, user?.access_token_gen ?? 0)
   })
 
   let refresh1

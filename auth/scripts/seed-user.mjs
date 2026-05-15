@@ -57,6 +57,7 @@ const res = await db.collection(AUTH_COLLECTIONS.USERS).findOneAndUpdate(
     $setOnInsert: {
       ou_id: ouId,
       branch_id: branchId,
+      access_token_gen: 0,
       cr_by: 'seed_script',
       cr_date: now,
       cr_prog: SEED_PROG

@@ -4,3 +4,11 @@ variables:
     value: http://127.0.0.1:{{port}}
   - name: port
     value: '3001'
+  - name: internalServiceSecret
+    value: 9e3c4e6f2cff572fbc5ac89340bd76f04acfad9ca7d78baa
+    secret: true
+  - name: userId
+    value: 69eb13d680e5f666f0308e0e
+    description: |
+      Must equal JWT `sub` from **Login** (MongoDB `users._id`, 24-hex).
+      Wrong id → 404 AUTH_USER_NOT_FOUND. Not staff profile id.

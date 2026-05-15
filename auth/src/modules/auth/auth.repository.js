@@ -38,6 +38,7 @@ export class AuthRepository {
       username: data.username,
       password_hash: data.password_hash,
       role: data.role,
+      access_token_gen: 0,
       cr_by: actor.user_id,
       cr_date: now,
       cr_prog: actor.route,
@@ -166,5 +167,44 @@ export class AuthRepository {
       detail_safe: row.detail_safe ?? null,
       retention_until
     })
+  }
+
+  /**
+   * Bump `access_token_gen` and revoke active refresh tokens for a user (O-16).
+   * @param {import('mongodb').ObjectId} userId
+   * @param {Date} revokedAt
+   * @param {import('mongodb').ClientSession} [session]
+   */
+  async bumpAccessTokenGenAndRevokeSessions(userId, revokedAt, session) {
+    const user = await this.db
+      .collection(USERS)
+      .findOneAndUpdate(
+        { _id: userId },
+        { $inc: { access_token_gen: 1 } },
+        { session, returnDocument: 'after' }
+      )
+
+    if (!user) {
+      return { found: false, access_token_gen: 0, revoked_refresh_tokens: 0 }
+    }
+
+    const revokeResult = await this.db
+      .collection(REFRESH)
+      .updateMany(
+        { user_id: userId, revoked_at: null },
+        { $set: { revoked_at: revokedAt } },
+        { session }
+      )
+
+    const gen =
+      typeof user.access_token_gen === 'number' && Number.isInteger(user.access_token_gen)
+        ? user.access_token_gen
+        : 0
+
+    return {
+      found: true,
+      access_token_gen: gen,
+      revoked_refresh_tokens: revokeResult.modifiedCount
+    }
   }
 }

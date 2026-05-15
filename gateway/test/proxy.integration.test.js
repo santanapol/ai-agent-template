@@ -82,10 +82,11 @@ describe('gateway proxy (JWKS + upstream)', () => {
     const upstreamBase = `http://127.0.0.1:${upstreamPort}`
 
     accessToken = await new jose.SignJWT({
-      sub: 'user-1',
+      sub: '507f1f77bcf86cd799439011',
       role: 'admin',
       ou_id: 'ou-1',
-      branch_id: 'branch-1'
+      branch_id: 'branch-1',
+      token_gen: 0
     })
       .setProtectedHeader({ alg: 'RS256', kid })
       .setIssuedAt()
@@ -135,7 +136,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
     expect(body.hasAuthorization).toBe(false)
     expect(body.ou).toBe('ou-1')
     expect(body.branch).toBe('branch-1')
-    expect(body.uid).toBe('user-1')
+    expect(body.uid).toBe('507f1f77bcf86cd799439011')
     expect(body.role).toBe('admin')
     expect(body.ifMatch).toBe('W/"etag-123"')
     expect(body.secret).toBe('gateway-secret-32-chars-minimum-ok!!')
@@ -170,9 +171,10 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
   test('401 GATEWAY_CLAIM_REJECTED when JWT omits ou_id (tenant claim)', async () => {
     const token = await new jose.SignJWT({
-      sub: 'user-1',
+      sub: '507f1f77bcf86cd799439011',
       role: 'admin',
-      branch_id: 'branch-1'
+      branch_id: 'branch-1',
+      token_gen: 0
     })
       .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
       .setIssuedAt()
@@ -190,9 +192,10 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
   test('401 GATEWAY_CLAIM_REJECTED when JWT omits branch_id (tenant claim)', async () => {
     const token = await new jose.SignJWT({
-      sub: 'user-1',
+      sub: '507f1f77bcf86cd799439011',
       role: 'admin',
-      ou_id: 'ou-1'
+      ou_id: 'ou-1',
+      token_gen: 0
     })
       .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
       .setIssuedAt()

@@ -5,15 +5,21 @@ import mongoPlugin from './plugins/mongo.js'
 import { loadEnv } from './config/env.js'
 import { buildFastifyLoggerOptions } from './config/logger.js'
 import { problemPayload, problemTypes } from './lib/problem.js'
+import { createClient } from 'redis'
 import { loadSigningMaterial, finalizeJwk } from './lib/jwt-access.js'
 import { AuthRepository } from './modules/auth/auth.repository.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { createAuthController } from './modules/auth/auth.controller.js'
 import authRoutePlugin from './modules/auth/auth.route.js'
+import { createInternalController } from './modules/internal/internal.controller.js'
+import internalRoutePlugin from './modules/internal/internal.route.js'
 
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
- * @param {{ logger?: boolean }} [options]
+ * @param {{
+ *   logger?: boolean
+ *   redisClient?: import('redis').RedisClientType | { get: (k: string) => Promise<string | null>, set: (k: string, v: string) => Promise<unknown>, ping?: () => Promise<string> } | null
+ * }} [options]
  */
 export async function buildApp(env = loadEnv(), options = {}) {
   const types = problemTypes(env.PROBLEM_TYPE_BASE)
@@ -64,6 +70,25 @@ export async function buildApp(env = loadEnv(), options = {}) {
 
   await fastify.register(mongoPlugin, { uri: env.DATABASE_URI })
 
+  const serviceLog =
+    options.logger === false ? { warn: () => {}, error: () => {}, info: () => {} } : fastify.log
+
+  /** @type {import('redis').RedisClientType | { get: (k: string) => Promise<string | null>, set: (k: string, v: string) => Promise<unknown>, ping?: () => Promise<string> } | null} */
+  let redisClient = options.redisClient ?? null
+  const redisUrl = String(env.REDIS_URL ?? '').trim()
+  if (!redisClient && redisUrl) {
+    redisClient = createClient({ url: redisUrl })
+    redisClient.on('error', (err) => {
+      serviceLog.error({ err }, 'Redis client error')
+    })
+    await redisClient.connect()
+    fastify.addHook('onClose', async () => {
+      if (redisClient?.isOpen) {
+        await redisClient.quit().catch(() => {})
+      }
+    })
+  }
+
   const startedAtMs = Date.now()
   fastify.get('/healthz', async () => ({
     status: 'ok',
@@ -74,9 +99,14 @@ export async function buildApp(env = loadEnv(), options = {}) {
   fastify.get('/readyz', async (_request, reply) => {
     try {
       await fastify.mongo.db.admin().command({ ping: 1 })
+      const dependencies = [{ name: 'mongodb', status: 'ok' }]
+      if (redisClient) {
+        await redisClient.ping()
+        dependencies.push({ name: 'redis', status: 'ok' })
+      }
       return {
         status: 'ok',
-        dependencies: [{ name: 'mongodb', status: 'ok' }]
+        dependencies
       }
     } catch {
       return reply
@@ -104,7 +134,9 @@ export async function buildApp(env = loadEnv(), options = {}) {
     repo,
     mongoClient: fastify.mongo.client,
     privateKey,
-    types
+    types,
+    redisClient,
+    log: serviceLog
   })
   const controller = createAuthController({ service, env, types })
 
@@ -114,6 +146,13 @@ export async function buildApp(env = loadEnv(), options = {}) {
   })
 
   await fastify.register(authRoutePlugin, { controller, types })
+
+  const internalController = createInternalController({ service, types })
+  await fastify.register(internalRoutePlugin, {
+    controller: internalController,
+    types,
+    env
+  })
 
   return fastify
 }

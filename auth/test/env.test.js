@@ -9,7 +9,9 @@ test('loadEnv rejects TZ values other than UTC', () => {
         TZ: 'Asia/Bangkok',
         DATABASE_URI: 'mongodb://localhost:27017/auth',
         JWT_PRIVATE_KEY_PEM: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
-        JWKS_PUBLIC_URL: 'https://auth.test.invalid/.well-known/jwks.json'
+        JWKS_PUBLIC_URL: 'https://auth.test.invalid/.well-known/jwks.json',
+        AUTH_INTERNAL_SERVICE_SECRET: 'test-internal-service-secret-32chars',
+        REDIS_URL: ''
       }),
     /Invalid environment/u
   )

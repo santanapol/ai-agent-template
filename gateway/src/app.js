@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { createClient } from 'redis'
 import { buildFastifyLoggerOptions } from './config/logger.js'
 import { loadEnv } from './config/env.js'
 import { loadRoutes } from './config/routes.js'
@@ -38,7 +39,7 @@ function hasDuplicateHeader (raw, headers, headerName) {
 
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
- * @param {{ logger?: boolean }} [options]
+ * @param {{ logger?: boolean, redisClient?: import('redis').RedisClientType | { get: (key: string) => Promise<string | null>, ping?: () => Promise<string> } | null }} [options]
  */
 export async function buildApp (env = loadEnv(), options = {}) {
   const routes = loadRoutes(env)
@@ -125,7 +126,28 @@ export async function buildApp (env = loadEnv(), options = {}) {
     await fastify.register(cors, { origin: corsOrigins, credentials: true })
   }
 
-  await fastify.register(jwtAuthPlugin, { env })
+  const serviceLog =
+    options.logger === false
+      ? { warn: () => {}, error: () => {}, info: () => {} }
+      : fastify.log
+
+  /** @type {import('redis').RedisClientType | { get: (key: string) => Promise<string | null>, ping?: () => Promise<string> } | null} */
+  let redisClient = options.redisClient ?? null
+  const redisUrl = String(env.REDIS_URL ?? '').trim()
+  if (!redisClient && redisUrl) {
+    redisClient = createClient({ url: redisUrl })
+    redisClient.on('error', (err) => {
+      serviceLog.error({ err }, 'Redis client error')
+    })
+    await redisClient.connect()
+    fastify.addHook('onClose', async () => {
+      if (redisClient && 'isOpen' in redisClient && redisClient.isOpen) {
+        await redisClient.quit().catch(() => {})
+      }
+    })
+  }
+
+  await fastify.register(jwtAuthPlugin, { env, redisClient })
   await fastify.register(injectContextPlugin, { env })
 
   fastify.get('/healthz', async () => ({
@@ -164,12 +186,26 @@ export async function buildApp (env = loadEnv(), options = {}) {
       clearTimeout(timeoutId)
     }
 
+    const dependencies = [
+      { name: 'jwks', status: 'ok' },
+      { name: 'routes', status: 'ok' }
+    ]
+
+    if (redisClient) {
+      try {
+        await redisClient.ping()
+        dependencies.push({ name: 'redis', status: 'ok' })
+      } catch (err) {
+        request.log.warn({ err }, 'readyz: redis ping failed')
+        return fastify.gatewayProblem.send(reply, 'GATEWAY_NOT_READY', {
+          detail: 'Readiness check failed: Redis not available.'
+        })
+      }
+    }
+
     return {
       status: 'ok',
-      dependencies: [
-        { name: 'jwks', status: 'ok' },
-        { name: 'routes', status: 'ok' }
-      ]
+      dependencies
     }
   })
 

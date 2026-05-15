@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: '{{baseUrl}}/auth/refresh'
+  url: "{{baseUrl}}/auth/refresh"
   headers:
     - name: Content-Type
       value: application/json
@@ -18,7 +18,7 @@ http:
     type: json
     data: |-
       {
-        "refresh_token": "Ss5RwXp-pf5rVsOa7a5T1iHcYd9ZfOT1HkjNFeso258"
+        "refresh_token": "7VSlOCAmYtP1JgCKTGY2-XdVk5g9rgRyoJAdavTEt84"
       }
   auth: inherit
 

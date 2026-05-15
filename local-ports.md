@@ -29,6 +29,7 @@
 | Name | Default port | Notes |
 |------|--------------|-------|
 | **MongoDB** | **27017** | ใช้ร่วมกันโดย `auth`, upstream ตัวอย่าง ฯลฯ — connection string อยู่ใน `.env.example` ของแต่ละแพ็กเกจ |
+| **Redis** | **6379** | `token_gen` publish (auth) + verify (gateway) — รัน local ด้วย [`docker-compose.yml`](./docker-compose.yml); **`REDIS_URL`** ใน `auth` + `gateway` `.env` ต้องตรงกัน (`redis://127.0.0.1:6379/0`) |
 
 ---
 

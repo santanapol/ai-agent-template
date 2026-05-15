@@ -2,12 +2,13 @@
 
 Self-hosted identity provider (login, refresh, JWT issuance) for the `access-platform` monorepo.
 
-| Read                                                                  | Role                                                         |
-| --------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [docs/architecture.md](./docs/architecture.md)                        | **Production SoT** — contract, security, MongoDB, JWT / JWKS |
-| [openapi.yaml](./openapi.yaml)                                        | HTTP contract (lint: `npm run spec:lint`)                    |
-| [../../ARCHITECTURE.md](../../ARCHITECTURE.md)                        | System architecture / trust boundary                         |
-| [`_coding-standards/auth`](../../../_coding-standards/auth/README.md) | Org auth edge standard                                       |
+| Read                                                                                   | Role                                                                            |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [docs/session-revoke-token-gen-changes.md](./docs/session-revoke-token-gen-changes.md) | **Planned work** — internal session revoke + `token_gen` / gateway coordination |
+| [docs/architecture.md](./docs/architecture.md)                                         | **Production SoT** — contract, security, MongoDB, JWT / JWKS                    |
+| [openapi.yaml](./openapi.yaml)                                                         | HTTP contract (lint: `npm run spec:lint`)                                       |
+| [../../ARCHITECTURE.md](../../ARCHITECTURE.md)                                         | System architecture / trust boundary                                            |
+| [`_coding-standards/auth`](../../../_coding-standards/auth/README.md)                  | Org auth edge standard                                                          |
 
 ## Scripts
 

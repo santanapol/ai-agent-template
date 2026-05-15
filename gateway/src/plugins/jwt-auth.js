@@ -1,7 +1,15 @@
 import fp from 'fastify-plugin'
 import * as jose from 'jose'
+import {
+  getCurrentTokenGenFromRedis,
+  parseTokenGenFromPayload
+} from '../lib/redis-token-gen.js'
+
 /**
- * @typedef {{ env: ReturnType<import('../config/env.js').loadEnv> }} JwtAuthOptions
+ * @typedef {{
+ *   env: ReturnType<import('../config/env.js').loadEnv>
+ *   redisClient?: { get: (key: string) => Promise<string | null> } | null
+ * }} JwtAuthOptions
  */
 
 export default fp(
@@ -10,7 +18,7 @@ export default fp(
    * @param {JwtAuthOptions} opts
    */
   async function jwtAuthPlugin (fastify, opts) {
-    const { env } = opts
+    const { env, redisClient = null } = opts
     const JWKS = jose.createRemoteJWKSet(new URL(env.JWT_JWKS_URL))
 
     fastify.decorate(
@@ -32,6 +40,34 @@ export default fp(
           if (iss !== '') verifyOpts.issuer = iss
           if (aud !== '') verifyOpts.audience = aud
           const { payload } = await jose.jwtVerify(token, JWKS, verifyOpts)
+
+          const jwtGen = parseTokenGenFromPayload(payload)
+          if (jwtGen === null) {
+            return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED', {
+              detail: 'Access token is missing a valid token_gen claim.'
+            })
+          }
+
+          if (redisClient) {
+            const sub = payload.sub !== undefined && payload.sub !== null ? String(payload.sub).trim() : ''
+            if (sub === '') {
+              return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED')
+            }
+            try {
+              const currentGen = await getCurrentTokenGenFromRedis(redisClient, sub)
+              if (jwtGen < currentGen) {
+                return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED', {
+                  detail: 'Access token generation is stale.'
+                })
+              }
+            } catch (err) {
+              request.log.warn({ err, sub }, 'redis token_gen read failed')
+              return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED', {
+                detail: 'Unable to validate access token generation.'
+              })
+            }
+          }
+
           request.jwtPayload = payload
         } catch (err) {
           const code =

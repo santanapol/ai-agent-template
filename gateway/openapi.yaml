@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: gateway API
-  version: 0.2.1
+  version: 0.2.3
   contact:
     name: engineering
     email: engineering@example.invalid
@@ -24,6 +24,7 @@ info:
 
     ### Versioning
     `info.version` สอดคล้อง `package.json` ของ service — เมื่อมี breaking change ต่อ client ให้ bump SemVer และ sync SoT
+    D3 runtime gate: production ต้องตั้ง `REDIS_URL` — gateway เทียบ JWT `token_gen` กับ Redis (`user:{sub}:token_gen`) หลัง verify JWKS
 
   license:
     name: LicenseRef-Proprietary
@@ -89,6 +90,7 @@ paths:
       summary: Readiness
       description: |
         ตรวจอย่างน้อยว่า **`JWT_JWKS_URL`** โหลดได้ — ถ้าไม่ผ่านคืน **`503`** พร้อม **`application/problem+json`** (`code`: **`GATEWAY_NOT_READY`**)
+        เมื่อกำหนด **`REDIS_URL`** จะตรวจ Redis readiness (`PING`) เพิ่มเติมด้วย
       operationId: getReadyz
       security: []
       parameters:
@@ -286,6 +288,7 @@ components:
       bearerFormat: JWT
       description: |
         **RS256 access JWT** ตรวจด้วย **`JWT_JWKS_URL`** (และ optional `JWT_ISSUER` / `JWT_AUDIENCE`) — ใช้กับ **proxied routes** เท่านั้น (ไม่ใช่ `/healthz` หรือ `/readyz`)
+        เมื่อกำหนด `REDIS_URL` จะบังคับตรวจ claim `token_gen` เทียบ Redis key `user:{sub}:token_gen`; stale/missing/ตรวจไม่ได้จะถูกปฏิเสธด้วย `401`
 
   schemas:
     GatewayHealthzResponse:

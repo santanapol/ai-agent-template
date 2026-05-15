@@ -56,9 +56,43 @@ npm run init:db
 
 ---
 
+## 2.5 🟥 Redis (local — `token_gen` / immediate revoke)
+
+`auth` (publish) และ `gateway` (verify) ใช้ Redis key รูปแบบ **`user:{sub}:token_gen`** ร่วมกัน — สำหรับ dev แนะนำยก Redis ขึ้นด้วย Docker จาก root ของ monorepo:
+
+```bash
+cd access-platform   # โฟลเดอร์ที่มี docker-compose.yml
+docker compose up -d redis
+docker compose ps    # รอ health: healthy
+```
+
+ตรวจว่า Redis ตอบ:
+
+```bash
+docker compose exec redis redis-cli ping
+# PONG
+```
+
+ตั้งค่าใน **ทั้งสอง** แพ็กเกจ (คัดลอกจาก `.env.example` หรือ uncomment):
+
+```env
+REDIS_URL=redis://127.0.0.1:6379/0
+```
+
+| หัวข้อ | หมายเหตุ |
+|--------|----------|
+| **Production** | ใช้ managed Redis (ไม่ใช่ container บน laptop); `NODE_ENV=production` บังคับ `REDIS_URL` ใน auth + gateway |
+| **Dev ไม่มี Redis** | auth/gateway ยัง login ได้ แต่ **ไม่ทด E2E** “revoke แล้วตัด access ทันที” |
+| **หยุด Redis** | `docker compose down` (ข้อมูลใน container หาย — เหมาะกับ dev) |
+
+> [!TIP]
+> หลัง internal revoke (`POST /internal/users/{id}/sessions/revoke`) ให้ลอง access JWT เก่าผ่าน gateway — ควรได้ **401** เมื่อ Redis + gate เปิดครบ
+
+---
+
 ## 3. 🚀 การรัน Services
 
-ขั้นต่ำ: **`auth`** + **`gateway`** เปิดคนละ Terminal
+ขั้นต่ำ: **Redis** (§2.5 แนะนำ) + **`auth`** + **`gateway`** เปิดคนละ Terminal
 
 ### 📺 Terminal 1: `auth`
 มีหน้าที่ตรวจสอบรหัสผ่าน, ออก Access Token (JWT), และจัดการ Refresh Token
@@ -118,7 +152,9 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 | อาการ (Symptom) | สาเหตุที่เป็นไปได้ (Possible Causes) | วิธีแก้ไข (Resolution) |
 |---|---|---|
 | `E11000 duplicate key error` (MongoDB) | มี User ใช้ Username นี้ไปแล้ว (Username เป็น Globally Unique) | ใช้ Username อื่นในการสร้าง หรือลบข้อมูลเก่าทิ้งหากเป็นระบบ Dev |
-| Gateway ตอบ `401 Unauthorized` | 1. JWT หมดอายุ <br>2. Signature ไม่ตรง (Key คนละชุดกัน) <br>3. ไม่ได้แนบ Bearer Header | ตรวจสอบไฟล์ `.env` ของ Gateway ว่า `JWT_JWKS_URL` ชี้ไปหา `auth` ถูกต้องหรือไม่ |
+| Gateway ตอบ `401 Unauthorized` | 1. JWT หมดอายุ <br>2. Signature ไม่ตรง (Key คนละชุดกัน) <br>3. ไม่ได้แนบ Bearer Header <br>4. **`token_gen` stale** หลัง revoke (Redis) | ตรวจ `JWT_JWKS_URL`; ตรวจ `REDIS_URL` ตรงกับ auth; หลัง revoke ลอง login ใหม่เพื่อ JWT gen ล่าสุด |
+| Revoke แล้ว access เก่ายังผ่าน gateway | auth ไม่ publish Redis หรือ gateway ไม่ตั้ง `REDIS_URL` | เปิด `docker compose up -d redis`; ตั้ง `REDIS_URL` ใน **auth** + **gateway** `.env` |
+| `GET /readyz` ล้มเหลว (503) เมื่อตั้ง Redis | Redis ไม่รันหรือ port ชน | `docker compose ps`; แก้ port 6379 หรือ `REDIS_URL` |
 | Upstream ปฏิเสธ Request (`403 Forbidden`) — mesh secret | รหัส `x-gateway-secret` ไม่ตรงกัน หรือตั้งค่าความยาวไม่ถึง 32 ตัวอักษร | ตรวจสอบตัวแปร `GATEWAY_SECRET` (gateway) กับ `GATEWAY_SHARED_SECRET` (upstream เช่น **api-example**) ให้ตรงกัน 100% |
 | ขาด Tenant Scope (`x-user-ou` หรือ `x-user-branch` หายไป) | ไม่ได้ใส่ค่า `ou_id` / `branch_id` ให้ผู้ใช้ตอนสร้างใน DB | อัปเดตข้อมูลผู้ใช้ใน MongoDB แล้วให้ผู้ใช้ Login ใหม่เพื่อรับ JWT เล่มใหม่ |
 
@@ -165,13 +201,23 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 | OU → `x-user-ou` | `JWT_CLAIM_OU` (Default: `ou_id`) | `JWT_CLAIM_OU` **ต้องตรงกัน** |
 | Branch → `x-user-branch` | `JWT_CLAIM_BRANCH` (Default: `branch_id`) | `JWT_CLAIM_BRANCH` **ต้องตรงกัน** |
 
-### 6.5 `GATEWAY_SECRET` (Gateway + upstream ที่ไว้ใจ gateway)
+### 6.5 Redis (`token_gen` — auth + gateway)
+
+| จุดตรวจสอบ | `auth` | `gateway` |
+|---|---|---|
+| `REDIS_URL` | ต้องชี้ instance เดียวกัน (production **บังคับ**) | ต้องชี้ instance เดียวกัน (production **บังคับ**) |
+| Key contract | หลัง internal revoke สำเร็จ → `SET user:{sub}:token_gen` | หลัง JWKS verify → `GET user:{sub}:token_gen` |
+| Readiness | `GET /readyz` รวม `redis` เมื่อ client เปิด | `GET /readyz` รวม `redis` เมื่อ client เปิด |
+
+> Dev local: ใช้ [`docker-compose.yml`](./docker-compose.yml) — ดู [§2.5](#25--redis-local--token_gen--immediate-revoke)
+
+### 6.6 `GATEWAY_SECRET` (Gateway + upstream ที่ไว้ใจ gateway)
 
 - ความยาว **ต้องไม่ต่ำกว่า 32 ตัวอักษร** (มีเช็คใน Joi)
 - `GATEWAY_SECRET` ของ gateway ต้อง **ตรงกับ** secret ที่ upstream ใช้ตรวจแนว mesh (เช่น **`crud-service`** (`GATEWAY_SHARED_SECRET`) / `smart-report` — ตามที่แต่ละ service กำหนด)
 - ห้ามส่งค่านี้มาจากฝั่ง Client เด็ดขาด; Gateway จะเป็นคน Inject ใส่ Header ในชื่อ `x-gateway-secret` ด้วยตัวเองตอน Proxy
 
-### 6.6 เอกสารอ้างอิง API (OpenAPI / SoT)
+### 6.7 เอกสารอ้างอิง API (OpenAPI / SoT)
 
 | เอกสาร | หน้าที่ |
 |---|---|
@@ -182,7 +228,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 | [gateway-service/docs/architecture.md](gateway-service/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ภาพรวม trust boundary และ routing แบบหลาย upstream |
 
-### 6.7 Smoke Test หลัง Deploy
+### 6.8 Smoke Test หลัง Deploy
 
 1. ยิง `GET` ไปที่ Auth JWKS → ต้องได้สถานะ **200** พร้อม JSON `{ "keys": [...] }`
 2. ทำการ Login ผ่าน Auth → ได้รับ Access Token

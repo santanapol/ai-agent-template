@@ -2,15 +2,30 @@
 
 ## Unreleased
 
+_(none)_
+
+## 0.2.3
+
+- **Review fixes (D3):** `REDIS_URL` **required** เมื่อ `NODE_ENV=production` (สอดคล้อง org `gateway/api.md`)
+- **Tests:** Redis `get` throw → `401`; `readyz` 503 เมื่อ Redis `ping` fail; `env-redis-production.test.js`
+- **CI:** `audit:check` ใน `npm run ci`
+- **Docs/OpenAPI:** `architecture.md` v1.3.4 — prod MUST `REDIS_URL`; §10 rollout checklist
+
+## 0.2.2
+
+- **D3 — `token_gen` at edge:** หลัง JWKS verify เทียบ JWT claim **`token_gen`** กับ Redis **`user:{sub}:token_gen`** (สัญญา auth D1) — stale / missing claim / Redis error (เมื่อ client เปิด) → **`401`** + **`GATEWAY_JWT_REJECTED`** (`jwt-auth.js`, `redis-token-gen.js`)
+- **`REDIS_URL`:** optional — ว่างข้าม Redis check; ตั้งแล้ว connect + **`readyz`** ping Redis
+- **Tests:** `test/lib/redis-token-gen.test.js`, `test/plugins/jwt-auth-token-gen.test.js`; proxy tests ใส่ `token_gen` ใน JWT
+- **Docs:** `docs/architecture.md` v1.3.3 (§5, §7, §9, §11.5); `docs/session-revoke-token-gen-changes.md` → implemented
+
+## 0.2.1
+
 - **Tenant claims at edge:** JWT ที่ proxy ต้องมี claim ที่แมปเป็น **`x-user-ou`** และ **`x-user-branch`** แบบ non-empty — ถ้าไม่ครบ → **`401`** + **`GATEWAY_CLAIM_REJECTED`** (`inject-context.js`) สอดคล้อง `_coding-standards/gateway/api.md` trusted headers **[Required]**
 - **Upstream client `detail`:** ข้อความ **`GATEWAY_UPSTREAM_UNAVAILABLE`** ไม่ใส่ path workspace / ชื่อ demo service — ย้ายไป `src/lib/upstream-problem-detail.js`
 - **Proxy header merge:** trusted headers **ทับ** inbound หลัง strip (`register-proxies.js`) เพื่อทนต่อการขยาย whitelist
 - **CI:** `npm run ci` รวม **`spec:lint`**
 - **Docs:** **`openapi.yaml`** ที่ root แพ็กเกจ (ย้ายจาก `docs/openapi.yaml`) — ลิงก์ normative ของ `/auth/*` ชี้ไป **`auth/openapi.yaml`** (ฉบับเดียวหลังรวม spec ที่ `auth`)
 - **Docs:** `docs/architecture.md` — แก้ §4 / §12.2 ให้ตรง behavior 401 claim validation; §7 หมายเหตุ **`GATEWAY_ROUTE_NOT_CONFIGURED`** กับ startup fail-fast; §9 readyz `routes`; §14 PR gates; bump doc **1.3.2**
-
-## 0.2.1
-
 - **HTTP / registry alignment ([`CODE_MATRIX_TARGET.md`](../../../CODE_MATRIX_TARGET.md)):** Problem **`GATEWAY_CLAIM_REJECTED`** ใช้ **HTTP 401** (เดิม 400) ใน `src/lib/gateway-problems.js` + อัปเดต `docs/architecture.md` §7 · JWT verify ล้มเหลว → **`GATEWAY_JWT_REJECTED`** (รวมเคสเดิม `GATEWAY_JWT_INVALID` / `GATEWAY_JWT_EXPIRED`) ใน `jwt-auth.js` / `inject-context.js`
 - **Observability:** Pino **`redact`** ใน `buildFastifyLoggerOptions` ตาม `_coding-standards/backend/observability.md` §2.2 (ผ่าน `gateway/README.md`)
 - **Process:** `uncaughtException` / `unhandledRejection` → log fatal + `process.exit(1)` ใน `src/server.js`

@@ -2,15 +2,15 @@
 
 ## Metadata
 
-| Field                | Value                                                                                                                                                                            |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Filename**         | `docs/architecture.md`                                                                                                                                                           |
-| **Document index**   | [README.md](../README.md)                                                                                                                                                        |
-| **Status**           | Active — SoT ของ `auth` (login, refresh, และ JWT issuance แบบ self-hosted IdP)                                                                                                   |
-| **Companion docs**   | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) (ADR / ภาพรวม), [`gateway` production SoT](../../gateway/docs/architecture.md) (`gateway` verify + header contract)                |
-| **OpenAPI**          | [`openapi.yaml`](../openapi.yaml) — **SoT เดียว** สำหรับสัญญา HTTP (`npm run spec:lint`, `npm run spec:codes`) — คำอธิบาย normative เพิ่มเติมอยู่ใน section **4–5** ของเอกสารนี้ |
-| **Scope**            | เอกสารนี้ **ไม่** แทน `gateway` — client รับ JWT จาก service นี้ แล้วค่อยเรียก `gateway` ตาม [`docs/architecture.md`](../../gateway/docs/architecture.md) ของ `gateway`          |
-| **Document version** | `1.3.6`                                                                                                                                                                          |
+| Field                | Value                                                                                                                                                                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Filename**         | `docs/architecture.md`                                                                                                                                                                                                                                     |
+| **Document index**   | [README.md](../README.md)                                                                                                                                                                                                                                  |
+| **Status**           | Active — SoT ของ `auth` (login, refresh, และ JWT issuance แบบ self-hosted IdP)                                                                                                                                                                             |
+| **Companion docs**   | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) (ADR / ภาพรวม), [`gateway` production SoT](../../gateway/docs/architecture.md) (`gateway` verify + `token_gen`), [implementation checklist](./session-revoke-token-gen-changes.md) (O-16 / D1 — implemented) |
+| **OpenAPI**          | [`openapi.yaml`](../openapi.yaml) — **SoT เดียว** สำหรับสัญญา HTTP (`npm run spec:lint`, `npm run spec:codes`) — คำอธิบาย normative เพิ่มเติมอยู่ใน section **4–5** ของเอกสารนี้                                                                           |
+| **Scope**            | เอกสารนี้ **ไม่** แทน `gateway` — client รับ JWT จาก service นี้ แล้วค่อยเรียก `gateway` ตาม [`docs/architecture.md`](../../gateway/docs/architecture.md) ของ `gateway`                                                                                    |
+| **Document version** | `1.3.8`                                                                                                                                                                                                                                                    |
 
 ---
 
@@ -38,8 +38,8 @@
 | **1**  | บทบาทในระบบ                                                                                           |
 | **2**  | End-to-end flow                                                                                       |
 | **3**  | Goals & non-goals                                                                                     |
-| **4**  | API surface (normative)                                                                               |
-| **5**  | JWT contract (สอดคล้อง gateway)                                                                       |
+| **4**  | API surface (normative) — **4.4** internal revoke (O-16)                                              |
+| **5**  | JWT contract (สอดคล้อง gateway) — **`token_gen`** (O-16)                                              |
 | **6**  | Stack & โครงสร้างแนะนำ                                                                                |
 | **7**  | Security (production)                                                                                 |
 | **8**  | ข้อมูล & token storage (**8.1** store · **8.2** refresh · **8.3** MongoDB schema · **8.4** `mongosh`) |
@@ -165,18 +165,59 @@ sequenceDiagram
 
 **แยก semantics `429`:** มีสองกรณีที่ใช้ HTTP code เดียวกัน ดังนั้น client / observability **ต้อง** ใช้ค่า **`type`** ใน `problem+json` เพื่อแยกอย่างน้อยระหว่าง **rate limit ทั่วไป** กับ **IP credential throttle**; **ห้าม** ใช้ `type` เดียวกันทั้งสองกรณี
 
+### 4.4 Internal API — revoke sessions by user (O-16 — implemented)
+
+> **สถานะ:** implemented ในแพ็กเกจ auth (v0.1.5+) — สัญญา HTTP อยู่ที่ [`openapi.yaml`](../openapi.yaml); checklist รายการย่อยที่ [`session-revoke-token-gen-changes.md`](./session-revoke-token-gen-changes.md)
+
+Trusted service (เช่น **staff** หลัง archive profile สำเร็จ) เรียกตัดทุก refresh session ของผู้ใช้และ bump **`access_token_gen`** เพื่อให้ gateway ปฏิเสธ access JWT เก่าทันที (ร่วมกับ [`gateway` session-revoke doc](../../gateway/docs/session-revoke-token-gen-changes.md))
+
+| Method | Path                                        | Description                                                                                           |
+| ------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `POST` | `/internal/users/{user_id}/sessions/revoke` | Revoke ทุก `auth_refresh_tokens` ที่ `revoked_at: null` ของ `user_id` + **`$inc` `access_token_gen`** |
+
+**Trust boundary (ล็อก O-15 + O-16):**
+
+- Path อยู่ใต้ **`/internal/*`** — **ห้าม** expose สู่ public internet โดยไม่มี network/auth แยก (private network, mTLS, VPN หรือ reverse proxy ภายใน)
+- Caller **ต้อง** ส่ง **`Authorization: Bearer <AUTH_INTERNAL_SERVICE_SECRET>`** — ตรวจแบบ **constant-time**; secret **แยกจาก** `GATEWAY_SHARED_SECRET`; ผิดหรือขาด → **`401 Unauthorized`** (`AUTH_INTERNAL_UNAUTHORIZED`)
+- **ไม่** ผ่าน `gateway` mesh header contract — เป็น service-to-service โดยตรง
+
+**Request**
+
+| Part        | Rule                                                                                                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `user_id`   | path param — **ต้อง** เป็น **ObjectId** 24-hex; ไม่ valid → **`400 Bad Request`** (`AUTH_INVALID_REQUEST`)           |
+| Body (JSON) | **Optional:** `reason` (เช่น `staff.profile_archive`), `correlation_id` — สำหรับ audit + idempotent retry จาก caller |
+
+**Response (สำเร็จ — `200 OK`)**
+
+| Field                    | Description                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `revoked_refresh_tokens` | จำนวนแถว `auth_refresh_tokens` ที่ตั้ง `revoked_at` ในรอบนี้ (อาจเป็น **0**) |
+| `access_token_gen`       | ค่าหลัง **`$inc`** — ใช้ยืนยัน idempotent retry                              |
+
+**Idempotency:** เรียกซ้ำด้วย `user_id` ที่มีอยู่ (แม้ไม่มี refresh ค้าง) → **`200`** + `revoked_refresh_tokens` (อาจ **0**) + `access_token_gen` หลัง **`$inc` ทุกครั้ง** (gen เพิ่มทุก call ที่สำเร็จ). **`user_id` ไม่พบ** → **`404`** (`AUTH_USER_NOT_FOUND`). เมื่อตั้ง **`REDIS_URL`** — หลัง bump DB ต้อง **`SET`** Redis สำเร็จ; ล้มเหลว → **`503`** (`AUTH_NOT_READY`, fail-closed)
+
+**Rate limit:** **ต้อง** แยก bucket จาก `POST /auth/login|refresh|logout` — ระบุใน OpenAPI (`x-ratelimit`)
+
+**Audit:** persist `auth_audit_events` ด้วย `event_type` = **`auth.sessions_revoked_by_service`**, `outcome` = `success`, `user_id`, `request_id` / `correlation_id`, และ `detail_safe.reason` (ถ้ามี)
+
+**Caller ที่คาดหวัง (นอกแพ็กเกจ auth):** **staff** — **archive profile ก่อน** revoke; retry idempotent + `correlation_id`; env: `AUTH_INTERNAL_BASE_URL` + `AUTH_INTERNAL_SERVICE_SECRET`
+
 ---
 
 ## 5. JWT contract (สอดคล้อง gateway)
 
 access JWT **ต้อง** มี claims ที่ Gateway แมปไป `x-user-id` / `x-user-role` ได้ตรงกับ env บน Gateway
 
-| Claim                                          | Must match                                                                                                                              |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `sub` (หรือ claim ที่ `JWT_CLAIM_USER_ID` ชี้) | ค่าที่ใส่ใน `x-user-id` และ **ควร** เป็น ASCII printable; **ต้องไม่** เกิน **128** chars มิฉะนั้น Gateway ตอบ `400` ตาม header contract |
-| role claim (ที่ `JWT_CLAIM_ROLE` ชี้)          | ค่าที่ใส่ใน `x-user-role` (รูปแบบ section 12.2 ของ [gateway SoT](../../gateway/docs/architecture.md))                                   |
-| `iss`, `aud`                                   | **ต้อง** ตรงกับ `JWT_ISSUER` / `JWT_AUDIENCE` บน Gateway ถ้ามีการตรวจ                                                                   |
-| `exp`                                          | access TTL — **ล็อก O-07:** **900 วินาที** (15 นาที) ค่าเริ่มต้น production                                                             |
+| Claim                                          | Must match                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sub` (หรือ claim ที่ `JWT_CLAIM_USER_ID` ชี้) | ค่าที่ใส่ใน `x-user-id` และ **ควร** เป็น ASCII printable; **ต้องไม่** เกิน **128** chars มิฉะนั้น Gateway ตอบ `400` ตาม header contract                                                                                                                                                                                                              |
+| role claim (ที่ `JWT_CLAIM_ROLE` ชี้)          | ค่าที่ใส่ใน `x-user-role` (รูปแบบ section 12.2 ของ [gateway SoT](../../gateway/docs/architecture.md))                                                                                                                                                                                                                                                |
+| `iss`, `aud`                                   | **ต้อง** ตรงกับ `JWT_ISSUER` / `JWT_AUDIENCE` บน Gateway ถ้ามีการตรวจ                                                                                                                                                                                                                                                                                |
+| `exp`                                          | access TTL — **ล็อก O-07:** **900 วินาที** (15 นาที) ค่าเริ่มต้น production                                                                                                                                                                                                                                                                          |
+| `token_gen`                                    | **ล็อก O-16:** integer — **ต้อง** เท่ากับ `auth_users.access_token_gen` ณ เวลา mint (login / refresh); gateway เปรียบเทียบกับ Redis `user:{sub}:token_gen` หลัง verify signature — JWT ที่ `token_gen` **น้อยกว่า** ค่าปัจจุบัน **ต้อง** ถูกปฏิเสธที่ edge (ดู [gateway session-revoke doc](../../gateway/docs/session-revoke-token-gen-changes.md)) |
+
+**Mint flow (O-16):** หลังพบ user สำหรับ login หรือหลัง refresh สำเร็จ — อ่าน **`access_token_gen`** ปัจจุบันจาก DB แล้วใส่ใน access JWT เป็น claim **`token_gen`** ก่อน sign
 
 **Algorithm (ล็อก O-08):** **ต้อง** ใช้โหมด **(B) asymmetric (แนะนำ RS256 หรือ ES256) + JWKS** ที่ Gateway ดึง และ **ห้าม** mismatch กับการ verify บน Gateway
 
@@ -276,20 +317,21 @@ auth/
 
 #### Collection `auth_users`
 
-| Field           | Type     | Required | Description                                                                                                |
-| --------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| `_id`           | ObjectId | Yes      | primary key                                                                                                |
-| `ou_id`         | ObjectId | Yes      | รหัสองค์กร — tenant scoping ตาม [`tenant-audit.md`](../../../../_coding-standards/backend/tenant-audit.md) |
-| `branch_id`     | ObjectId | Yes      | รหัสสาขา — tenant scoping ตาม [`tenant-audit.md`](../../../../_coding-standards/backend/tenant-audit.md)   |
-| `username`      | string   | Yes      | ค่าหลัง normalize (trim + lowercase) — ใช้ login; **Globally Unique** (ไม่ scope ตาม tenant)               |
-| `password_hash` | string   | Yes      | ผล **Argon2id** แบบ encoded string (รวม params ตาม lib) — **ห้าม** plaintext                               |
-| `role`          | string   | Yes      | ค่าที่ map ไป JWT role claim (สอดคล้อง `JWT_CLAIM_ROLE` บน Gateway)                                        |
-| `cr_by`         | string   | Yes      | ID ผู้สร้าง (`x-user-id`) — **insert only**, immutable                                                     |
-| `cr_date`       | Date     | Yes      | วันที่สร้าง (UTC) — **insert only**, immutable                                                             |
-| `cr_prog`       | string   | Yes      | route template ที่ใช้สร้าง — **insert only**, immutable                                                    |
-| `upd_by`        | string   | Yes      | ID ผู้แก้ไขล่าสุด (`x-user-id`) — refresh ทุก update                                                       |
-| `upd_date`      | Date     | Yes      | วันที่แก้ไขล่าสุด (UTC) — refresh ทุก update; ใช้สร้าง ETag                                                |
-| `upd_prog`      | string   | Yes      | route template ที่แก้ไขล่าสุด — refresh ทุก update                                                         |
+| Field              | Type     | Required | Description                                                                                                                                                                                                                         |
+| ------------------ | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_id`              | ObjectId | Yes      | primary key                                                                                                                                                                                                                         |
+| `ou_id`            | ObjectId | Yes      | รหัสองค์กร — tenant scoping ตาม [`tenant-audit.md`](../../../../_coding-standards/backend/tenant-audit.md)                                                                                                                          |
+| `branch_id`        | ObjectId | Yes      | รหัสสาขา — tenant scoping ตาม [`tenant-audit.md`](../../../../_coding-standards/backend/tenant-audit.md)                                                                                                                            |
+| `username`         | string   | Yes      | ค่าหลัง normalize (trim + lowercase) — ใช้ login; **Globally Unique** (ไม่ scope ตาม tenant)                                                                                                                                        |
+| `password_hash`    | string   | Yes      | ผล **Argon2id** แบบ encoded string (รวม params ตาม lib) — **ห้าม** plaintext                                                                                                                                                        |
+| `role`             | string   | Yes      | ค่าที่ map ไป JWT role claim (สอดคล้อง `JWT_CLAIM_ROLE` บน Gateway)                                                                                                                                                                 |
+| `access_token_gen` | int      | Yes      | **Monotonic** generation counter สำหรับ access JWT — เริ่ม **`0`** (หรือ **`1`** — ล็อก default ใน migration); bump ด้วย **`$inc`** เมื่อ internal revoke-by-user; ค่าปัจจุบัน **ต้อง** ใส่ใน JWT claim **`token_gen`** (section 5) |
+| `cr_by`            | string   | Yes      | ID ผู้สร้าง (`x-user-id`) — **insert only**, immutable                                                                                                                                                                              |
+| `cr_date`          | Date     | Yes      | วันที่สร้าง (UTC) — **insert only**, immutable                                                                                                                                                                                      |
+| `cr_prog`          | string   | Yes      | route template ที่ใช้สร้าง — **insert only**, immutable                                                                                                                                                                             |
+| `upd_by`           | string   | Yes      | ID ผู้แก้ไขล่าสุด (`x-user-id`) — refresh ทุก update                                                                                                                                                                                |
+| `upd_date`         | Date     | Yes      | วันที่แก้ไขล่าสุด (UTC) — refresh ทุก update; ใช้สร้าง ETag                                                                                                                                                                         |
+| `upd_prog`         | string   | Yes      | route template ที่แก้ไขล่าสุด — refresh ทุก update                                                                                                                                                                                  |
 
 **Membership policy (contract lock):**
 
@@ -343,6 +385,7 @@ auth/
 2. **Refresh:** `findOne` ด้วย `token_hash` — ถ้าพบแถวที่ **`revoked_at` ไม่ null** (นำ token เก่ามาใช้ซ้ำหลัง rotate) → ถือเป็น **reuse** → `updateMany` ตาม `family_id` เพื่อตั้ง `revoked_at` ทั้งกลุ่ม แล้วตอบ **401**; ถ้าไม่พบแถว → ตอบ **401**; ถ้าพบแถวที่ `revoked_at` เป็น null และ `expires_at` > now → ไปข้อ 3
 3. **Refresh สำเร็จ:** ตั้ง `revoked_at` ที่แถวเดิม แล้ว insert แถวใหม่ (`family_id` เดิม, `replaced_by_id` ชี้แถวใหม่)
 4. **Logout (O-03):** `updateMany` `{ family_id, revoked_at: null }` เพื่อกำหนด `revoked_at`
+5. **Internal revoke-by-user (O-16):** ภายใน transaction (หรือลำดับเขียนที่กำหนด): (1) **`$inc` `access_token_gen`** บน `auth_users` ที่ `_id = user_id` (2) **`updateMany`** `auth_refresh_tokens` ที่ `{ user_id, revoked_at: null }` → set **`revoked_at`**; เรียกซ้ำด้วย `user_id` เดิม **ต้อง** idempotent (**200**, `revoked_refresh_tokens` อาจเป็น **0**); **ควร** publish ค่า `access_token_gen` ใหม่ไป Redis (`user:{sub}:token_gen`) เพื่อให้ gateway ตรวจได้ทันที — รายละเอียด HTTP ที่ **section 4.4**
 
 ---
 
@@ -380,17 +423,17 @@ auth/
 
 ถ้าทีมส่ง audit ไปที่ log stack อย่างเดียว (เช่น Loki) ก็ **ทำได้** แต่ถ้าต้อง query ย้อนหลังจาก DB ให้ใช้ collection นี้
 
-| Field             | Type     | Required | Description                                                      |
-| ----------------- | -------- | -------- | ---------------------------------------------------------------- |
-| `_id`             | ObjectId | Yes      | primary key                                                      |
-| `event_type`      | string   | Yes      | เช่น `auth.login`, `auth.refresh`, `auth.logout`                 |
-| `ts`              | Date     | Yes      | เวลาเหตุการณ์ (UTC)                                              |
-| `outcome`         | string   | Yes      | `success` \| `fail`                                              |
-| `request_id`      | string   | Yes      | correlation id                                                   |
-| `user_id`         | ObjectId | Optional | มีเมื่อรู้ตัวตนแล้ว                                              |
-| `ip_digest`       | string   | Optional | **แนะนำ** เก็บแบบ one-way digest (ไม่เก็บ IP เต็ม) ตามนโยบาย PII |
-| `detail_safe`     | object   | Optional | ข้อมูลเสริมที่ปลอดภัย — **ห้าม** ใส่ password / token            |
-| `retention_until` | Date     | Yes      | `ts` + **180 วัน** (ล็อก O-14) — ใช้กับ TTL index                |
+| Field             | Type     | Required | Description                                                                                 |
+| ----------------- | -------- | -------- | ------------------------------------------------------------------------------------------- |
+| `_id`             | ObjectId | Yes      | primary key                                                                                 |
+| `event_type`      | string   | Yes      | เช่น `auth.login`, `auth.refresh`, `auth.logout`, `auth.sessions_revoked_by_service` (O-16) |
+| `ts`              | Date     | Yes      | เวลาเหตุการณ์ (UTC)                                                                         |
+| `outcome`         | string   | Yes      | `success` \| `fail`                                                                         |
+| `request_id`      | string   | Yes      | correlation id                                                                              |
+| `user_id`         | ObjectId | Optional | มีเมื่อรู้ตัวตนแล้ว                                                                         |
+| `ip_digest`       | string   | Optional | **แนะนำ** เก็บแบบ one-way digest (ไม่เก็บ IP เต็ม) ตามนโยบาย PII                            |
+| `detail_safe`     | object   | Optional | ข้อมูลเสริมที่ปลอดภัย — **ห้าม** ใส่ password / token                                       |
+| `retention_until` | Date     | Yes      | `ts` + **180 วัน** (ล็อก O-14) — ใช้กับ TTL index                                           |
 
 **Index (ต้องสร้างเมื่อ persist audit ลง MongoDB)**
 
@@ -410,6 +453,7 @@ erDiagram
     ObjectId branch_id
     string username
     string role
+    int access_token_gen
     string cr_by
     date cr_date
     string upd_by
@@ -501,12 +545,14 @@ db.auth_audit_events.createIndex(
 | `ARGON2_MEMORY_KIB`, `ARGON2_TIME`, `ARGON2_PARALLELISM` | **ล็อก O-11** — ตั้งตาม benchmark + OWASP / นโยบาย security (ไม่ commit ค่าจริง)                                                                                                                                                                            |
 | `REFRESH_COOKIE_NAME`                                    | ชื่อ cookie เมื่อใช้ channel cookie (ค่าเริ่มต้น `refresh_token`)                                                                                                                                                                                           |
 | `CORS_ORIGINS`                                           | รายการ origin ที่อนุญาตให้ส่ง credential/cookie (ถ้าเป็น browser client)                                                                                                                                                                                    |
+| `AUTH_INTERNAL_SERVICE_SECRET`                           | **Required** เมื่อเปิด internal route (O-16) — Bearer secret สำหรับ `POST /internal/users/{user_id}/sessions/revoke`; **แยกจาก** `GATEWAY_SHARED_SECRET`                                                                                                    |
+| `REDIS_URL`                                              | **Required ใน production** (`NODE_ENV=production`); dev/CI ว่างได้ — เมื่อตั้ง: เชื่อม Redis; หลัง internal revoke **`SET`** `user:{sub}:token_gen` (**ล้มเหลว → 503**, fail-closed); **`GET /readyz`** รวม **`PING`** Redis                                |
 
 ---
 
 ## 10. Observability & operations
 
-- **ต้อง** มี `GET /healthz` (liveness) และ `GET /readyz` (readiness; ไม่ต้อง auth)
+- **ต้อง** มี `GET /healthz` (liveness) และ `GET /readyz` (readiness; ไม่ต้อง auth) — **`readyz`** **ต้อง** ping MongoDB; **ถ้า** ตั้ง **`REDIS_URL`** แล้ว **ต้อง** `PING` Redis ด้วย (ล้มเหลว → **503** เช่นกัน)
 - **ควร** มี metrics อย่างน้อย: login success/fail, refresh success/fail, latency DB
 - **Audit (ล็อก O-14):** **ต้อง** เก็บอย่างน้อย **`event_type`**, เวลาเหตุการณ์ (**`timestamp`** ใน log / **`ts`** ใน MongoDB section 8.3), **`outcome`** (success/fail), และ **`request_id`** (correlation); **ถ้ารู้ตัวตนแล้ว** ให้เก็บ **`user_id`**; ส่วน **IP** ให้เก็บตามนโยบาย PII — **แนะนำ** hash/truncate หรือเก็บเฉพาะ /24 ถ้านโยบายห้ามเก็บ IP เต็ม — **ห้าม** เก็บ access JWT / refresh token แบบ plaintext ใน audit
 - **Retention (ล็อก O-14):** ค่าเริ่มต้นคือ **180 วัน** — หากต้องปรับตาม compliance องค์กร ให้แก้เอกสารนี้และ bump version อย่างน้อยระดับ patch
@@ -525,41 +571,44 @@ db.auth_audit_events.createIndex(
 
 ## 12. Locked decisions (checklist)
 
-ค่าด้านล่าง **ล็อกแล้ว** และสอดคล้องกับหมวด normative ด้านบน (เวอร์ชันเอกสาร **1.3.5**)
+ค่าด้านล่าง **ล็อกแล้ว** และสอดคล้องกับหมวด normative ด้านบน (เวอร์ชันเอกสาร **1.3.7**)
 
 ถ้าแถวใดมีการเปลี่ยนค่าที่กระทบ client หรือ deploy — **ควร** bump เวอร์ชันเอกสารอย่างน้อยระดับ patch และ sync `CHANGELOG.md` ถ้า repo มี
 
-| ID   | Decision                                                                      | Reference             | Locked value / Notes                                                                                                                                                                                                          |
-| ---- | ----------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| O-01 | ชนิด credential สำหรับ login (MVP)                                            | 3.1, 4.1              | **ล็อกแล้ว:** username + password (JSON body)                                                                                                                                                                                 |
-| O-02 | มี `POST /auth/refresh` ในรอบแรกหรือไม่                                       | 2, 3.1, 4.1           | **ล็อกแล้ว:** **มี** ใน MVP                                                                                                                                                                                                   |
-| O-03 | มี `POST /auth/logout` หรือไม่ — revoke ระดับไหน                              | 4.1                   | **ล็อกแล้ว:** **มี** — revoke refresh ที่ส่งมา + **ทั้ง `family_id`**                                                                                                                                                         |
-| O-04 | ส่ง refresh: **body** vs **`httpOnly` cookie** (หรือทั้งคู่ + default)        | 4.1, 4.2              | **ล็อกแล้ว:** **ทั้งคู่** — **default สำหรับ browser:** `httpOnly` + `Secure` + `SameSite=Lax` cookie; **non-browser** (mobile, CLI): `refresh_token` ใน JSON body เมื่อ login/refresh                                        |
-| O-05 | รูปแบบ JSON response หลัง login / refresh (field names, envelope, error body) | 4.2, 4.3              | **ล็อกแล้ว:** success ไม่มี envelope — `access_token`, `expires_in`, `token_type: Bearer`, และ `refresh_token` ใน body เฉพาะ non-browser; ข้อผิดพลาด **`application/problem+json`**                                           |
-| O-06 | HTTP status เมื่อ account ถูก lock (`403` vs `423`)                           | 4.3                   | **ล็อกแล้ว:** **`423 Locked`** (ล็อกบัญชีจาก `user:` throttle); **P4:** ล็อกเฉพาะ **`ip:`** → **`429`**                                                                                                                       |
-| O-07 | Access JWT TTL (วินาที) และความสัมพันธ์กับ refresh                            | 5, 9                  | **ล็อกแล้ว:** access **900s** (15m); refresh **30d** (`REFRESH_TOKEN_TTL_SECONDS=2592000`)                                                                                                                                    |
-| O-08 | โหมด signing กับ Gateway (**ล็อกแล้ว = (B) เท่านั้น**)                        | 5, 9                  | **(B) asymmetric + JWKS** (RS256 หรือ ES256); **`kid`** เมื่อมีหลายคีย์/rotation; **P2:** path **`/.well-known/jwks.json`** + `JWKS_PUBLIC_URL` / `JWT_JWKS_URL` sync — ไม่ใช้ **(A) HS256** สำหรับ access ที่ Gateway verify |
-| O-09 | Stack: **Express + CommonJS** vs **Fastify + ESM** (+ ADR ถ้าผิดมาตรฐานทีม)   | 6                     | **ล็อกแล้ว:** **Fastify + ESM** + **ADR** (แตกจาก architecture standard ที่เป็น Express+CJS)                                                                                                                                  |
-| O-10 | User store (เช่น MongoDB / PostgreSQL) + migration / index หลัก               | 8.1, **8.3**, **8.4** | **ล็อกแล้ว:** **MongoDB** — collections / indexes ตาม **section 8.3**; ตัวอย่าง **`mongosh` + `createIndex`** ที่ **section 8.4**                                                                                             |
-| O-11 | Password hash: **Argon2id** vs **bcrypt** + พารามิเตอร์ (cost / Argon)        | 7, 9                  | **ล็อกแล้ว:** **Argon2id** — พารามิเตอร์ผ่าน `ARGON2_*` env (tune ตาม hardware policy)                                                                                                                                        |
-| O-12 | Account lockout: ต่อ **IP** / ต่อ **user** / ทั้งคู่ + threshold + duration   | 7, 4.3, 8.3           | **ล็อกแล้ว:** **ทั้ง IP และ user** — **10 ครั้ง** / **15 นาที** (rolling) → lock **30 นาที** — **P1:** username ไม่พบ → นับเฉพาะ **`ip:`**; **P4:** user lock → **`423`**, IP-only lock → **`429`**                           |
-| O-13 | Refresh: บังคับ **one-time rotation** + ตรวจ reuse ใน MVP หรือไม่             | 8.2                   | **ล็อกแล้ว:** **บังคับ** rotation + reuse detection → reuse แล้ว revoke **ทั้ง family**                                                                                                                                       |
-| O-14 | Audit / log: เก็บอะไรบ้าง (user id, IP, event) — retention / PII ตามนโยบาย    | 10                    | **ล็อกแล้ว:** ฟิลด์ขั้นต่ำตาม section 10; retention **180 วัน** default; IP ตามนโยบาย PII                                                                                                                                     |
-| O-15 | path ที่ถือเป็น admin / internal — ห้าม public โดยไม่มี auth แยก              | 11                    | **ล็อกแล้ว:** **`/internal/*`**, **`/admin/*`**, **`/metrics`** (ถ้ามี)                                                                                                                                                       |
+| ID   | Decision                                                                      | Reference              | Locked value / Notes                                                                                                                                                                                                                                                                                                                                                                              |
+| ---- | ----------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| O-01 | ชนิด credential สำหรับ login (MVP)                                            | 3.1, 4.1               | **ล็อกแล้ว:** username + password (JSON body)                                                                                                                                                                                                                                                                                                                                                     |
+| O-02 | มี `POST /auth/refresh` ในรอบแรกหรือไม่                                       | 2, 3.1, 4.1            | **ล็อกแล้ว:** **มี** ใน MVP                                                                                                                                                                                                                                                                                                                                                                       |
+| O-03 | มี `POST /auth/logout` หรือไม่ — revoke ระดับไหน                              | 4.1                    | **ล็อกแล้ว:** **มี** — revoke refresh ที่ส่งมา + **ทั้ง `family_id`**                                                                                                                                                                                                                                                                                                                             |
+| O-04 | ส่ง refresh: **body** vs **`httpOnly` cookie** (หรือทั้งคู่ + default)        | 4.1, 4.2               | **ล็อกแล้ว:** **ทั้งคู่** — **default สำหรับ browser:** `httpOnly` + `Secure` + `SameSite=Lax` cookie; **non-browser** (mobile, CLI): `refresh_token` ใน JSON body เมื่อ login/refresh                                                                                                                                                                                                            |
+| O-05 | รูปแบบ JSON response หลัง login / refresh (field names, envelope, error body) | 4.2, 4.3               | **ล็อกแล้ว:** success ไม่มี envelope — `access_token`, `expires_in`, `token_type: Bearer`, และ `refresh_token` ใน body เฉพาะ non-browser; ข้อผิดพลาด **`application/problem+json`**                                                                                                                                                                                                               |
+| O-06 | HTTP status เมื่อ account ถูก lock (`403` vs `423`)                           | 4.3                    | **ล็อกแล้ว:** **`423 Locked`** (ล็อกบัญชีจาก `user:` throttle); **P4:** ล็อกเฉพาะ **`ip:`** → **`429`**                                                                                                                                                                                                                                                                                           |
+| O-07 | Access JWT TTL (วินาที) และความสัมพันธ์กับ refresh                            | 5, 9                   | **ล็อกแล้ว:** access **900s** (15m); refresh **30d** (`REFRESH_TOKEN_TTL_SECONDS=2592000`)                                                                                                                                                                                                                                                                                                        |
+| O-08 | โหมด signing กับ Gateway (**ล็อกแล้ว = (B) เท่านั้น**)                        | 5, 9                   | **(B) asymmetric + JWKS** (RS256 หรือ ES256); **`kid`** เมื่อมีหลายคีย์/rotation; **P2:** path **`/.well-known/jwks.json`** + `JWKS_PUBLIC_URL` / `JWT_JWKS_URL` sync — ไม่ใช้ **(A) HS256** สำหรับ access ที่ Gateway verify                                                                                                                                                                     |
+| O-09 | Stack: **Express + CommonJS** vs **Fastify + ESM** (+ ADR ถ้าผิดมาตรฐานทีม)   | 6                      | **ล็อกแล้ว:** **Fastify + ESM** + **ADR** (แตกจาก architecture standard ที่เป็น Express+CJS)                                                                                                                                                                                                                                                                                                      |
+| O-10 | User store (เช่น MongoDB / PostgreSQL) + migration / index หลัก               | 8.1, **8.3**, **8.4**  | **ล็อกแล้ว:** **MongoDB** — collections / indexes ตาม **section 8.3**; ตัวอย่าง **`mongosh` + `createIndex`** ที่ **section 8.4**                                                                                                                                                                                                                                                                 |
+| O-11 | Password hash: **Argon2id** vs **bcrypt** + พารามิเตอร์ (cost / Argon)        | 7, 9                   | **ล็อกแล้ว:** **Argon2id** — พารามิเตอร์ผ่าน `ARGON2_*` env (tune ตาม hardware policy)                                                                                                                                                                                                                                                                                                            |
+| O-12 | Account lockout: ต่อ **IP** / ต่อ **user** / ทั้งคู่ + threshold + duration   | 7, 4.3, 8.3            | **ล็อกแล้ว:** **ทั้ง IP และ user** — **10 ครั้ง** / **15 นาที** (rolling) → lock **30 นาที** — **P1:** username ไม่พบ → นับเฉพาะ **`ip:`**; **P4:** user lock → **`423`**, IP-only lock → **`429`**                                                                                                                                                                                               |
+| O-13 | Refresh: บังคับ **one-time rotation** + ตรวจ reuse ใน MVP หรือไม่             | 8.2                    | **ล็อกแล้ว:** **บังคับ** rotation + reuse detection → reuse แล้ว revoke **ทั้ง family**                                                                                                                                                                                                                                                                                                           |
+| O-14 | Audit / log: เก็บอะไรบ้าง (user id, IP, event) — retention / PII ตามนโยบาย    | 10                     | **ล็อกแล้ว:** ฟิลด์ขั้นต่ำตาม section 10; retention **180 วัน** default; IP ตามนโยบาย PII                                                                                                                                                                                                                                                                                                         |
+| O-15 | path ที่ถือเป็น admin / internal — ห้าม public โดยไม่มี auth แยก              | 11, **4.4**            | **ล็อกแล้ว:** **`/internal/*`**, **`/admin/*`**, **`/metrics`** (ถ้ามี)                                                                                                                                                                                                                                                                                                                           |
+| O-16 | Access credential generation + internal revoke-by-user                        | **4.4**, 5, **8.3**, 9 | **ล็อกแล้ว (implemented):** ฟิลด์ **`access_token_gen`**; claim **`token_gen`**; internal revoke + **`AUTH_INTERNAL_SERVICE_SECRET`**; **404** เมื่อ user ไม่พบ; Redis publish **`user:{sub}:token_gen`** (fail-closed เมื่อ `REDIS_URL` ตั้ง); **`REDIS_URL` required ใน production**; gateway ตรวจ `token_gen` — [`session-revoke-token-gen-changes.md`](./session-revoke-token-gen-changes.md) |
 
 ---
 
 ## 13. References
 
-| Path                                                                          | Notes                                                                             |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [`gateway` SoT](../../gateway/docs/architecture.md)                           | Gateway verify, headers, JWT modes                                                |
-| [`ARCHITECTURE.md`](../../../ARCHITECTURE.md)                                 | Trust boundary, security strategy                                                 |
-| `_engineering-standards/active/backend/architecture/architecture-standard.md` | โครง service มาตรฐานทีม (Express+CJS) — service นี้ใช้ Fastify+ESM ตาม O-09 + ADR |
-| `_engineering-standards/active/backend/api/api-rate-limit-standard.md`        | Rate limit                                                                        |
+| Path                                                                               | Notes                                                                             |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`gateway` SoT](../../gateway/docs/architecture.md)                                | Gateway verify, headers, JWT modes                                                |
+| [`gateway` session-revoke](../../gateway/docs/session-revoke-token-gen-changes.md) | `token_gen` verification ที่ edge (implemented)                                   |
+| [`session-revoke-token-gen-changes.md`](./session-revoke-token-gen-changes.md)     | Implementation checklist — auth internal revoke + `token_gen`                     |
+| [`ARCHITECTURE.md`](../../../ARCHITECTURE.md)                                      | Trust boundary, security strategy                                                 |
+| `_engineering-standards/active/backend/architecture/architecture-standard.md`      | โครง service มาตรฐานทีม (Express+CJS) — service นี้ใช้ Fastify+ESM ตาม O-09 + ADR |
+| `_engineering-standards/active/backend/api/api-rate-limit-standard.md`             | Rate limit                                                                        |
 
 _หมายเหตุ:_ path ที่ขึ้นต้นด้วย `_engineering-standards/` ชี้มาตรฐานทีมที่อาจอยู่ **นอก** monorepo นี้ — ใช้เป็น reference เชิงข้อความ; ถ้า clone ไม่มีไฟล์ให้ดูที่ repo มาตรฐานขององค์กร
 
 ---
 
-_Document version **1.3.5** — `auth` (self-hosted IdP) SoT._
+_Document version **1.3.8** — `auth` (self-hosted IdP) SoT; O-16 / D1 session revoke + `token_gen` implemented._

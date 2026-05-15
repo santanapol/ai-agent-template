@@ -24,6 +24,8 @@ export function problemTypes(base) {
     accountLocked: `${b}/account-locked`,
     invalidToken: `${b}/refresh-rejected`,
     tokenReuse: `${b}/refresh-rejected`,
-    notReady: `${b}/not-ready`
+    notReady: `${b}/not-ready`,
+    internalUnauthorized: `${b}/internal-unauthorized`,
+    userNotFound: `${b}/user-not-found`
   }
 }

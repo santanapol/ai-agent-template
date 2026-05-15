@@ -1,6 +1,9 @@
 import Joi from 'joi'
 
 const schema = Joi.object({
+  NODE_ENV: Joi.string()
+    .valid('production', 'development', 'test')
+    .default('development'),
   PORT: Joi.number().integer().min(1).max(65535).default(3002),
   JWT_JWKS_URL: Joi.string()
     .uri()
@@ -29,7 +32,16 @@ const schema = Joi.object({
     .valid('trace', 'debug', 'info', 'warn', 'error', 'fatal')
     .default('info'),
   LOG_PRETTY: Joi.boolean().truthy('true').falsy('false').optional(),
-  JWT_SECRET: Joi.string().allow('').optional()
+  JWT_SECRET: Joi.string().allow('').optional(),
+  /**
+   * Gateway compares JWT `token_gen` to Redis `user:{sub}:token_gen` (D3).
+   * Required in production (org gateway/api.md + auth publisher contract).
+   */
+  REDIS_URL: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().min(1).required(),
+    otherwise: Joi.string().allow('').default('')
+  })
 }).unknown(true)
 
 export function loadEnv (env = process.env) {

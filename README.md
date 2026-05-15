@@ -14,6 +14,7 @@
 |---|---|
 | **1. โครงสร้างโฟลเดอร์ (SoT)**<br/>[PROJECT_TREE.md](./PROJECT_TREE.md) | Layout มาตรฐานของ monorepo (gateway, auth, `.demo/crud-service`, services, www) |
 | **1b. พอร์ต local (ดัชนีกลาง)**<br/>[`local-ports.md`](./local-ports.md) | ตาราง **default PORT** ต่อ service (`auth` :3001, `gateway` :3002, upstream ตัวอย่าง ฯลฯ) — อัปเดตเมื่อเพิ่มบริการ |
+| **1c. Redis (local dev)**<br/>[`docker-compose.yml`](./docker-compose.yml) | Redis สำหรับ **`token_gen`** (auth publish + gateway verify) — ดู [RUNBOOK §2.5](./RUNBOOK.md#25--redis-local--token_gen--immediate-revoke) |
 | **2. ภาพรวมระบบ**<br/>[ARCHITECTURE.md](./ARCHITECTURE.md) | Architecture, ADR, trust boundary, system flow และ diagrams |
 | **3. Gateway SoT**<br/>[`gateway/docs/architecture.md`](./gateway/docs/architecture.md) | Contract, env, runtime, lifecycle และ deployment ของ Gateway (Production SoT) |
 | **4. Login / Auth SoT**<br/>[`auth/docs/architecture.md`](./auth/docs/architecture.md) | JWT issuance, login, refresh token, token storage และ security |

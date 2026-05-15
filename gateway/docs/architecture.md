@@ -8,7 +8,7 @@
 | **Document index** | [README.md](../README.md) |
 | **Status** | Active — SoT ระดับ production ของ `gateway` (API Gateway) |
 | **Companion docs** | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) — ADR / overview · [`auth` production SoT](../../auth/docs/architecture.md) — SoT ของ `auth` (Gateway **ไม่** ทำขั้นนี้) · เอกสารนี้ครอบคลุม contract, config, และ runtime ของ `gateway` |
-| **Document version** | `1.3.2` — bump ตาม [SemVer](https://semver.org/) เมื่อมี breaking change ต่อ implementer หรือ contract |
+| **Document version** | `1.3.4` — bump ตาม [SemVer](https://semver.org/) เมื่อมี breaking change ต่อ implementer หรือ contract |
 | **Terms** | **ต้อง (MUST)** = บังคับ production · **ควร (SHOULD)** = default ยกเว้นมี ADR · **อาจ (MAY)** = optional |
 
 > **การเปลี่ยนแปลง:** หากแก้ **section 4 (headers), section 5 (env), section 7 (errors), section 8 (internal), sections 11–12 (decisions)** → ต้องมี **code review** + **bump เวอร์ชันเอกสาร** (อย่างน้อย minor) + อัปเดต `CHANGELOG.md` เมื่อ repo มีไฟล์นี้
@@ -169,6 +169,7 @@ gateway/
 | `TRUST_PROXY` | Recommended | `true` หลัง LB — section 12.6 |
 | `MAX_BODY_BYTES` | Recommended | default **1048576** (1 MiB) — section 12.5 |
 | `JWT_LEEWAY_SECONDS` | Optional | default **60** — section 12.3 |
+| `REDIS_URL` | **Yes (prod)** | **ต้อง** ตั้งใน production (`NODE_ENV=production`) — หลัง JWKS verify **ต้อง** เทียบ claim **`token_gen`** กับ Redis `user:{sub}:token_gen` (สัญญา auth D1) — section 11.5 · dev/CI ว่างได้ |
 | `CORS_ORIGINS` | Optional | เมื่อเปิด CORS — section 12.4 |
 | `SHUTDOWN_TIMEOUT_MS` | Optional | graceful deadline เช่น **10000** |
 | `LOG_LEVEL` | Recommended | `info` / `warn` / `error` |
@@ -210,7 +211,7 @@ gateway/
 
 | Scenario | HTTP | Layer |
 |----------|------|-------|
-| JWT หมดอายุ / ลายเซ็นผิด / ไม่มี Bearer | `401` | gateway — **`application/problem+json`** + `code` (`GATEWAY_JWT_*`) ตาม `_coding-standards/gateway/codes.yaml` |
+| JWT หมดอายุ / ลายเซ็นผิด / ไม่มี Bearer / ไม่มีหรือ stale **`token_gen`** (เมื่อ `REDIS_URL` ตั้ง) / Redis read ล้มเหลว (fail-closed) | `401` | gateway — **`application/problem+json`** + `code` (`GATEWAY_JWT_*`) ตาม `_coding-standards/gateway/codes.yaml` |
 | claim/header ไม่พร้อม หรือเกินความยาว (section 4, section 12.2) | `401` | gateway — **`application/problem+json`** + `code` **`GATEWAY_CLAIM_REJECTED`** (authentication failure — [`CODE_MATRIX_TARGET.md`](../../../../CODE_MATRIX_TARGET.md)) |
 | Path ไม่ match **ตาราง route ที่ deploy** (client ยิง URL ผิด / ไม่มี resource ที่ gateway รู้จัก) | `404` | gateway — ตอบ **`application/problem+json`** + `code` **`GATEWAY_ROUTE_NOT_FOUND`** พร้อม header `x-gateway-hit: true` (แนว **Approach A** — แยกจาก `GATEWAY_ROUTE_NOT_CONFIGURED`) |
 | **Routing misconfiguration** ระดับ operator (เช่น deploy ผิด ทำให้ path ที่ **ควร** มี upstream กลับไม่มี / upstream ว่างหลัง validate ตาม SoT — ไม่ใช่แค่ client พิมพ์ผิด) | `502` | gateway — **`application/problem+json`** + `code` **`GATEWAY_ROUTE_NOT_CONFIGURED`** — **หมายเหตุ:** ใน implementation ปัจจุบัน ข้อผิดพลาดชุด route / env หลักถูก **fail-fast ตอน startup** (process exit) จึงไม่ค่อยส่ง HTTP response นี้ให้ client; รหัสยังอยู่ใน registry สำหรับ path ระหว่างรัน (เช่น hot reload / ตรวจซ้ำหลัง boot) หากมีในอนาคต |
@@ -241,7 +242,7 @@ gateway/
 | **Metrics** | **ควร** ใช้ Prometheus บน **internal interface** เท่านั้น — ไม่เปิด public โดยไม่มี auth (section 12.1) |
 | **Metrics ขั้นต่ำ** | rate `400`/`401`/`502`/`504` + upstream status ต่อ route + latency |
 | **Health** | **`GET /healthz`** — liveness; **ต้องไม่** บังคับ JWT |
-| **Ready** | **`GET /readyz`** — readiness (อย่างน้อยตรวจ **`JWT_JWKS_URL`**); **ต้องไม่** บังคับ JWT · ฟิลด์ `dependencies.routes: ok` หมายถึง **ตาราง route โหลดและ validate ผ่านตอน boot** ไม่ใช่การ probe TCP ไปยังทุก upstream |
+| **Ready** | **`GET /readyz`** — readiness (อย่างน้อยตรวจ **`JWT_JWKS_URL`**); เมื่อ **`REDIS_URL`** ตั้ง → **ต้อง** `PING` Redis ด้วย · **ต้องไม่** บังคับ JWT · ฟิลด์ `dependencies.routes: ok` หมายถึง **ตาราง route โหลดและ validate ผ่านตอน boot** ไม่ใช่การ probe TCP ไปยังทุก upstream |
 
 ---
 
@@ -257,6 +258,8 @@ gateway/
 - [ ] **Error mapping** section 7 + section 12.9
 - [ ] **Graceful shutdown** ทดสอบใน staging
 - [ ] **Rollback / handover** — **ควร** `_engineering-standards/active/deployment/`
+- [ ] **`REDIS_URL`** ตั้งและตรงกับ auth (shared Redis สำหรับ `user:{sub}:token_gen`) — **ต้อง** ใน production
+- [ ] **Rollout `token_gen`:** auth ออก JWT พร้อม claim + publish หลัง revoke ก่อนเปิด traffic ผ่าน gateway ที่ enforce gate
 
 ---
 
@@ -268,6 +271,7 @@ gateway/
 | **11.2** | Forward `Authorization` | **ไม่ forward** |
 | **11.3** | JWT | เอกสารนี้ใช้เฉพาะ **(B) asymmetric + JWKS** ผ่าน `JWT_JWKS_URL`; **ไม่ใช้** `(A) JWT_SECRET / HS256` ใน doc set นี้ |
 | **11.3b** | JWKS | **ต้อง** key rotation (cache + refresh เมื่อ `kid` ไม่รู้จัก) |
+| **11.5** | `token_gen` (access JWT) | หลัง verify JWKS: access JWT **ต้อง** มี claim **`token_gen`** (integer ≥ 0) · **production ต้องมี `REDIS_URL`** → อ่าน `user:{sub}:token_gen` จาก Redis (สัญญา auth D1) · ถ้า JWT `token_gen` **<** ค่าปัจจุบัน → **`401`** + **`GATEWAY_JWT_REJECTED`** · key ไม่มี → **0** · Redis error → **fail-closed** |
 | **11.4** | Tests | Jest + ESM — section 3.5 |
 
 ---
@@ -336,4 +340,4 @@ gateway/
 
 ---
 
-_Document version **1.3.2** — production SoT (lifecycle, security gates, change control)._
+_Document version **1.3.4** — production SoT (lifecycle, security gates, change control)._

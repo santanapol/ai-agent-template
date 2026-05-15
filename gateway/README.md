@@ -6,6 +6,7 @@ API Gateway (Fastify, ESM): verify JWT (JWKS), inject trusted headers, proxy ต
 
 | เอกสาร | Role |
 | :--- | :--- |
+| [`docs/session-revoke-token-gen-changes.md`](./docs/session-revoke-token-gen-changes.md) | **Planned work** — verify `token_gen` + Redis ร่วมกับ auth internal revoke |
 | [`openapi.yaml`](./openapi.yaml) | HTTP contract — `npm run spec:lint` (Spectral) |
 | [`docs/architecture.md`](./docs/architecture.md) | **Production SoT** — contract, env, errors, security (นับเป็น **ADR** ตาม `_coding-standards/gateway/runtime.md`) |
 | [`docs/adrs/001-gateway-esm-fastify.md`](./docs/adrs/001-gateway-esm-fastify.md) | ADR ชั้น service: ESM + Jest + อ้างอิง SoT ด้านบน |

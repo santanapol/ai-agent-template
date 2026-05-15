@@ -2,10 +2,30 @@
 
 ## [Unreleased]
 
+_(none)_
+
+## 0.1.5
+
+- **Review fixes (O-16/D1):** Redis publish หลัง internal revoke — fail-closed **`503`** + **`AUTH_NOT_READY`** เมื่อ `SET` ล้มเหลวและ `REDIS_URL` ตั้ง (ไม่ warn-only)
+- **`REDIS_URL`:** required เมื่อ **`NODE_ENV=production`**
+- **Internal revoke:** `user_id` ไม่พบ → **`404`** + **`AUTH_USER_NOT_FOUND`** (registry + OpenAPI)
+- **Tests:** `internal-revoke-redis.integration.test.js`, `env-redis-production.test.js`; unknown user + Redis paths
+- **Docs/OpenAPI:** `architecture.md` v1.3.8 (O-16 implemented); `/readyz` รวม Redis; idempotency wording ชัด
+- **Dev:** monorepo root `docker-compose.yml` (Redis 7) + `RUNBOOK.md` §2.5 local Redis guide
+
+## 0.1.4
+
 - **OpenAPI:** รวมสัญญาเป็นฉบับเดียว — ลบ `docs/openapi.yaml`; SoT คือ [`openapi.yaml`](./openapi.yaml) เท่านั้น (`openapi-package-version-alignment` ตรวจแค่ไฟล์นี้กับ `package.json`)
 - **CI:** script `ci:with-coverage` รัน merge gate แล้วตามด้วย `test:coverage` (แนว `_coding-standards/backend/ci.md` §4)
 - **Supply chain:** `npm audit fix` — แก้ `fast-uri` (high) ผ่าน `npm run audit:check`
 - **Code matrix ([`CODE_MATRIX_TARGET.md`](../../../CODE_MATRIX_TARGET.md)):** refresh token ไม่ถูกต้องหรือ reuse → Problem **`code`** **`TOKEN_REFRESH_REJECTED`** (แทน `TOKEN_REFRESH_INVALID` / `TOKEN_REFRESH_REUSED`).
+- **D1 — Redis `token_gen` publish:** เมื่อตั้ง **`REDIS_URL`** — auth เชื่อม Redis ตอน startup; หลัง internal revoke สำเร็จ **`SET`** `user:{sub}:token_gen`; dependency **`GET /readyz`** รวม **`PING`** Redis; dependency **`redis`** package
+
+## 0.1.3
+
+- **O-16 — session revoke + `token_gen`:** ฟิลด์ `access_token_gen` บน `auth_users`; claim **`token_gen`** ใน access JWT (login/refresh); **`POST /internal/users/{user_id}/sessions/revoke`** ด้วย **`AUTH_INTERNAL_SERVICE_SECRET`** (Bearer, constant-time); idempotent **200**; audit `auth.sessions_revoked_by_service`; OpenAPI + **`AUTH_INTERNAL_UNAUTHORIZED`** ใน `_coding-standards/auth/codes.yaml`
+- **Migration:** `init-db` backfill `access_token_gen: 0` สำหรับผู้ใช้เดิม
+- **Env:** `AUTH_INTERNAL_SERVICE_SECRET` (required) — ดู `.env.example`
 
 ## 0.1.2
 

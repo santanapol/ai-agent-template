@@ -13,5 +13,7 @@ export function codeForProblemType(types, typeUri) {
   if (typeUri === types.invalidToken) return 'TOKEN_REFRESH_REJECTED'
   if (typeUri === types.tokenReuse) return 'TOKEN_REFRESH_REJECTED'
   if (typeUri === types.notReady) return 'AUTH_NOT_READY'
+  if (typeUri === types.internalUnauthorized) return 'AUTH_INTERNAL_UNAUTHORIZED'
+  if (typeUri === types.userNotFound) return 'AUTH_USER_NOT_FOUND'
   return undefined
 }

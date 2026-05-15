@@ -4,6 +4,8 @@ import argon2 from 'argon2'
 import { applyFailure, isLocked } from '../../lib/throttle.js'
 import { generateOpaqueRefresh, hashRefreshToken } from '../../lib/refresh-token.js'
 import { signAccessJwt } from '../../lib/jwt-access.js'
+import { problemPayload } from '../../lib/problem.js'
+import { setAccessTokenGenInRedis } from '../../lib/redis-access-token-gen.js'
 
 function normalizeUsername(u) {
   return String(u).trim().toLowerCase()
@@ -19,6 +21,11 @@ function userThrottleKey(userId) {
 
 function ipThrottleKey(ip) {
   return `ip:${ip}`
+}
+
+function coerceTokenGen(user) {
+  const v = user.access_token_gen
+  return typeof v === 'number' && Number.isInteger(v) ? v : 0
 }
 
 function buildAccessTokenResponseBody(
@@ -57,14 +64,18 @@ export class AuthService {
    *  mongoClient: import('mongodb').MongoClient
    *  privateKey: import('jose').KeyLike
    *  types: ReturnType<typeof import('../../lib/problem.js').problemTypes>
+   *  redisClient?: import('redis').RedisClientType | null
+   *  log?: { warn: (obj: unknown, msg?: string) => void }
    * }} p
    */
-  constructor({ env, repo, mongoClient, privateKey, types }) {
+  constructor({ env, repo, mongoClient, privateKey, types, redisClient = null, log = null }) {
     this.env = env
     this.repo = repo
     this.mongoClient = mongoClient
     this.privateKey = privateKey
     this.types = types
+    this.redisClient = redisClient
+    this.log = log
   }
 
   async audit({ event_type, outcome, request_id, user_id, ip, detail_safe }) {
@@ -126,6 +137,7 @@ export class AuthService {
       roleClaim: this.env.JWT_CLAIM_ROLE,
       ouId: user.ou_id?.toHexString?.() ?? String(user.ou_id),
       branchId: user.branch_id?.toHexString?.() ?? String(user.branch_id),
+      tokenGen: coerceTokenGen(user),
       issuer: this.env.JWT_ISSUER,
       audience: this.env.JWT_AUDIENCE,
       ttlSeconds: this.env.ACCESS_TOKEN_TTL_SECONDS
@@ -401,5 +413,87 @@ export class AuthService {
       detail_safe: {}
     })
     return { ok: true, status: 204, clearCookie: true }
+  }
+
+  /**
+   * Internal revoke-by-user (O-16) — bump `access_token_gen` and revoke active refresh rows.
+   * @param {{ user_id_hex: string, reason?: string, correlation_id?: string, request_id: string }} p
+   */
+  async revokeSessionsByUser({ user_id_hex, reason, correlation_id, request_id }) {
+    const now = new Date()
+    const userId = new ObjectId(user_id_hex)
+
+    const runTxn = async (session) =>
+      this.repo.bumpAccessTokenGenAndRevokeSessions(userId, now, session)
+
+    const session = this.mongoClient.startSession()
+    /** @type {{ found: boolean, access_token_gen: number, revoked_refresh_tokens: number }} */
+    let result = { found: false, access_token_gen: 0, revoked_refresh_tokens: 0 }
+    try {
+      try {
+        await session.withTransaction(async () => {
+          result = await runTxn(session)
+        })
+      } catch (e) {
+        if (isTransactionUnsupportedOnTopology(e)) {
+          result = await runTxn(undefined)
+        } else {
+          throw e
+        }
+      }
+    } finally {
+      await session.endSession()
+    }
+
+    if (!result.found) {
+      return {
+        ok: false,
+        status: 404,
+        problem: problemPayload({
+          type: this.types.userNotFound,
+          title: 'Not Found',
+          status: 404,
+          detail: 'User not found.',
+          code: 'AUTH_USER_NOT_FOUND'
+        })
+      }
+    }
+
+    await this.audit({
+      event_type: 'auth.sessions_revoked_by_service',
+      outcome: 'success',
+      request_id: correlation_id ?? request_id,
+      user_id: userId,
+      ip: null,
+      detail_safe: reason ? { reason } : null
+    })
+
+    if (this.redisClient) {
+      try {
+        await setAccessTokenGenInRedis(this.redisClient, user_id_hex, result.access_token_gen)
+      } catch (err) {
+        this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen publish failed')
+        return {
+          ok: false,
+          status: 503,
+          problem: problemPayload({
+            type: this.types.notReady,
+            title: 'Service Unavailable',
+            status: 503,
+            detail: 'Unable to publish access token generation to Redis.',
+            code: 'AUTH_NOT_READY'
+          })
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      body: {
+        revoked_refresh_tokens: result.revoked_refresh_tokens,
+        access_token_gen: result.access_token_gen
+      }
+    }
   }
 }

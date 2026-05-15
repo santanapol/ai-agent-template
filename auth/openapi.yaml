@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: auth
-  version: 0.1.2
+  version: 0.1.5
   description: |
-    Edge identity API (login, refresh, logout) and JWKS for access-token verification.
+    Edge identity API (login, refresh, logout), internal session revoke for trusted services, and JWKS for access-token verification.
 
     All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
 
@@ -35,6 +35,8 @@ tags:
     description: JWKS and metadata
   - name: health
     description: Liveness and readiness
+  - name: internal
+    description: Trusted service-to-service APIs (O-15 — not public internet)
 
 paths:
   /healthz:
@@ -88,7 +90,7 @@ paths:
       description: |
         **Purpose:** Readiness probe before sending user traffic — verifies critical dependencies (at minimum MongoDB connectivity for this service).
 
-        **Behaviour:** On success, returns JSON with `status` and a `dependencies` array (name + status per probed dependency). If the database check fails, returns **`503`** with **`application/problem+json`** (`Problem` schema) and required registry `code` (e.g. `AUTH_NOT_READY`).
+        **Behaviour:** On success, returns JSON with `status` and a `dependencies` array (name + status per probed dependency). Probes at least **MongoDB**; when **`REDIS_URL`** is configured, also **`PING`** Redis and include a `redis` dependency entry. If any probe fails, returns **`503`** with **`application/problem+json`** (`Problem` schema) and required registry `code` (e.g. `AUTH_NOT_READY`).
 
         **Auth:** None.
       operationId: getReadyz
@@ -121,11 +123,13 @@ paths:
                           type: string
               examples:
                 ready:
-                  summary: Mongo reachable
+                  summary: Mongo + Redis reachable
                   value:
                     status: ok
                     dependencies:
                       - name: mongodb
+                        status: ok
+                      - name: redis
                         status: ok
         '503':
           description: |
@@ -506,7 +510,134 @@ paths:
                     status: 429
                     detail: Too many authentication attempts, please try again later.
                     code: AUTH_TOO_MANY_ATTEMPTS
+  /internal/users/{user_id}/sessions/revoke:
+    post:
+      tags: [internal]
+      summary: Revoke user sessions
+      description: |
+        **Purpose:** Trusted caller (e.g. staff after profile archive) revokes all active refresh sessions for `user_id` and bumps `access_token_gen` so gateway can reject stale access JWTs via `token_gen` claim (O-16).
+
+        **Auth:** `Authorization: Bearer <AUTH_INTERNAL_SERVICE_SECRET>` — constant-time verification; separate from gateway mesh secret.
+
+        **Idempotency:** Repeat calls with the same existing `user_id` return **200**; `revoked_refresh_tokens` may be **0** when no active refresh rows remain; **`access_token_gen` still increments on every successful call** (by design). Unknown `user_id` → **404** (`AUTH_USER_NOT_FOUND`). When **`REDIS_URL`** is set, Redis publish failure after DB bump → **503** (`AUTH_NOT_READY`, fail-closed).
+
+        **Network:** Must not be exposed on public internet without private network / mTLS controls (O-15).
+      operationId: revokeUserSessions
+      security:
+        - InternalServiceBearer: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalRevokeSessionsRequest'
+            examples:
+              withReason:
+                summary: Staff archive follow-up
+                value:
+                  reason: staff.profile_archive
+                  correlation_id: corr-01HX-example
+              empty:
+                summary: Idempotent retry
+                value: {}
+      responses:
+        '200':
+          description: Sessions revoked (or none remaining) and generation bumped when user exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalRevokeSessionsSuccess'
+              examples:
+                revoked:
+                  value:
+                    revoked_refresh_tokens: 2
+                    access_token_gen: 1
+                idempotent:
+                  value:
+                    revoked_refresh_tokens: 0
+                    access_token_gen: 2
+        '400':
+          description: Invalid `user_id` path parameter (not 24-hex ObjectId).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                invalidRequest:
+                  value:
+                    type: https://example.invalid/auth/problems/invalid-request
+                    title: Bad Request
+                    status: 400
+                    detail: Request validation failed.
+                    code: AUTH_INVALID_REQUEST
+        '404':
+          description: Valid ObjectId path but no matching user.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                userNotFound:
+                  value:
+                    type: https://example.invalid/auth/problems/user-not-found
+                    title: Not Found
+                    status: 404
+                    detail: User not found.
+                    code: AUTH_USER_NOT_FOUND
+        '401':
+          description: Missing or invalid internal service Bearer secret.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                internalUnauthorized:
+                  value:
+                    type: https://example.invalid/auth/problems/internal-unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Internal service authentication failed.
+                    code: AUTH_INTERNAL_UNAUTHORIZED
+        '429':
+          description: Internal route rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                tooManyAttempts:
+                  value:
+                    type: https://example.invalid/auth/problems/too-many-attempts
+                    title: Too Many Requests
+                    status: 429
+                    detail: Too many authentication attempts, please try again later.
+                    code: AUTH_TOO_MANY_ATTEMPTS
+        '503':
+          description: Dependency failure (e.g. Redis publish after revoke when `REDIS_URL` is set).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                notReady:
+                  value:
+                    type: https://example.invalid/auth/problems/not-ready
+                    title: Service Unavailable
+                    status: 503
+                    detail: Unable to publish access token generation to Redis.
+                    code: AUTH_NOT_READY
 components:
+  securitySchemes:
+    InternalServiceBearer:
+      type: http
+      scheme: bearer
+      description: Shared secret from `AUTH_INTERNAL_SERVICE_SECRET` (service-to-service only).
   parameters:
     AcceptJson:
       name: Accept
@@ -544,6 +675,16 @@ components:
         type: string
       example: refresh_token=<opaque-refresh-placeholder>
 
+    UserIdPath:
+      name: user_id
+      in: path
+      required: true
+      description: MongoDB ObjectId as 24-character lowercase/uppercase hex string.
+      schema:
+        type: string
+        pattern: '^[a-fA-F0-9]{24}$'
+      example: 507f1f77bcf86cd799439011
+
   schemas:
     Problem:
       type: object
@@ -568,6 +709,32 @@ components:
             - LOGIN_ACCOUNT_LOCKED
             - AUTH_TOO_MANY_ATTEMPTS
             - AUTH_NOT_READY
+            - AUTH_INTERNAL_UNAUTHORIZED
+            - AUTH_USER_NOT_FOUND
+    InternalRevokeSessionsRequest:
+      type: object
+      description: Optional metadata for audit and idempotent retries from trusted callers.
+      properties:
+        reason:
+          type: string
+          maxLength: 256
+          description: Caller-specific reason code (e.g. `staff.profile_archive`).
+        correlation_id:
+          type: string
+          maxLength: 128
+          description: Correlation id for audit / retry (may differ from Fastify request id).
+    InternalRevokeSessionsSuccess:
+      type: object
+      required: [revoked_refresh_tokens, access_token_gen]
+      properties:
+        revoked_refresh_tokens:
+          type: integer
+          minimum: 0
+          description: Refresh token rows set `revoked_at` in this call.
+        access_token_gen:
+          type: integer
+          minimum: 0
+          description: User generation counter after `$inc` (0 when user not found).
     LoginRequest:
       type: object
       description: Credential payload for `POST /auth/login` (TLS required in production).
