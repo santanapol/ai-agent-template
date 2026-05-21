@@ -1,6 +1,6 @@
 # auth
 
-Self-hosted identity provider (login, refresh, JWT issuance) for the `access-platform` monorepo.
+Self-hosted identity provider (login, refresh, JWT issuance) for the `zero-platform` monorepo.
 
 | Read                                                                                   | Role                                                                            |
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |

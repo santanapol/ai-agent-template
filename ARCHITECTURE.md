@@ -1,4 +1,4 @@
-# 🏛️ access-platform — Architecture ADR
+# 🏛️ zero-platform — Architecture ADR
 
 > **TL;DR:** Client รับ Access JWT จาก `auth` แล้วส่งคำร้องขอผ่าน `gateway`; `gateway` เป็นด่านหน้า (Stateless) ในการ Verify JWT, Inject headers, และ Proxy ไปยัง Internal APIs ส่วน Internal API จะเชื่อถือ Context ก็ต่อเมื่อ Request ผ่าน `gateway` และตรวจสอบ `x-gateway-secret` สำเร็จเท่านั้น
 

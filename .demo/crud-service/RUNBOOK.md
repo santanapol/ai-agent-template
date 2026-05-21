@@ -2,7 +2,7 @@
 
 เอกสารสำหรับรันและดูแล **`crud-service`** ในเครื่องและสภาพแวดล้อมจริง
 
-**ที่ตั้งโปรเจกต์:** จาก root ของ repo **`access-platform`** ให้ `cd .demo/crud-service` (นี่คือ **root ของแพ็กเกจ** `crud-service` สำหรับคำสั่ง `npm` / `pm2`) — ถ้าใช้ร่วมกับ [ai-agent workspace](https://github.com/santanapol/ai-agent-cursor) โปรเจกต์มักอยู่ที่ `project-active/access-platform/.demo/crud-service/`
+**ที่ตั้งโปรเจกต์:** จาก root ของ repo **`zero-platform`** ให้ `cd .demo/crud-service` (นี่คือ **root ของแพ็กเกจ** `crud-service` สำหรับคำสั่ง `npm` / `pm2`) — ถ้าใช้ร่วมกับ [ai-agent workspace](https://github.com/santanapol/ai-agent-cursor) โปรเจกต์มักอยู่ที่ `project-active/zero-platform/.demo/crud-service/`
 
 ## Table of contents
 
@@ -34,7 +34,7 @@
 | Development | `npm run dev` — ดู [Development](#development)              |
 | Production  | PM2 + `ecosystem.config.cjs` — ดู [Production](#production) |
 
-มาตรฐานอ้างอิง: ดู [`openapi.yaml`](./openapi.yaml) ในแพ็กเกจนี้ — ชุดมาตรฐาน org อยู่ที่ [`_coding-standards/`](../../_coding-standards/README.md) ใต้ root ของ repo `access-platform` (ถ้า clone เฉพาะ monorepo โดยไม่มี `_coding-standards/` ที่ path นี้ ให้ใช้ SoT ตามที่ทีม mirror ไว้) รวม [`backend/`](../../_coding-standards/backend/README.md) สำหรับ contract / envelope · **MongoDB (connection, lifecycle, ERD, data dictionary, indexes):** [`docs/db/erd.md`](./docs/db/erd.md)
+มาตรฐานอ้างอิง: ดู [`openapi.yaml`](./openapi.yaml) ในแพ็กเกจนี้ — ชุดมาตรฐาน org อยู่ที่ [`_coding-standards/`](../../_coding-standards/README.md) ใต้ root ของ repo `zero-platform` (ถ้า clone เฉพาะ monorepo โดยไม่มี `_coding-standards/` ที่ path นี้ ให้ใช้ SoT ตามที่ทีม mirror ไว้) รวม [`backend/`](../../_coding-standards/backend/README.md) สำหรับ contract / envelope · **MongoDB (connection, lifecycle, ERD, data dictionary, indexes):** [`docs/db/erd.md`](./docs/db/erd.md)
 
 ---
 

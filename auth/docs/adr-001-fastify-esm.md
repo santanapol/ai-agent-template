@@ -3,7 +3,7 @@
 | Field                    | Value                                                                                         |
 | :----------------------- | :-------------------------------------------------------------------------------------------- |
 | **Status**               | Accepted                                                                                      |
-| **Scope**                | `access-platform/auth`                                                                        |
+| **Scope**                | `zero-platform/auth`                                                                        |
 | **Normative SoT**        | [`docs/architecture.md`](./architecture.md) — production contract, headers, errors, lifecycle |
 | **Architecture context** | [`ARCHITECTURE.md`](../../ARCHITECTURE.md)                                                    |
 

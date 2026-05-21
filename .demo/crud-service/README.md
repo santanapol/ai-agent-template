@@ -10,12 +10,12 @@ Package path in this monorepo: **`.demo/crud-service/`** (demo / teaching code).
 - **ADRs (package decisions):** [`docs/adrs/`](./docs/adrs/) — e.g. [`001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md) (`PUT` semantics on `items`)
 - **Through `gateway` (Bearer JWT อย่างเดียว):** [`openapi-via-gateway.yaml`](./openapi-via-gateway.yaml) (พอร์ต gateway ตัวอย่าง **3002**)
 
-**In the `access-platform` monorepo:** the default `gateway` route table sends **`/api/v1/items`** and the catch-all **`/api`** (e.g. **`/api/v1/me`**) → this service at **`http://127.0.0.1:3003`** — set **`GATEWAY_SHARED_SECRET`** in `.env` to match **`GATEWAY_SECRET`** in `gateway/.env` (see [`../../gateway/.env.example`](../../gateway/.env.example)).
+**In the `zero-platform` monorepo:** the default `gateway` route table sends **`/api/v1/items`** and the catch-all **`/api`** (e.g. **`/api/v1/me`**) → this service at **`http://127.0.0.1:3003`** — set **`GATEWAY_SHARED_SECRET`** in `.env` to match **`GATEWAY_SECRET`** in `gateway/.env` (see [`../../gateway/.env.example`](../../gateway/.env.example)).
 
 ## Where this code lives
 
 - **This repository (clone):** `cd` to **`.demo/crud-service/`** from the monorepo root.
-- **Inside the [ai-agent](https://github.com/santanapol/ai-agent-cursor) workspace:** usually `project-active/access-platform/.demo/crud-service/`.
+- **Inside the [ai-agent](https://github.com/santanapol/ai-agent-cursor) workspace:** usually `project-active/zero-platform/.demo/crud-service/`.
 
 ## Source layout (`src/`)
 

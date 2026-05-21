@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Repository identity:** rename monorepo from **access-platform** to **zero-platform** (folder, docs, workspace links). GitHub repository **`Chiang-Rai-Technology/zero-platform`** (formerly `authorization-gateway`).
 - **Gateway routes:** `/api/v1/members` → `/api/v1/staff` in [`gateway/routes.json`](./gateway/routes.json) and [`gateway/.env.example`](./gateway/.env.example); port **3004** reserved for planned [`services/staff/`](./services/staff/).
 - **`services/README.md`:** index table for **staff** (docs-only, planned `package.json`).
 - **`local-ports.md`:** staff row replaces members; layout links point at [`ARCHITECTURE.md`](./ARCHITECTURE.md) and org [`service-tree.md`](../../../_coding-standards/backend/service-tree.md).
@@ -32,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Auth OpenAPI:** single SoT at `auth/openapi.yaml` — remove `auth/docs/openapi.yaml`; update **`gateway/openapi.yaml`** normative links and `RUNBOOK.md` document map paths.
 - **Gateway OpenAPI:** single contract file at **`gateway/openapi.yaml`** (package root) — remove `gateway/docs/openapi.yaml`; `spec:lint` และเอกสารชี้ path ใหม่.
 - Move CRUD sample upstream to **`.demo/crud-service/`** and rename npm package to **`crud-service`** (was `demo-crud-service` at repo root). Docs and gateway links updated. Historical changelog subsections below still use the name **reference** for releases at that time.
-- Consolidate repository service layout: `auth/`, `gateway/`, and sample upstream under **`.demo/crud-service/`** at access-platform root (no `access/` wrapper).
+- Consolidate repository service layout: `auth/`, `gateway/`, and sample upstream under **`.demo/crud-service/`** at zero-platform root (no `access/` wrapper).
 - Align `auth` runtime/contract behavior with auth SoT, including canonical RFC7807 mapping and client-kind semantics.
 - Update gateway code matrix behavior: `GATEWAY_CLAIM_REJECTED` now maps to HTTP `401`, and JWT verify failures map to `GATEWAY_JWT_REJECTED`.
 - Update `crud-service` `/api/v1/me` payload key order to `ou`, `branch`, `userId`, `role`.
@@ -46,7 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
-- Remove vendored **`_coding-standards/`** at access-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../../_coding-standards/...`).
+- Remove vendored **`_coding-standards/`** at zero-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../../_coding-standards/...`).
 - Remove broad gateway catch-all routing in favor of explicit allowlisted prefixes.
 
 ## [0.1.1] - 2026-04-17

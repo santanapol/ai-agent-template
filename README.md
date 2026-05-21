@@ -1,4 +1,8 @@
-# access-platform
+# zero-platform
+
+API platform monorepo (auth, gateway, internal services) — identity and traffic enter through a single mesh boundary.
+
+**GitHub:** [Chiang-Rai-Technology/zero-platform](https://github.com/Chiang-Rai-Technology/zero-platform) · `git@github-berlin:Chiang-Rai-Technology/zero-platform.git`
 
 เอกสารในโฟลเดอร์นี้เป็นชุดอ้างอิงสำหรับ **บริการที่เกี่ยวข้องกันในระดับ repo** (`gateway`, `auth`, และ **`crud-service`** ใต้ **`.demo/`** — upstream ตัวอย่าง CRUD หลัง gateway: **`GET /api/v1/me`** + CRUD **`/api/v1/items`**)
 

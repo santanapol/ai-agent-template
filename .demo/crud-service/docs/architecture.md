@@ -1,6 +1,6 @@
 # crud-service — architecture (package SoT)
 
-This file is the **single service-level design summary** for the `.demo/crud-service` sample upstream (Express + MongoDB) in the `access-platform` monorepo. It complements the HTTP contract in the repository root [`openapi.yaml`](../openapi.yaml).
+This file is the **single service-level design summary** for the `.demo/crud-service` sample upstream (Express + MongoDB) in the `zero-platform` monorepo. It complements the HTTP contract in the repository root [`openapi.yaml`](../openapi.yaml).
 
 ## Role
 

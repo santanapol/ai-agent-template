@@ -1,4 +1,4 @@
-# Local dev ports (access-platform)
+# Local dev ports (zero-platform)
 
 เอกสารนี้เป็น **ดัชนีกลาง** สำหรับพอร์ต HTTP ที่ใช้บนเครื่องพัฒนา (local) เท่านั้น — production อาจใช้ reverse proxy, service mesh หรือ port mapping อื่น
 

@@ -3,7 +3,7 @@
 | Field | Value |
 | :--- | :--- |
 | **Status** | Accepted |
-| **Scope** | `access-platform/gateway` |
+| **Scope** | `zero-platform/gateway` |
 | **Normative SoT** | [`docs/architecture.md`](../architecture.md) — production contract, headers, errors, lifecycle |
 | **Architecture context** | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) |
 

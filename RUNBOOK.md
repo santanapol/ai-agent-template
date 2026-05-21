@@ -61,7 +61,7 @@ npm run init:db
 `auth` (publish) และ `gateway` (verify) ใช้ Redis key รูปแบบ **`user:{sub}:token_gen`** ร่วมกัน — สำหรับ dev แนะนำยก Redis ขึ้นด้วย Docker จาก root ของ monorepo:
 
 ```bash
-cd access-platform   # โฟลเดอร์ที่มี docker-compose.yml
+cd zero-platform   # โฟลเดอร์ที่มี docker-compose.yml
 docker compose up -d redis
 docker compose ps    # รอ health: healthy
 ```
