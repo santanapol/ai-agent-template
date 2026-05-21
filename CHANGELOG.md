@@ -27,9 +27,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Removed
 
 - **auth:** `docs/adr-001-fastify-esm.md` (superseded by `docs/adrs/001-fastify-esm.md`).
-
-### Removed (prior layout)
-
 - **`www/`** — Vite/React client (`www/app/`) and frontend docs (`www/docs/`); API-only monorepo focus.
 - **`PROJECT_TREE.md`** — monorepo folder SoT is [`ARCHITECTURE.md`](./ARCHITECTURE.md) plus per-package docs; package layout normative on parent workspace [`_coding-standards/backend/service-tree.md`](../../_coding-standards/backend/service-tree.md). Update [`README.md`](./README.md) document map.
 
