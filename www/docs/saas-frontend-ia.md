@@ -25,7 +25,7 @@ Identity scope ที่แนะนำใน Frontend state:
 ### Current MVP (`www/app`)
 
 - Shell: **Members** + **OU Settings** เท่านั้น — หลังเลือก branch แล้ว default ไป **`/ou/:ouId/branches/:branchId/members`**.
-- **Members API** (ผ่าน gateway): path แบบ flat **`/api/v1/members`** บน service **`members-api`** (`PORT` **3004**); `ouId` / `branchId` มาจาก gateway-injected **`x-user-ou`** / **`x-user-branch`** (ไม่ใส่ใน URL ของ API).
+- **Members API** (ผ่าน gateway): path แบบ flat **`/api/v1/members`** — **`services/members` ถูกลบออกจาก monorepo**; UI ยังเรียก path นี้ (e2e stub); เมื่อมี backend ใหม่ให้อัปเดต gateway `routes.json` + package SoT
 - **Reference** (`3003`): **`/api/v1/items`**, **`/api/v1/me`**, **`/metrics`** (ดู `gateway/routes.json`).
 
 ### OU-level routes
