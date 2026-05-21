@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: crud-service
-  version: 0.1.0
+  version: 0.1.1
   description: |
     Sample upstream backend for the `zero-platform` monorepo (lives under `services/.demo/crud-service/`).
 

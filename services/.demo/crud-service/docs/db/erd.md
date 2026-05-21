@@ -8,7 +8,7 @@
 | **Document index** | [README.md](../../README.md) |
 | **Status** | Active — persistence SoT |
 | **Parent doc** | [`../architecture.md`](../architecture.md) |
-| **Package version** | `0.1.0` |
+| **Package version** | `0.1.1` |
 | **Document version** | `1.0.2` |
 
 | Layer | Document |

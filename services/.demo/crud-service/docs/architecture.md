@@ -9,7 +9,7 @@
 | **Status** | Active — demo / teaching upstream |
 | **OpenAPI** | [`openapi.yaml`](../openapi.yaml) (direct mesh `:3003`) · [`openapi-via-gateway.yaml`](../openapi-via-gateway.yaml) (client Bearer `:3002`) |
 | **Scope** | Internal API หลัง **gateway** — ไม่ verify JWT; ไม่มี **`docs/domain.md`** (optional) |
-| **Package version** | `0.1.0` |
+| **Package version** | `0.1.1` |
 | **Document version** | `1.0.4` |
 
 | Layer | Document |

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-21
+
 ### Added
 
 - `docs/domain.md` — business SoT (scope, RBAC, HTTP intent, sequences).

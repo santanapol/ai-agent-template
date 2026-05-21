@@ -10,7 +10,7 @@
 | **Companion docs** | [`ARCHITECTURE.md`](../../ARCHITECTURE.md) (ADR / ภาพรวม), [`gateway` production SoT](../../gateway/docs/architecture.md) (`gateway` verify + `token_gen`), [implementation checklist](./session-revoke-token-gen-changes.md) (O-16 / D1 — implemented) |
 | **OpenAPI** | [`openapi.yaml`](../openapi.yaml) — **SoT เดียว** สำหรับสัญญา HTTP (`npm run spec:lint`, `npm run spec:codes`) — คำอธิบาย normative เพิ่มเติมอยู่ใน section **4–5** ของเอกสารนี้ |
 | **Scope** | เอกสารนี้ **ไม่** แทน `gateway` — client รับ JWT จาก service นี้ แล้วค่อยเรียก `gateway` ตาม [`docs/architecture.md`](../../gateway/docs/architecture.md) ของ `gateway` |
-| **Package version** | `0.1.5` |
+| **Package version** | `0.1.6` |
 | **Document version** | `1.4.1` |
 
 ---

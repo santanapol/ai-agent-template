@@ -8,7 +8,7 @@
 | **Document index** | [README.md](../../README.md) |
 | **Status** | Active — Persistence SoT ของ `auth` |
 | **Parent doc** | [`architecture.md`](../architecture.md) |
-| **Package version** | `0.1.5` |
+| **Package version** | `0.1.6` |
 | **Document version** | `1.0.1` |
 
 | Layer | Document |

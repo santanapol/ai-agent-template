@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-21
+
 ### Added
 
 - **`x-request-id`:** `genReqId` + response echo; upstream inject ใช้ `request.id` (`src/lib/request-id.js`)

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: gateway
-  version: 0.2.3
+  version: 0.2.4
   contact:
     name: engineering
     email: engineering@example.invalid

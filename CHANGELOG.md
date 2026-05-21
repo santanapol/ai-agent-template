@@ -6,60 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Added
+## [0.2.0] - 2026-05-21
 
-- **auth:** [`docs/domain.md`](./auth/docs/domain.md), [`docs/db/erd.md`](./auth/docs/db/erd.md), [`docs/adrs/001-fastify-esm.md`](./auth/docs/adrs/001-fastify-esm.md) (moved from package-root ADR); `request-id` + per-route rate-limit helpers; integration coverage for `x-request-id`.
-- **gateway:** `request-id` (`genReqId` + upstream echo); Prettier (`format` / `format:check`); OpenAPI problem-code validation script; tests for `routes.json` ↔ `routes.example.json` and `openapi.yaml` `info.version` ↔ `package.json`.
-- **crud-service:** OpenAPI `info.version` alignment tests; `.prettierignore` for prose/docs.
+Repository snapshot: **auth 0.1.6**, **gateway 0.2.4**, **crud-service 0.1.1**. Detail per package in [`auth/CHANGELOG.md`](./auth/CHANGELOG.md), [`gateway/CHANGELOG.md`](./gateway/CHANGELOG.md), [`services/.demo/crud-service/CHANGELOG.md`](./services/.demo/crud-service/CHANGELOG.md).
 
-### Changed
+### auth (0.1.6)
 
-- **Monorepo docs:** fix broken `_coding-standards` and [`model-matrix.md`](../../model-matrix.md) links in root, `auth`, and `gateway` changelogs/docs; [`local-ports.md`](./local-ports.md) service-tree path.
-- **README.md:** fix broken links to `_coding-standards` (use `../../` from monorepo root).
-- **ARCHITECTURE.md:** bump to v1.1.0; reflect implemented session revocation (O-16/D3) using `token_gen` and Redis; update sequence diagrams.
-- **RUNBOOK.md:** fix folder names (`auth-service` → `auth`, `gateway-service` → `gateway`), broken links, and upstream examples (`crud-service`).
-- **auth:** `docs/architecture.md` v1.4.1 — TOC/anchors, companion links, MongoDB index pointer to `docs/db/erd.md`; `docs/session-revoke-token-gen-changes.md` metadata; `init-db` comment → `docs/db/erd.md`.
-- **gateway:** `docs/architecture.md` v1.4.1 — `GATEWAY_CLAIM_REJECTED` documented as **401**; [`openapi.yaml`](./gateway/openapi.yaml) title `gateway`, login `client_kind` enum `[native, web]` aligned with auth; **`/auth` proxy route** in [`routes.json`](./gateway/routes.json) / [`routes.example.json`](./gateway/routes.example.json); README document map + local dev tables.
-- **crud-service:** docs resync (`architecture.md`, `docs/db/erd.md` v1.0.2, README/RUNBOOK); fix monorepo [`CHANGELOG.md`](../../../CHANGELOG.md) link depth; Spectral extends path.
-- **Gateway routes:** `/api/v1/members` → `/api/v1/staff`; port **3004** reserved for planned [`services/staff/`](./services/staff/) (docs-only, gitignored locally).
-- **`auth/.env.example`**, **`gateway/.env.example`:** default `CORS_ORIGINS` empty (no in-repo browser SPA).
+- Docs SoT: `domain.md`, `db/erd.md`, ADR under `docs/adrs/`; `architecture.md` v1.4.1.
+- Runtime: `x-request-id` echo; per-route rate-limit helpers; integration tests.
 
-### Removed
+### gateway (0.2.4)
 
-- **auth:** `docs/adr-001-fastify-esm.md` (superseded by `docs/adrs/001-fastify-esm.md`).
-- **`www/`** — Vite/React client (`www/app/`) and frontend docs (`www/docs/`); API-only monorepo focus.
-- **`PROJECT_TREE.md`** — monorepo folder SoT is [`ARCHITECTURE.md`](./ARCHITECTURE.md) plus per-package docs; package layout normative on parent workspace [`_coding-standards/backend/service-tree.md`](../../_coding-standards/backend/service-tree.md). Update [`README.md`](./README.md) document map.
+- `x-request-id`; Prettier + OpenAPI/routes alignment CI tests.
+- `/auth` proxy route; OpenAPI `client_kind` aligned with auth; `docs/architecture.md` v1.4.1.
+
+### crud-service (0.1.1)
+
+- Package docs resync (`architecture.md`, `db/erd.md`, README/RUNBOOK); OpenAPI version alignment tests.
+
+### Monorepo
 
 ### Added
 
 - Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs) and **`services/.demo/crud-service/`** gateway mesh demo upstream.
-- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional **staff**); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
-- Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
-- Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
-- Add gateway `spec:lint` script for OpenAPI linting with org Spectral rules.
-- Add standards registry entry `GATEWAY_ROUTE_NOT_FOUND` in `_coding-standards/gateway/codes.yaml`.
+- [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional **staff**).
+- Strict gateway route file `gateway/routes.json` and runtime source `ROUTES_FILE=./routes.json`.
+- Gateway fallback for unmatched routes: `404 application/problem+json`, `x-gateway-hit: true`, `GATEWAY_ROUTE_NOT_FOUND`.
+- Gateway `spec:lint` (org Spectral); registry entry `GATEWAY_ROUTE_NOT_FOUND`.
 
 ### Changed
 
-- **Auth OpenAPI:** single SoT at `auth/openapi.yaml` — remove `auth/docs/openapi.yaml`; update **`gateway/openapi.yaml`** normative links and `RUNBOOK.md` document map paths.
-- **Gateway OpenAPI:** single contract file at **`gateway/openapi.yaml`** (package root) — remove `gateway/docs/openapi.yaml`; `spec:lint` และเอกสารชี้ path ใหม่.
-- Move CRUD sample upstream to **`services/.demo/crud-service/`** and rename npm package to **`crud-service`** (was `demo-crud-service` at repo root). Docs and gateway links updated. Historical changelog subsections below still use the name **reference** for releases at that time.
-- Consolidate repository service layout: `auth/`, `gateway/`, and sample upstream under **`services/.demo/crud-service/`** at zero-platform root (no `access/` wrapper).
-- Align `auth` runtime/contract behavior with auth SoT, including canonical RFC7807 mapping and client-kind semantics.
-- Update gateway code matrix behavior: `GATEWAY_CLAIM_REJECTED` now maps to HTTP `401`, and JWT verify failures map to `GATEWAY_JWT_REJECTED`.
-- Update `crud-service` `/api/v1/me` payload key order to `ou`, `branch`, `userId`, `role`.
-- Refresh repository docs (`README.md`, `ARCHITECTURE.md`, `RUNBOOK.md`) and gateway docs/spec to match new route-miss behavior.
-- **`ARCHITECTURE.md`:** companion SoT / demo links use root layout paths (`gateway/`, `auth/`, `services/.demo/crud-service/`) instead of legacy `access/` prefixes.
+- Rename monorepo **access-platform** → **zero-platform**; GitHub **`Chiang-Rai-Technology/zero-platform`**.
+- Move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; `.gitignore` ignores `services/*` except **`services/.demo/**`**.
+- **ARCHITECTURE.md** v1.1.0 — `token_gen` + Redis session revocation (O-16/D3); updated sequence diagrams.
+- **RUNBOOK.md** — `auth` / `gateway` folder names; broken links; `crud-service` upstream examples.
+- **README.md**, **local-ports.md** — fix `_coding-standards` / `model-matrix.md` links.
+- Gateway routes: `/api/v1/members` → `/api/v1/staff` (port **3004** planned for `services/staff/`).
+- Auth/gateway OpenAPI single SoT at package root; normative cross-links updated.
+- **`auth/.env.example`**, **`gateway/.env.example`:** default `CORS_ORIGINS` empty.
 
 ### Fixed
 
-- Standardize refresh token rejection mapping in auth to `TOKEN_REFRESH_REJECTED` (replacing legacy split codes).
-- Align `crud-service` service quality gates and docs with `_coding-standards/backend` expectations.
+- Monorepo doc review: broken relative links and internal anchors across packages.
+- Auth refresh rejection → `TOKEN_REFRESH_REJECTED`; gateway `GATEWAY_CLAIM_REJECTED` → HTTP **401**.
 
 ### Removed
 
-- Remove vendored **`_coding-standards/`** at zero-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../_coding-standards/...`).
-- Remove broad gateway catch-all routing in favor of explicit allowlisted prefixes.
+- **`www/`** — Vite/React client; API-only monorepo focus.
+- **`PROJECT_TREE.md`** — folder SoT is `ARCHITECTURE.md` + per-package docs.
+- **auth:** `docs/adr-001-fastify-esm.md` → `docs/adrs/001-fastify-esm.md`.
+- Vendored **`_coding-standards/`** at zero-platform root (org SoT on parent workspace).
+- Broad gateway catch-all routing (explicit allowlisted prefixes only).
 
 ## [0.1.1] - 2026-04-17
 

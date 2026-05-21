@@ -1,6 +1,6 @@
 {
   "name": "crud-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Sample CRUD upstream API (GET /api/v1/me + items CRUD) — Express + Mongo behind gateway",
   "type": "commonjs",
