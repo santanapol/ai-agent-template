@@ -1,45 +1,65 @@
-# crud-service — MongoDB: ERD, data dictionary, indexes, and operations
+# crud-service — Database (ERD & schema)
 
-Single **`docs/db/`** reference for **MongoDB** used by this package: connection/lifecycle, persisted **`items`** shape (diagram + field dictionary), DBA index audit (`explain`), and security notes. HTTP contract: [`../../openapi.yaml`](../../openapi.yaml). Service design summary: [`../architecture.md`](../architecture.md).
+## Metadata
 
-**Scope:** this package writes **only** collection **`items`** in database **`DB_NAME`** (default `api_example`). **`GET /api/v1/me`** does not read MongoDB.
+| Field | Value |
+| :--- | :--- |
+| **Filename** | `docs/db/erd.md` |
+| **Document index** | [README.md](../../README.md) |
+| **Status** | Active — persistence SoT |
+| **Parent doc** | [`../architecture.md`](../architecture.md) |
+| **Package version** | `0.1.0` |
+| **Document version** | `1.0.2` |
 
----
+| Layer | Document |
+| :--- | :--- |
+| HTTP contract | [`openapi.yaml`](../../openapi.yaml) |
+| Service design | [`../architecture.md`](../architecture.md) |
+| ADR (`PUT`) | [`../adrs/001-put-full-replace.md`](../adrs/001-put-full-replace.md) |
+| Org MongoDB std | [`mongodb.md`](../../../../../../../_coding-standards/backend/mongodb.md) |
 
-## Engine and scope
+**Scope:** writes **only** collection **`items`** in **`DB_NAME`** (default `api_example`). **`GET /api/v1/me`** does not read MongoDB.
 
-- **Engine:** MongoDB (official Node driver in [`../../src/config/database.js`](../../src/config/database.js)).
-- **Database name:** from **`DB_NAME`** (default **`api_example`** — see [`../../.env.example`](../../.env.example) and [`../../src/config/env.js`](../../src/config/env.js)).
-- **Collections written by this service:** **`items`** only (repository constant in [`../../src/modules/items/items.repository.js`](../../src/modules/items/items.repository.js)).
+## Contents
 
-## Connection and environment
+1. [Engine and connection](#1-engine-and-connection)
+2. [Lifecycle](#2-lifecycle)
+3. [Security](#3-security)
+4. [ER diagram](#4-er-diagram)
+5. [Data dictionary (`items`)](#5-data-dictionary-items)
+6. [Indexes](#6-indexes)
 
-| Variable / setting                       | Role                                                                                                                   |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **`MONGODB_URI`**                        | Required at runtime (validated in production via `readEnv`). Full connection string including auth database if needed. |
-| **`DB_NAME`**                            | Logical database name passed to `MongoClient#db()`.                                                                    |
-| **`MAX_POOL_SIZE`**, **`MIN_POOL_SIZE`** | Driver pool sizing (defaults in `env.js`).                                                                             |
-| **`APP_NAME`**                           | MongoDB `appName` client metadata (default `crud-service`).                                                            |
+## 1. Engine and connection
 
-Driver options (timeouts, `readPreference`, retries) are set in code in `database.js` — change there if org policy requires different defaults.
+- **Engine:** MongoDB — driver config [`../../src/config/database.js`](../../src/config/database.js)
+- **Database:** **`DB_NAME`** (default **`api_example`**) — [`../../.env.example`](../../.env.example), [`../../src/config/env.js`](../../src/config/env.js)
+- **Collections written:** **`items`** only — [`../../src/modules/items/items.repository.js`](../../src/modules/items/items.repository.js)
 
-## Lifecycle
+| Variable | Role |
+| :--- | :--- |
+| **`MONGODB_URI`** | Required; full URI + `authSource` when needed |
+| **`DB_NAME`** | Logical DB for `MongoClient#db()` |
+| **`MAX_POOL_SIZE`**, **`MIN_POOL_SIZE`** | Pool sizing (`env.js`) |
+| **`APP_NAME`** | Client metadata (default `crud-service`) |
 
-1. **`src/server.js`** calls **`connectDatabase(env)`** before `listen`.
-2. Handlers use **`getDatabase()`** → `collection("items")` for CRUD.
-3. **`GET /readyz`** uses **`pingDatabase(1000)`** (admin `ping` with timeout).
-4. Shutdown closes the client via **`closeDatabase()`** (see server graceful shutdown).
+Timeouts, `readPreference`, retries: **`database.js`** (change per org policy).
 
-## Security notes
+## 2. Lifecycle
 
-- Never log raw **`MONGODB_URI`** with credentials; startup errors use a **redacted** URI in logs (`redactMongoUri` in `database.js`).
-- Tenant isolation for `items` is enforced in the repository layer with **`ou_id`** + **`branch_id`** on every query aligned to trusted headers (not from client body for identity).
+1. **`server.js`** → **`connectDatabase(env)`** before listen
+2. Handlers → **`getDatabase()`** → `collection("items")`
+3. **`GET /readyz`** → **`pingDatabase(1000)`**
+4. Shutdown → **`closeDatabase()`** (graceful shutdown)
 
----
+## 3. Security
 
-## ER diagram (logical)
+- **ห้าม** log raw **`MONGODB_URI`** — ใช้ `redactMongoUri` ใน `database.js`
+- Tenant isolation: **`ou_id`** + **`branch_id`** ทุก query จาก trusted headers (ไม่จาก client body สำหรับ identity)
+- **`ou_id` / `branch_id`:** repository แปลง **hex24** → `ObjectId` เมื่อครบรูปแบบ; ไม่เช่นนั้นเก็บ string (fixtures) — ใน local smoke ใช้ hex24 ตาม [`RUNBOOK.md`](../../RUNBOOK.md)
 
-Logical entity **`ITEMS`** = documents in MongoDB collection **`items`**. Types below are logical; the driver persists BSON (`ObjectId`, `Date`, arrays, strings).
+## 4. ER diagram
+
+Entity **`ITEMS`** = collection **`items`** (logical BSON types).
 
 ```mermaid
 erDiagram
@@ -61,51 +81,56 @@ erDiagram
   }
 ```
 
-**Cardinality:** each document is scoped by **`(ou_id, branch_id)`** on every read/write path in the repository. There is **no separate `tenants` collection** in this demo package.
+**Cardinality:** scoped by **`(ou_id, branch_id)`** — ไม่มี collection `tenants` แยกใน demo นี้
 
----
+## 5. Data dictionary (`items`)
 
-## Data dictionary (`items` document)
+Write shape SoT: [`items.repository.js`](../../src/modules/items/items.repository.js) (`createItem`, `mapPublic`, updates)
 
-| Storage field | BSON type (typical)  | Required           | Exposed in list/detail API | Description                                                                                  |
-| ------------- | -------------------- | ------------------ | -------------------------- | -------------------------------------------------------------------------------------------- |
-| `_id`         | `ObjectId`           | yes (generated)    | yes as `id` (string)       | Primary key; public shape uses stringified id (`mapPublic`).                                 |
-| `ou_id`       | `ObjectId` or string | yes                | no                         | Tenant OU; must align with trusted `x-user-ou` on requests.                                  |
-| `branch_id`   | `ObjectId` or string | yes                | no                         | Tenant branch; must align with trusted `x-user-branch`.                                      |
-| `code`        | string               | yes                | yes                        | Business code; uniqueness enforced per tenant in service layer / index strategy (see below). |
-| `name`        | string               | yes                | yes                        | Display name.                                                                                |
-| `description` | string or null       | no                 | yes                        | Nullable description.                                                                        |
-| `status`      | string               | yes                | yes                        | Example values: `draft`, `active`, `inactive` (see OpenAPI).                                 |
-| `tags`        | array of string      | no (defaults `[]`) | yes                        | Tag list; stored as BSON array.                                                              |
-| `cr_by`       | string               | yes                | no                         | Create audit: user id from trusted context.                                                  |
-| `cr_date`     | `Date`               | yes                | no                         | Create audit timestamp.                                                                      |
-| `cr_prog`     | string               | yes                | no                         | Create audit: route template / program id.                                                   |
-| `upd_by`      | string               | yes                | no                         | Update audit user id.                                                                        |
-| `upd_date`    | `Date`               | yes                | no                         | Update audit time; basis for weak **`ETag`** / optimistic concurrency.                       |
-| `upd_prog`    | string               | yes                | no                         | Update audit: route template / program id.                                                   |
+| Field | Type | Req | In API | Description |
+| :--- | :--- | :---: | :---: | :--- |
+| `_id` | `ObjectId` | yes | yes (`id`) | PK; stringified in `mapPublic` |
+| `ou_id` | `ObjectId` / string | yes | no | Tenant OU ↔ `x-user-ou` (hex24 ใน prod-like dev) |
+| `branch_id` | `ObjectId` / string | yes | no | Branch ↔ `x-user-branch` (hex24 ใน prod-like dev) |
+| `code` | string | yes | yes | Business code; **ควร** unique ต่อ `(ou_id, branch_id)` — ดู §6.3 |
+| `name` | string | yes | yes | Display name |
+| `description` | string / null | no | yes | Nullable |
+| `status` | string | yes | yes | e.g. `draft`, `active`, `inactive` (OpenAPI) |
+| `tags` | string[] | no | yes | Default `[]` |
+| `cr_by` | string | yes | no | Create audit user |
+| `cr_date` | `Date` | yes | no | Create time (UTC) |
+| `cr_prog` | string | yes | no | Create route template |
+| `upd_by` | string | yes | no | Update audit user |
+| `upd_date` | `Date` | yes | no | Update time; basis for weak **ETag** |
+| `upd_prog` | string | yes | no | Update route template |
 
-**Source of truth for write shape:** [`../../src/modules/items/items.repository.js`](../../src/modules/items/items.repository.js) (`createItem`, `mapPublic`, updates).
+### List query (`GET /api/v1/items`)
 
----
+- Filter: `{ ou_id, branch_id }` จาก trusted context
+- Sort: `{ _id: -1 }` · pagination: `page`, `limit` → `skip` / `limit` (response `pagination` ตาม [`openapi.yaml`](../../openapi.yaml))
+- Implementation: `listItems` ใน [`items.repository.js`](../../src/modules/items/items.repository.js)
 
-## Indexes (summary)
+## 6. Indexes
 
-| Index name                           | Key pattern                                       | Purpose (short)                                                            |
-| ------------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------- |
-| **`IDX_ITEMS_TENANT_LIST`**          | `{ ou_id: 1, branch_id: 1, _id: -1 }`             | Tenant-scoped list + `_id` descending pagination.                          |
-| **`IDX_ITEMS_TENANT_VERSION_CHECK`** | `{ _id: 1, ou_id: 1, branch_id: 1, upd_date: 1 }` | Reads/updates with tenant + `_id` + **`upd_date`** for optimistic locking. |
+**Policy:** app bootstrap **does not** create indexes — **DBA-owned**
 
-**Policy:** application bootstrap **does not** create indexes; treat indexes as **DBA-owned**.
+### Summary
 
-### IDX_ITEMS_TENANT_LIST
+| Name | Keys | Purpose |
+| :--- | :--- | :--- |
+| **`IDX_ITEMS_TENANT_LIST`** | `{ ou_id: 1, branch_id: 1, _id: -1 }` | Tenant list + `_id` desc pagination |
+| **`IDX_ITEMS_TENANT_VERSION_CHECK`** | `{ _id: 1, ou_id: 1, branch_id: 1, upd_date: 1 }` | Optimistic locking (`PUT`/`PATCH`/`DELETE`) |
+| **`IDX_ITEMS_TENANT_CODE_UNIQUE`** (recommended) | `{ ou_id: 1, branch_id: 1, code: 1 }` **unique** | กันซ้ำ `code` ต่อ tenant — §6.3 |
 
-- name: `IDX_ITEMS_TENANT_LIST`
-- keys: `{ ou_id: 1, branch_id: 1, _id: -1 }`
-- options: `{ background: true }`
-- reason: Supports `GET /api/v1/items` filter by tenant (`ou_id`, `branch_id`) with `_id` descending pagination/sort.
-- date: `2026-04-20`
-- PR/ticket: `TBD`
-- explain (`executionStats`):
+### `IDX_ITEMS_TENANT_LIST`
+
+| | |
+| :--- | :--- |
+| **keys** | `{ ou_id: 1, branch_id: 1, _id: -1 }` |
+| **options** | `{ background: true }` |
+| **reason** | `GET /api/v1/items` by tenant, sort `_id` desc |
+| **date** | `2026-04-20` |
+| **PR/ticket** | `N/A (demo package)` |
 
 ```js
 db.items
@@ -116,15 +141,15 @@ db.items
   .explain("executionStats");
 ```
 
-### IDX_ITEMS_TENANT_VERSION_CHECK
+### `IDX_ITEMS_TENANT_VERSION_CHECK`
 
-- name: `IDX_ITEMS_TENANT_VERSION_CHECK`
-- keys: `{ _id: 1, ou_id: 1, branch_id: 1, upd_date: 1 }`
-- options: `{ background: true }`
-- reason: Supports optimistic concurrency filters used by `PUT`, `PATCH`, and `DELETE` with `_id + tenant + upd_date`.
-- date: `2026-04-20`
-- PR/ticket: `TBD`
-- explain (`executionStats`):
+| | |
+| :--- | :--- |
+| **keys** | `{ _id: 1, ou_id: 1, branch_id: 1, upd_date: 1 }` |
+| **options** | `{ background: true }` |
+| **reason** | Filter `_id` + tenant + `upd_date` for concurrency |
+| **date** | `2026-04-20` |
+| **PR/ticket** | `N/A (demo package)` |
 
 ```js
 db.items
@@ -136,3 +161,14 @@ db.items
   })
   .explain("executionStats");
 ```
+
+### `IDX_ITEMS_TENANT_CODE_UNIQUE` (recommended — not created by app)
+
+| | |
+| :--- | :--- |
+| **keys** | `{ ou_id: 1, branch_id: 1, code: 1 }` |
+| **options** | `{ unique: true, background: true }` |
+| **reason** | Enforce business **`code`** uniqueness per tenant at DB layer |
+| **date** | `2026-05-21` |
+| **PR/ticket** | `N/A (demo package)` |
+| **app today** | Demo **ไม่** สร้าง index นี้ และ **ไม่** catch duplicate ใน service layer — DBA ควรสร้างใน env จริง; จนกว่าจะมี index อาจ insert ซ้ำได้ |

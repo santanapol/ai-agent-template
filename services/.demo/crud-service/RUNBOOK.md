@@ -1,10 +1,10 @@
 # crud-service Runbook
 
-เอกสารสำหรับรันและดูแล **`crud-service`** ในเครื่องและสภาพแวดล้อมจริง
+ปฏิบัติการรันและดูแล **`crud-service`** (local / production). Document map: [README.md](./README.md).
 
-**ที่ตั้งโปรเจกต์:** จาก root ของ repo **`zero-platform`** ให้ `cd services/.demo/crud-service` (นี่คือ **root ของแพ็กเกจ** `crud-service` สำหรับคำสั่ง `npm` / `pm2`) — ถ้าใช้ร่วมกับ [ai-agent workspace](https://github.com/santanapol/ai-agent-cursor) โปรเจกต์มักอยู่ที่ `project-active/zero-platform/services/.demo/crud-service/`
+**Package root:** `zero-platform/services/.demo/crud-service/` — คำสั่ง `npm` / `pm2` รันจากโฟลเดอร์นี้
 
-## Table of contents
+## Contents
 
 1. [Overview](#overview)
 2. [Configuration](#configuration)
@@ -12,200 +12,108 @@
 4. [Production](#production)
 5. [Health checks](#health-checks)
 6. [API contract](#api-contract)
-7. [Smoke tests (API)](#smoke-tests-api)
-8. [HTTP errors reference](#http-errors-reference)
+7. [Smoke tests](#smoke-tests) (direct mesh + [gateway E2E](#smoke-ผ่าน-gateway-e2e))
+8. [HTTP errors](#http-errors)
 9. [Troubleshooting](#troubleshooting)
-10. [Pre-merge quality gate](#pre-merge-quality-gate)
+10. [Pre-merge](#pre-merge)
 11. [Production handoff](#production-handoff)
 12. [Notes](#notes)
 
----
+## Overview
 
-<a id="overview"></a>
+| Item | Value |
+| :--- | :--- |
+| Service | `crud-service` |
+| Node | `>=24 <25` |
+| Database | MongoDB `api_example` — [docs/db/erd.md](./docs/db/erd.md) |
+| Port | **`3003`** default (`PORT`) — [local-ports.md](../../../local-ports.md) |
+| Dev | `npm run dev` |
+| Prod | PM2 [`ecosystem.config.cjs`](./ecosystem.config.cjs) |
 
-## ภาพรวม
+**SoT:** [openapi.yaml](./openapi.yaml) · [docs/architecture.md](./docs/architecture.md) · org [`_coding-standards/backend`](../../../../../_coding-standards/backend/README.md)
 
-| รายการ      | ค่า                                                         |
-| :---------- | :---------------------------------------------------------- |
-| Service     | `crud-service`                                              |
-| Node.js     | `>=24 <25`                                                  |
-| Database    | MongoDB ชื่อ `api_example`                                  |
-| HTTP listen | ค่าเริ่มต้น **`3003`** (`PORT` ใน `.env.example`)           |
-| Development | `npm run dev` — ดู [Development](#development)              |
-| Production  | PM2 + `ecosystem.config.cjs` — ดู [Production](#production) |
+**Gateway (local):** prefixes `/api/v1/items`, `/api/v1/me` → `:3003` — [gateway routes.json](../../../gateway/routes.json); `GATEWAY_SHARED_SECRET` = gateway `GATEWAY_SECRET`
 
-มาตรฐานอ้างอิง: ดู [`openapi.yaml`](./openapi.yaml) ในแพ็กเกจนี้ — ชุดมาตรฐาน org อยู่ที่ [`_coding-standards/`](../../_coding-standards/README.md) ใต้ root ของ repo `zero-platform` (ถ้า clone เฉพาะ monorepo โดยไม่มี `_coding-standards/` ที่ path นี้ ให้ใช้ SoT ตามที่ทีม mirror ไว้) รวม [`backend/`](../../_coding-standards/backend/README.md) สำหรับ contract / envelope · **MongoDB (connection, lifecycle, ERD, data dictionary, indexes):** [`docs/db/erd.md`](./docs/db/erd.md)
-
----
-
-<a id="configuration"></a>
-
-## การตั้งค่า (`.env`)
-
-จาก **root ของแพ็กเกจ** `services/.demo/crud-service/` (ไม่ใช่แค่ root ของ monorepo ถ้าคำสั่งรันคนละ cwd):
+## Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-ตัวแปรที่ต้องมีและควรตรวจก่อนรัน:
+| Variable | Notes |
+| :--- | :--- |
+| `PORT` | Default **`3003`** — ปรับ `curl` ด้านล่างถ้าเปลี่ยน |
+| `DB_NAME` | `api_example` |
+| `MONGODB_URI` | user/password + `authSource` ถูกต้อง |
+| `GATEWAY_SHARED_SECRET` | ตรง `x-gateway-secret` จาก gateway |
 
-| ตัวแปร                  | หมายเหตุ                                                                                                                                 |
-| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                  | ค่าเริ่มต้นใน repo นี้ **`3003`** (สอด `.env.example` / `README`) — ตัวอย่าง `curl` ด้านล่างใช้พอร์ตนี้; เปลี่ยนตาม `PORT` จริงถ้าไม่ตรง |
-| `DB_NAME`               | `api_example`                                                                                                                            |
-| `MONGODB_URI`           | connection string ที่มี user/password และ `authSource` ถูกต้อง                                                                           |
-| `GATEWAY_SHARED_SECRET` | ต้องตรงกับค่าที่ gateway ส่งมาใน `x-gateway-secret`                                                                                      |
+**`.env` load:** `src/config/load-local-env.js` — เติมเฉพาะคีย์ที่ยังไม่มีใน `process.env` (PM2/systemd/shell ชนะ). Production: secret ผ่าน platform env; ถ้าใช้ไฟล์บน server → `chmod 600`, ห้าม commit
 
-**ไฟล์ `.env`:** ถ้ามีที่ **root ของแพ็กเกจ** (เดียวกับที่มี `package.json`) แอปจะโหลดและตั้งเฉพาะตัวแปรที่ยังไม่มีใน `process.env` (ค่าจาก PM2 / systemd / shell มาก่อนเสมอ — ไม่ถูกทับ) ดู `src/config/load-local-env.js`  
-บน production แนะนำตั้ง secret ผ่าน environment ของแพลตฟอร์ม; ใช้ `.env` บน server ได้ถ้าคุมสิทธิ์ไฟล์ (เช่น `chmod 600`) และไม่ commit ขึ้น git
-
----
-
-<a id="development"></a>
-
-## Development (เครื่องพัฒนา)
-
-ใช้เมื่อแก้โค้ดในเครื่อง — โดยทั่วไป `NODE_ENV` เป็น `development` (ค่าเริ่มต้นของ Node / ไม่ได้ตั้งใน shell); ตั้งค่าลับใน `.env` ตาม [การตั้งค่า](#configuration)
-
-**ติดตั้งและรันแอป**
+## Development
 
 ```bash
 npm ci
 npm run dev
 ```
 
-**ตรวจคุณภาพโค้ดในเครื่อง**
+**Quality (ชุดเดียวกับ CI):** `npm run ci`
 
-ชุดเต็มเดียวกับ CI ของแพ็กเกจ:
+**เร็ว:** `npm run lint` · `npm test` · `npm run format:check` · `npm run format` (แก้รูปแบบ)
 
-```bash
-npm run ci
-```
+หลังขึ้น: [Health checks](#health-checks)
 
-ตรวจแบบเร็ว (ไม่รวม Spectral / audit):
+## Production
 
-```bash
-npm run lint
-npm test
-npm run format:check
-```
-
-ถ้าต้องการจัดรูปแบบไฟล์ในเครื่อง: `npm run format`
-
-หลังขึ้นปกติ เรียก health ได้ (ดู [ตรวจสุขภาพ](#health-checks))
-
----
-
-<a id="production"></a>
-
-## Production (server)
-
-ใช้บน server จริง — `ecosystem.config.cjs` ตั้ง `NODE_ENV=production`, `TZ=UTC`, และ `PORT` เริ่มต้น; ปรับค่าใน ecosystem หรือ inject ผ่าน environment ตามนโยบายทีม
-
-**ติดตั้ง dependencies (production เท่านั้น)**
+`ecosystem.config.cjs` — `NODE_ENV=production`, `TZ=UTC`
 
 ```bash
 npm ci --omit=dev
-```
-
-**เริ่มรันครั้งแรก (หรือหลัง `pm2 delete crud-service`)**
-
-```bash
 pm2 start ecosystem.config.cjs
 pm2 status
 pm2 logs crud-service
 ```
 
-**อัปเดตหลัง deploy โค้ด** (สั่งจาก **root ของแพ็กเกจ** `services/.demo/crud-service/` บน server)
+**Deploy (package root on server)**
 
-เมื่อ **มีการเปลี่ยน** `package.json` / `package-lock.json`:
+| Change | Commands |
+| :--- | :--- |
+| `package.json` / lock | `git pull --ff-only` → `npm ci --omit=dev` → `pm2 startOrReload ecosystem.config.cjs --update-env` |
+| Code only | `git pull --ff-only` → `pm2 startOrReload ecosystem.config.cjs --update-env` |
 
-```bash
-git pull --ff-only
-npm ci --omit=dev
-pm2 startOrReload ecosystem.config.cjs --update-env
-```
+**PM2:** `pm2 restart|stop|delete crud-service`
 
-เมื่อ **แก้แค่โค้ด** (ไม่แตะ dependencies):
+**Without PM2:** `NODE_ENV=production npm start` (หลังตั้ง env)
 
-```bash
-git pull --ff-only
-pm2 startOrReload ecosystem.config.cjs --update-env
-```
+## Health checks
 
-**จัดการ process**
+ไม่ต้อง `x-gateway-secret` บน `/healthz`, `/readyz` (แทน `3003` ด้วย `PORT` จริง)
 
-```bash
-pm2 restart crud-service
-pm2 stop crud-service
-pm2 delete crud-service
-```
+| Check | Command | Expected |
+| :--- | :--- | :--- |
+| Liveness | `curl -s http://127.0.0.1:3003/healthz` | `200` |
+| Readiness | `curl -s http://127.0.0.1:3003/readyz` | `200` (Mongo ping OK) |
+| Readiness fail | same | `503` + `SERVICE_UNAVAILABLE` |
 
-**ทางเลือก (ไม่ใช้ PM2):** จาก root ของแพ็กเกจหลังตั้ง env แล้ว
+## API contract
 
-```bash
-NODE_ENV=production npm start
-```
+**Mesh `/api/v1/*` (CRUD + `GET /api/v1/me`)**
 
----
+- `x-gateway-secret`, `x-user-id`, `x-user-ou`, `x-user-branch`
+- `x-user-role` — optional (สะท้อนใน `/api/v1/me`)
 
-<a id="health-checks"></a>
+**`Accept`:** ถ้าส่ง ต้องมี `application/json` หรือ `*/*` — ไม่เช่นนั้น `400` + `INVALID_HEADER`
 
-## ตรวจสุขภาพ
+**Concurrency:** `POST` → `ETag` + `Location`; `PATCH`/`PUT`/`DELETE` → `If-Match` (ดู org tenant-audit / [ADR 001](./docs/adrs/001-put-full-replace.md))
 
-ไม่ต้องส่ง `x-gateway-secret` บน `/healthz` และ `/readyz` ตาม wiring ปัจจุบัน — แทน `3003` ด้วยค่า `PORT` จริงถ้าไม่ใช้ค่าเริ่มต้นใน repo นี้
+**`GET /metrics`:** **`x-gateway-secret` เท่านั้น** — Prometheus text (ไม่ผ่าน `/api/v1` stack)
 
-| Endpoint        | คำสั่ง                                  | ผลที่คาดหวัง                                |
-| :-------------- | :-------------------------------------- | :------------------------------------------ |
-| Liveness        | `curl -s http://127.0.0.1:3003/healthz` | `200` — process ยังมีชีวิต                  |
-| Readiness       | `curl -s http://127.0.0.1:3003/readyz`  | `200` — MongoDB ping ผ่าน                   |
-| Readiness (ล้ม) | เหมือนบรรทัดบน                          | `503` + `SERVICE_UNAVAILABLE` — DB ไม่พร้อม |
+## Smoke tests
 
----
-
-<a id="api-contract"></a>
-
-## สัญญา API (headers และ concurrency)
-
-**Headers บังคับสำหรับ CRUD**
-
-- `x-gateway-secret`
-- `x-user-id`
-- `x-user-ou`
-- `x-user-branch`
-- `x-user-role` (ไม่บังคับ — ส่งเมื่อต้องการสะท้อน role ใน `GET /api/v1/me`)
-
-**Optimistic concurrency**
-
-- `POST` create: ได้ `ETag` และ `Location` ใน response headers
-- `GET` รายการเดียว / `PATCH` / `PUT` / `DELETE`: ต้องใช้ `If-Match` ตาม `ETag` ล่าสุด (รายละเอียดตาม `_coding-standards/backend/tenant-audit.md` เมื่อมี workspace มาตรฐาน)
-
-**`Accept` (แนะนำสำหรับ `/api/v1/*`)**
-
-- ถ้าส่ง `Accept` ต้องรวม **`application/json`** หรือ **`*/*`** — ไม่เช่นนั้น middleware ตอบ `400` + `INVALID_HEADER`
-
-**`GET /api/v1/me`**
-
-- ใช้ชุด mesh + user headers เดียวกับ CRUD (ไม่มี body)
-
-**`GET /metrics`**
-
-- ต้องมี **`x-gateway-secret`** เท่านั้น (ไม่ผ่าน stack `/api/v1`); response เป็น Prometheus text
-
----
-
-<a id="smoke-tests-api"></a>
-
-## Smoke tests (API)
-
-ใช้ได้ทั้งหลัง [Development](#development) (`npm run dev`) หรือชี้ `BASE_URL` ไป staging/production
-
-ตั้งค่า shell ใช้ซ้ำ (ค่าเริ่มต้นพอร์ต **`3003`** ตาม `.env.example`):
+Direct mesh (`BASE_URL` default `http://127.0.0.1:3003`):
 
 ```bash
 BASE_URL="http://127.0.0.1:3003"
-GW_SECRET="replace-me"
+GW_SECRET="replace-me"   # = GATEWAY_SHARED_SECRET
 
 COMMON_HEADERS=(
   -H "accept: application/json"
@@ -216,142 +124,170 @@ COMMON_HEADERS=(
 )
 ```
 
-**ด่วน:** `GET /api/v1/me` และ metrics
+**Quick**
 
 ```bash
 curl -i "${COMMON_HEADERS[@]}" "${BASE_URL}/api/v1/me"
-
 curl -i -H "x-gateway-secret: ${GW_SECRET}" "${BASE_URL}/metrics"
 ```
 
-ลำดับ **items CRUD** ที่แนะนำ:
-
-1. **List** — `GET /api/v1/items`
-2. **Create** — `POST /api/v1/items` (เก็บ `Location` และ `ETag` จาก headers)
-3. **Detail** — `GET /api/v1/items/<itemId>`
-4. **Patch** — `PATCH /api/v1/items/<itemId>` พร้อม `If-Match`
-5. **Delete** — `DELETE /api/v1/items/<itemId>` พร้อม `If-Match` ล่าสุด
-
-ตัวอย่างคำสั่ง:
+**Items CRUD (ลำดับแนะนำ):** list → create (เก็บ `Location`/`ETag`) → get → patch (`If-Match`) → delete (`If-Match` ล่าสุด)
 
 ```bash
-# 1. List
 curl -i "${COMMON_HEADERS[@]}" "${BASE_URL}/api/v1/items"
 
-# 2. Create
-curl -i "${COMMON_HEADERS[@]}" \
-  -H "content-type: application/json" \
+curl -i "${COMMON_HEADERS[@]}" -H "content-type: application/json" \
   -d '{"code":"ITEM-900","name":"Runbook Item","description":null,"status":"active","tags":[]}' \
   "${BASE_URL}/api/v1/items"
 
-# 3. Detail (แทน <itemId>)
+# แทน <itemId> / ETag จาก response ก่อนหน้า
 curl -i "${COMMON_HEADERS[@]}" "${BASE_URL}/api/v1/items/<itemId>"
-
-# 4. Patch (แทน ETag จาก detail หรือ create)
-curl -i "${COMMON_HEADERS[@]}" \
-  -H "content-type: application/json" \
-  -H 'if-match: W/"<etag-from-detail-or-create>"' \
-  -X PATCH \
-  -d '{"name":"Runbook Item Updated"}' \
+curl -i "${COMMON_HEADERS[@]}" -H "content-type: application/json" \
+  -H 'if-match: W/"<etag>"' -X PATCH -d '{"name":"Updated"}' \
   "${BASE_URL}/api/v1/items/<itemId>"
-
-# 5. Delete (ใช้ ETag ล่าสุดหลัง patch)
-curl -i "${COMMON_HEADERS[@]}" \
-  -H 'if-match: W/"<latest-etag>"' \
-  -X DELETE \
+curl -i "${COMMON_HEADERS[@]}" -H 'if-match: W/"<latest-etag>"' -X DELETE \
   "${BASE_URL}/api/v1/items/<itemId>"
 ```
 
----
+### Smoke ผ่าน gateway (E2E)
 
-<a id="http-errors-reference"></a>
+Client ยิง **gateway** (`:3002`) ด้วย **`Authorization: Bearer`** — gateway verify JWT (JWKS) แล้ว inject mesh headers ไป **crud-service** (`:3003`). ไม่ส่ง `x-gateway-secret` จาก client
 
-## อ้างอิง HTTP / error code
+**ก่อนเริ่ม**
 
-| HTTP  | `code` (ตัวอย่าง)              | สาเหตุโดยย่อ                                                 |
-| :---- | :----------------------------- | :----------------------------------------------------------- |
-| `400` | `INVALID_HEADER`               | `Accept` ไม่รองรับ / header สำคัญซ้ำ                         |
-| `401` | `GATEWAY_SECRET_REJECTED`      | `x-gateway-secret` ผิดหรือไม่มี                              |
-| `403` | `MISSING_GATEWAY_USER_CONTEXT` | ขาด `x-user-*` ที่บังคับ                                     |
-| `415` | `UNSUPPORTED_MEDIA_TYPE`       | `POST`/`PUT`/`PATCH` ไม่ใช่ `Content-Type: application/json` |
-| `412` | `VERSION_CONFLICT`             | `If-Match` ผิดรูปแบบหรือไม่ตรงเวอร์ชันปัจจุบัน               |
-| `428` | `PRECONDITION_REQUIRED`        | ขาด `If-Match` บน `PATCH` / `PUT` / `DELETE`                 |
-| `429` | (rate limit)                   | เกินโควตา (write เข้มกว่า read)                              |
-| `503` | `SERVICE_UNAVAILABLE`          | MongoDB ไม่พร้อม                                             |
+| Check | Command / action |
+| :--- | :--- |
+| User ตัวอย่าง | ที่ `auth`: `npm run seed:example` (ถ้ายังไม่มี) — user `demo` / password ตาม stdout |
+| Secret คู่กัน | `GATEWAY_SHARED_SECRET` (crud) = `GATEWAY_SECRET` (gateway) — template เดียวกัน |
+| Redis (แนะนำ) | [RUNBOOK §2.5](../../../RUNBOOK.md#25--redis-local--token_gen--immediate-revoke) — `REDIS_URL` ใน auth + gateway |
+| Routes | [gateway `routes.json`](../../../gateway/routes.json) มี `/api/v1/me` และ `/api/v1/items` → `:3003` |
 
-รายละเอียดเต็มดู `openapi.yaml` และ (ถ้ามีใน workspace) `_coding-standards/backend/codes.yaml`
+**Terminal layout**
 
----
+| # | Service | Cwd | Command | Port |
+| :---: | :--- | :--- | :--- | :---: |
+| 1 | auth | `zero-platform/auth` | `npm run dev` | 3001 |
+| 2 | crud-service | `services/.demo/crud-service` | `npm run dev` | 3003 |
+| 3 | gateway | `zero-platform/gateway` | `npm start` | 3002 |
+| 4 | smoke | `zero-platform/gateway` | `npm run try:proxy` | — |
 
-<a id="troubleshooting"></a>
+**Pre-flight (ทุกตัวต้อง `200`)**
 
-## แก้ปัญหา (Troubleshooting)
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3001/healthz   # auth
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3003/healthz   # crud-service
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3002/healthz   # gateway
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3003/readyz    # Mongo ready
+```
 
-| อาการ                              | สิ่งที่ตรวจ                                                                                                                                                                                                                                                                                                                                       |
-| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/readyz` = `503`                  | MongoDB รันอยู่หรือไม่; `MONGODB_URI` / `DB_NAME` / user / `authSource`                                                                                                                                                                                                                                                                           |
-| CRUD = `401` / `403`               | ครบ headers หรือไม่; `x-gateway-secret` ตรง `GATEWAY_SHARED_SECRET`                                                                                                                                                                                                                                                                               |
-| `PATCH` / `DELETE` = `412`         | ดึง `ETag` ใหม่จาก `GET` แล้วส่ง `If-Match` ใหม่                                                                                                                                                                                                                                                                                                  |
-| `429`                              | รอ reset window; write จำกัดเข้มกว่า read                                                                                                                                                                                                                                                                                                         |
-| `GET /api/v1/items` ได้ `data: []` | แอปอ่าน MongoDB ตาม **`DB_NAME`** (ค่าเริ่มต้น `api_example`) และ collection **`items`** — ตรวจใน Compass ว่าเอกสารอยู่ database เดียวกัน; ถ้าข้อมูลอยู่ database อื่น ให้ตั้ง `DB_NAME` / URI ให้ตรง หรือย้ายข้อมูลเข้า `api_example`. ส่ง **`x-user-ou`** / **`x-user-branch`** เป็น **สตริง hex 24 ตัว** ให้ตรง `ou_id` / `branch_id` ในเอกสาร |
-| `MODULE_NOT_FOUND` ตอน boot        | รัน `npm ci` ที่ **root ของแพ็กเกจ**; ตรวจว่ามี `node_modules/pino`; ถ้า `NODE_ENV` ไม่ใช่ `production` แต่ติดตั้งแบบ `--omit=dev` โค้ดจะข้าม `pino-pretty` ถ้าไม่มีแพ็กเกจ — บน server ให้ยึด [Production](#production) (`NODE_ENV=production` ผ่าน PM2)                                                                                         |
+**อัตโนมัติ (แนะนำ)** — จาก `gateway/`:
 
----
+```bash
+# default: login → GET /api/v1/me
+npm run try:proxy
 
-<a id="pre-merge-quality-gate"></a>
+# ทด items list ผ่าน gateway
+TRY_PROXY_PATH=/api/v1/items npm run try:proxy
+```
 
-## ก่อน merge (quality gate)
+Env (optional): `TRY_AUTH_URL`, `TRY_GATEWAY_URL`, `TRY_PROXY_PATH`, `TRY_LOGIN_USERNAME`, `TRY_LOGIN_PASSWORD` — ดู [gateway `.env.example`](../../../gateway/.env.example)
 
-แนะนำรันชุดเดียวกับ CI:
+**Manual `curl`**
+
+```bash
+AUTH=http://127.0.0.1:3001
+GW=http://127.0.0.1:3002
+
+# 1) Login (native JSON) — แก้ user/password ตาม seed
+LOGIN=$(curl -s -X POST "${AUTH}/auth/login" \
+  -H 'content-type: application/json' \
+  -d '{"username":"demo","password":"DevExample-demo-1","client_kind":"native"}')
+TOKEN=$(printf '%s' "$LOGIN" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+# หรือใช้ jq: TOKEN=$(echo "$LOGIN" | jq -r .access_token)
+
+test -n "$TOKEN" || { echo "login failed: $LOGIN"; exit 1; }
+
+# 2) Profile ผ่าน gateway (trusted headers inject ที่ edge)
+curl -i "${GW}/api/v1/me" \
+  -H "authorization: Bearer ${TOKEN}" \
+  -H 'accept: application/json'
+
+# 3) Items list ผ่าน gateway
+curl -i "${GW}/api/v1/items" \
+  -H "authorization: Bearer ${TOKEN}" \
+  -H 'accept: application/json'
+```
+
+**ผลที่คาดหวัง:** `GET /api/v1/me` → `200` + JSON profile; `GET /api/v1/items` → `200` + envelope (อาจ `data: []` ถ้ายังไม่มี item — ดู [Troubleshooting](#troubleshooting))
+
+**ถ้าล้ม**
+
+| HTTP | สาเหตุที่พบบ่อย |
+| :--- | :--- |
+| `401` ที่ gateway | JWT/JWKS/`token_gen`+Redis — `JWT_JWKS_URL` ชี้ auth; ลอง login ใหม่ |
+| `502` / `504` | crud-service ไม่ขึ้น หรือ `ROUTES_JSON` ไม่มี prefix — ดู log `[gateway] Effective proxy prefixes:` |
+| `401` / `403` ที่ upstream (หลัง proxy) | แปลก — client ไม่ควรยิง `:3003` โดยตรงใน flow นี้; ตรวจ gateway inject headers |
+
+Monorepo E2E เต็ม (auth + Redis + หลาย upstream): [RUNBOOK.md](../../../RUNBOOK.md)
+
+## HTTP errors
+
+| HTTP | `code` | Cause (short) |
+| :--- | :--- | :--- |
+| 400 | `INVALID_HEADER` | `Accept` / duplicate headers |
+| 401 | `GATEWAY_SECRET_REJECTED` | `x-gateway-secret` |
+| 403 | `MISSING_GATEWAY_USER_CONTEXT` | missing `x-user-*` |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | body not JSON |
+| 412 | `VERSION_CONFLICT` | bad `If-Match` |
+| 428 | `PRECONDITION_REQUIRED` | no `If-Match` on mutating |
+| 429 | (rate limit) | quota exceeded |
+| 503 | `SERVICE_UNAVAILABLE` | Mongo down |
+
+Full registry: `openapi.yaml`, [codes.yaml](./codes.yaml), org `backend/codes.yaml`
+
+## Troubleshooting
+
+| Symptom | Check |
+| :--- | :--- |
+| `/readyz` 503 | Mongo up; `MONGODB_URI` / `DB_NAME` / `authSource` |
+| CRUD 401/403 | headers; `GATEWAY_SHARED_SECRET` |
+| PATCH/DELETE 412 | fresh `ETag` from `GET` |
+| 429 | rate window; writes stricter than reads |
+| `items` empty `data: []` | DB = `DB_NAME`; collection `items`; `x-user-ou` / `x-user-branch` hex24 ตรงเอกสาร |
+| `MODULE_NOT_FOUND` | `npm ci` at package root; `pino` present; prod ใช้ `NODE_ENV=production` + PM2 |
+
+## Pre-merge
 
 ```bash
 npm run ci
 ```
 
-ทางเลือก (ไม่รวม Spectral / `npm audit`):
+Optional: `npm run lint` · `npm test` · `npm run format:check` · `npm run spec:lint`
 
-```bash
-npm run lint
-npm test
-npm run format:check
-npm run spec:lint
-```
+## Production handoff
 
----
+### Before deploy
 
-<a id="production-handoff"></a>
+- [ ] `npm run ci` (หรือ `lint` + `test` + `format:check` + `spec:lint` ตามทีม)
+- [ ] `openapi.yaml` ↔ implementation
+- [ ] indexes ตาม [docs/db/erd.md](./docs/db/erd.md)
+- [ ] `package.json` version (ถ้าทีม bump release)
 
-## มอบงาน production
+### Deploy
 
-### ก่อน deploy
+- [ ] code + env (`MONGODB_URI`, `GATEWAY_SHARED_SECRET`, …)
+- [ ] [Production](#production) (`npm ci --omit=dev` เมื่อ lock เปลี่ยน)
+- [ ] `RATE_LIMIT_STORE` (Redis) ถ้าหลาย instance
+- [ ] gateway ถึง `PORT` ได้
 
-- [ ] `npm run ci` ผ่าน (หรืออย่างน้อย `lint` + `test` + `format:check` + `spec:lint` ตามนโยบายทีม)
-- [ ] `openapi.yaml` สอดคล้อง implementation
-- [ ] index บน DB ตรงแผนใน `docs/db/erd.md`
-- [ ] เวอร์ชันใน `package.json` (ถ้าทีมใช้ semver สำหรับ release)
+### After deploy
 
-### ตอน deploy
+- [ ] `/healthz` + `/readyz` = `200`
+- [ ] logs ไม่ error ตอน boot
+- [ ] smoke: `/api/v1/me` + `/api/v1/items` ([Smoke tests](#smoke-tests))
 
-- [ ] ดึงโค้ดล่าสุดบน server (เช่น `git pull --ff-only`) หรือตาม flow CD ของทีม
-- [ ] ตัวแปร production (`MONGODB_URI`, `GATEWAY_SHARED_SECRET` ฯลฯ) ครบ — ผ่าน env ของระบบ / PM2 หรือไฟล์ `.env` บน server (โหลดเฉพาะคีย์ที่ยังไม่ถูกตั้งใน environment)
-- [ ] ติดตั้งและรีโหลดตาม [Production](#production) (`npm ci --omit=dev` เมื่อ lock เปลี่ยน, `pm2 startOrReload` ฯลฯ)
-- [ ] หลาย instance: พิจารณา `RATE_LIMIT_STORE` (เช่น Redis) ตามสถาปัตยกรรม
-- [ ] `ecosystem.config.cjs` ตั้ง instances / memory ตาม SLO
-- [ ] พอร์ตที่ gateway เข้าถึงได้
+## Notes
 
-### หลัง deploy
-
-- [ ] `GET /healthz` = `200`
-- [ ] `GET /readyz` = `200`
-- [ ] ตรวจ log (PM2 / Pino) ไม่มี error ตอน boot
-- [ ] smoke: `GET /api/v1/me` และ `GET /api/v1/items` พร้อม mesh + user headers (ดู [Smoke tests (API)](#smoke-tests-api))
-
----
-
-<a id="notes"></a>
-
-## หมายเหตุ
-
-- ห้าม log ค่าลับ (`MONGODB_URI` เต็ม, `GATEWAY_SHARED_SECRET`)
-- ทุกการเปลี่ยน index ต้องมี audit ใน `docs/db/erd.md` (ส่วน Indexes)
-- ชื่อ process ใน PM2 แนะนำให้สอดคล้อง เช่น `crud-service`
+- ห้าม log `MONGODB_URI` เต็ม / `GATEWAY_SHARED_SECRET`
+- index changes → audit ใน `docs/db/erd.md`
+- PM2 name: `crud-service`

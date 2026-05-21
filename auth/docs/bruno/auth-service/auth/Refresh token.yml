@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/auth/refresh"
+  url: '{{baseUrl}}/auth/refresh'
   headers:
     - name: Content-Type
       value: application/json

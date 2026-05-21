@@ -27,7 +27,7 @@ describe('redis-token-gen', () => {
 
   test('getCurrentTokenGenFromRedis returns 0 when key missing', async () => {
     const client = {
-      async get () {
+      async get() {
         return null
       }
     }
@@ -36,7 +36,7 @@ describe('redis-token-gen', () => {
 
   test('getCurrentTokenGenFromRedis parses stored value', async () => {
     const client = {
-      async get (key) {
+      async get(key) {
         expect(key).toBe('user:507f1f77bcf86cd799439011:token_gen')
         return '2'
       }

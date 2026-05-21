@@ -56,7 +56,7 @@ export const GATEWAY_ERROR_DEF = {
  * @param {keyof typeof GATEWAY_ERROR_DEF} codeKey
  * @param {{ detail?: string }} [opts]
  */
-export function sendGatewayProblem (reply, types, codeKey, opts = {}) {
+export function sendGatewayProblem(reply, types, codeKey, opts = {}) {
   const def = GATEWAY_ERROR_DEF[codeKey]
   if (!def) {
     throw new Error(`Unknown gateway problem code: ${String(codeKey)}`)

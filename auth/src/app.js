@@ -5,6 +5,7 @@ import mongoPlugin from './plugins/mongo.js'
 import { loadEnv } from './config/env.js'
 import { buildFastifyLoggerOptions } from './config/logger.js'
 import { problemPayload, problemTypes } from './lib/problem.js'
+import { genRequestId } from './lib/request-id.js'
 import { createClient } from 'redis'
 import { loadSigningMaterial, finalizeJwk } from './lib/jwt-access.js'
 import { AuthRepository } from './modules/auth/auth.repository.js'
@@ -25,9 +26,16 @@ export async function buildApp(env = loadEnv(), options = {}) {
   const types = problemTypes(env.PROBLEM_TYPE_BASE)
   const fastify = Fastify({
     logger: options.logger === false ? false : buildFastifyLoggerOptions(env),
-    trustProxy: env.TRUST_PROXY
+    trustProxy: env.TRUST_PROXY,
+    genReqId: genRequestId,
+    requestIdHeader: 'x-request-id'
   })
   fastify.decorate('problemTypes', types)
+
+  fastify.addHook('onSend', async (request, reply, payload) => {
+    reply.header('x-request-id', request.id)
+    return payload
+  })
 
   // [Forbidden] Duplicate Headers check (api.md § 3.1)
   fastify.addHook('onRequest', async (request, reply) => {

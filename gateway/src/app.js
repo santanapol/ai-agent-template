@@ -11,6 +11,7 @@ import jwtAuthPlugin from './plugins/jwt-auth.js'
 import injectContextPlugin from './plugins/inject-context.js'
 import { registerProxies } from './proxy/register-proxies.js'
 import { upstreamProblemDetail } from './lib/upstream-problem-detail.js'
+import { genRequestId } from './lib/request-id.js'
 
 const TRUSTED_HEADER_KEYS = [
   'x-gateway-secret',
@@ -29,7 +30,7 @@ const TRUSTED_HEADER_KEYS = [
  * @param {Record<string, unknown>} headers
  * @param {string} headerName
  */
-function hasDuplicateHeader (raw, headers, headerName) {
+function hasDuplicateHeader(raw, headers, headerName) {
   const distinct = /** @type {Record<string, unknown> | undefined} */ (raw.headersDistinct)
   if (distinct && Array.isArray(distinct[headerName]) && distinct[headerName].length > 1) {
     return true
@@ -41,14 +42,16 @@ function hasDuplicateHeader (raw, headers, headerName) {
  * @param {ReturnType<typeof loadEnv>} [env]
  * @param {{ logger?: boolean, redisClient?: import('redis').RedisClientType | { get: (key: string) => Promise<string | null>, ping?: () => Promise<string> } | null }} [options]
  */
-export async function buildApp (env = loadEnv(), options = {}) {
+export async function buildApp(env = loadEnv(), options = {}) {
   const routes = loadRoutes(env)
   const startedAtMs = Date.now()
 
   const fastify = Fastify({
     logger: options.logger === false ? false : buildFastifyLoggerOptions(env),
     trustProxy: env.TRUST_PROXY,
-    bodyLimit: env.MAX_BODY_BYTES
+    bodyLimit: env.MAX_BODY_BYTES,
+    genReqId: genRequestId,
+    requestIdHeader: 'x-request-id'
   })
 
   if (options.logger !== false) {
@@ -74,7 +77,7 @@ export async function buildApp (env = loadEnv(), options = {}) {
      * @param {keyof import('./lib/gateway-problems.js').GATEWAY_ERROR_DEF} codeKey
      * @param {{ detail?: string }} [opts]
      */
-    send (reply, codeKey, opts) {
+    send(reply, codeKey, opts) {
       return sendGatewayProblem(reply, problemTypeUris, codeKey, opts)
     }
   })
@@ -89,7 +92,8 @@ export async function buildApp (env = loadEnv(), options = {}) {
     }
   })
 
-  fastify.addHook('onSend', async (_request, reply, payload) => {
+  fastify.addHook('onSend', async (request, reply, payload) => {
+    reply.header('x-request-id', request.id)
     if (!reply.getHeader('x-content-type-options')) {
       reply.header('X-Content-Type-Options', 'nosniff')
     }
@@ -127,9 +131,7 @@ export async function buildApp (env = loadEnv(), options = {}) {
   }
 
   const serviceLog =
-    options.logger === false
-      ? { warn: () => {}, error: () => {}, info: () => {} }
-      : fastify.log
+    options.logger === false ? { warn: () => {}, error: () => {}, info: () => {} } : fastify.log
 
   /** @type {import('redis').RedisClientType | { get: (key: string) => Promise<string | null>, ping?: () => Promise<string> } | null} */
   let redisClient = options.redisClient ?? null
@@ -220,7 +222,10 @@ export async function buildApp (env = loadEnv(), options = {}) {
     })
   })
 
-  fastify.decorate('gatewayRoutePrefixes', routes.map((r) => r.prefix))
+  fastify.decorate(
+    'gatewayRoutePrefixes',
+    routes.map((r) => r.prefix)
+  )
 
   return fastify
 }

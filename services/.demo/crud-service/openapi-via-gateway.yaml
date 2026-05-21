@@ -12,9 +12,9 @@ info:
 
     **Normative JSON shapes** (envelopes, `Item`, errors): reuse definitions in **[`./openapi.yaml`](./openapi.yaml)** via `$ref` below.
 
-    **Gateway edge behaviour** (JWT failures as `application/problem+json`, proxy rules): **[`../../gateway/openapi.yaml`](../../gateway/openapi.yaml)** and **[`../../gateway/docs/architecture.md`](../../gateway/docs/architecture.md)**.
+    **Gateway edge behaviour** (JWT failures as `application/problem+json`, proxy rules): **[`../../../gateway/openapi.yaml`](../../../gateway/openapi.yaml)** and **[`../../../gateway/docs/architecture.md`](../../../gateway/docs/architecture.md)**.
 
-    Monorepo route table (prefix → upstream) for this demo: **[`../../gateway/routes.json`](../../gateway/routes.json)** (`/api/v1/items`, `/api/v1/me` → `http://127.0.0.1:3003`).
+    Monorepo route table (prefix → upstream) for this demo: **[`../../../gateway/routes.json`](../../../gateway/routes.json)** (`/api/v1/items`, `/api/v1/me` → `http://127.0.0.1:3003`).
 
     Service design: [`docs/architecture.md`](./docs/architecture.md).
   license:
@@ -319,4 +319,4 @@ components:
       bearerFormat: JWT
       description: |
         RS256 access JWT verified by **gateway** (`JWT_JWKS_URL`, optional issuer/audience per gateway SoT).
-        Align name/shape with **`gateway`** [`../../gateway/openapi.yaml`](../../gateway/openapi.yaml) (`BearerJwt`).
+        Align name/shape with **`gateway`** [`../../../gateway/openapi.yaml`](../../../gateway/openapi.yaml) (`BearerJwt`).

@@ -27,11 +27,10 @@ const PINO_REDACT = {
   remove: false
 }
 
-export function buildFastifyLoggerOptions (env) {
+export function buildFastifyLoggerOptions(env) {
   const level = env.LOG_LEVEL ?? 'info'
   const usePretty =
-    env.LOG_PRETTY === true ||
-    (env.LOG_PRETTY !== false && process.env.NODE_ENV !== 'production')
+    env.LOG_PRETTY === true || (env.LOG_PRETTY !== false && process.env.NODE_ENV !== 'production')
 
   const base = { level, redact: PINO_REDACT }
 

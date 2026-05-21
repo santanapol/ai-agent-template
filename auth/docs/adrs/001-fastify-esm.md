@@ -1,11 +1,11 @@
 # ADR 001 — `auth`: ESM + Fastify + Node:test
 
-| Field                    | Value                                                                                         |
-| :----------------------- | :-------------------------------------------------------------------------------------------- |
-| **Status**               | Accepted                                                                                      |
-| **Scope**                | `zero-platform/auth`                                                                        |
-| **Normative SoT**        | [`docs/architecture.md`](./architecture.md) — production contract, headers, errors, lifecycle |
-| **Architecture context** | [`ARCHITECTURE.md`](../../ARCHITECTURE.md)                                                    |
+| Field | Value |
+| :--- | :--- |
+| **Status** | Accepted |
+| **Scope** | `zero-platform/auth` |
+| **Normative SoT** | [`docs/architecture.md`](../architecture.md) — production contract, headers, errors, lifecycle |
+| **Architecture context** | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) |
 
 ## Context
 
@@ -20,5 +20,5 @@
 ## Consequences
 
 - ทีมพัฒนาต้องใช้ความคุ้นเคยกับ Fastify และ ESM ในการบำรุงรักษา
-- ต้องรักษาความสอดคล้องระหว่าง [`docs/architecture.md`](./architecture.md) และ ADR นี้เมื่อมีการเปลี่ยนแปลงโครงสร้างหลัก
+- ต้องรักษาความสอดคล้องระหว่าง [`docs/architecture.md`](../architecture.md) และ ADR นี้เมื่อมีการเปลี่ยนแปลงโครงสร้างหลัก
 - การใช้ `node:test` ช่วยให้รันเทสต์ได้เร็วขึ้นและลดความซับซ้อนของ configuration

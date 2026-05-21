@@ -4,7 +4,9 @@ import Joi from 'joi'
 
 const routeItemSchema = Joi.object({
   prefix: Joi.string().pattern(/^\//u).required(),
-  upstream: Joi.string().uri({ scheme: [/https?/] }).required(),
+  upstream: Joi.string()
+    .uri({ scheme: [/https?/] })
+    .required(),
   stripPrefix: Joi.boolean().default(true)
 })
 
@@ -13,7 +15,7 @@ const routesSchema = Joi.array().items(routeItemSchema).min(1).required()
 /**
  * @param {ReturnType<import('./env.js').loadEnv>} env
  */
-export function loadRoutes (env) {
+export function loadRoutes(env) {
   const raw =
     env.ROUTES_FILE && String(env.ROUTES_FILE).trim() !== ''
       ? readFileSync(resolve(String(env.ROUTES_FILE)), 'utf8')

@@ -1,85 +1,72 @@
 # crud-service
 
-Sample internal API: **`GET /api/v1/me`** (trusted gateway headers) plus CRUD on **`items`** using MongoDB, tenant headers, and std.min envelope patterns.
+Sample internal API (Express) for `zero-platform` — **`GET /api/v1/me`** (trusted gateway headers) and **items** CRUD (MongoDB, tenant scope, std.min envelope).
 
-Package path in this monorepo: **`services/.demo/crud-service/`** (demo / teaching code).
+Path: **`services/.demo/crud-service/`** (demo / teaching).
 
-- **Direct to this service:** [`openapi.yaml`](./openapi.yaml) (port **3003**; mesh + `x-user-*` ตาม spec)
-- **Architecture (service SoT):** [`docs/architecture.md`](./docs/architecture.md) (trust boundary, persistence, ERD)
-- **MongoDB (ERD, data dictionary, indexes, ops):** [`docs/db/erd.md`](./docs/db/erd.md)
-- **ADRs (package decisions):** [`docs/adrs/`](./docs/adrs/) — e.g. [`001-put-full-replace.md`](./docs/adrs/001-put-full-replace.md) (`PUT` semantics on `items`)
-- **Through `gateway` (Bearer JWT อย่างเดียว):** [`openapi-via-gateway.yaml`](./openapi-via-gateway.yaml) (พอร์ต gateway ตัวอย่าง **3002**)
+| Read | Role |
+| :--- | :--- |
+| [docs/architecture.md](./docs/architecture.md) | **Technical SoT** — trust boundary, HTTP, persistence |
+| [docs/db/erd.md](./docs/db/erd.md) | **Database** — ERD, data dictionary, indexes |
+| [openapi.yaml](./openapi.yaml) | **HTTP Contract** — direct mesh (`:3003`, `x-user-*`) |
+| [openapi-via-gateway.yaml](./openapi-via-gateway.yaml) | **Public client** — Bearer JWT via gateway (`:3002`) |
+| [docs/adrs/001-put-full-replace.md](./docs/adrs/001-put-full-replace.md) | **ADR 001** — `PUT` full replace on `items` |
+| [docs/bruno/](./docs/bruno/) | **Optional** — Bruno collections (direct + via gateway) |
+| [RUNBOOK.md](./RUNBOOK.md) | Ops — setup, smoke, troubleshooting |
+| [../../../local-ports.md](../../../local-ports.md) | Monorepo port index |
+| [../../../gateway/README.md](../../../gateway/README.md) | Gateway routes + `GATEWAY_SECRET` |
+| [`_coding-standards/backend`](../../../../../_coding-standards/backend/README.md) | Org backend mesh standard |
+| [codes.yaml](./codes.yaml) | Service error code snapshot |
 
-**In the `zero-platform` monorepo:** the default `gateway` route table sends **`/api/v1/items`** and the catch-all **`/api`** (e.g. **`/api/v1/me`**) → this service at **`http://127.0.0.1:3003`** — set **`GATEWAY_SHARED_SECRET`** in `.env` to match **`GATEWAY_SECRET`** in `gateway/.env` (see [`../../gateway/.env.example`](../../gateway/.env.example)).
+## Scripts
 
-## Where this code lives
+- `npm run dev` / `npm start` — local (`TZ=UTC`, port **3003** default)
+- `npm test` / `npm run ci` — quality gates (lint, format, Spectral, audit)
+- `npm run spec:lint` — `openapi.yaml` + `openapi-via-gateway.yaml`
+- `npm run test:integration:mongo` — Mongo integration subset
 
-- **This repository (clone):** `cd` to **`services/.demo/crud-service/`** from the monorepo root.
-- **Inside the [ai-agent](https://github.com/santanapol/ai-agent-cursor) workspace:** usually `project-active/zero-platform/services/.demo/crud-service/`.
+## Quick start
 
-## Source layout (`src/`)
+1. `cp .env.example .env` — `MONGODB_URI`, `GATEWAY_SHARED_SECRET` (ตรง [gateway `.env`](../../../gateway/.env.example))
+2. `npm ci` → `npm run dev`
+3. `GET /healthz` — liveness; `GET /readyz` เมื่อ Mongo พร้อม
 
-- **Domain / HTTP modules:** only **`src/modules/items/`** and **`src/modules/me/`** (no other `src/modules/*` in this package).
-- **Observability:** **`src/observability/`** — Prometheus registry, HTTP metrics middleware, latency-report helper; tests live under **`src/observability/tests/`** (`unit-test` / `integration-test`).
+Dev logs: **pino-pretty** เมื่อ `NODE_ENV` ไม่ใช่ `production` / `test` (`LOG_PRETTY=false` สำหรับ JSON)
 
-Shared wiring stays outside those folders (for example **`src/app.js`**, **`src/config/`**, **`src/middlewares/`**, **`src/utils/`**).
+## Gateway (local)
 
-## Runbook
+Default [gateway `routes.json`](../../../gateway/routes.json) → this service at **`http://127.0.0.1:3003`**:
 
-- Operational guide: [`RUNBOOK.md`](./RUNBOOK.md)
+| Prefix | Notes |
+| :--- | :--- |
+| `/api/v1/items` | Items CRUD |
+| `/api/v1/me` | Profile from trusted headers |
 
-## Prerequisites
+`GATEWAY_SHARED_SECRET` ใน `.env` **ต้องตรง** `GATEWAY_SECRET` บน gateway
 
-- Node `>=24 <25` (see `package.json` `engines`)
-- MongoDB reachable with database `api_example` — connection string and options are in [`.env.example`](./.env.example)
+## Mesh (`/api/v1/*`)
 
-Development logs use **`pino-pretty`** (readable lines) when `NODE_ENV` is not `production` or `test`. Set **`LOG_PRETTY=false`** in `.env` if you prefer raw JSON.
-
-## Setup
-
-```bash
-cp .env.example .env
-# Edit .env: MONGODB_URI, GATEWAY_SHARED_SECRET, etc.
-npm ci
-npm run dev
-```
-
-Default listen port in this repo is **`3003`** (monorepo: หลีก `smart-report` ที่ 3000; เปลี่ยน `PORT` ใน `.env` ได้). เมื่อ **`npm run dev`** (หรือ process อื่นที่ bind `PORT`) listen แล้ว ลอง **`GET /healthz`**; **`GET /readyz`** ควร success เมื่อ MongoDB พร้อมและ connection ใช้งานได้
-
-## Quality checks
-
-```bash
-npm run ci       # format:check + lint + spec:lint + test + audit:check
-npm run spec:lint # Spectral — `.spectral.yaml` extends `../../../../_coding-standards/spectral/org-api.yaml`
-```
-
-**Observability:** **`GET /metrics`** (Prometheus text) requires **`x-gateway-secret`** (same mesh secret as **`/api/v1/*`**).
-
-## Required headers on `/api/v1/*` (including `me` and CRUD)
-
-- `x-gateway-secret`
-- `x-user-id`
-- `x-user-ou`
-- `x-user-branch`
+- `x-gateway-secret`, `x-user-id`, `x-user-ou`, `x-user-branch` (CRUD + `/api/v1/me`)
+- `GET /metrics` — `x-gateway-secret` เท่านั้น (ดู [RUNBOOK.md](./RUNBOOK.md))
 
 ## Endpoints
 
-- `GET /healthz`
-- `GET /readyz`
-- `GET /metrics` (Prometheus text; requires `x-gateway-secret`)
-- `GET /api/v1/me`
-- `GET /api/v1/items`
-- `POST /api/v1/items`
-- `GET /api/v1/items/:itemId`
-- `PUT /api/v1/items/:itemId`
-- `PATCH /api/v1/items/:itemId`
-- `DELETE /api/v1/items/:itemId`
+| Group | Paths |
+| :--- | :--- |
+| Ops | `GET /healthz`, `GET /readyz`, `GET /metrics` |
+| API | `GET /api/v1/me` |
+| Items | `GET/POST /api/v1/items`, `GET/PUT/PATCH/DELETE /api/v1/items/:itemId` |
+
+## Source layout
+
+- **Modules:** `src/modules/items/`, `src/modules/me/` only
+- **Observability:** `src/observability/` (+ tests under `observability/tests/`)
+- **Wiring:** `src/app.js`, `src/config/`, `src/middlewares/`, `src/utils/`
 
 ## PM2
 
-Process definition: [`ecosystem.config.cjs`](./ecosystem.config.cjs) (package root).
+[`ecosystem.config.cjs`](./ecosystem.config.cjs) — `pm2 start ecosystem.config.cjs`
 
-```bash
-pm2 start ecosystem.config.cjs
-pm2 logs
-```
+## E2E via gateway
+
+Step-by-step: [RUNBOOK.md § Smoke ผ่าน gateway](./RUNBOOK.md#smoke-ผ่าน-gateway-e2e) — `npm run try:proxy` จาก `gateway/`

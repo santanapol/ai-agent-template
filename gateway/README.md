@@ -1,48 +1,75 @@
 # gateway
 
-API Gateway (Fastify, ESM): verify JWT (JWKS), inject trusted headers, proxy ตาม `ROUTES_JSON` / `ROUTES_FILE`
+API Gateway (Fastify, ESM) for the `zero-platform` monorepo — verify JWT (JWKS), optional **`token_gen`** gate (Redis), inject trusted headers, proxy ตาม `ROUTES_JSON` / `ROUTES_FILE`.
 
-## SoT / ADR
-
-| เอกสาร | Role |
+| Read | Role |
 | :--- | :--- |
-| [`docs/session-revoke-token-gen-changes.md`](./docs/session-revoke-token-gen-changes.md) | **Planned work** — verify `token_gen` + Redis ร่วมกับ auth internal revoke |
-| [`openapi.yaml`](./openapi.yaml) | HTTP contract — `npm run spec:lint` (Spectral) |
-| [`docs/architecture.md`](./docs/architecture.md) | **Production SoT** — contract, env, errors, security (นับเป็น **ADR** ตาม `_coding-standards/gateway/runtime.md`) |
-| [`docs/adrs/001-gateway-esm-fastify.md`](./docs/adrs/001-gateway-esm-fastify.md) | ADR ชั้น service: ESM + Jest + อ้างอิง SoT ด้านบน |
-| [`ARCHITECTURE.md`](../../ARCHITECTURE.md) | Trust boundary / overview |
-
-## Org standards
-
-- [`_coding-standards/gateway`](../../../_coding-standards/gateway/README.md) — edge codes, API contract, runtime
+| [docs/architecture.md](./docs/architecture.md) | **Technical SoT** — contract, env, errors, routing |
+| [openapi.yaml](./openapi.yaml) | **HTTP Contract** (`spec:lint`, `spec:codes`) |
+| [docs/session-revoke-token-gen-changes.md](./docs/session-revoke-token-gen-changes.md) | **Checklist** — D3 `token_gen` + Redis (implemented) |
+| [docs/adrs/001-gateway-esm-fastify.md](./docs/adrs/001-gateway-esm-fastify.md) | **ADR 001** — Fastify + ESM exception |
+| [../../ARCHITECTURE.md](../../ARCHITECTURE.md) | System architecture / trust boundary |
+| [../local-ports.md](../local-ports.md) | Local dev port index |
+| [../RUNBOOK.md](../RUNBOOK.md) | Monorepo ops — Redis §2.5, deploy JWT/env |
+| [`_coding-standards/gateway`](../../../_coding-standards/gateway/README.md) | Org gateway edge standard |
 
 ## Scripts
 
-- `npm run dev` — local
-- `npm test` / `npm run lint` / `npm run ci` — quality gates
+- `npm run dev` / `npm start` — local (`--env-file=.env`, `TZ=UTC`)
+- `npm test` / `npm run ci` — quality gates (lint, format, Spectral, `spec:codes`, audit)
+- `npm run spec:lint` / `npm run spec:codes` — OpenAPI + problem `code` registry
+- `npm run dev:upstream` / `npm run try:proxy` — proxy smoke (see `.env.example`)
 
-## Local multi-upstream (smart-report + crud-service)
+## Quick start
 
-Default [`.env.example`](./.env.example) / [`routes.example.json`](./routes.example.json) registers upstream **prefixes** (longest match wins — see [`src/config/routes.js`](./src/config/routes.js)):
+1. `cp .env.example .env` — `JWT_JWKS_URL`, `GATEWAY_SECRET`, routes (§ Proxy routes)
+2. (แนะนำ) [Redis](#redis-local--token_gen--immediate-revoke) สำหรับ `token_gen`
+3. รัน **auth** (:3001) + upstream + **gateway** (:3002) — [local-ports.md](../local-ports.md)
+4. `npm run try:proxy`
 
-| Prefix (on gateway host) | Default upstream | Service in this monorepo |
-|---------------------------|------------------|---------------------------|
-| `/api/v1/reports` | `http://127.0.0.1:3000` | [`smart-report`](../../../smart-report/) (workspace sibling) |
-| `/api/v1/items` | `http://127.0.0.1:3003` | [`crud-service`](../services/.demo/crud-service/) (`GATEWAY_SHARED_SECRET` must match gateway `GATEWAY_SECRET`) |
-| `/api` | `http://127.0.0.1:3003` | Same **crud-service** upstream — catch-all for paths such as **`/api/v1/me`** (not under `items` / `reports`) |
+## Local development
 
-If **`GET /api/v1/reports`** (via gateway) returns **`404`** with upstream body **`NO_MATCHING_API_PATH`**, the request is hitting **crud-service**, which has no that path — your **`ROUTES_JSON` / `ROUTES_FILE`** is missing the **longer** prefix for smart-report.
+### Proxy routes
 
-Ensure **`/api/v1/items`** and **`/api/v1/reports`** are listed **before** the catch-all **`/api`** entry.
+SoT: [`routes.json`](./routes.json), [`.env.example`](./.env.example) (`ROUTES_JSON`), หรือ [`routes.example.json`](./routes.example.json) (`ROUTES_FILE`) — **longest prefix wins** ([`src/config/routes.js`](./src/config/routes.js)). ตั้ง **อย่างใดอย่างหนึ่ง** ระหว่าง `ROUTES_JSON` กับ `ROUTES_FILE`.
 
-- **SoT values:** copy from [`.env.example`](./.env.example) or use committed [`routes.example.json`](./routes.example.json) with `ROUTES_FILE=./routes.example.json` (and clear `ROUTES_JSON` per env rules).
+| Prefix | Upstream | Service |
+| :--- | :--- | :--- |
+| `/api/v1/items` | `:3003` | [crud-service](../services/.demo/crud-service/) |
+| `/api/v1/me` | `:3003` | Same **crud-service** |
+| `/api/v1/staff` | `:3004` | [staff](../services/staff/) |
 
-Restart **gateway** after changing routes.
+Host เต็มใน `routes.json` (`http://127.0.0.1:…`). Prefix ที่เฉพาะกว่า **ก่อน** prefix สั้นกว่า.
+
+- **`GATEWAY_SECRET`:** ตรง `GATEWAY_SHARED_SECRET` ของ upstream (`x-gateway-secret`)
+
+### Redis (local — `token_gen` / immediate revoke)
+
+`auth` + gateway ใช้ Redis key **`user:{sub}:token_gen`** ร่วมกัน
+
+```bash
+cd ..   # zero-platform root
+docker compose up -d redis
+docker compose exec redis redis-cli ping   # PONG
+```
+
+`REDIS_URL=redis://127.0.0.1:6379/0` ใน **ทั้ง** `auth/.env` และ `gateway/.env` — [RUNBOOK §2.5](../RUNBOOK.md#25--redis-local--token_gen--immediate-revoke)
+
+- **Local (แนะนำ):** ตั้ง URL → ตรวจ `token_gen` หลัง JWKS (immediate revoke)
+- **Local (minimal):** ว่าง → ข้าม `token_gen` (ไม่ทดสอบ revoke)
+- **Production:** `REDIS_URL` บังคับ (Joi) — [architecture.md §5](./docs/architecture.md)
+
+### Smoke
+
+`npm run try:proxy` หลัง auth + upstream + gateway ขึ้นแล้ว (terminal layout ใน `.env.example`)
+
+## Troubleshooting
 
 ### `ROUTES_JSON` in `.env` seems ignored
 
-Node’s [`--env-file`](https://nodejs.org/api/cli.html#--env-fileconfig) does **not** override variables that are **already set in your shell**. If you previously `export ROUTES_JSON='[{"prefix":"/api",...}]'`, that value would normally win over the line in `.env`.
+[`--env-file`](https://nodejs.org/api/cli.html#--env-fileconfig) **ไม่** override ตัวแปรที่ export ใน shell แล้ว
 
-**Mitigation (gateway `server.js`):** on startup, **`ROUTES_JSON` / `ROUTES_FILE` are re-read from `gateway/.env`** (path resolved from the package, not `process.cwd()`) and written to `process.env`, so the **route table follows the service `.env` file** even when a stale `ROUTES_JSON` is exported in the shell or when the shell cwd is not `gateway/`. You can still `unset ROUTES_JSON` if you prefer not to rely on this.
+**Mitigation (`server.js`):** อ่าน `ROUTES_JSON` / `ROUTES_FILE` จาก `gateway/.env` (package root) แล้วเขียนกลับ `process.env`
 
-- On startup the process prints **`[gateway] Effective proxy prefixes:`** — confirm `/api/v1/reports` appears before `/api` when smart-report is in use.
+- Log **`[gateway] Effective proxy prefixes:`** ต้องตรง `routes.json` / `.env`
+- หรือ `unset ROUTES_JSON` ใน shell

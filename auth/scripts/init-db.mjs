@@ -55,7 +55,7 @@ console.log('=== init-db: สร้าง indexes + admin user ===')
 console.log(`Database: ${db.databaseName}`)
 console.log('')
 
-// ─── 1. Indexes (ตาม docs/architecture.md section 8.4) ─────────
+// ─── 1. Indexes (ตาม docs/db/erd.md — architecture §8.3) ───────
 
 console.log('▶ สร้าง indexes...')
 

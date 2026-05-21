@@ -6,24 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **auth:** [`docs/domain.md`](./auth/docs/domain.md), [`docs/db/erd.md`](./auth/docs/db/erd.md), [`docs/adrs/001-fastify-esm.md`](./auth/docs/adrs/001-fastify-esm.md) (moved from package-root ADR); `request-id` + per-route rate-limit helpers; integration coverage for `x-request-id`.
+- **gateway:** `request-id` (`genReqId` + upstream echo); Prettier (`format` / `format:check`); OpenAPI problem-code validation script; tests for `routes.json` ↔ `routes.example.json` and `openapi.yaml` `info.version` ↔ `package.json`.
+- **crud-service:** OpenAPI `info.version` alignment tests; `.prettierignore` for prose/docs.
+
 ### Changed
 
-- **Demo layout:** move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; **`.gitignore`** now ignores `services/*` except **`services/.demo/**`** (workspace clones such as `staff/`, `smart-report/` stay local-only).
-- **Repository identity:** rename monorepo from **access-platform** to **zero-platform** (folder, docs, workspace links). GitHub repository **`Chiang-Rai-Technology/zero-platform`** (formerly `authorization-gateway`).
-- **Gateway routes:** `/api/v1/members` → `/api/v1/staff` in [`gateway/routes.json`](./gateway/routes.json) and [`gateway/.env.example`](./gateway/.env.example); port **3004** reserved for planned [`services/staff/`](./services/staff/).
-- **`services/README.md`:** index table for **staff** (docs-only, planned `package.json`).
-- **`local-ports.md`:** staff row replaces members; layout links point at [`ARCHITECTURE.md`](./ARCHITECTURE.md) and org [`service-tree.md`](../../../_coding-standards/backend/service-tree.md).
+- **Monorepo docs:** fix broken `_coding-standards` and [`model-matrix.md`](../../model-matrix.md) links in root, `auth`, and `gateway` changelogs/docs; [`local-ports.md`](./local-ports.md) service-tree path.
+- **README.md:** fix broken links to `_coding-standards` (use `../../` from monorepo root).
+- **ARCHITECTURE.md:** bump to v1.1.0; reflect implemented session revocation (O-16/D3) using `token_gen` and Redis; update sequence diagrams.
+- **RUNBOOK.md:** fix folder names (`auth-service` → `auth`, `gateway-service` → `gateway`), broken links, and upstream examples (`crud-service`).
+- **auth:** `docs/architecture.md` v1.4.1 — TOC/anchors, companion links, MongoDB index pointer to `docs/db/erd.md`; `docs/session-revoke-token-gen-changes.md` metadata; `init-db` comment → `docs/db/erd.md`.
+- **gateway:** `docs/architecture.md` v1.4.1 — `GATEWAY_CLAIM_REJECTED` documented as **401**; [`openapi.yaml`](./gateway/openapi.yaml) title `gateway`, login `client_kind` enum `[native, web]` aligned with auth; **`/auth` proxy route** in [`routes.json`](./gateway/routes.json) / [`routes.example.json`](./gateway/routes.example.json); README document map + local dev tables.
+- **crud-service:** docs resync (`architecture.md`, `docs/db/erd.md` v1.0.2, README/RUNBOOK); fix monorepo [`CHANGELOG.md`](../../../CHANGELOG.md) link depth; Spectral extends path.
+- **Gateway routes:** `/api/v1/members` → `/api/v1/staff`; port **3004** reserved for planned [`services/staff/`](./services/staff/) (docs-only, gitignored locally).
 - **`auth/.env.example`**, **`gateway/.env.example`:** default `CORS_ORIGINS` empty (no in-repo browser SPA).
 
 ### Removed
 
+- **auth:** `docs/adr-001-fastify-esm.md` (superseded by `docs/adrs/001-fastify-esm.md`).
+
+### Removed (prior layout)
+
 - **`www/`** — Vite/React client (`www/app/`) and frontend docs (`www/docs/`); API-only monorepo focus.
-- **`PROJECT_TREE.md`** — monorepo folder SoT is [`ARCHITECTURE.md`](./ARCHITECTURE.md) plus per-package docs; package layout normative on parent workspace [`_coding-standards/backend/service-tree.md`](../../../_coding-standards/backend/service-tree.md). Update [`README.md`](./README.md) document map.
+- **`PROJECT_TREE.md`** — monorepo folder SoT is [`ARCHITECTURE.md`](./ARCHITECTURE.md) plus per-package docs; package layout normative on parent workspace [`_coding-standards/backend/service-tree.md`](../../_coding-standards/backend/service-tree.md). Update [`README.md`](./README.md) document map.
 
 ### Added
 
 - Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs) and **`services/.demo/crud-service/`** gateway mesh demo upstream.
-- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional staff/smart-report); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
+- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional **staff**); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
 - Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
 - Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
 - Add gateway `spec:lint` script for OpenAPI linting with org Spectral rules.
@@ -48,7 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
-- Remove vendored **`_coding-standards/`** at zero-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../../_coding-standards/...`).
+- Remove vendored **`_coding-standards/`** at zero-platform root — org SoT is **`_coding-standards/`** on the parent **ai-agent** workspace only (`gateway` / `auth` `spec:lint` already use `../../_coding-standards/...`).
 - Remove broad gateway catch-all routing in favor of explicit allowlisted prefixes.
 
 ## [0.1.1] - 2026-04-17

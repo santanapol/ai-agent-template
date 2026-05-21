@@ -26,17 +26,17 @@ describe('jwt-auth token_gen (D3)', () => {
   let redisGetThrows = false
 
   const mockRedis = {
-    async get (key) {
+    async get(key) {
       if (redisGetThrows) throw new Error('redis GET failed (test)')
       return redisStore.get(key) ?? null
     },
-    async ping () {
+    async ping() {
       return 'PONG'
     },
-    get isOpen () {
+    get isOpen() {
       return true
     },
-    async quit () {}
+    async quit() {}
   }
 
   beforeAll(async () => {
@@ -67,7 +67,8 @@ describe('jwt-auth token_gen (D3)', () => {
     await new Promise((resolve) => upstreamServer.listen(0, '127.0.0.1', resolve))
 
     const jwksPort = /** @type {import('node:net').AddressInfo} */ (jwksServer.address()).port
-    const upstreamPort = /** @type {import('node:net').AddressInfo} */ (upstreamServer.address()).port
+    const upstreamPort = /** @type {import('node:net').AddressInfo} */ (upstreamServer.address())
+      .port
     const jwksUrl = `http://127.0.0.1:${jwksPort}/.well-known/jwks.json`
     const upstreamBase = `http://127.0.0.1:${upstreamPort}`
 
@@ -96,7 +97,7 @@ describe('jwt-auth token_gen (D3)', () => {
     await new Promise((resolve) => upstreamServer?.close(() => resolve(undefined)))
   })
 
-  async function signToken (tokenGen) {
+  async function signToken(tokenGen) {
     return new jose.SignJWT({
       sub: SUB,
       role: 'admin',

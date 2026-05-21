@@ -25,5 +25,8 @@ Keep **`PUT /api/v1/items/{itemId}`** as **full replace** for this teaching serv
 
 ## References
 
-- [`openapi.yaml`](../../openapi.yaml) — `replaceItem` operation (`PUT`).
-- [`../../src/modules/items/items.route.js`](../../src/modules/items/items.route.js) — HTTP routes for items (`PUT` full replace alongside `PATCH`).
+- [`../architecture.md`](../architecture.md) — package technical SoT
+- [`openapi.yaml`](../../openapi.yaml) — `replaceItem` operation (`PUT`)
+- [`../db/erd.md`](../db/erd.md) — `items` persistence + indexes
+- [`../../src/modules/items/items.route.js`](../../src/modules/items/items.route.js) — routes (`PUT` + `PATCH`)
+- [`_coding-standards/backend/api.md`](../../../../../../../_coding-standards/backend/api.md) — default no `PUT` rule

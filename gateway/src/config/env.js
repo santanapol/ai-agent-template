@@ -1,9 +1,8 @@
 import Joi from 'joi'
 
 const schema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('production', 'development', 'test')
-    .default('development'),
+  NODE_ENV: Joi.string().valid('production', 'development', 'test').default('development'),
+  TZ: Joi.string().valid('UTC').default('UTC'),
   PORT: Joi.number().integer().min(1).max(65535).default(3002),
   JWT_JWKS_URL: Joi.string()
     .uri()
@@ -24,13 +23,9 @@ const schema = Joi.object({
   MAX_BODY_BYTES: Joi.number().integer().positive().default(1_048_576),
   CORS_ORIGINS: Joi.string().allow('').default(''),
   SHUTDOWN_TIMEOUT_MS: Joi.number().integer().positive().default(10_000),
-  PROBLEM_TYPE_BASE: Joi.string()
-    .uri()
-    .default('https://example.invalid/gateway/problems'),
+  PROBLEM_TYPE_BASE: Joi.string().uri().default('https://example.invalid/gateway/problems'),
   READY_CHECK_TIMEOUT_MS: Joi.number().integer().positive().default(2000),
-  LOG_LEVEL: Joi.string()
-    .valid('trace', 'debug', 'info', 'warn', 'error', 'fatal')
-    .default('info'),
+  LOG_LEVEL: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error', 'fatal').default('info'),
   LOG_PRETTY: Joi.boolean().truthy('true').falsy('false').optional(),
   JWT_SECRET: Joi.string().allow('').optional(),
   /**
@@ -44,7 +39,7 @@ const schema = Joi.object({
   })
 }).unknown(true)
 
-export function loadEnv (env = process.env) {
+export function loadEnv(env = process.env) {
   const { value, error } = schema.validate(env, { abortEarly: false, stripUnknown: false })
   if (error) {
     const msg = error.details.map((d) => d.message).join('; ')

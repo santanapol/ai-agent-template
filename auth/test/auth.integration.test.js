@@ -89,6 +89,21 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
     assert.ok(Number.isInteger(body.uptime))
   })
 
+  await t.test('echoes x-request-id on response (valid inbound UUID)', async () => {
+    const inbound = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+    const r = await fetch(`${base}/healthz`, { headers: { 'x-request-id': inbound } })
+    assert.equal(r.status, 200)
+    assert.equal(r.headers.get('x-request-id'), inbound)
+  })
+
+  await t.test('mints lowercase x-request-id when header absent', async () => {
+    const r = await fetch(`${base}/healthz`)
+    assert.equal(r.status, 200)
+    const echoed = r.headers.get('x-request-id')
+    assert.ok(echoed)
+    assert.match(echoed, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+
   await t.test('GET /health is not served (use /healthz)', async () => {
     const r = await fetch(`${base}/health`)
     assert.equal(r.status, 404)

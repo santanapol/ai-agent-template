@@ -12,9 +12,12 @@
     "start": "TZ=UTC node --enable-source-maps --env-file=.env src/server.js",
     "dev": "TZ=UTC node --enable-source-maps --watch --env-file=.env src/server.js",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "spec:lint": "npx -y @stoplight/spectral-cli lint openapi.yaml --ruleset ../../../_coding-standards/spectral/org-api.yaml",
+    "spec:codes": "node scripts/validate-gateway-openapi-problem-codes.mjs",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run spec:lint && npm test && npm run audit:check",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run spec:codes && npm test && npm run audit:check",
     "test": "TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest",
     "test:unit": "TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest",
     "dev:upstream": "node scripts/dev-upstream.mjs",
@@ -34,6 +37,7 @@
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",
     "globals": "^15.15.0",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "prettier": "^3.5.3"
   }
 }

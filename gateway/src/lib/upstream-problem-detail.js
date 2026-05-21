@@ -5,7 +5,7 @@
  * @param {unknown} err
  * @returns {string}
  */
-export function upstreamProblemDetail (err) {
+export function upstreamProblemDetail(err) {
   let code = ''
   /** @type {unknown} */
   let cur = err

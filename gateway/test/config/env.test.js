@@ -26,6 +26,30 @@ describe('loadEnv', () => {
     ).toThrow(/Exactly one of ROUTES_JSON or ROUTES_FILE/)
   })
 
+  test('rejects TZ values other than UTC', () => {
+    expect(() =>
+      loadEnv({
+        TZ: 'Asia/Bangkok',
+        PORT: 3002,
+        JWT_JWKS_URL: 'http://127.0.0.1:3001/.well-known/jwks.json',
+        GATEWAY_SECRET: 'x'.repeat(32),
+        UPSTREAM_TIMEOUT_MS: 5000,
+        ROUTES_JSON: '[{"prefix":"/api","upstream":"http://127.0.0.1:1","stripPrefix":true}]'
+      })
+    ).toThrow(/TZ/)
+  })
+
+  test('defaults TZ to UTC', () => {
+    const env = loadEnv({
+      PORT: 3002,
+      JWT_JWKS_URL: 'http://127.0.0.1:3001/.well-known/jwks.json',
+      GATEWAY_SECRET: 'x'.repeat(32),
+      UPSTREAM_TIMEOUT_MS: 5000,
+      ROUTES_JSON: '[{"prefix":"/api","upstream":"http://127.0.0.1:1","stripPrefix":true}]'
+    })
+    expect(env.TZ).toBe('UTC')
+  })
+
   test('rejects GATEWAY_SECRET shorter than 32 characters', () => {
     expect(() =>
       loadEnv({

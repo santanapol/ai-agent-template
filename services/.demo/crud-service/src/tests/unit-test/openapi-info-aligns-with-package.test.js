@@ -3,6 +3,39 @@
 const fs = require("fs");
 const path = require("path");
 
+/** Minimal parse: first `info:` block, then `  version:` (OpenAPI root). */
+function readInfoVersion(openapiPath) {
+  const text = fs.readFileSync(openapiPath, "utf8");
+  const lines = text.split(/\r?\n/);
+  let i = 0;
+  while (i < lines.length && lines[i].trim() !== "info:") {
+    i += 1;
+  }
+  if (i >= lines.length) {
+    throw new Error(`info: block not found in ${openapiPath}`);
+  }
+  i += 1;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^[a-zA-Z]/.test(line) && !line.startsWith(" ")) {
+      break;
+    }
+    const m = line.match(/^ {2}version:\s*(.+)$/);
+    if (m) {
+      const raw = m[1].trim();
+      if (
+        (raw.startsWith('"') && raw.endsWith('"')) ||
+        (raw.startsWith("'") && raw.endsWith("'"))
+      ) {
+        return raw.slice(1, -1);
+      }
+      return raw;
+    }
+    i += 1;
+  }
+  throw new Error(`version not found under info in ${openapiPath}`);
+}
+
 /** Minimal parse: first `info:` block, then `  title:` (OpenAPI root). */
 function readInfoTitle(openapiPath) {
   const text = fs.readFileSync(openapiPath, "utf8");
@@ -50,5 +83,15 @@ describe("OpenAPI info.title vs package.json name (backend SoT)", () => {
   it("openapi-via-gateway.yaml info.title matches package.json name", () => {
     const title = readInfoTitle(path.join(root, "openapi-via-gateway.yaml"));
     expect(title).toBe(pkg.name);
+  });
+
+  it("openapi.yaml info.version matches package.json version", () => {
+    const v = readInfoVersion(path.join(root, "openapi.yaml"));
+    expect(v).toBe(pkg.version);
+  });
+
+  it("openapi-via-gateway.yaml info.version matches package.json version", () => {
+    const v = readInfoVersion(path.join(root, "openapi-via-gateway.yaml"));
+    expect(v).toBe(pkg.version);
   });
 });

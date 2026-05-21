@@ -2,7 +2,23 @@
 
 ## [Unreleased]
 
-_(none)_
+### Added
+
+- **`x-request-id`:** `genReqId` + response echo; upstream inject ใช้ `request.id` (`src/lib/request-id.js`)
+- **CI:** `format` / `format:check` (Prettier); `spec:codes` (`GatewayProblem.code` ↔ `_coding-standards/gateway/codes.yaml`); test `routes.json` ↔ `routes.example.json` alignment; test `openapi.yaml` `info.version` ↔ `package.json`
+
+### Changed
+
+- **`loadEnv`:** `TZ` must be `UTC` (default `UTC`)
+- **`openapi.yaml`:** `GatewayProblem.code` enum + shared `components/examples` (404/401/502/504) + `GET /api/v1/me` gateway error responses
+- **`README.md`:** document map + local dev (compact tables, Scripts bullets); Redis / routes / troubleshooting; exclude from Prettier (`.prettierignore`)
+- **Docs:** `README.md` document map, local routes ตรง `routes.json` (ลบ smart-report); `docs/architecture.md` v1.4.1 — `GATEWAY_CLAIM_REJECTED` → **401**, `model-matrix.md` link
+- **`openapi.yaml`:** `info.title` → `gateway`; login `client_kind` enum `[native, web]` (aligned with auth)
+- **`routes.json` / `routes.example.json`:** add **`/auth`** → auth `:3001`; sync staff / items / me
+
+### Removed
+
+- **`server.js`:** startup warn สำหรับ `/api/v1/reports` / smart-report (ไม่ใช้แล้ว)
 
 ## [0.2.3] - 2026-05-15
 
@@ -26,7 +42,7 @@ _(none)_
 - **CI:** `npm run ci` รวม **`spec:lint`**
 - **Docs:** **`openapi.yaml`** ที่ root แพ็กเกจ (ย้ายจาก `docs/openapi.yaml`) — ลิงก์ normative ของ `/auth/*` ชี้ไป **`auth/openapi.yaml`** (ฉบับเดียวหลังรวม spec ที่ `auth`)
 - **Docs:** `docs/architecture.md` — แก้ §4 / §12.2 ให้ตรง behavior 401 claim validation; §7 หมายเหตุ **`GATEWAY_ROUTE_NOT_CONFIGURED`** กับ startup fail-fast; §9 readyz `routes`; §14 PR gates; bump doc **1.3.2**
-- **HTTP / registry alignment ([`CODE_MATRIX_TARGET.md`](../../../CODE_MATRIX_TARGET.md)):** Problem **`GATEWAY_CLAIM_REJECTED`** ใช้ **HTTP 401** (เดิม 400) ใน `src/lib/gateway-problems.js` + อัปเดต `docs/architecture.md` §7 · JWT verify ล้มเหลว → **`GATEWAY_JWT_REJECTED`** (รวมเคสเดิม `GATEWAY_JWT_INVALID` / `GATEWAY_JWT_EXPIRED`) ใน `jwt-auth.js` / `inject-context.js`
+- **HTTP / registry alignment ([`model-matrix.md`](../../../model-matrix.md)):** Problem **`GATEWAY_CLAIM_REJECTED`** ใช้ **HTTP 401** (เดิม 400) ใน `src/lib/gateway-problems.js` + อัปเดต `docs/architecture.md` §7 · JWT verify ล้มเหลว → **`GATEWAY_JWT_REJECTED`** (รวมเคสเดิม `GATEWAY_JWT_INVALID` / `GATEWAY_JWT_EXPIRED`) ใน `jwt-auth.js` / `inject-context.js`
 - **Observability:** Pino **`redact`** ใน `buildFastifyLoggerOptions` ตาม `_coding-standards/backend/observability.md` §2.2 (ผ่าน `gateway/README.md`)
 - **Process:** `uncaughtException` / `unhandledRejection` → log fatal + `process.exit(1)` ใน `src/server.js`
 - **Routing (Approach A):** `setNotFoundHandler` → **404** สำหรับ path ที่ไม่ match proxy routes; เอกสาร §7 + `_coding-standards/gateway/api.md` แยก **404** vs **`GATEWAY_ROUTE_NOT_CONFIGURED`**

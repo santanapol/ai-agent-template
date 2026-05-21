@@ -1,6 +1,6 @@
 # 📘 Authorization Gateway System Runbook
 
-เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `services/.demo/`) / **`smart-report`**)
+เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `services/.demo/`) / **`staff`**)
 
 **ดัชนีพอร์ต local (อัปเดตเมื่อเพิ่ม service):** [`local-ports.md`](./local-ports.md)
 
@@ -8,14 +8,14 @@
 
 ## 1. ⚙️ การตั้งค่า Environment & RSA Keys (Setup)
 
-ระบบต้องการตัวแปรแวดล้อมหลัก ได้แก่ Private Key (สำหรับ `auth` ใช้เซ็น JWT) และ `GATEWAY_SECRET` สำหรับการสื่อสารระหว่าง `gateway` และ upstream ที่ตรวจ `x-gateway-secret` / `GATEWAY_SHARED_SECRET` (เช่น **`crud-service`**, **`smart-report`** — ค่าเดียวกันใน dev ตาม template)
+ระบบต้องการตัวแปรแวดล้อมหลัก ได้แก่ Private Key (สำหรับ `auth` ใช้เซ็น JWT) และ `GATEWAY_SECRET` สำหรับการสื่อสารระหว่าง `gateway` และ upstream ที่ตรวจ `x-gateway-secret` / `GATEWAY_SHARED_SECRET` (เช่น **`crud-service`**, **`staff`** — ค่าเดียวกันใน dev ตาม template)
 
 ### 1.1 `auth`
 
 เข้าไปที่โฟลเดอร์ `auth` และสร้าง `.env` พร้อม RSA 2048-bit Private Key สำหรับฝั่ง Development:
 
 ```bash
-cd auth-service
+cd auth
 npm run create-env
 # ⚠️ ระบบจะสร้างไฟล์ .env ขึ้นมาอัตโนมัติ ห้าม Commit ไฟล์นี้!
 ```
@@ -28,7 +28,7 @@ npm run create-env
 เข้าไปที่โฟลเดอร์ `gateway` และสร้างไฟล์ `.env`:
 
 ```bash
-cd gateway-service
+cd gateway
 cp .env.example .env
 ```
 
@@ -43,7 +43,7 @@ cp .env.example .env
 `auth` ใช้ MongoDB ในการเก็บข้อมูลผู้ใช้งานและ Token จึงจำเป็นต้องสร้าง Index ให้ถูกต้องก่อนใช้งาน
 
 ```bash
-cd auth-service
+cd auth
 
 # สร้าง Database Indexes ตามมาตรฐาน และเพิ่มผู้ดูแลระบบ (admin) 1 คน
 npm run init:db
@@ -97,7 +97,7 @@ REDIS_URL=redis://127.0.0.1:6379/0
 ### 📺 Terminal 1: `auth`
 มีหน้าที่ตรวจสอบรหัสผ่าน, ออก Access Token (JWT), และจัดการ Refresh Token
 ```bash
-cd auth-service
+cd auth
 npm install
 npm run dev
 # 🌐 ทำงานที่พอร์ต 3001 (http://127.0.0.1:3001)
@@ -106,7 +106,7 @@ npm run dev
 ### 📺 Terminal 2: `gateway`
 มีหน้าที่ดักจับ Request, ตรวจสอบ JWT Signature, นำ Claims ไปใส่ใน Headers, และ Proxy ไป upstream ตาม `ROUTES_JSON`
 ```bash
-cd gateway-service
+cd gateway
 npm install
 npm run dev
 # 🌐 default จาก .env.example: พอร์ต 3002 (http://127.0.0.1:3002)
@@ -119,9 +119,9 @@ npm run dev
 | Terminal | Service | พอร์ต (ค่าเริ่มต้นใน repo) | โฟลเดอร์ |
 |----------|---------|---------------------------|----------|
 | 3 | **`crud-service`** | **`3003`** | **`services/.demo/crud-service/`** |
-| 4 | `smart-report` (workspace) | `3000` | `../smart-report/` |
+| 4 | **`staff`** (เมื่อ implement) | **`3004`** | **`services/staff/`** |
 
-เส้นทาง gateway ที่ไป **`crud-service`** (`:3003`): prefix **`/api/v1/items`** และ catch-all **`/api`** (เช่น **`/api/v1/me`**) → `http://127.0.0.1:3003` (ดู [`gateway/.env.example`](gateway/.env.example))
+เส้นทาง gateway ตาม [`gateway/routes.json`](gateway/routes.json): **`/api/v1/staff`** → `:3004`; **`/api/v1/items`**, **`/api/v1/me`** → `:3003` (ดู [`gateway/.env.example`](gateway/.env.example))
 
 ---
 
@@ -155,7 +155,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 | Gateway ตอบ `401 Unauthorized` | 1. JWT หมดอายุ <br>2. Signature ไม่ตรง (Key คนละชุดกัน) <br>3. ไม่ได้แนบ Bearer Header <br>4. **`token_gen` stale** หลัง revoke (Redis) | ตรวจ `JWT_JWKS_URL`; ตรวจ `REDIS_URL` ตรงกับ auth; หลัง revoke ลอง login ใหม่เพื่อ JWT gen ล่าสุด |
 | Revoke แล้ว access เก่ายังผ่าน gateway | auth ไม่ publish Redis หรือ gateway ไม่ตั้ง `REDIS_URL` | เปิด `docker compose up -d redis`; ตั้ง `REDIS_URL` ใน **auth** + **gateway** `.env` |
 | `GET /readyz` ล้มเหลว (503) เมื่อตั้ง Redis | Redis ไม่รันหรือ port ชน | `docker compose ps`; แก้ port 6379 หรือ `REDIS_URL` |
-| Upstream ปฏิเสธ Request (`403 Forbidden`) — mesh secret | รหัส `x-gateway-secret` ไม่ตรงกัน หรือตั้งค่าความยาวไม่ถึง 32 ตัวอักษร | ตรวจสอบตัวแปร `GATEWAY_SECRET` (gateway) กับ `GATEWAY_SHARED_SECRET` (upstream เช่น **api-example**) ให้ตรงกัน 100% |
+| Upstream ปฏิเสธ Request (`403 Forbidden`) — mesh secret | รหัส `x-gateway-secret` ไม่ตรงกัน หรือตั้งค่าความยาวไม่ถึง 32 ตัวอักษร | ตรวจสอบตัวแปร `GATEWAY_SECRET` (gateway) กับ `GATEWAY_SHARED_SECRET` (upstream เช่น **crud-service**) ให้ตรงกัน 100% |
 | ขาด Tenant Scope (`x-user-ou` หรือ `x-user-branch` หายไป) | ไม่ได้ใส่ค่า `ou_id` / `branch_id` ให้ผู้ใช้ตอนสร้างใน DB | อัปเดตข้อมูลผู้ใช้ใน MongoDB แล้วให้ผู้ใช้ Login ใหม่เพื่อรับ JWT เล่มใหม่ |
 
 ---
@@ -164,7 +164,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 
 ## 6. 📦 Deploy: JWT & Env Alignment Checklist
 
-ใช้เช็คลิสต์นี้ก่อน Deploy หรือหลังเปลี่ยน Env ระหว่าง **auth-service**, **gateway-service**, และ upstream (เช่น **api-example** / **smart-report**) เพื่อให้ระบบทำงานประสานกันได้อย่างถูกต้อง (เอกสารเดิม `docs/deploy-jwt-env-checklist.md` ถูกยุบรวมไว้ที่นี่)
+ใช้เช็คลิสต์นี้ก่อน Deploy หรือหลังเปลี่ยน Env ระหว่าง **auth**, **gateway**, และ upstream (เช่น **crud-service** / **staff**) เพื่อให้ระบบทำงานประสานกันได้อย่างถูกต้อง (เอกสารเดิม `docs/deploy-jwt-env-checklist.md` ถูกยุบรวมไว้ที่นี่)
 
 ### 6.1 JWKS URL (Gateway ต้องชี้ไปที่ Auth)
 
@@ -214,7 +214,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 ### 6.6 `GATEWAY_SECRET` (Gateway + upstream ที่ไว้ใจ gateway)
 
 - ความยาว **ต้องไม่ต่ำกว่า 32 ตัวอักษร** (มีเช็คใน Joi)
-- `GATEWAY_SECRET` ของ gateway ต้อง **ตรงกับ** secret ที่ upstream ใช้ตรวจแนว mesh (เช่น **`crud-service`** (`GATEWAY_SHARED_SECRET`) / `smart-report` — ตามที่แต่ละ service กำหนด)
+- `GATEWAY_SECRET` ของ gateway ต้อง **ตรงกับ** secret ที่ upstream ใช้ตรวจแนว mesh (เช่น **`crud-service`** (`GATEWAY_SHARED_SECRET`), **`staff`** — ตามที่แต่ละ service กำหนด)
 - ห้ามส่งค่านี้มาจากฝั่ง Client เด็ดขาด; Gateway จะเป็นคน Inject ใส่ Header ในชื่อ `x-gateway-secret` ด้วยตัวเองตอน Proxy
 
 ### 6.7 เอกสารอ้างอิง API (OpenAPI / SoT)
@@ -225,7 +225,7 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 | [gateway/openapi.yaml](gateway/openapi.yaml) | ข้อมูล `GET /healthz`, `GET /readyz` และ SoT Links |
 | [services/.demo/crud-service/openapi-via-gateway.yaml](services/.demo/crud-service/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
 | [services/.demo/crud-service/openapi.yaml](services/.demo/crud-service/openapi.yaml) | Mesh contract ตรง **`crud-service`** (`x-gateway-secret` + `x-user-*`) |
-| [gateway-service/docs/architecture.md](gateway-service/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
+| [gateway/docs/architecture.md](gateway/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ภาพรวม trust boundary และ routing แบบหลาย upstream |
 
 ### 6.8 Smoke Test หลัง Deploy

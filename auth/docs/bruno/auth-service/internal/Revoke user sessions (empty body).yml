@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/internal/users/{{userId}}/sessions/revoke"
+  url: '{{baseUrl}}/internal/users/{{userId}}/sessions/revoke'
   headers:
     - name: Authorization
       value: Bearer {{internalServiceSecret}}

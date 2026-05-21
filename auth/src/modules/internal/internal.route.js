@@ -1,4 +1,5 @@
 import rateLimit from '@fastify/rate-limit'
+import { buildRateLimitPluginOptions } from '../../lib/rate-limit.js'
 import { problemPayload } from '../../lib/problem.js'
 import { constantTimeSecretEqual, extractBearerToken } from '../../lib/internal-bearer.js'
 
@@ -34,17 +35,7 @@ export default async function internalRoutePlugin(fastify, opts) {
   }
 
   await fastify.register(async (scope) => {
-    await scope.register(rateLimit, {
-      global: false,
-      errorResponseBuilder: (_req, context) =>
-        problemPayload({
-          type: types.rateLimit,
-          title: 'Too Many Requests',
-          status: 429,
-          detail: `Rate limit exceeded, retry in ${context.ttl} seconds.`,
-          code: 'AUTH_TOO_MANY_ATTEMPTS'
-        })
-    })
+    await scope.register(rateLimit, buildRateLimitPluginOptions(types))
 
     scope.addHook('preHandler', requireInternalBearer)
 

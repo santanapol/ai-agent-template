@@ -11,7 +11,7 @@
 | **Status** | **Active** — ADR / Architecture overview, trust boundary, และ system flow |
 | **Companion docs** | [`gateway` SoT](./gateway/docs/architecture.md) · [`001-gateway-esm-fastify.md`](./gateway/docs/adrs/001-gateway-esm-fastify.md) · [`auth` SoT](./auth/docs/architecture.md) |
 | **Scope** | ภาพรวมเชิงสถาปัตยกรรม, Trust boundary, และเหตุผลเชิงระบบ (ไม่แทนที่ SoT เชิง Contract ของแต่ละ Service) |
-| **Document version** | `1.0.9` |
+| **Document version** | `1.1.0` |
 | **Terms** | **ต้อง (MUST)** = บังคับ · **ควร (SHOULD)** = แนะนำ (Default) · **อาจ (MAY)** = ทางเลือก |
 
 > ⚠️ **การเปลี่ยนแปลง:** หากแก้ไข Flow, Trust boundary, Security strategy, หรือ Diagram ที่กระทบระบบโดยรวม **ควร** Review คู่กับ SoT ของ Gateway/Auth เสมอ
@@ -27,10 +27,11 @@
 
 1. **Client** ส่ง Request พร้อม `Authorization: Bearer <JWT>`
 2. **`gateway`** ตรวจสอบ (Verify) JWT Signature แบบ Stateless
-3. **`gateway`** อ่าน Payload และ Inject HTTP Headers (เช่น `x-user-*`) พร้อมแนบ `x-gateway-secret` — ระบบจะไม่เชื่อถือ User Context ที่ Client ส่งมาโดยตรง 
+3. **`gateway` (Revocation check):** หากระบบอยู่ในโหมด Production และมีการตั้งค่า **Redis** — Gateway จะตรวจสอบ claim **`token_gen`** ใน JWT เทียบกับค่าปัจจุบันใน Redis (`user:{sub}:token_gen`); หากค่าใน JWT น้อยกว่าค่าใน Redis (ถูก Revoke) Gateway จะตอบ **`401`** ทันที
+4. **`gateway`** อ่าน Payload และ Inject HTTP Headers (เช่น `x-user-*`) พร้อมแนบ `x-gateway-secret` — ระบบจะไม่เชื่อถือ User Context ที่ Client ส่งมาโดยตรง 
    *(หมายเหตุ: Claim ที่ Map ไปยัง `x-user-id` **ควร** เป็น ASCII printable และ **ต้องไม่** เกิน 128 ตัวอักษร มิฉะนั้น Gateway จะตอบ `400`)*
-4. **`gateway`** ทำการ Proxy ไปยัง Internal API ตาม Routing ที่กำหนด
-5. **Internal API** ตรวจสอบ `x-gateway-secret` ก่อนเสมอ จากนั้นจึงนำ User Context จาก Headers ที่ Gateway แนบมา ไปใช้ประมวลผล Business Logic ต่อไป
+5. **`gateway`** ทำการ Proxy ไปยัง Internal API ตาม Routing ที่กำหนด
+6. **Internal API** ตรวจสอบ `x-gateway-secret` ก่อนเสมอ จากนั้นจึงนำ User Context จาก Headers ที่ Gateway แนบมา ไปใช้ประมวลผล Business Logic ต่อไป
 
 **Trust Boundary:** Internal API ถือว่า Headers (เช่น `x-user-id`, `x-user-role`, `x-user-ou`, `x-user-branch`) เป็นความจริง **ก็ต่อเมื่อ** Request วิ่งมาทาง Private Network ที่อนุญาตเฉพาะ Gateway, ผ่านการส่งต่อจาก Gateway และตรวจสอบ `x-gateway-secret` สำเร็จแล้วเท่านั้น
 
@@ -40,6 +41,7 @@
 - **Reasoning:** Fastify มี Overhead ต่ำและรองรับ Throughput ได้ดี เหมาะกับการเป็น Proxy ด้านหน้า; การใช้ ESM ช่วยให้สอดคล้องกับ Module Graph และ Ecosystem ใหม่ๆ ซึ่ง**ต่างจาก**มาตรฐาน Backend หลักของทีม (Express + CommonJS) ถือเป็น Exception เฉพาะ Service นี้เท่านั้น
 - **Responsibilities:**
   - Stateless Authentication (JWT)
+  - **Session Revocation (O-16/D3):** ตรวจสอบ `token_gen` ผ่าน Redis (ใน Production)
   - Header Injection (User Context + Gateway Secret)
   - Reverse Proxy / Routing แบบ **Path-based (`prefix`)** ไปยัง Internal Upstream ต่างๆ
 
@@ -48,13 +50,15 @@
 - **Gateway Secret:** ใช้ค่าเดียวกันกับทุก Upstream (ในระยะเริ่มต้น)
 - **ไม่ Forward Header:** จะไม่ส่ง `Authorization` ไปที่ Internal API; ยืนยัน Identity ผ่าน Headers ที่ Gateway Inject ให้เท่านั้น
 - **JWT:** **ต้อง** Verify Access JWT ด้วยโหมด **Asymmetric + JWKS** (`JWT_JWKS_URL`) และตรวจสอบ `aud` / `iss` (โหมด `HS256` ไม่รองรับในปัจจุบัน)
+- **Revocation Gate:** Gateway **ต้อง** ตรวจสอบ `token_gen` กับ Redis เมื่อ `REDIS_URL` ถูกกำหนด (สัญญา D3)
 
 ### 2.2 Operational Baseline (อ้างอิง [Gateway SoT](./gateway/docs/architecture.md) section 12)
 
-- **Public Routes:** เปิดเฉพาะ **`GET /healthz`** และ **`GET /readyz`** (ตรวจสอบ JWKS เบื้องต้น)
+- **Public Routes:** เปิดเฉพาะ **`GET /healthz`** และ **`GET /readyz`** (ตรวจสอบ JWKS และ Redis connection)
 - **`x-user-id`:** Map จาก `JWT_CLAIM_USER_ID` — ความยาวสูงสุด 128 ตัวอักษร (เกินกำหนดตอบ `400`)
 - **`x-user-role`:** String เดียว หรือหลายค่าโดยคั่นด้วย comma — ความยาวสูงสุด 256 ตัวอักษร (เกินกำหนดตอบ `400`)
 - **JWT Leeway:** Default ที่ 60 วินาที
+- **Redis:** **ต้อง** ใช้ Redis ใน Production สำหรับ sync สถานะ `token_gen` ระหว่าง `auth` และ `gateway`
 - **CORS:** ปิดเป็น Default (Server-to-Server) · กำหนด Body ไว้ที่ 1 MiB
 - **Error Handling ขอบ Gateway:** ใช้ `application/problem+json` อ้างอิงตาม `codes.yaml`
 - **Upstream Handling:** ถ้า Internal Secret ผิดตอบ `403`; ถ้า Upstream ตอบ HTTP `5xx` ให้ Passthrough ไปยัง Client 
@@ -69,7 +73,7 @@
 
 ## 3. Internal API Component
 
-Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`crud-service`](./services/.demo/crud-service/README.md)** (แพ็กเกจใต้ `services/.demo/`); บริการอื่นใน workspace (เช่น smart-report) ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
+Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`crud-service`](./services/.demo/crud-service/README.md)** (แพ็กเกจใต้ `services/.demo/`) และ **`staff`** (เมื่อ implement); บริการอื่นใน workspace ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
 
 - **Responsibilities:** มุ่งเน้นไปที่ Business Logic เป็นหลัก
 - **Security Rules:**
@@ -89,9 +93,13 @@ Upstream ภายในหมายถึงบริการหลัง `gat
 - **Secret:** เก็บใน env/secret manager; หลีกเลี่ยงการ log request headers ที่มี secret; เปรียบเทียบแบบ constant-time; วางแผน rotate (หรือ dual-key ระหว่างช่วงเปลี่ยน)
 - **Transport:** Client → `gateway` **ต้อง** ใช้ TLS; `gateway` → internal **ต้อง** วิ่งบน private network และ **ต้อง** ใช้ TLS; **mTLS ยังไม่อยู่ใน baseline ของ ADR นี้**
 
-### JWT stateless (ข้อจำกัด)
+### JWT stateless & Revocation (O-16/D3)
 
-- การ revoke token ทันที (logout / compromise) ทำได้ยากถ้าใช้แค่ stateless JWT — ความสามารถ revocation เพิ่มเติม **ยังไม่ถูกล็อกใน ADR นี้**; หาก requirement ต้อง revoke ได้ทันที **ต้อง** ทำ ADR/SoT เพิ่มเติม โดยอ้างอิงรายละเอียดการออก token / refresh ที่ [`auth` SoT](./auth/docs/architecture.md)
+- การ revoke token ทันที (logout / compromise) ในระบบ Stateless JWT ทำได้โดยใช้ **`token_gen`** (Generation counter):
+  1. **`auth`** เก็บ `access_token_gen` ใน DB และ Mirror ลง **Redis** เมื่อมีการ Revoke
+  2. **`gateway`** ตรวจสอบ `token_gen` ใน JWT เทียบกับ Redis ทุกครั้ง (ใน Production)
+  3. หาก `token_gen` ใน JWT เก่ากว่าค่าใน Redis → Gateway ปฏิเสธ Request ทันที
+- รายละเอียดการออก token / refresh อยู่ที่ [`auth` SoT](./auth/docs/architecture.md) และการตรวจสอบที่ขอบ Gateway อยู่ที่ [`gateway` SoT](./gateway/docs/architecture.md)
 
 ## 5. Diagrams
 
@@ -124,10 +132,14 @@ sequenceDiagram
   autonumber
   participant C as Client
   participant G as gateway
+  participant R as Redis (token_gen)
   participant I as Internal API
 
   C->>+G: HTTPS + Bearer JWT
   G->>G: Verify JWT signature (stateless)
+  G->>+R: GET user:{sub}:token_gen (if production)
+  R-->>-G: current_gen
+  G->>G: Compare JWT token_gen vs current_gen
   G->>G: Strip or override client x-user-* headers
   G->>G: Set x-user-id, x-user-role, x-gateway-secret
   G->>+I: Proxy over private path
@@ -135,7 +147,7 @@ sequenceDiagram
   I->>I: Authorize from x-user-role
   I->>I: Execute business logic
   I-->>-G: Response
-  G-->>-C: HTTPS response
+  G-->>-C: Response
 ```
 
 ### 5.3 Multiple internal services (routing)
@@ -168,16 +180,33 @@ sequenceDiagram
   autonumber
   participant C as Client
   participant L as auth
+  participant R as Redis (token_gen)
   participant G as gateway
   participant I as Internal API
 
   C->>+L: Login (credential)
-  L-->>-C: access JWT + refresh token
+  L-->>-C: access JWT (token_gen=N) + refresh token
+  
   Note over C,L: Refresh ทำที่ auth เท่านั้น
   C->>+L: Refresh request
   L-->>-C: New access JWT + rotated refresh token
-  C->>+G: API request + Bearer JWT
-  G->>G: Verify JWT, inject headers
+
+  rect rgb(255, 235, 235)
+    Note over L,R: Session Revoke (O-16)
+    L->>L: Bump access_token_gen (N+1)
+    L->>R: SET user:{sub}:token_gen = N+1
+  end
+
+  C->>+G: API request + Bearer JWT (token_gen=N)
+  G->>+R: GET user:{sub}:token_gen
+  R-->>-G: N+1
+  G->>G: N < N+1 → Reject (401)
+  G-->>C: 401 Unauthorized
+
+  C->>+G: API request + New JWT (token_gen=N+1)
+  G->>+R: GET user:{sub}:token_gen
+  R-->>-G: N+1
+  G->>G: N+1 == N+1 → OK
   G->>+I: Proxy
   I-->>-G: Response
   G-->>-C: Response
@@ -187,4 +216,4 @@ sequenceDiagram
 
 ---
 
-_Document version **1.0.9** — Architecture ADR (flow, trust boundary, diagrams)._
+_Document version **1.1.0** — Architecture ADR (flow, trust boundary, diagrams)._

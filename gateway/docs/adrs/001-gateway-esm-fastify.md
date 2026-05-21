@@ -1,11 +1,11 @@
 # ADR 001 — `gateway`: ESM + Fastify + Jest (experimental VM)
 
-| Field | Value |
-| :--- | :--- |
-| **Status** | Accepted |
-| **Scope** | `zero-platform/gateway` |
-| **Normative SoT** | [`docs/architecture.md`](../architecture.md) — production contract, headers, errors, lifecycle |
-| **Architecture context** | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) |
+| Field                    | Value                                                                                          |
+| :----------------------- | :--------------------------------------------------------------------------------------------- |
+| **Status**               | Accepted                                                                                       |
+| **Scope**                | `zero-platform/gateway`                                                                        |
+| **Normative SoT**        | [`docs/architecture.md`](../architecture.md) — production contract, headers, errors, lifecycle |
+| **Architecture context** | [`ARCHITECTURE.md`](../../../ARCHITECTURE.md)                                                  |
 
 ## Context
 

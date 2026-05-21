@@ -26,7 +26,7 @@ const proxyPath = process.env.TRY_PROXY_PATH ?? '/api/v1/me'
 const username = process.env.TRY_LOGIN_USERNAME ?? 'demo'
 const password = process.env.TRY_LOGIN_PASSWORD ?? 'DevExample-demo-1'
 
-async function readExampleLoginBody () {
+async function readExampleLoginBody() {
   const here = dirname(fileURLToPath(import.meta.url))
   const examplePath = join(here, '../../auth/examples/login-native.body.json')
   try {

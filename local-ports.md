@@ -16,7 +16,6 @@
 | **gateway** | **3002** | [`gateway/`](./gateway/) | Entry สำหรับ client ที่ยิง API ผ่าน proxy |
 | **crud-service** (demo upstream) | **3003** | [`services/.demo/crud-service/`](./services/.demo/crud-service/) | ตัวอย่างใน [`gateway/.env.example`](./gateway/.env.example) `ROUTES_JSON` / [`gateway/routes.json`](./gateway/routes.json) |
 | **staff** | **3004** | [`services/staff/`](./services/staff/) | [`gateway/routes.json`](./gateway/routes.json) — `/api/v1/staff` → `:3004` |
-| **smart-report** (optional) | **3000** | workspace นอก template (เช่น `services/smart-report/`) | อ้างอิงใน [`gateway/.env.example`](./gateway/.env.example) คอมเมนต์ — ไม่บังคับเปิด |
 
 ## Dependencies (not repo HTTP services)
 
@@ -30,4 +29,4 @@
 ## Related
 
 - [RUNBOOK.md](./RUNBOOK.md) — ลำดับรัน terminal และ smoke `curl`
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — ภาพรวม monorepo · package layout: [`service-tree.md`](../../../_coding-standards/backend/service-tree.md) (workspace SoT)
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — ภาพรวม monorepo · package layout: [`service-tree.md`](../../_coding-standards/backend/service-tree.md) (workspace SoT)

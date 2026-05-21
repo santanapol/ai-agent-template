@@ -75,7 +75,8 @@ describe('gateway proxy (JWKS + upstream)', () => {
     await new Promise((resolve) => upstreamServer.listen(0, '127.0.0.1', resolve))
 
     const jwksPort = /** @type {import('node:net').AddressInfo} */ (jwksServer.address()).port
-    const upstreamPort = /** @type {import('node:net').AddressInfo} */ (upstreamServer.address()).port
+    const upstreamPort = /** @type {import('node:net').AddressInfo} */ (upstreamServer.address())
+      .port
 
     const jwksUrl = `http://127.0.0.1:${jwksPort}/.well-known/jwks.json`
     sharedJwksUrl = jwksUrl
@@ -254,5 +255,4 @@ describe('gateway proxy (JWKS + upstream)', () => {
       await deadApp.close()
     }
   })
-
 })

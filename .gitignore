@@ -20,7 +20,7 @@ Thumbs.db
 dist/
 .cache/
 
-# services/ — workspace-only clones (staff, smart-report, …); track reference demo only
+# services/ — workspace-only clones (e.g. staff); track reference demo only
 services/*
 !services/.demo/
 !services/.demo/**

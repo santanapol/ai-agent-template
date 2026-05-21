@@ -3,7 +3,7 @@ import httpProxy from '@fastify/http-proxy'
 /**
  * @param {Record<string, string | string[] | undefined>} headers
  */
-function stripDangerousInboundHeaders (headers) {
+function stripDangerousInboundHeaders(headers) {
   const out = { ...headers }
   for (const key of Object.keys(out)) {
     const lower = key.toLowerCase()
@@ -23,7 +23,7 @@ function stripDangerousInboundHeaders (headers) {
  * @param {import('fastify').FastifyInstance} fastify
  * @param {{ env: ReturnType<import('../config/env.js').loadEnv>, routes: ReturnType<import('../config/routes.js').loadRoutes> }} opts
  */
-export async function registerProxies (fastify, opts) {
+export async function registerProxies(fastify, opts) {
   const { env, routes } = opts
 
   const replyOptions = {

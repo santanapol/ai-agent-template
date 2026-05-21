@@ -4,9 +4,20 @@ All notable changes to the **crud-service** package (`services/.demo/crud-servic
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this package adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) together with `package.json` / `openapi.yaml` `info.version`.
 
-Monorepo-level history (gateway, auth, layout moves) stays in the repository root [`CHANGELOG.md`](../../CHANGELOG.md).
+Monorepo-level history (gateway, auth, layout moves) stays in the repository root [`CHANGELOG.md`](../../../CHANGELOG.md).
 
 ## [Unreleased]
+
+### Changed
+
+- `.spectral.yaml` — fix extends path to org `org-api.yaml` (`../../../../../`)
+- `.prettierignore` — exclude `docs/` (prose SoT; with README/RUNBOOK)
+- OpenAPI alignment tests — `info.version` ↔ `package.json` for `openapi.yaml` and `openapi-via-gateway.yaml`
+- `README.md` — compact document map (auth/gateway style), Scripts bullets, gateway routes (`/api/v1/me` + items), `.prettierignore` for README; link `docs/bruno/`
+- `RUNBOOK.md` — compact tables/TOC, fix `_coding-standards` paths, drop HTML anchors; **§ Smoke ผ่าน gateway** (terminals, pre-flight, `try:proxy`, manual `curl`); exclude from Prettier
+- **`/service-docs resync` (docs/):** `architecture.md` v1.0.2+ — org std links, `codes.yaml` in Related; `adrs/001` cross-links
+- `docs/db/erd.md` v1.0.2 — package version, org `mongodb.md`, tenant hex24, list pagination, recommended unique `code` index (§6.3)
+- `docs/architecture.md` v1.0.4 — §3 middleware + PUT/ADR/ETag; §6 Operations; Related dedup
 
 ### Added
 

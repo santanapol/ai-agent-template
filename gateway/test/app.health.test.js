@@ -11,17 +11,17 @@ describe('GET /healthz and GET /readyz', () => {
   let redisPingFails = false
 
   const mockRedis = {
-    async get () {
+    async get() {
       return null
     },
-    async ping () {
+    async ping() {
       if (redisPingFails) throw new Error('redis PING failed (test)')
       return 'PONG'
     },
-    get isOpen () {
+    get isOpen() {
       return true
     },
-    async quit () {}
+    async quit() {}
   }
 
   beforeAll(async () => {
@@ -62,6 +62,25 @@ describe('GET /healthz and GET /readyz', () => {
     expect(body.status).toBe('ok')
     expect(typeof body.timestamp).toBe('string')
     expect(typeof body.uptime).toBe('number')
+  })
+
+  test('echoes x-request-id on response (valid inbound UUID)', async () => {
+    const inbound = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+    const res = await app.inject({
+      method: 'GET',
+      url: '/healthz',
+      headers: { 'x-request-id': inbound }
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['x-request-id']).toBe(inbound)
+  })
+
+  test('mints lowercase x-request-id when header absent', async () => {
+    const res = await app.inject({ method: 'GET', url: '/healthz' })
+    expect(res.statusCode).toBe(200)
+    const echoed = res.headers['x-request-id']
+    expect(echoed).toBeDefined()
+    expect(echoed).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   })
 
   test('GET /readyz returns 200 when JWKS and Redis are reachable', async () => {

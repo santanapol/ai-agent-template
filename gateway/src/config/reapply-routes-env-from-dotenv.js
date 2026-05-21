@@ -19,7 +19,7 @@ export const defaultGatewayDotenvPath = resolve(MODULE_DIR, '../../.env')
  * @param {{ envPath?: string }} [opts]
  * @returns {{ kind: 'ROUTES_JSON' | 'ROUTES_FILE' | 'none' }}
  */
-export function reapplyRoutesEnvFromDotenvFile (opts = {}) {
+export function reapplyRoutesEnvFromDotenvFile(opts = {}) {
   const envPath = opts.envPath ?? defaultGatewayDotenvPath
   if (!existsSync(envPath)) {
     return { kind: 'none' }

@@ -1,5 +1,5 @@
 import rateLimit from '@fastify/rate-limit'
-import { problemPayload } from '../../lib/problem.js'
+import { buildRateLimitPluginOptions } from '../../lib/rate-limit.js'
 
 /** Per-route caps (per IP) — สอดคล้อง `_coding-standards/auth/api.md` (default แนะนำ) */
 const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
@@ -14,17 +14,7 @@ export default async function authRoutePlugin(fastify, opts) {
   const { controller, types } = opts
 
   await fastify.register(async (scope) => {
-    await scope.register(rateLimit, {
-      global: false,
-      errorResponseBuilder: (_req, context) =>
-        problemPayload({
-          type: types.rateLimit,
-          title: 'Too Many Requests',
-          status: 429,
-          detail: `Rate limit exceeded, retry in ${context.ttl} seconds.`,
-          code: 'AUTH_TOO_MANY_ATTEMPTS'
-        })
-    })
+    await scope.register(rateLimit, buildRateLimitPluginOptions(types))
 
     scope.post('/auth/login', { config: { rateLimit: RATE_LIMIT_LOGIN } }, (request, reply) =>
       controller.login(request, reply)

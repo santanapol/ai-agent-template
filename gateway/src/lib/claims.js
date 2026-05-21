@@ -4,7 +4,7 @@ const ASCII_PRINTABLE = /^[\u0020-\u007E]+$/u
  * @param {unknown} value
  * @returns {string}
  */
-export function normalizeUserIdClaim (value) {
+export function normalizeUserIdClaim(value) {
   if (value === undefined || value === null) {
     throw new Error('missing_user_id')
   }
@@ -14,7 +14,7 @@ export function normalizeUserIdClaim (value) {
 /**
  * @param {string} userId
  */
-export function assertValidUserIdHeader (userId) {
+export function assertValidUserIdHeader(userId) {
   if (userId.length > 128) {
     throw new Error('user_id_too_long')
   }
@@ -29,7 +29,7 @@ export function assertValidUserIdHeader (userId) {
  * @param {unknown} value
  * @returns {string}
  */
-export function normalizeRoleHeader (value) {
+export function normalizeRoleHeader(value) {
   if (value === undefined || value === null) {
     return ''
   }
@@ -43,7 +43,7 @@ export function normalizeRoleHeader (value) {
 /**
  * @param {string} roleHeader
  */
-export function assertValidRoleHeader (roleHeader) {
+export function assertValidRoleHeader(roleHeader) {
   if (roleHeader.length > 256) {
     throw new Error('role_too_long')
   }
@@ -56,7 +56,7 @@ export function assertValidRoleHeader (roleHeader) {
  * @param {unknown} value
  * @returns {string}
  */
-export function normalizeTenantClaim (value) {
+export function normalizeTenantClaim(value) {
   if (value === undefined || value === null || value === '') {
     return ''
   }

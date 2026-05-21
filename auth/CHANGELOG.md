@@ -2,7 +2,21 @@
 
 ## [Unreleased]
 
-_(none)_
+### Added
+
+- `docs/domain.md` — business SoT (scope, RBAC, HTTP intent, sequences).
+- `docs/db/erd.md` v1.0.1 — MongoDB schema/ERD/indexes; org std links, metadata/layer table, audit/Redis notes.
+- `docs/adrs/001-fastify-esm.md` — ADR moved from package-root `docs/adr-001-fastify-esm.md`.
+- `src/lib/request-id.js`, `src/lib/rate-limit.js` — `x-request-id` echo; per-route rate-limit buckets.
+
+### Changed
+
+- `docs/architecture.md` v1.4.1 — TOC/anchors, companion links, persistence index → `docs/db/erd.md`; reading guide sections 1–13.
+- `docs/session-revoke-token-gen-changes.md` — metadata table.
+- `README.md` — document map links (`ARCHITECTURE.md`, `_coding-standards`).
+- `CHANGELOG.md` — `model-matrix.md` link (was broken `CODE_MATRIX_TARGET.md`).
+- `init-db.mjs` — index comment points at `docs/db/erd.md`.
+- Integration tests — `x-request-id` coverage on auth routes.
 
 ## [0.1.5] - 2026-05-15
 
@@ -18,7 +32,7 @@ _(none)_
 - **OpenAPI:** รวมสัญญาเป็นฉบับเดียว — ลบ `docs/openapi.yaml`; SoT คือ [`openapi.yaml`](./openapi.yaml) เท่านั้น (`openapi-package-version-alignment` ตรวจแค่ไฟล์นี้กับ `package.json`)
 - **CI:** script `ci:with-coverage` รัน merge gate แล้วตามด้วย `test:coverage` (แนว `_coding-standards/backend/ci.md` §4)
 - **Supply chain:** `npm audit fix` — แก้ `fast-uri` (high) ผ่าน `npm run audit:check`
-- **Code matrix ([`CODE_MATRIX_TARGET.md`](../../../CODE_MATRIX_TARGET.md)):** refresh token ไม่ถูกต้องหรือ reuse → Problem **`code`** **`TOKEN_REFRESH_REJECTED`** (แทน `TOKEN_REFRESH_INVALID` / `TOKEN_REFRESH_REUSED`).
+- **Code matrix ([`model-matrix.md`](../../../model-matrix.md)):** refresh token ไม่ถูกต้องหรือ reuse → Problem **`code`** **`TOKEN_REFRESH_REJECTED`** (แทน `TOKEN_REFRESH_INVALID` / `TOKEN_REFRESH_REUSED`).
 - **D1 — Redis `token_gen` publish:** เมื่อตั้ง **`REDIS_URL`** — auth เชื่อม Redis ตอน startup; หลัง internal revoke สำเร็จ **`SET`** `user:{sub}:token_gen`; dependency **`GET /readyz`** รวม **`PING`** Redis; dependency **`redis`** package
 
 ## [0.1.3] - 2026-05-13

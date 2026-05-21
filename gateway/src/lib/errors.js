@@ -5,7 +5,7 @@
  * @param {unknown} err
  * @returns {number | undefined}
  */
-export function mapGatewayClientStatus (err) {
+export function mapGatewayClientStatus(err) {
   if (!err || typeof err !== 'object') return undefined
 
   const code = 'code' in err && err.code !== undefined ? String(err.code) : ''
