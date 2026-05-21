@@ -18,7 +18,7 @@
 
 ---
 
-*(หมายเหตุ: ชุดเอกสารในโฟลเดอร์นี้อ้างอิงร่วมกันระหว่าง `gateway`, `auth`, และตัวอย่าง upstream **[`crud-service`](./.demo/crud-service/README.md)** (อยู่ใต้ `.demo/` — `/api/v1/me`, `/api/v1/items`, และ catch-all `/api` ผ่าน gateway) — ดูเอกสารที่เกี่ยวข้องได้ที่ [README.md](./README.md))*
+*(หมายเหตุ: ชุดเอกสารในโฟลเดอร์นี้อ้างอิงร่วมกันระหว่าง `gateway`, `auth`, และตัวอย่าง upstream **[`crud-service`](./services/.demo/crud-service/README.md)** (อยู่ใต้ `services/.demo/` — `/api/v1/me`, `/api/v1/items`, และ catch-all `/api` ผ่าน gateway) — ดูเอกสารที่เกี่ยวข้องได้ที่ [README.md](./README.md))*
 
 
 ## 1. System Flow
@@ -69,7 +69,7 @@
 
 ## 3. Internal API Component
 
-Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`crud-service`](./.demo/crud-service/README.md)** (แพ็กเกจใต้ `.demo/`); บริการอื่นใน workspace (เช่น smart-report) ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
+Upstream ภายในหมายถึงบริการหลัง `gateway` ที่ไม่รับ public traffic โดยตรง — ใน monorepo นี้มีตัวอย่างอ้างอิงที่ **[`crud-service`](./services/.demo/crud-service/README.md)** (แพ็กเกจใต้ `services/.demo/`); บริการอื่นใน workspace (เช่น smart-report) ปฏิบัติตามสัญญา mesh (`x-gateway-secret`, `x-user-*`) เช่นกัน
 
 - **Responsibilities:** มุ่งเน้นไปที่ Business Logic เป็นหลัก
 - **Security Rules:**

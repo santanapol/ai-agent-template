@@ -2,7 +2,7 @@
 
 Sample internal API: **`GET /api/v1/me`** (trusted gateway headers) plus CRUD on **`items`** using MongoDB, tenant headers, and std.min envelope patterns.
 
-Package path in this monorepo: **`.demo/crud-service/`** (demo / teaching code).
+Package path in this monorepo: **`services/.demo/crud-service/`** (demo / teaching code).
 
 - **Direct to this service:** [`openapi.yaml`](./openapi.yaml) (port **3003**; mesh + `x-user-*` ตาม spec)
 - **Architecture (service SoT):** [`docs/architecture.md`](./docs/architecture.md) (trust boundary, persistence, ERD)
@@ -14,8 +14,8 @@ Package path in this monorepo: **`.demo/crud-service/`** (demo / teaching code).
 
 ## Where this code lives
 
-- **This repository (clone):** `cd` to **`.demo/crud-service/`** from the monorepo root.
-- **Inside the [ai-agent](https://github.com/santanapol/ai-agent-cursor) workspace:** usually `project-active/zero-platform/.demo/crud-service/`.
+- **This repository (clone):** `cd` to **`services/.demo/crud-service/`** from the monorepo root.
+- **Inside the [ai-agent](https://github.com/santanapol/ai-agent-cursor) workspace:** usually `project-active/zero-platform/services/.demo/crud-service/`.
 
 ## Source layout (`src/`)
 

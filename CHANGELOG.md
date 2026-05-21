@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Demo layout:** move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; **`.gitignore`** now ignores `services/*` except **`services/.demo/**`** (workspace clones such as `staff/`, `smart-report/` stay local-only).
 - **Repository identity:** rename monorepo from **access-platform** to **zero-platform** (folder, docs, workspace links). GitHub repository **`Chiang-Rai-Technology/zero-platform`** (formerly `authorization-gateway`).
 - **Gateway routes:** `/api/v1/members` → `/api/v1/staff` in [`gateway/routes.json`](./gateway/routes.json) and [`gateway/.env.example`](./gateway/.env.example); port **3004** reserved for planned [`services/staff/`](./services/staff/).
 - **`services/README.md`:** index table for **staff** (docs-only, planned `package.json`).
@@ -21,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs) and **`.demo/crud-service/`** gateway mesh demo upstream.
+- Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs) and **`services/.demo/crud-service/`** gateway mesh demo upstream.
 - Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional staff/smart-report); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
 - Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
 - Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
@@ -32,13 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Auth OpenAPI:** single SoT at `auth/openapi.yaml` — remove `auth/docs/openapi.yaml`; update **`gateway/openapi.yaml`** normative links and `RUNBOOK.md` document map paths.
 - **Gateway OpenAPI:** single contract file at **`gateway/openapi.yaml`** (package root) — remove `gateway/docs/openapi.yaml`; `spec:lint` และเอกสารชี้ path ใหม่.
-- Move CRUD sample upstream to **`.demo/crud-service/`** and rename npm package to **`crud-service`** (was `demo-crud-service` at repo root). Docs and gateway links updated. Historical changelog subsections below still use the name **reference** for releases at that time.
-- Consolidate repository service layout: `auth/`, `gateway/`, and sample upstream under **`.demo/crud-service/`** at zero-platform root (no `access/` wrapper).
+- Move CRUD sample upstream to **`services/.demo/crud-service/`** and rename npm package to **`crud-service`** (was `demo-crud-service` at repo root). Docs and gateway links updated. Historical changelog subsections below still use the name **reference** for releases at that time.
+- Consolidate repository service layout: `auth/`, `gateway/`, and sample upstream under **`services/.demo/crud-service/`** at zero-platform root (no `access/` wrapper).
 - Align `auth` runtime/contract behavior with auth SoT, including canonical RFC7807 mapping and client-kind semantics.
 - Update gateway code matrix behavior: `GATEWAY_CLAIM_REJECTED` now maps to HTTP `401`, and JWT verify failures map to `GATEWAY_JWT_REJECTED`.
 - Update `crud-service` `/api/v1/me` payload key order to `ou`, `branch`, `userId`, `role`.
 - Refresh repository docs (`README.md`, `ARCHITECTURE.md`, `RUNBOOK.md`) and gateway docs/spec to match new route-miss behavior.
-- **`ARCHITECTURE.md`:** companion SoT / demo links use root layout paths (`gateway/`, `auth/`, `.demo/crud-service/`) instead of legacy `access/` prefixes.
+- **`ARCHITECTURE.md`:** companion SoT / demo links use root layout paths (`gateway/`, `auth/`, `services/.demo/crud-service/`) instead of legacy `access/` prefixes.
 
 ### Fixed
 

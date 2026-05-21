@@ -1,6 +1,6 @@
 # 📘 Authorization Gateway System Runbook
 
-เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `.demo/`) / **`smart-report`**)
+เอกสารฉบับนี้เป็น **ศูนย์รวมคู่มือปฏิบัติการ (Single SoT)** สำหรับ Monorepo นี้ ครอบคลุมตั้งแต่การตั้งค่า E2E, การรันบริการ, การแก้ไขปัญหาเบื้องต้น และ **Checklist ก่อน/หลัง Deploy** (สำหรับการตั้งค่า JWT และ Env ระหว่าง `auth`, `gateway`, และ upstream เช่น **`crud-service`** (ใต้ `services/.demo/`) / **`smart-report`**)
 
 **ดัชนีพอร์ต local (อัปเดตเมื่อเพิ่ม service):** [`local-ports.md`](./local-ports.md)
 
@@ -118,7 +118,7 @@ npm run dev
 
 | Terminal | Service | พอร์ต (ค่าเริ่มต้นใน repo) | โฟลเดอร์ |
 |----------|---------|---------------------------|----------|
-| 3 | **`crud-service`** | **`3003`** | **`.demo/crud-service/`** |
+| 3 | **`crud-service`** | **`3003`** | **`services/.demo/crud-service/`** |
 | 4 | `smart-report` (workspace) | `3000` | `../smart-report/` |
 
 เส้นทาง gateway ที่ไป **`crud-service`** (`:3003`): prefix **`/api/v1/items`** และ catch-all **`/api`** (เช่น **`/api/v1/me`**) → `http://127.0.0.1:3003` (ดู [`gateway/.env.example`](gateway/.env.example))
@@ -223,8 +223,8 @@ curl -X GET http://127.0.0.1:3002/api/v1/me \
 |---|---|
 | [auth/openapi.yaml](auth/openapi.yaml) | การ Login / Refresh / Logout และ Token Issuance |
 | [gateway/openapi.yaml](gateway/openapi.yaml) | ข้อมูล `GET /healthz`, `GET /readyz` และ SoT Links |
-| [.demo/crud-service/openapi-via-gateway.yaml](.demo/crud-service/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
-| [.demo/crud-service/openapi.yaml](.demo/crud-service/openapi.yaml) | Mesh contract ตรง **`crud-service`** (`x-gateway-secret` + `x-user-*`) |
+| [services/.demo/crud-service/openapi-via-gateway.yaml](services/.demo/crud-service/openapi-via-gateway.yaml) | Client → Gateway (Bearer) — รวม **`/api/v1/me`** และ **`/api/v1/items`** |
+| [services/.demo/crud-service/openapi.yaml](services/.demo/crud-service/openapi.yaml) | Mesh contract ตรง **`crud-service`** (`x-gateway-secret` + `x-user-*`) |
 | [gateway-service/docs/architecture.md](gateway-service/docs/architecture.md) | Header contract, errors, routing (Production SoT gateway) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ภาพรวม trust boundary และ routing แบบหลาย upstream |
 

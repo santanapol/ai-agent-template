@@ -3,7 +3,7 @@ info:
   title: crud-service
   version: 0.1.0
   description: |
-    Sample upstream backend for the `access-platform` monorepo (lives under `.demo/crud-service/`).
+    Sample upstream backend for the `access-platform` monorepo (lives under `services/.demo/crud-service/`).
 
     Includes:
     - CRUD for `/api/v1/items`

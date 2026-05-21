@@ -2,7 +2,7 @@
 
 เอกสารสำหรับรันและดูแล **`crud-service`** ในเครื่องและสภาพแวดล้อมจริง
 
-**ที่ตั้งโปรเจกต์:** จาก root ของ repo **`zero-platform`** ให้ `cd .demo/crud-service` (นี่คือ **root ของแพ็กเกจ** `crud-service` สำหรับคำสั่ง `npm` / `pm2`) — ถ้าใช้ร่วมกับ [ai-agent workspace](https://github.com/santanapol/ai-agent-cursor) โปรเจกต์มักอยู่ที่ `project-active/zero-platform/.demo/crud-service/`
+**ที่ตั้งโปรเจกต์:** จาก root ของ repo **`zero-platform`** ให้ `cd services/.demo/crud-service` (นี่คือ **root ของแพ็กเกจ** `crud-service` สำหรับคำสั่ง `npm` / `pm2`) — ถ้าใช้ร่วมกับ [ai-agent workspace](https://github.com/santanapol/ai-agent-cursor) โปรเจกต์มักอยู่ที่ `project-active/zero-platform/services/.demo/crud-service/`
 
 ## Table of contents
 
@@ -42,7 +42,7 @@
 
 ## การตั้งค่า (`.env`)
 
-จาก **root ของแพ็กเกจ** `.demo/crud-service/` (ไม่ใช่แค่ root ของ monorepo ถ้าคำสั่งรันคนละ cwd):
+จาก **root ของแพ็กเกจ** `services/.demo/crud-service/` (ไม่ใช่แค่ root ของ monorepo ถ้าคำสั่งรันคนละ cwd):
 
 ```bash
 cp .env.example .env
@@ -117,7 +117,7 @@ pm2 status
 pm2 logs crud-service
 ```
 
-**อัปเดตหลัง deploy โค้ด** (สั่งจาก **root ของแพ็กเกจ** `.demo/crud-service/` บน server)
+**อัปเดตหลัง deploy โค้ด** (สั่งจาก **root ของแพ็กเกจ** `services/.demo/crud-service/` บน server)
 
 เมื่อ **มีการเปลี่ยน** `package.json` / `package-lock.json`:
 

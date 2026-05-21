@@ -28,7 +28,7 @@ Default [`.env.example`](./.env.example) / [`routes.example.json`](./routes.exam
 | Prefix (on gateway host) | Default upstream | Service in this monorepo |
 |---------------------------|------------------|---------------------------|
 | `/api/v1/reports` | `http://127.0.0.1:3000` | [`smart-report`](../../../smart-report/) (workspace sibling) |
-| `/api/v1/items` | `http://127.0.0.1:3003` | [`crud-service`](../.demo/crud-service/) (`GATEWAY_SHARED_SECRET` must match gateway `GATEWAY_SECRET`) |
+| `/api/v1/items` | `http://127.0.0.1:3003` | [`crud-service`](../services/.demo/crud-service/) (`GATEWAY_SHARED_SECRET` must match gateway `GATEWAY_SECRET`) |
 | `/api` | `http://127.0.0.1:3003` | Same **crud-service** upstream — catch-all for paths such as **`/api/v1/me`** (not under `items` / `reports`) |
 
 If **`GET /api/v1/reports`** (via gateway) returns **`404`** with upstream body **`NO_MATCHING_API_PATH`**, the request is hitting **crud-service**, which has no that path — your **`ROUTES_JSON` / `ROUTES_FILE`** is missing the **longer** prefix for smart-report.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — **`crud-service`** sample upstream only (under `.demo/`).
+Accepted — **`crud-service`** sample upstream only (under `services/.demo/`).
 
 ## Context
 

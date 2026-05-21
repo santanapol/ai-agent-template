@@ -14,7 +14,7 @@
 |----------------|----------------|----------------|-------|
 | **auth** | **3001** | [`auth/`](./auth/) | JWKS: `http://127.0.0.1:3001/.well-known/jwks.json` — `gateway` ตั้ง `JWT_JWKS_URL` ให้ตรง |
 | **gateway** | **3002** | [`gateway/`](./gateway/) | Entry สำหรับ client ที่ยิง API ผ่าน proxy |
-| **crud-service** (demo upstream) | **3003** | [`.demo/crud-service/`](./.demo/crud-service/) | ตัวอย่างใน [`gateway/.env.example`](./gateway/.env.example) `ROUTES_JSON` / [`gateway/routes.json`](./gateway/routes.json) |
+| **crud-service** (demo upstream) | **3003** | [`services/.demo/crud-service/`](./services/.demo/crud-service/) | ตัวอย่างใน [`gateway/.env.example`](./gateway/.env.example) `ROUTES_JSON` / [`gateway/routes.json`](./gateway/routes.json) |
 | **staff** | **3004** | [`services/staff/`](./services/staff/) | [`gateway/routes.json`](./gateway/routes.json) — `/api/v1/staff` → `:3004` |
 | **smart-report** (optional) | **3000** | workspace นอก template (เช่น `services/smart-report/`) | อ้างอิงใน [`gateway/.env.example`](./gateway/.env.example) คอมเมนต์ — ไม่บังคับเปิด |
 
