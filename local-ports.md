@@ -18,12 +18,6 @@
 | **staff** | **3004** | [`services/staff/`](./services/staff/) | [`gateway/routes.json`](./gateway/routes.json) — `/api/v1/staff` → `:3004` |
 | **smart-report** (optional) | **3000** | workspace นอก template (เช่น `services/smart-report/`) | อ้างอิงใน [`gateway/.env.example`](./gateway/.env.example) คอมเมนต์ — ไม่บังคับเปิด |
 
-## Browser / frontend (dev)
-
-| Artifact | Default | Path | Notes |
-|----------|---------|------|-------|
-| **Vite dev** (www app) | **5173** | [`www/app/`](./www/app/) | ค่า `CORS_ORIGINS` บน `auth` / `gateway` มักใส่ `http://localhost:5173` และ `http://127.0.0.1:5173` — ดู [`www/app/.env.example`](./www/app/.env.example) |
-
 ## Dependencies (not repo HTTP services)
 
 | Name | Default port | Notes |

@@ -12,7 +12,7 @@
 
 | ลำดับ / เอกสาร | บทบาทและรายละเอียด (Role & Outcome) |
 |---|---|
-| **1. โครงสร้างโฟลเดอร์ (SoT)**<br/>[`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`service-tree.md`](../../../_coding-standards/backend/service-tree.md) | ภาพรวม monorepo + layout package ตาม org std (gateway, auth, `.demo/crud-service`, services, www) |
+| **1. โครงสร้างโฟลเดอร์ (SoT)**<br/>[`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`service-tree.md`](../../../_coding-standards/backend/service-tree.md) | ภาพรวม monorepo + layout package ตาม org std (gateway, auth, `.demo/crud-service`, services) |
 | **1b. พอร์ต local (ดัชนีกลาง)**<br/>[`local-ports.md`](./local-ports.md) | ตาราง **default PORT** ต่อ service (`auth` :3001, `gateway` :3002, upstream ตัวอย่าง ฯลฯ) — อัปเดตเมื่อเพิ่มบริการ |
 | **1c. Redis (local dev)**<br/>[`docker-compose.yml`](./docker-compose.yml) | Redis สำหรับ **`token_gen`** (auth publish + gateway verify) — ดู [RUNBOOK §2.5](./RUNBOOK.md#25--redis-local--token_gen--immediate-revoke) |
 | **2. ภาพรวมระบบ**<br/>[ARCHITECTURE.md](./ARCHITECTURE.md) | Architecture, ADR, trust boundary, system flow และ diagrams |

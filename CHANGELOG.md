@@ -11,16 +11,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Gateway routes:** `/api/v1/members` → `/api/v1/staff` in [`gateway/routes.json`](./gateway/routes.json) and [`gateway/.env.example`](./gateway/.env.example); port **3004** reserved for planned [`services/staff/`](./services/staff/).
 - **`services/README.md`:** index table for **staff** (docs-only, planned `package.json`).
 - **`local-ports.md`:** staff row replaces members; layout links point at [`ARCHITECTURE.md`](./ARCHITECTURE.md) and org [`service-tree.md`](../../../_coding-standards/backend/service-tree.md).
-- **`www/docs/{release-readiness,saas-frontend-ia}.md`:** reflect removed **members-api**; Members UI still calls `/api/v1/members` (e2e stub until replacement backend).
+- **`auth/.env.example`**, **`gateway/.env.example`:** default `CORS_ORIGINS` empty (no in-repo browser SPA).
 
 ### Removed
 
+- **`www/`** — Vite/React client (`www/app/`) and frontend docs (`www/docs/`); API-only monorepo focus.
 - **`PROJECT_TREE.md`** — monorepo folder SoT is [`ARCHITECTURE.md`](./ARCHITECTURE.md) plus per-package docs; package layout normative on parent workspace [`_coding-standards/backend/service-tree.md`](../../../_coding-standards/backend/service-tree.md). Update [`README.md`](./README.md) document map.
 
 ### Added
 
-- Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs), **`.demo/crud-service/`** gateway mesh demo upstream, and **`www/`** Vite client workspace (`node_modules` / build outputs remain gitignored).
-- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional staff/smart-report, Vite); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
+- Version-control **`auth/`** service (Fastify IdP-style HTTP API, tests, `openapi.yaml`, docs) and **`.demo/crud-service/`** gateway mesh demo upstream.
+- Add [`local-ports.md`](./local-ports.md) at repository root: central index of **default local HTTP ports** for dev (`auth`, `gateway`, demo upstream, optional staff/smart-report); links from [`README.md`](./README.md) and [`RUNBOOK.md`](./RUNBOOK.md).
 - Add strict gateway route file `gateway/routes.json` and switch runtime route source to `ROUTES_FILE=./routes.json`.
 - Add gateway fallback for unmatched routes: `404 application/problem+json`, header `x-gateway-hit: true`, and code `GATEWAY_ROUTE_NOT_FOUND`.
 - Add gateway `spec:lint` script for OpenAPI linting with org Spectral rules.
