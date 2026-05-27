@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **service-demo:** `/healthz` and `/readyz` — plain JSON probes (uptime from process start); readiness reports `dependencies`; `503` uses `application/problem+json` with `SERVICE_NOT_READY`.
 - **service-demo:** default database `DB_NAME` **`service-demo`** (was `api_example`); `.env.example` uses `demo-service` credentials.
 - **Monorepo paths:** Platform packages moved under `backend/` (was flat `auth/`, `gateway/`, `services/.demo/crud-service/` at repo root).
 - **Demo upstream:** `services/.demo/crud-service/` → `backend/service-demo/` (same role: `/api/v1/me`, `/api/v1/items`).

@@ -17,7 +17,10 @@ import metricsPlugin from "./plugins/metrics.js";
 import meRoutes from "./modules/me/me.route.js";
 import itemsRoutes from "./modules/items/items.route.js";
 
+const PROBLEM_TYPE_BASE = "https://problems.zero-platform.internal/service"
+
 export default async function createApp(env) {
+  const startedAtMs = Date.now()
   const app = Fastify({
     loggerInstance: logger,
     trustProxy: true,
@@ -36,26 +39,30 @@ export default async function createApp(env) {
   await app.register(errorHandler);
   await app.register(metricsPlugin);
 
-  app.get("/healthz", async (_request, _reply) => {
-    return successEnvelope({
-      status: "ok",
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-    });
-  });
+  app.get("/healthz", async () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor((Date.now() - startedAtMs) / 1000),
+  }));
 
-  app.get("/readyz", async (request, reply) => {
+  app.get("/readyz", async (_request, reply) => {
     try {
       await pingDatabase(1000);
-      return successEnvelope({ status: "ready" });
+      return {
+        status: "ok",
+        dependencies: [{ name: "database", status: "ok" }],
+      };
     } catch (_error) {
-      return reply.status(503).send(
-        errorEnvelope({
-          code: CODES.SERVICE_UNAVAILABLE,
-          message: "Service dependencies are not ready",
-          requestId: request.id,
-        }),
-      );
+      return reply
+        .code(503)
+        .type("application/problem+json")
+        .send({
+          type: `${PROBLEM_TYPE_BASE}/not-ready`,
+          title: "Service Unavailable",
+          status: 503,
+          detail: "Readiness check failed.",
+          code: "SERVICE_NOT_READY",
+        });
     }
   });
 

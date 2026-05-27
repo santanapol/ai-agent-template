@@ -17,6 +17,8 @@ Monorepo-level history (gateway, auth, layout moves) stays in the repository roo
 
 ### Changed
 
+- `/healthz` — minimal JSON (`status`, `timestamp`, `uptime` seconds since app start); no std.min envelope.
+- `/readyz` — `{ status, dependencies: [{ name: "database", status }] }` on success; `503` + RFC 7807 problem (`SERVICE_NOT_READY`) when Mongo ping fails.
 - Default `DB_NAME` and documentation: `api_example` → **`service-demo`**.
 - `.env.example` / `RUNBOOK.md` / `README.md` — quick start includes DB bootstrap; Mongo URI uses `demo-service` user.
 
