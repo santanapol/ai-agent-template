@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **service-demo:** `npm run init:db` and `npm run seed:example` — MongoDB indexes on `items` and dev sample data (`DEMO-001` … `DEMO-003`).
+- **service-demo:** `scripts/mongo-create-demo-user.md` — `demo_service_role` and `demo-service` MongoDB user for local auth.
 - **Repository layout:** `backend/` (auth, gateway, service-demo, items, ops docs) and `frontend/backoffice/` (Vite + React admin UI).
 - **Documentation:** Root [`README.md`](./README.md) — full-stack overview, document map, local ports, quick start.
 - **Backend:** [`backend/README.md`](./backend/README.md) — monorepo entry, gateway routes, prerequisites.
@@ -16,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **service-demo:** default database `DB_NAME` **`service-demo`** (was `api_example`); `.env.example` uses `demo-service` credentials.
 - **Monorepo paths:** Platform packages moved under `backend/` (was flat `auth/`, `gateway/`, `services/.demo/crud-service/` at repo root).
 - **Demo upstream:** `services/.demo/crud-service/` → `backend/service-demo/` (same role: `/api/v1/me`, `/api/v1/items`).
 - **Frontend:** Back-office UI under `frontend/backoffice/` (Vite dev proxy `/auth` → auth, `/api` → gateway).

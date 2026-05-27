@@ -38,7 +38,7 @@
 | **Package path** | `services/.demo/crud-service/` |
 | **Stack** | Express + CommonJS + MongoDB |
 | **Listen** | `PORT` default **3003** |
-| **Database** | `DB_NAME` default **`api_example`** — [`.env.example`](../.env.example) |
+| **Database** | `DB_NAME` default **`service-demo`** — [`.env.example`](../.env.example) |
 | **API** | `GET /api/v1/me` + CRUD **`/api/v1/items`** |
 
 ## 2. Trust boundary

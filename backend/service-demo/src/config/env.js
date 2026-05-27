@@ -8,7 +8,7 @@ export function readEnv() {
   const env = {
     nodeEnv: process.env.NODE_ENV || "development",
     port: Number(process.env.PORT || 3003),
-    dbName: process.env.DB_NAME || "api_example",
+    dbName: process.env.DB_NAME || "service-demo",
     mongoUri: process.env.MONGODB_URI || "",
     gatewaySharedSecret: process.env.GATEWAY_SHARED_SECRET || "",
     appName: process.env.APP_NAME || "crud-service",

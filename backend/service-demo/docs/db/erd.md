@@ -18,7 +18,7 @@
 | ADR (`PUT`) | [`../adrs/001-put-full-replace.md`](../adrs/001-put-full-replace.md) |
 | Org MongoDB std | [`mongodb.md`](../../../../../../../_coding-standards/backend/mongodb.md) |
 
-**Scope:** writes **only** collection **`items`** in **`DB_NAME`** (default `api_example`). **`GET /api/v1/me`** does not read MongoDB.
+**Scope:** writes **only** collection **`items`** in **`DB_NAME`** (default `service-demo`). **`GET /api/v1/me`** does not read MongoDB.
 
 ## Contents
 
@@ -32,7 +32,7 @@
 ## 1. Engine and connection
 
 - **Engine:** MongoDB — driver config [`../../src/config/database.js`](../../src/config/database.js)
-- **Database:** **`DB_NAME`** (default **`api_example`**) — [`../../.env.example`](../../.env.example), [`../../src/config/env.js`](../../src/config/env.js)
+- **Database:** **`DB_NAME`** (default **`service-demo`**) — [`../../.env.example`](../../.env.example), [`../../src/config/env.js`](../../src/config/env.js)
 - **Collections written:** **`items`** only — [`../../src/modules/items/items.repository.js`](../../src/modules/items/items.repository.js)
 
 | Variable | Role |

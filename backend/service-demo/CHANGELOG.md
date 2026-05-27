@@ -8,6 +8,18 @@ Monorepo-level history (gateway, auth, layout moves) stays in the repository roo
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/init-db.mjs` — create `items` indexes (`IDX_ITEMS_TENANT_*`) per `docs/db/erd.md`.
+- `scripts/seed-example-data.mjs` — upsert three demo items; optional `--reset-items`; `SEED_OU_ID` / `SEED_BRANCH_ID` for gateway E2E alignment with auth seed.
+- `scripts/mongo-create-demo-user.md` — MongoDB role `demo_service_role` and user `demo-service`.
+- npm scripts `init:db`, `seed:example`.
+
+### Changed
+
+- Default `DB_NAME` and documentation: `api_example` → **`service-demo`**.
+- `.env.example` / `RUNBOOK.md` / `README.md` — quick start includes DB bootstrap; Mongo URI uses `demo-service` user.
+
 ## [0.1.1] - 2026-05-21
 
 ### Added

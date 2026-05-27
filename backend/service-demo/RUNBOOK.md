@@ -25,7 +25,7 @@
 | :--- | :--- |
 | Service | `crud-service` |
 | Node | `>=24 <25` |
-| Database | MongoDB `api_example` — [docs/db/erd.md](./docs/db/erd.md) |
+| Database | MongoDB `service-demo` — [docs/db/erd.md](./docs/db/erd.md) |
 | Port | **`3003`** default (`PORT`) — [local-ports.md](../../../local-ports.md) |
 | Dev | `npm run dev` |
 | Prod | PM2 [`ecosystem.config.cjs`](./ecosystem.config.cjs) |
@@ -43,7 +43,7 @@ cp .env.example .env
 | Variable | Notes |
 | :--- | :--- |
 | `PORT` | Default **`3003`** — ปรับ `curl` ด้านล่างถ้าเปลี่ยน |
-| `DB_NAME` | `api_example` |
+| `DB_NAME` | `service-demo` |
 | `MONGODB_URI` | user/password + `authSource` ถูกต้อง |
 | `GATEWAY_SHARED_SECRET` | ตรง `x-gateway-secret` จาก gateway |
 
@@ -53,8 +53,14 @@ cp .env.example .env
 
 ```bash
 npm ci
+npm run init:db          # indexes บน collection items (ครั้งแรก)
+npm run seed:example     # ข้อมูลตัวอย่าง 3 รายการ (dev)
 npm run dev
 ```
+
+**Mongo local (docker compose ไม่มี auth):** ตั้ง `MONGODB_URI=mongodb://127.0.0.1:27017/service-demo` ใน `.env` — อย่าใช้ user/password จาก `.env.example` ถ้ายังไม่ได้สร้าง user ใน Mongo (ดู [`scripts/mongo-create-demo-user.md`](./scripts/mongo-create-demo-user.md))
+
+**Gateway E2E + auth seed:** หลัง `auth` รัน `npm run seed:example` ให้ copy `ou_id` / `branch_id` จาก stdout มาใส่ `.env` แล้วรัน `SEED_OU_ID=... SEED_BRANCH_ID=... npm run seed:example` ที่ crud-service
 
 **Quality (ชุดเดียวกับ CI):** `npm run ci`
 

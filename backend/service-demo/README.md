@@ -21,6 +21,8 @@ Path: **`services/.demo/crud-service/`** (demo / teaching).
 ## Scripts
 
 - `npm run dev` / `npm start` — local (`TZ=UTC`, port **3003** default)
+- `npm run init:db` — สร้าง indexes บน `items` (ครั้งแรก / หลังสร้าง DB ใหม่)
+- `npm run seed:example` — ใส่ items ตัวอย่าง 3 รายการ (dev); ใช้ `SEED_OU_ID` / `SEED_BRANCH_ID` ให้ตรง auth seed สำหรับ gateway E2E
 - `npm test` / `npm run ci` — quality gates (lint, format, Spectral, audit)
 - `npm run spec:lint` — `openapi.yaml` + `openapi-via-gateway.yaml`
 - `npm run test:integration:mongo` — Mongo integration subset
@@ -28,8 +30,9 @@ Path: **`services/.demo/crud-service/`** (demo / teaching).
 ## Quick start
 
 1. `cp .env.example .env` — `MONGODB_URI`, `GATEWAY_SHARED_SECRET` (ตรง [gateway `.env`](../../../gateway/.env.example))
-2. `npm ci` → `npm run dev`
-3. `GET /healthz` — liveness; `GET /readyz` เมื่อ Mongo พร้อม
+2. `npm ci` → `npm run init:db` → `npm run seed:example` (หลัง Mongo พร้อม)
+3. `npm run dev`
+4. `GET /healthz` — liveness; `GET /readyz` เมื่อ Mongo พร้อม
 
 Dev logs: **pino-pretty** เมื่อ `NODE_ENV` ไม่ใช่ `production` / `test` (`LOG_PRETTY=false` สำหรับ JSON)
 
