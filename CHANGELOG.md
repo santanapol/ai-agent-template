@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Local dev:** [`docker-compose.yml`](./docker-compose.yml) — MongoDB 8 service (`mongo:8`) on port 27017 with named volume for local auth/staff DB work.
+
+### Changed
+
+- **Local dev:** [`docker-compose.yml`](./docker-compose.yml) — Redis image `redis:7-alpine` → `redis:8-alpine` for `token_gen` / auth dev stack.
+
 ## [0.2.0] - 2026-05-21
 
 Repository snapshot: **auth 0.1.6**, **gateway 0.2.4**, **crud-service 0.1.1**. Detail per package in [`auth/CHANGELOG.md`](./auth/CHANGELOG.md), [`gateway/CHANGELOG.md`](./gateway/CHANGELOG.md), [`services/.demo/crud-service/CHANGELOG.md`](./services/.demo/crud-service/CHANGELOG.md).

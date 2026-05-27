@@ -6,7 +6,7 @@
 
 services:
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: zero-platform-redis
     ports:
       - '6379:6379'
@@ -17,3 +17,21 @@ services:
       retries: 5
       start_period: 5s
     restart: unless-stopped
+
+  mongodb:
+    image: mongo:8
+    container_name: zero-platform-mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - zero-platform-mongodb-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  zero-platform-mongodb-data:
