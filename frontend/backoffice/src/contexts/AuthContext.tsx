@@ -1,0 +1,84 @@
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { DecodedUser, TokenResponse } from '../types/auth';
+import * as authApi from '../lib/authApiClient';
+import { setAccessToken, setRefreshCallback } from '../lib/staffApiClient';
+
+interface AuthContextValue {
+  user: DecodedUser | null;
+  loading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+function decodeJwt(token: string): DecodedUser {
+  const payload = token.split('.')[1];
+  return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as DecodedUser;
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<DecodedUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const applyToken = useCallback((data: TokenResponse) => {
+    setUser(decodeJwt(data.access_token));
+    setAccessToken(data.access_token);
+    authApi.setAuthAccessToken(data.access_token);
+  }, []);
+
+  const clearSession = useCallback(() => {
+    setUser(null);
+    setAccessToken(null);
+    authApi.setAuthAccessToken(null);
+  }, []);
+
+  // Register the refresh callback so staffApiClient can retry on 401
+  useEffect(() => {
+    setRefreshCallback(async () => {
+      try {
+        const fresh = await authApi.refresh();
+        applyToken(fresh);
+        return fresh.access_token;
+      } catch {
+        clearSession();
+        return null;
+      }
+    });
+  }, [applyToken, clearSession]);
+
+  // On mount: attempt to restore session via HttpOnly refresh cookie
+  useEffect(() => {
+    authApi
+      .refresh()
+      .then(applyToken)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [applyToken]);
+
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const data = await authApi.login(username, password);
+      applyToken(data);
+    },
+    [applyToken],
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // best-effort
+    }
+    clearSession();
+  }, [clearSession]);
+
+  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+}

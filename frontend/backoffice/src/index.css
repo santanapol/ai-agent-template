@@ -1,0 +1,14 @@
+@import 'antd/dist/reset.css';
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Sarabun', sans-serif;
+  background-color: #F9FAFB; /* Gray-50 */
+}
+
+/* Make layout full height */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

@@ -16,11 +16,6 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Build / cache (if added later)
+# Build / cache
 dist/
 .cache/
-
-# services/ — workspace-only clones (e.g. staff); track reference demo only
-services/*
-!services/.demo/
-!services/.demo/**
