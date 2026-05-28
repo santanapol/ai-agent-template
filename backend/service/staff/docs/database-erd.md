@@ -1,5 +1,7 @@
 # staff — MongoDB ERD & persistence notes
 
+> **Package status:** **spec only** — ยังไม่มี `package.json` หรือ migration scripts ใน repo
+
 **SoT ฝั่ง persistence** สำหรับ **`auth_staff_profiles`** — ความหมายธุรกิจและ HTTP อยู่ [`./business-domain.md`](./business-domain.md)
 
 | ชั้น SoT | เอกสาร |
@@ -8,7 +10,7 @@
 | **Technical** | [`./technical-architecture.md`](./technical-architecture.md) |
 | **Persistence (ไฟล์นี้)** | ERD, constraints, indexes, search |
 
-สอดคล้อง [`mongodb.md`](../../../../../_coding-standards/backend/mongodb.md), [`tenant-audit.md`](../../../../../_coding-standards/backend/tenant-audit.md)
+สอดคล้อง [`11-database-connection.md`](../../../../../../coding-standard/backend/11-database-connection.md), [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)
 
 > **Database:** ร่วมกับ auth ได้ — prefix `auth_*` ตาม [`../../../auth/src/config/mongo-collections.js`](../../../auth/src/config/mongo-collections.js)
 
@@ -85,7 +87,7 @@ erDiagram
 | `lastname` | string | yes | 1–128 |
 | `email` | string | yes | max 254; lowercase; **not unique** in MVP |
 | `tel` | string | yes | E.164, max 16 |
-| `cr_*`, `upd_*` | string/date | yes | [`tenant-audit.md`](../../../../../_coding-standards/backend/tenant-audit.md) |
+| `cr_*`, `upd_*` | string/date | yes | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
 
 **Out of scope:** `display_name`, `job_title`, `department`, `employment_status`
 
@@ -121,7 +123,7 @@ erDiagram
 
 | Name | Keys | Type | Purpose |
 | :--- | :--- | :--- | :--- |
-| `uniq_user_id` | `{ user_id: 1 }` | unique | 1:1 user |
+| `uniq_user_id` | `{ user_id: 1 }` | unique | 1:1 user; lookup `GET /profiles?user_id=` |
 | `uniq_ou_branch_code` | `{ ou_id: 1, branch_id: 1, code: 1 }` | unique | business key |
 | `list_by_branch_status` | `{ ou_id: 1, branch_id: 1, status: 1, upd_date: -1 }` | non-unique | list ต่อสาขา + filter status |
 | `list_archived_by_ou` | `{ ou_id: 1, status: 1, upd_date: -1 }` | non-unique | archived list (platform_admin ข้ามสาขา) |
@@ -175,7 +177,7 @@ db.runCommand({
 
 ## Connection
 
-- Singleton client / pool — [`mongodb.md`](../../../../../_coding-standards/backend/mongodb.md)
+- Singleton client / pool — [`11-database-connection.md`](../../../../../../coding-standard/backend/11-database-connection.md)
 
 ## Related documents
 
@@ -184,5 +186,6 @@ db.runCommand({
 
 ## Last updated
 
-2026-05-28 — อยู่ใน `docs/` ไม่ได้ย้ายเข้า `db/`; แก้ relative links
-2026-05-21 — ย้ายจาก `docs/database.md` → `docs/db/database-erd.md`; แก้ relative links
+2026-05-28 — อ้างอิง lookup `GET /profiles?user_id=` ที่ index `uniq_user_id`
+2026-05-28 — Sync **spec only**; แก้ path coding-standard; ชื่อไฟล์ `docs/database-erd.md` (ไม่ใช่ `docs/db/`)
+2026-05-21 — แยก persistence notes จาก business domain

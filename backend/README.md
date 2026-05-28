@@ -12,7 +12,7 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 | [`auth/`](./auth/) | Login, refresh, JWT/JWKS, session revoke (`token_gen`) | Fastify (ESM) | **3001** |
 | [`gateway/`](./gateway/) | JWT verify, Redis `token_gen` gate, reverse proxy | Fastify (ESM) | **3002** |
 | [`service/service-demo/`](./service/service-demo/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
-| [`service/staff/`](./service/staff/) | Staff API (docs scaffold; port TBD) | — | **3004** |
+| [`service/staff/`](./service/staff/) | Staff API (**spec only** — docs scaffold) | — | **3004** (reserved) |
 
 Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
 
@@ -57,7 +57,7 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
 | :--- | :--- | :--- |
 | `/api/v1/items` | `:3003` | service-demo |
 | `/api/v1/me` | `:3003` | service-demo |
-| `/api/v1/staff` | `:3004` | staff (ยังไม่มีใน repo — reserved) |
+| `/api/v1/staff` | `:3004` | staff (**spec only** — ยังไม่ bootstrap service) |
 | `/auth` | `:3001` | auth (proxy ผ่าน gateway) |
 
 ## Quick start
