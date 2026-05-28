@@ -138,7 +138,8 @@ Prefix: **`/auth/...`** และ **`/internal/...`**
 - [`architecture.md`](./architecture.md)
 - [`design-password-management.md`](./design-password-management.md)
 - [`db/erd.md`](./db/erd.md)
-- [`../../services/staff/docs/design-password-management.md`](../../services/staff/docs/design-password-management.md)
+- [`../../service/staff/docs/business-domain.md` §3.5 Password rules](../../service/staff/docs/business-domain.md#35-password-rules-business--normative)
+- [`../../service/staff/docs/technical-architecture.md` §5.1 Password endpoints](../../service/staff/docs/technical-architecture.md#51-password-endpoints)
 
 ---
 

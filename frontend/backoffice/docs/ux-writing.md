@@ -37,7 +37,7 @@
 
 | Context | Copy |
 | :--- | :--- |
-| Create helper | Minimum 16 characters. Username = Staff Code. |
+| Create helper | Minimum 16 characters. |
 | Reset confirm | This will sign the user out of all devices. |
 | Self success | Password updated. Please sign in again. |
 | Wrong current | Current password is incorrect. |

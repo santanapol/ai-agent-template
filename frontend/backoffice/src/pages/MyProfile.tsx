@@ -23,20 +23,9 @@ import {
   passwordFieldRules,
 } from '../lib/passwordPolicy';
 import axios from 'axios';
+import { apiErrorMessage } from '../lib/apiError';
 
 const { Title, Text } = Typography;
-
-function apiErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const code = err.response?.data?.code as string | undefined;
-    if (code === 'VERSION_CONFLICT') {
-      return 'Profile was modified by another session. Please refresh and try again.';
-    }
-    const msg = err.response?.data?.message as string | undefined;
-    if (msg) return msg;
-  }
-  return fallback;
-}
 
 const MyProfile: React.FC = () => {
   const { user, logout } = useAuth();

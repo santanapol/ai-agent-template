@@ -4,7 +4,7 @@ All notable changes to the **crud-service** package (`services/.demo/crud-servic
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this package adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) together with `package.json` / `openapi.yaml` `info.version`.
 
-Monorepo-level history (gateway, auth, layout moves) stays in the repository root [`CHANGELOG.md`](../../../CHANGELOG.md).
+Monorepo-level history (gateway, auth, layout moves) stays in the repository root [`CHANGELOG.md`](../../../../CHANGELOG.md).
 
 ## [Unreleased]
 
@@ -17,6 +17,7 @@ Monorepo-level history (gateway, auth, layout moves) stays in the repository roo
 
 ### Changed
 
+- Package path: `backend/service-demo/` → **`backend/service/service-demo/`** (no API behavior change).
 - `/healthz` — minimal JSON (`status`, `timestamp`, `uptime` seconds since app start); no std.min envelope.
 - `/readyz` — `{ status, dependencies: [{ name: "database", status }] }` on success; `503` + RFC 7807 problem (`SERVICE_NOT_READY`) when Mongo ping fails.
 - Default `DB_NAME` and documentation: `api_example` → **`service-demo`**.

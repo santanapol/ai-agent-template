@@ -1,69 +1,30 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  Table,
   Button,
   Input,
   Select,
-  Space,
-  Badge,
   Typography,
-  Drawer,
-  Form,
   Modal,
   message,
   Card,
   Flex,
+  Form,
   theme,
-  Spin,
-  Divider,
 } from 'antd';
-import {
-  PlusOutlined,
-  SearchOutlined,
-  EditOutlined,
-  InboxOutlined,
-  EyeOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import type { TablePaginationConfig } from 'antd/es/table';
 import type {
   StaffProfile,
   ProfileStatus,
-  CreateProfilePayload,
   PatchProfilePayload,
 } from '../types/staff';
 import * as staffApi from '../lib/staffApiClient';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  PASSWORD_MIN_LENGTH,
-  confirmPasswordRule,
-  optionalConfirmPasswordRule,
-  optionalNewPasswordRules,
-  passwordFieldRules,
-} from '../lib/passwordPolicy';
-import axios from 'axios';
+import { apiErrorMessage } from '../lib/apiError';
+import StaffTable from '../components/staff/StaffTable';
+import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../components/staff/StaffDrawer';
 
-const { Title, Text } = Typography;
-
-function apiErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const code = err.response?.data?.code as string | undefined;
-    if (code === 'VERSION_CONFLICT') return 'Profile was modified by another session. Please refresh and try again.';
-    if (code === 'STAFF_AUTH_REVOKE_PENDING') return 'Profile archived, but session revocation is still pending.';
-    if (code === 'DUPLICATE') return 'A profile with this staff code or user already exists.';
-    const msg = err.response?.data?.message as string | undefined;
-    if (msg) return msg;
-  }
-  return fallback;
-}
-
-type DrawerFormValues = CreateProfilePayload &
-  PatchProfilePayload & {
-    password?: string;
-    confirmPassword?: string;
-    newPassword?: string;
-    confirmNewPassword?: string;
-  };
+const { Title } = Typography;
 
 const StaffManagement: React.FC = () => {
   const { user } = useAuth();
@@ -71,7 +32,7 @@ const StaffManagement: React.FC = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>('create');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [updatingPassword, setUpdatingPassword] = useState(false);
@@ -136,7 +97,7 @@ const StaffManagement: React.FC = () => {
   }, []);
 
   const handleOpenDrawer = useCallback(
-    async (mode: 'create' | 'edit' | 'view', record?: StaffProfile) => {
+    async (mode: DrawerMode, record?: StaffProfile) => {
       setDrawerMode(mode);
       setIsDrawerOpen(true);
       currentEtag.current = null;
@@ -189,10 +150,7 @@ const StaffManagement: React.FC = () => {
   }, [form]);
 
   const showAdminResetPassword =
-    drawerMode === 'edit' &&
-    editingUserId &&
-    user?.sub &&
-    editingUserId !== user.sub;
+    drawerMode === 'edit' && editingUserId !== null && user?.sub !== undefined && editingUserId !== user.sub;
 
   const handleUpdatePassword = useCallback(async () => {
     if (!editingId) return;
@@ -326,86 +284,6 @@ const StaffManagement: React.FC = () => {
     [refresh],
   );
 
-  const columns = useMemo<ColumnsType<StaffProfile>>(
-    () => [
-      { title: 'Code', dataIndex: 'code', key: 'code' },
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, record) => (
-          <Text strong>
-            {record.firstname} {record.lastname}
-          </Text>
-        ),
-      },
-      {
-        title: 'Username',
-        key: 'username',
-        render: (_, record) => <Text type="secondary">{record.user?.username ?? '—'}</Text>,
-      },
-      { title: 'Email', dataIndex: 'email', key: 'email' },
-      { title: 'Tel', dataIndex: 'tel', key: 'tel' },
-      {
-        title: 'Status',
-        dataIndex: 'status',
-        key: 'status',
-        render: (status: StaffProfile['status']) => (
-          <Badge
-            status={status === 'active' ? 'success' : 'error'}
-            text={
-              <span
-                style={{
-                  textTransform: 'capitalize',
-                  color: status === 'active' ? token.colorSuccess : token.colorError,
-                }}
-              >
-                {status}
-              </span>
-            }
-          />
-        ),
-      },
-      {
-        title: 'Actions',
-        key: 'actions',
-        render: (_, record) => (
-          <Space>
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              aria-label="View profile"
-              onClick={() => handleOpenDrawer('view', record)}
-            />
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              aria-label="Edit profile"
-              onClick={() => handleOpenDrawer('edit', record)}
-            />
-            {record.status === 'active' ? (
-              <Button
-                type="text"
-                danger
-                icon={<InboxOutlined />}
-                aria-label="Archive profile"
-                onClick={() => handleArchive(record)}
-              />
-            ) : (
-              <Button
-                type="text"
-                style={{ color: token.colorSuccess }}
-                icon={<ReloadOutlined />}
-                aria-label="Restore profile"
-                onClick={() => handleRestore(record)}
-              />
-            )}
-          </Space>
-        ),
-      },
-    ],
-    [handleOpenDrawer, handleArchive, handleRestore, token],
-  );
-
   return (
     <div>
       <Flex justify="space-between" align="center" style={{ marginBottom: token.marginLG }}>
@@ -441,139 +319,30 @@ const StaffManagement: React.FC = () => {
           </Select>
         </Flex>
 
-        <Table
-          columns={columns}
-          dataSource={profiles}
-          rowKey="id"
+        <StaffTable
+          profiles={profiles}
           loading={tableLoading}
-          pagination={{
-            current: paginationConfig.current,
-            pageSize: paginationConfig.pageSize,
-            total: paginationConfig.total,
-            showSizeChanger: true,
-            pageSizeOptions: [10, 20, 50],
-          }}
-          onChange={handleTableChange}
+          pagination={paginationConfig}
+          onView={(record) => handleOpenDrawer('view', record)}
+          onEdit={(record) => handleOpenDrawer('edit', record)}
+          onArchive={handleArchive}
+          onRestore={handleRestore}
+          onTableChange={handleTableChange}
         />
       </Card>
 
-      <Drawer
-        title={
-          drawerMode === 'create'
-            ? 'Create Staff Profile'
-            : drawerMode === 'edit'
-              ? 'Edit Staff Profile'
-              : 'View Staff Profile'
-        }
-        width={500}
-        onClose={handleCloseDrawer}
+      <StaffDrawer
         open={isDrawerOpen}
-        extra={
-          <Space>
-            <Button onClick={handleCloseDrawer}>Cancel</Button>
-            {drawerMode !== 'view' && (
-              <Button type="primary" onClick={handleSave}>
-                {drawerMode === 'create' ? 'Create Profile' : 'Save Changes'}
-              </Button>
-            )}
-            {drawerMode === 'view' && (
-              <Button type="primary" onClick={() => handleOpenDrawer('edit', profiles.find((p) => p.id === editingId))}>
-                Edit Profile
-              </Button>
-            )}
-          </Space>
-        }
-      >
-        <Spin spinning={drawerLoading}>
-          <Form form={form} layout="vertical" disabled={drawerMode === 'view'}>
-            <Form.Item
-              label="Staff Code"
-              name="code"
-              rules={[{ required: true, message: 'Please enter staff code' }]}
-            >
-              <Input disabled={drawerMode !== 'create'} placeholder="e.g. EMP-001" maxLength={32} />
-            </Form.Item>
-
-            <Flex gap={token.margin}>
-              <Form.Item
-                label="First Name"
-                name="firstname"
-                rules={[{ required: true, message: 'Please enter first name' }]}
-                style={{ flex: 1 }}
-              >
-                <Input maxLength={128} />
-              </Form.Item>
-              <Form.Item
-                label="Last Name"
-                name="lastname"
-                rules={[{ required: true, message: 'Please enter last name' }]}
-                style={{ flex: 1 }}
-              >
-                <Input maxLength={128} />
-              </Form.Item>
-            </Flex>
-
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}
-            >
-              <Input maxLength={254} />
-            </Form.Item>
-
-            <Form.Item
-              label="Telephone"
-              name="tel"
-              rules={[{ required: true, message: 'Please enter telephone number' }]}
-            >
-              <Input placeholder="+66812345678" maxLength={16} />
-            </Form.Item>
-
-            {drawerMode === 'create' ? (
-              <>
-                <Divider plain>Login credentials</Divider>
-                <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-                  Minimum {PASSWORD_MIN_LENGTH} characters. Username = Staff Code.
-                </Typography.Paragraph>
-                <Form.Item label="Password" name="password" rules={passwordFieldRules}>
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-                <Form.Item
-                  label="Confirm password"
-                  name="confirmPassword"
-                  dependencies={['password']}
-                  rules={[
-                    { required: true, message: 'Please confirm the password' },
-                    confirmPasswordRule(() => form.getFieldValue('password') as string),
-                  ]}
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-              </>
-            ) : null}
-
-            {showAdminResetPassword ? (
-              <>
-                <Divider plain>Reset password (admin)</Divider>
-                <Form.Item label="New password" name="newPassword" rules={optionalNewPasswordRules}>
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-                <Form.Item
-                  label="Confirm password"
-                  name="confirmNewPassword"
-                  dependencies={['newPassword']}
-                  rules={[optionalConfirmPasswordRule(() => form.getFieldValue('newPassword') as string)]}
-                >
-                  <Input.Password autoComplete="new-password" />
-                </Form.Item>
-                <Button loading={updatingPassword} onClick={() => void handleUpdatePassword()}>
-                  Update password
-                </Button>
-              </>
-            ) : null}
-          </Form>
-        </Spin>
-      </Drawer>
+        mode={drawerMode}
+        loading={drawerLoading}
+        updatingPassword={updatingPassword}
+        showAdminResetPassword={!!showAdminResetPassword}
+        form={form}
+        onClose={handleCloseDrawer}
+        onSave={() => void handleSave()}
+        onSwitchToEdit={() => handleOpenDrawer('edit', profiles.find((p) => p.id === editingId))}
+        onUpdatePassword={() => void handleUpdatePassword()}
+      />
     </div>
   );
 };

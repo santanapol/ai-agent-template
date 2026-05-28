@@ -83,7 +83,8 @@
   - `Email`: Text Input (Type: Email)
   - `Tel`: Text Input — รูปแบบ E.164 (เช่น `+66812345678`)
 - **Login credentials** *(planned)*:
-  - `Password` / `Confirm password`: `Input.Password` — required, min 16; helper: username = Staff Code
+  - `Username`: Text Input (Required) — Global unique login ID
+  - `Password` / `Confirm password`: `Input.Password` — required, min 16
 - **Auth user:** ไม่มีฟิลด์เลือก User — provision อัตโนมัติ (ดู `api-mapping.md`)
 
 ### 3.2 Footer Actions

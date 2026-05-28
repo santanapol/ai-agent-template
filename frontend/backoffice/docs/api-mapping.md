@@ -18,7 +18,7 @@
 | :--- | :--- | :--- | :--- |
 | **โหลดข้อมูลลงตาราง** (Table List) | `GET` | `/api/v1/staff/profiles` | Query: `q`, `status`, `branchId`, `page`, `limit`, `sort` |
 | **กดดูรายละเอียด** (View Details) | `GET` | `/api/v1/staff/profiles/{id}` | คืน `ETag` ใน response header |
-| **กดสร้างพนักงาน** (Create) | `POST` | `/api/v1/staff/profiles` | Body: `code`, `firstname`, `lastname`, `email`, `tel`, **`password`** (required, min 16) — **ไม่ส่ง `user_id`** |
+| **กดสร้างพนักงาน** (Create) | `POST` | `/api/v1/staff/profiles` | Body: `code`, `firstname`, `lastname`, `email`, `tel`, **`username`**, **`password`** (required, min 16) — **ไม่ส่ง `user_id`** |
 | **กดบันทึกการแก้ไข** (Save Changes) | `PATCH` | `/api/v1/staff/profiles/{id}` | Contact fields + `If-Match` — **ไม่** รวม password |
 | **อัปเดตรหัสผ่าน** (Reset password) | `POST` | `/api/v1/staff/profiles/{id}/password` | Body: `password`, `revoke_sessions?` — ปุ่มแยกจาก Save Changes |
 | **กดยืนยัน Archive** (Archive Modal) | `POST` | `/api/v1/staff/profiles/{id}/archive` | ไม่มี Body; ต้องมี `If-Match` |
@@ -61,4 +61,4 @@
 | :--- | :--- | :--- | :--- |
 | **เปลี่ยนรหัสตัวเอง** (My Profile) | `POST` | `/auth/me/password` | Body: `current_password`, `new_password` — success → logout → `/login` |
 
-รายละเอียด: [`design-password-management.md`](./design-password-management.md) · [`../../auth/docs/design-password-management.md`](../../auth/docs/design-password-management.md)
+รายละเอียด: [`staff business-domain.md §3.5`](../../services/staff/docs/business-domain.md#35-password-rules-business--normative) · [`staff technical-architecture.md §5.1`](../../services/staff/docs/technical-architecture.md#51-password-endpoints) · [`auth design-password-management.md`](../../auth/docs/design-password-management.md)

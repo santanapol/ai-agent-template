@@ -12,8 +12,9 @@ zero-platform/
 ├── backend/                 # API monorepo — อ่าน [backend/README.md](./backend/README.md)
 │   ├── auth/                # IdP — login, JWT/JWKS, token_gen
 │   ├── gateway/             # JWT edge + reverse proxy
-│   ├── service-demo/        # ตัวอย่าง upstream (/api/v1/me, /api/v1/items)
-│   ├── items/               # Items service (Express)
+│   ├── service/             # Internal APIs
+│   │   ├── service-demo/    # ตัวอย่าง upstream (/api/v1/me, /api/v1/items)
+│   │   └── staff/           # Staff domain docs (implementation TBD)
 │   ├── docker-compose.yml   # MongoDB + Redis (local)
 │   ├── ARCHITECTURE.md
 │   └── RUNBOOK.md

@@ -26,7 +26,7 @@
 │ ─── Login credentials ───                │
 │ Password *         [ •••••••• ] 👁        │
 │ Confirm password * [ •••••••• ] 👁        │
-│ ℹ Min 16 characters. Username = Staff Code.│
+│ ℹ Min 16 characters. │
 │              [ Cancel ] [ Create Profile ]│
 └──────────────────────────────────────────┘
 ```
@@ -80,7 +80,7 @@ Profile fields ยังใช้ `PATCH` + `If-Match` เหมือนเด�
 
 | Context | Message |
 | :--- | :--- |
-| Create helper | Minimum 16 characters. Username = Staff Code. |
+| Create helper | Minimum 16 characters. |
 | Reset confirm | This will sign the user out of all devices. |
 | Self success | Password updated. Please sign in again. |
 | Wrong current | Current password is incorrect. |

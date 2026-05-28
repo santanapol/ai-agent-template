@@ -11,8 +11,8 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 | :--- | :--- | :--- | :---: |
 | [`auth/`](./auth/) | Login, refresh, JWT/JWKS, session revoke (`token_gen`) | Fastify (ESM) | **3001** |
 | [`gateway/`](./gateway/) | JWT verify, Redis `token_gen` gate, reverse proxy | Fastify (ESM) | **3002** |
-| [`service-demo/`](./service-demo/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
-| [`items/`](./items/) | Items REST API (mesh / gateway-secret) | Express (ESM) | **3000** |
+| [`service/service-demo/`](./service/service-demo/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
+| [`service/staff/`](./service/staff/) | Staff API (docs scaffold; port TBD) | — | **3004** |
 
 Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
 
@@ -37,7 +37,8 @@ Client ──Bearer JWT──► gateway ──x-gateway-secret + x-user-*──
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes ระดับ repository |
 | [auth/docs/architecture.md](./auth/docs/architecture.md) | JWT issuance, JWKS, Redis revoke (auth SoT) |
 | [gateway/docs/architecture.md](./gateway/docs/architecture.md) | Routing, env, errors (gateway SoT) |
-| [service-demo/README.md](./service-demo/README.md) | Sample upstream + OpenAPI / Bruno |
+| [service/service-demo/README.md](./service/service-demo/README.md) | Sample upstream + OpenAPI / Bruno |
+| [service/staff/docs/](./service/staff/docs/) | Staff business + technical docs |
 
 ## Local ports
 
