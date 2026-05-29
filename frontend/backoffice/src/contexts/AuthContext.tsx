@@ -12,9 +12,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function decodeJwt(token: string): DecodedUser {
-  const payload = token.split('.')[1];
-  return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as DecodedUser;
+function decodeJwt(token: string): DecodedUser | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const decoded = JSON.parse(
+      atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+    ) as DecodedUser;
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) return null;
+    return decoded;
+  } catch {
+    return null;
+  }
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,7 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const applyToken = useCallback((data: TokenResponse) => {
-    setUser(decodeJwt(data.access_token));
+    const decoded = decodeJwt(data.access_token);
+    if (!decoded) return;
+    setUser(decoded);
     setAccessToken(data.access_token);
     authApi.setAuthAccessToken(data.access_token);
   }, []);
