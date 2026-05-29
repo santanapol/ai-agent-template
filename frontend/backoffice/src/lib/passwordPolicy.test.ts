@@ -46,6 +46,11 @@ describe('passwordPolicy', () => {
       const rule = confirmPasswordRule(() => 'same-password-value!');
       await expect(rule.validator(null, 'same-password-value!')).resolves.toBeUndefined();
     });
+
+    it('resolves when confirm is empty (defers to required rule)', async () => {
+      const rule = confirmPasswordRule(() => 'primary-password-value');
+      await expect(rule.validator(null, '')).resolves.toBeUndefined();
+    });
   });
 
   describe('optionalConfirmPasswordRule', () => {
