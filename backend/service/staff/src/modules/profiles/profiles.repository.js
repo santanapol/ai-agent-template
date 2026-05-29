@@ -1,8 +1,9 @@
-import { ObjectId } from "mongodb";
-
 import { getDatabase } from "../../config/database.js";
 import { STAFF_COLLECTIONS } from "../../config/mongo-collections.js";
 import { encodeEtagFromItemDoc } from "../../lib/etag.js";
+import { toObjectId } from "../../lib/utils/mongo.js";
+
+export { toObjectId };
 
 function profilesCollection() {
   return getDatabase().collection(STAFF_COLLECTIONS.STAFF_PROFILES);
@@ -10,16 +11,6 @@ function profilesCollection() {
 
 function usersCollection() {
   return getDatabase().collection(STAFF_COLLECTIONS.USERS);
-}
-
-export function toObjectId(value) {
-  if (value instanceof ObjectId) {
-    return value;
-  }
-  if (typeof value === "string" && /^[a-fA-F0-9]{24}$/.test(value)) {
-    return new ObjectId(value);
-  }
-  throw new Error(`Invalid ObjectId: ${value}`);
 }
 
 /**
