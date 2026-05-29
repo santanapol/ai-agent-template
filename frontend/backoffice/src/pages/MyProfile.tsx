@@ -85,7 +85,12 @@ const MyProfile: React.FC = () => {
   const handleSave = async () => {
     if (!profile || !currentEtag.current) return;
 
-    const values = await form.validateFields();
+    let values: Record<string, string>;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
     const payload: PatchProfilePayload = {
       firstname: values.firstname,
       lastname: values.lastname,
