@@ -9,26 +9,6 @@ export const profileIdParamsSchema = {
   },
 };
 
-export const listProfilesQuerySchema = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    status: {
-      type: "string",
-      enum: ["active", "archived", "all"],
-      default: "active",
-    },
-    branch_id: { type: "string", pattern: objectIdPattern },
-    q: { type: "string", maxLength: 128 },
-    sort: {
-      type: "string",
-      pattern: "^-?(code|firstname|lastname|upd_date)$",
-      default: "-upd_date",
-    },
-    page: { type: "integer", minimum: 1, default: 1 },
-    limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
-  },
-};
 
 export const lookupProfilesQuerySchema = {
   type: "object",

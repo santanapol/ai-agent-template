@@ -30,7 +30,7 @@ export default fp(async function gatewaySecretGuard(fastify, options) {
       );
     }
 
-    if (!sharedSecret || !constantTimeEquals(incoming.trim(), sharedSecret)) {
+    if (!sharedSecret || !constantTimeEquals(incoming.trim(), sharedSecret.trim())) {
       throw new HttpError(
         401,
         CODES.GATEWAY_SECRET_REJECTED,

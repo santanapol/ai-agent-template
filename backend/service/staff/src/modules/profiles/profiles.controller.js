@@ -3,7 +3,11 @@ import CODES from "../../lib/error-codes.js";
 import * as service from "./profiles.service.js";
 
 function getRouteTemplate(request) {
-  return request.routeOptions.url || request.routerPath || request.url;
+  return (
+    request.routeOptions.url ||
+    request.routerPath ||
+    request.url.split("?")[0]
+  );
 }
 
 function sendProfileResponse(reply, result) {
@@ -79,6 +83,7 @@ export async function archiveProfile(request, reply) {
     request.headers["if-match"],
     request.userContext,
     getRouteTemplate(request),
+    request.id,
   );
   return sendProfileResponse(reply, result);
 }

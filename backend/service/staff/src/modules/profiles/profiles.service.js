@@ -760,12 +760,14 @@ async function transitionProfileStatus(
  * @param {string | string[] | undefined} ifMatchHeader
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  * @param {string} routeTemplate
+ * @param {string} [requestId]
  */
 export async function archiveProfile(
   profileId,
   ifMatchHeader,
   userContext,
   routeTemplate,
+  requestId,
 ) {
   const result = await transitionProfileStatus(
     profileId,
@@ -783,7 +785,7 @@ export async function archiveProfile(
   try {
     await authClient.revokeUserSessions({
       userId: result.profile.user_id,
-      correlationId: routeTemplate,
+      correlationId: requestId ?? routeTemplate,
       maxRetries: env.authRevokeMaxRetries,
       backoffMs: env.authRevokeBackoffMs,
     });
