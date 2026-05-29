@@ -35,6 +35,7 @@ interface StaffDrawerProps {
   open: boolean;
   mode: DrawerMode;
   loading: boolean;
+  isSaving: boolean;
   updatingPassword: boolean;
   showAdminResetPassword: boolean;
   form: FormInstance;
@@ -48,6 +49,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   open,
   mode,
   loading,
+  isSaving,
   updatingPassword,
   showAdminResetPassword,
   form,
@@ -75,7 +77,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
         <Space>
           <Button onClick={onClose}>Cancel</Button>
           {mode !== 'view' && (
-            <Button type="primary" onClick={onSave}>
+            <Button type="primary" onClick={onSave} loading={isSaving} disabled={isSaving}>
               {mode === 'create' ? 'Create Profile' : 'Save Changes'}
             </Button>
           )}

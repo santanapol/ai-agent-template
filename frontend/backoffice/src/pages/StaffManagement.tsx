@@ -36,6 +36,7 @@ const StaffManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [paginationConfig, setPaginationConfig] = useState({ current: 1, pageSize: 20, total: 0 });
   const [rawSearch, setRawSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -63,7 +64,7 @@ const StaffManagement: React.FC = () => {
       try {
         const res = await staffApi.listProfiles({
           q: debouncedSearch || undefined,
-          status: statusFilter,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
           page: currentPage,
           limit: pageSize,
           sort: '-upd_date',
@@ -146,6 +147,7 @@ const StaffManagement: React.FC = () => {
     setIsDrawerOpen(false);
     form.resetFields();
     currentEtag.current = null;
+    setEditingId(null);
     setEditingUserId(null);
   }, [form]);
 
@@ -195,10 +197,17 @@ const StaffManagement: React.FC = () => {
     const fieldNames = isCreate
         ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword']
         : ['firstname', 'lastname', 'email', 'tel'];
-    const values = (await form.validateFields(fieldNames)) as DrawerFormValues;
 
-    if (isCreate) {
-      try {
+    let values: DrawerFormValues;
+    try {
+      values = (await form.validateFields(fieldNames)) as DrawerFormValues;
+    } catch {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (isCreate) {
         const { code, firstname, lastname, email, tel, username, password } = values as Required<DrawerFormValues>;
         await staffApi.createProfile({
           code,
@@ -214,23 +223,21 @@ const StaffManagement: React.FC = () => {
         form.resetFields();
         setPaginationConfig((prev) => ({ ...prev, current: 1 }));
         refresh();
-      } catch (err) {
-        message.error(apiErrorMessage(err, 'Failed to create profile'));
+        return;
       }
-      return;
-    }
 
-    if (drawerMode === 'edit' && editingId && currentEtag.current) {
-      const { firstname, lastname, email, tel } = values;
-      const payload: PatchProfilePayload = { firstname, lastname, email, tel };
-      try {
+      if (drawerMode === 'edit' && editingId && currentEtag.current) {
+        const { firstname, lastname, email, tel } = values;
+        const payload: PatchProfilePayload = { firstname, lastname, email, tel };
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
         message.success('Profile updated');
         setIsDrawerOpen(false);
         refresh();
-      } catch (err) {
-        message.error(apiErrorMessage(err, 'Failed to update profile'));
       }
+    } catch (err) {
+      message.error(apiErrorMessage(err, isCreate ? 'Failed to create profile' : 'Failed to update profile'));
+    } finally {
+      setIsSaving(false);
     }
   }, [form, drawerMode, editingId, refresh]);
 
@@ -333,12 +340,16 @@ const StaffManagement: React.FC = () => {
         open={isDrawerOpen}
         mode={drawerMode}
         loading={drawerLoading}
+        isSaving={isSaving}
         updatingPassword={updatingPassword}
         showAdminResetPassword={!!showAdminResetPassword}
         form={form}
         onClose={handleCloseDrawer}
         onSave={() => void handleSave()}
-        onSwitchToEdit={() => handleOpenDrawer('edit', profiles.find((p) => p.id === editingId))}
+        onSwitchToEdit={() => {
+          const record = profiles.find((p) => p.id === editingId);
+          if (record) void handleOpenDrawer('edit', record);
+        }}
         onUpdatePassword={() => void handleUpdatePassword()}
       />
     </div>
