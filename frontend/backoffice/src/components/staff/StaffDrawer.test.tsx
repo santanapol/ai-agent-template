@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Form } from 'antd';
@@ -27,8 +28,6 @@ const Wrapper: React.FC<WrapperProps> = ({ mode, isSaving = false, showAdminRese
     />
   );
 };
-
-import React from 'react';
 
 describe('StaffDrawer', () => {
   describe('mode: create', () => {
