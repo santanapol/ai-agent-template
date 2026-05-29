@@ -393,9 +393,7 @@ export async function updateProfile(
   });
 
   if (result.matchedCount === 1) {
-    const doc = await profilesCollection().findOne({
-      _id: toObjectId(profileId),
-    });
+    const doc = await profilesCollection().findOne(baseFilter);
     if (!doc) {
       return null;
     }
@@ -451,9 +449,8 @@ export async function updateProfileStatus(
   });
 
   if (result.matchedCount === 1) {
-    const doc = await profilesCollection().findOne({
-      _id: toObjectId(profileId),
-    });
+    const idScopeFilter = { _id: toObjectId(profileId), ...buildScopeFilter(scope) };
+    const doc = await profilesCollection().findOne(idScopeFilter);
     if (!doc) {
       return null;
     }
