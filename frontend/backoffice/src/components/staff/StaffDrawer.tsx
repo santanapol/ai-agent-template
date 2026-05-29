@@ -141,7 +141,10 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
               <Form.Item
                 label="Username"
                 name="username"
-                rules={[{ required: true, message: 'Please enter username' }]}
+                rules={[
+                  { required: true, message: 'Please enter username' },
+                  { pattern: /^[a-zA-Z0-9_]+$/, message: 'Only English letters, numbers, and underscores allowed' }
+                ]}
               >
                 <Input maxLength={128} autoComplete="off" />
               </Form.Item>
