@@ -118,7 +118,12 @@ const MyProfile: React.FC = () => {
   };
 
   const handleChangePassword = async () => {
-    const values = await passwordForm.validateFields();
+    let values: Record<string, string>;
+    try {
+      values = await passwordForm.validateFields();
+    } catch {
+      return;
+    }
     setChangingPassword(true);
     try {
       await authApi.changePassword({
