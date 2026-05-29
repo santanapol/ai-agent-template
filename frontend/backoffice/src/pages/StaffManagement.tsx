@@ -103,41 +103,44 @@ const StaffManagement: React.FC = () => {
       setIsDrawerOpen(true);
       currentEtag.current = null;
 
-      if (record && mode !== 'create') {
-        setEditingId(record.id);
-        setEditingUserId(record.user_id);
-        if (mode === 'view') {
-          form.setFieldsValue({
-            code: record.code,
-            firstname: record.firstname,
-            lastname: record.lastname,
-            email: record.email,
-            tel: record.tel,
-          });
-        } else {
-          // edit: fetch fresh data + ETag for optimistic concurrency
-          setDrawerLoading(true);
-          try {
-            const { profile, etag } = await staffApi.getProfileById(record.id);
-            currentEtag.current = etag;
-            form.setFieldsValue({
-              code: profile.code,
-              firstname: profile.firstname,
-              lastname: profile.lastname,
-              email: profile.email,
-              tel: profile.tel,
-            });
-          } catch (err) {
-            message.error(apiErrorMessage(err, 'Failed to load profile'));
-            setIsDrawerOpen(false);
-          } finally {
-            setDrawerLoading(false);
-          }
-        }
-      } else {
+      if (!record || mode === 'create') {
         setEditingId(null);
         setEditingUserId(null);
         form.resetFields();
+        return;
+      }
+
+      setEditingId(record.id);
+      setEditingUserId(record.user_id);
+
+      if (mode === 'view') {
+        form.setFieldsValue({
+          code: record.code,
+          firstname: record.firstname,
+          lastname: record.lastname,
+          email: record.email,
+          tel: record.tel,
+        });
+        return;
+      }
+
+      // edit: fetch fresh data + ETag for optimistic concurrency
+      setDrawerLoading(true);
+      try {
+        const { profile, etag } = await staffApi.getProfileById(record.id);
+        currentEtag.current = etag;
+        form.setFieldsValue({
+          code: profile.code,
+          firstname: profile.firstname,
+          lastname: profile.lastname,
+          email: profile.email,
+          tel: profile.tel,
+        });
+      } catch (err) {
+        message.error(apiErrorMessage(err, 'Failed to load profile'));
+        setIsDrawerOpen(false);
+      } finally {
+        setDrawerLoading(false);
       }
     },
     [form],
@@ -226,7 +229,7 @@ const StaffManagement: React.FC = () => {
         return;
       }
 
-      if (drawerMode === 'edit' && editingId && currentEtag.current) {
+      if (editingId && currentEtag.current) {
         const { firstname, lastname, email, tel } = values;
         const payload: PatchProfilePayload = { firstname, lastname, email, tel };
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
@@ -342,7 +345,7 @@ const StaffManagement: React.FC = () => {
         loading={drawerLoading}
         isSaving={isSaving}
         updatingPassword={updatingPassword}
-        showAdminResetPassword={!!showAdminResetPassword}
+        showAdminResetPassword={showAdminResetPassword}
         form={form}
         onClose={handleCloseDrawer}
         onSave={() => void handleSave()}
