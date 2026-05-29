@@ -55,7 +55,7 @@ const Login: React.FC = () => {
           <Text type="secondary">Sign in to your account</Text>
         </div>
 
-        <Form name="login" layout="vertical" onFinish={onFinish} autoComplete="off">
+        <Form name="login" layout="vertical" onFinish={onFinish}>
           <Form.Item
             label="Username"
             name="username"
@@ -65,6 +65,7 @@ const Login: React.FC = () => {
               prefix={<UserOutlined style={{ color: token.colorTextQuaternary }} />}
               placeholder="Username"
               size="large"
+              autoComplete="username"
             />
           </Form.Item>
 
@@ -77,6 +78,7 @@ const Login: React.FC = () => {
               prefix={<LockOutlined style={{ color: token.colorTextQuaternary }} />}
               placeholder="Password"
               size="large"
+              autoComplete="current-password"
             />
           </Form.Item>
 
