@@ -1,0 +1,94 @@
+meta {
+  name: Readiness
+  type: http
+  seq: 2
+  tags: [
+    health
+  ]
+}
+
+get {
+  url: {{baseUrl}}/readyz
+  body: none
+  auth: inherit
+}
+
+docs {
+  Readiness with dependency checks (MongoDB ping).
+}
+
+example {
+  name: ready
+  
+  request: {
+    url: {{baseUrl}}/readyz
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "success": true,
+          "code": "SUCCESS",
+          "message": null,
+          "data": {
+            "status": "ready"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: notReady
+  
+  request: {
+    url: {{baseUrl}}/readyz
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "success": false,
+          "code": "SERVICE_UNAVAILABLE",
+          "message": "Service dependencies are not ready",
+          "data": {
+            "dependencies": [
+              {
+                "name": "mongodb",
+                "status": "unavailable"
+              }
+            ]
+          },
+          "requestId": "018f3c2e-0000-7000-8000-000000000001"
+        }
+      '''
+    }
+  }
+}

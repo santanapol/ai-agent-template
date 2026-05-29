@@ -4,15 +4,21 @@ export function loadEnv(env = process.env) {
     TZ: env.TZ || 'UTC',
     PORT: env.PORT ? parseInt(env.PORT, 10) : 3001,
     DATABASE_URI: env.DATABASE_URI,
-    JWT_PRIVATE_KEY_PEM: env.JWT_PRIVATE_KEY_PEM ? String(env.JWT_PRIVATE_KEY_PEM).replace(/\\n/g, '\n') : undefined,
+    JWT_PRIVATE_KEY_PEM: env.JWT_PRIVATE_KEY_PEM
+      ? String(env.JWT_PRIVATE_KEY_PEM).replace(/\\n/g, '\n')
+      : undefined,
     JWKS_PUBLIC_URL: env.JWKS_PUBLIC_URL,
     JWT_ISSUER: env.JWT_ISSUER,
     JWT_AUDIENCE: env.JWT_AUDIENCE,
     JWT_CLAIM_USER_ID: env.JWT_CLAIM_USER_ID || 'sub',
     JWT_CLAIM_ROLE: env.JWT_CLAIM_ROLE || 'role',
     JWT_KID: env.JWT_KID || 'default',
-    ACCESS_TOKEN_TTL_SECONDS: env.ACCESS_TOKEN_TTL_SECONDS ? parseInt(env.ACCESS_TOKEN_TTL_SECONDS, 10) : 900,
-    REFRESH_TOKEN_TTL_SECONDS: env.REFRESH_TOKEN_TTL_SECONDS ? parseInt(env.REFRESH_TOKEN_TTL_SECONDS, 10) : 2592000,
+    ACCESS_TOKEN_TTL_SECONDS: env.ACCESS_TOKEN_TTL_SECONDS
+      ? parseInt(env.ACCESS_TOKEN_TTL_SECONDS, 10)
+      : 900,
+    REFRESH_TOKEN_TTL_SECONDS: env.REFRESH_TOKEN_TTL_SECONDS
+      ? parseInt(env.REFRESH_TOKEN_TTL_SECONDS, 10)
+      : 2592000,
     ARGON2_MEMORY_KIB: env.ARGON2_MEMORY_KIB ? parseInt(env.ARGON2_MEMORY_KIB, 10) : 65536,
     ARGON2_TIME: env.ARGON2_TIME ? parseInt(env.ARGON2_TIME, 10) : 3,
     ARGON2_PARALLELISM: env.ARGON2_PARALLELISM ? parseInt(env.ARGON2_PARALLELISM, 10) : 4,
@@ -29,17 +35,21 @@ export function loadEnv(env = process.env) {
   }
 
   const errors = []
-  if (!['production', 'development', 'test'].includes(result.NODE_ENV)) errors.push('NODE_ENV invalid')
+  if (!['production', 'development', 'test'].includes(result.NODE_ENV))
+    errors.push('NODE_ENV invalid')
   if (result.TZ !== 'UTC') errors.push('TZ must be UTC')
   if (!result.DATABASE_URI) errors.push('DATABASE_URI is required')
   if (!result.JWT_PRIVATE_KEY_PEM) errors.push('JWT_PRIVATE_KEY_PEM is required')
-  if (!result.JWKS_PUBLIC_URL || !result.JWKS_PUBLIC_URL.endsWith('/.well-known/jwks.json')) errors.push('JWKS_PUBLIC_URL invalid')
-  if (!result.AUTH_INTERNAL_SERVICE_SECRET || result.AUTH_INTERNAL_SERVICE_SECRET.length < 16) errors.push('AUTH_INTERNAL_SERVICE_SECRET invalid')
-  if (result.NODE_ENV === 'production' && !result.REDIS_URL) errors.push('REDIS_URL required in production')
+  if (!result.JWKS_PUBLIC_URL || !result.JWKS_PUBLIC_URL.endsWith('/.well-known/jwks.json'))
+    errors.push('JWKS_PUBLIC_URL invalid')
+  if (!result.AUTH_INTERNAL_SERVICE_SECRET || result.AUTH_INTERNAL_SERVICE_SECRET.length < 16)
+    errors.push('AUTH_INTERNAL_SERVICE_SECRET invalid')
+  if (result.NODE_ENV === 'production' && !result.REDIS_URL)
+    errors.push('REDIS_URL required in production')
 
   if (errors.length > 0) {
     throw new Error(`Invalid environment: ${errors.join('; ')}`)
   }
-  
+
   return result
 }

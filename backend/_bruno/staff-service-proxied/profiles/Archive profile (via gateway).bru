@@ -1,0 +1,304 @@
+meta {
+  name: Archive profile (via gateway)
+  type: http
+  seq: 5
+  tags: [
+    profiles
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  If-Match: "2026-05-28T00:00:00.000Z"
+}
+
+docs {
+  Admin lifecycle action with `If-Match`.
+  Persists archived status first, then revokes auth sessions; revoke failure returns
+  `503 STAFF_AUTH_REVOKE_PENDING`.
+  
+}
+
+example {
+  name: 200 Response
+  description: Archived
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 403 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 412 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 412
+      text: Precondition Failed
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 428 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 428
+      text: Precondition Required
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 429 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId/archive
+    method: POST
+    mode: none
+    headers: {
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  }
+  
+  response: {
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}

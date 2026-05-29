@@ -1,0 +1,98 @@
+info:
+  name: Liveness
+  type: http
+  seq: 1
+  tags:
+    - health
+
+http:
+  method: GET
+  url: "{{baseUrl}}/healthz"
+  headers:
+    - name: Accept
+      value: application/json
+      description: Optional; successful JSON responses use `application/json` (or `application/problem+json` for errors).
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Process is alive
+    request:
+      url: "{{baseUrl}}/healthz"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+          description: Optional; successful JSON responses use `application/json` (or `application/problem+json` for errors).
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "status": "ok",
+            "timestamp": "",
+            "uptime": 0
+          }
+  - name: Path ไม่ตรง prefix ใน `ROUTES_JSON`
+    request:
+      url: "{{baseUrl}}/healthz"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+          description: Optional; successful JSON responses use `application/json` (or `application/problem+json` for errors).
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-route",
+            "title": "Route not found",
+            "status": 404,
+            "detail": "No route configured for this path.",
+            "code": "GATEWAY_ROUTE_NOT_FOUND"
+          }
+  - name: 500 Response
+    description: Unhandled error
+    request:
+      url: "{{baseUrl}}/healthz"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+          description: Optional; successful JSON responses use `application/json` (or `application/problem+json` for errors).
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+
+docs: |
+  คืน JSON liveness จาก Fastify route — **ไม่** ใช้ backend `Envelope` แบบ upstream mesh

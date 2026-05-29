@@ -1,0 +1,154 @@
+info:
+  name: Provision user (staff caller)
+  type: http
+  seq: 1
+  tags:
+    - internal
+
+http:
+  method: POST
+  url: "{{baseUrl}}/internal/users"
+  body:
+    type: json
+    data: |-
+      {
+        "ou_id": "",
+        "branch_id": "",
+        "username": "",
+        "password": "",
+        "role": ""
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: User created
+    request:
+      url: "{{baseUrl}}/internal/users"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "ou_id": "",
+            "branch_id": "",
+            "username": "",
+            "password": "",
+            "role": ""
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "user_id": ""
+          }
+  - name: 400 Response
+    description: Validation failed.
+    request:
+      url: "{{baseUrl}}/internal/users"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "ou_id": "",
+            "branch_id": "",
+            "username": "",
+            "password": "",
+            "role": ""
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+  - name: 401 Response
+    description: Internal service authentication failed.
+    request:
+      url: "{{baseUrl}}/internal/users"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "ou_id": "",
+            "branch_id": "",
+            "username": "",
+            "password": "",
+            "role": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+  - name: 409 Response
+    description: Username already exists.
+    request:
+      url: "{{baseUrl}}/internal/users"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "ou_id": "",
+            "branch_id": "",
+            "username": "",
+            "password": "",
+            "role": ""
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+
+docs: |
+  Create `auth_users` for staff profile provisioning. **Implemented** — OpenAPI resync 2026-05-26.

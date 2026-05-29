@@ -1,0 +1,191 @@
+info:
+  name: Logout
+  type: http
+  seq: 4
+  tags:
+    - proxy
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/logout"
+  headers:
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": "{{refresh_token}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 204 || (typeof res.getStatus === 'function' && res.getStatus() === 204) || res.status === 200 || (typeof res.getStatus === 'function' && res.getStatus() === 200)) {
+          bru.setEnvVar("access_token", "");
+          bru.setEnvVar("refresh_token", "");
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 204 Response (Native logout body)
+    description: Logged out (often no body).
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
+  - name: 204 Response (No body (browser cookie))
+    description: Logged out (often no body).
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
+  - name: 400 Response (Native logout body)
+    description: Validation — problem+json.
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+  - name: 400 Response (No body (browser cookie))
+    description: Validation — problem+json.
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+  - name: 429 Response (Native logout body)
+    description: Rate limit — problem+json.
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+  - name: 429 Response (No body (browser cookie))
+    description: Rate limit — problem+json.
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "",
+            "title": "",
+            "status": 0,
+            "detail": "",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+
+docs: |
+  **Proxied** to auth. Normative: [`../auth/openapi.yaml`](../auth/openapi.yaml) (`logout`).

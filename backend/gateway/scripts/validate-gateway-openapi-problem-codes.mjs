@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const serviceRoot = join(__dirname, '..')
-const standardsRoot = join(serviceRoot, '..', '..', '..', '_coding-standards', 'gateway')
+const standardsRoot = join(serviceRoot, '..', '..', '..', '..', 'coding-standard', 'gateway')
 
 const openapiPath = join(serviceRoot, 'openapi.yaml')
 const codesPath = join(standardsRoot, 'codes.yaml')

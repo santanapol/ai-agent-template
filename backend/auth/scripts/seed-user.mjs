@@ -67,8 +67,8 @@ const res = await db.collection(AUTH_COLLECTIONS.USERS).findOneAndUpdate(
 )
 const userId = res.value?._id
 if (userId) {
-  await db.collection('auth_staff_profiles').findOneAndUpdate(
-    { user_id: userId },
+  await db.collection('staff_profiles').findOneAndUpdate(
+    { user_id: res.value._id },
     {
       $set: {
         upd_by: 'seed_script',

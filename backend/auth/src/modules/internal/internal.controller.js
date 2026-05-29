@@ -1,12 +1,4 @@
-import { problemPayload } from '../../lib/problem.js'
-
-export function createInternalController({ service, types }) {
-  const sendProblem = (reply, status, type, title, detail, code) =>
-    reply
-      .code(status)
-      .type('application/problem+json')
-      .send(problemPayload({ type, title, status, detail, code }))
-
+export function createInternalController({ service }) {
   const sendServiceResult = (reply, result, { emptyBody = false } = {}) => {
     if (!result.ok) {
       return reply.code(result.status).type('application/problem+json').send(result.problem)

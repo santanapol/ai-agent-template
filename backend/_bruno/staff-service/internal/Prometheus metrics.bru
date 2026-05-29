@@ -1,0 +1,92 @@
+meta {
+  name: Prometheus metrics
+  type: http
+  seq: 1
+  tags: [
+    internal
+  ]
+}
+
+get {
+  url: {{baseUrl}}/metrics
+  body: none
+  auth: apikey
+}
+
+headers {
+  Accept: text/plain
+}
+
+auth:apikey {
+  key: x-gateway-secret
+  value: {{apiKey}}
+  placement: header
+}
+
+docs {
+  Prometheus text exposition (mesh secret required).
+}
+
+example {
+  name: 200 Response
+  description: Prometheus text exposition
+  
+  request: {
+    url: {{baseUrl}}/metrics
+    method: GET
+    mode: none
+    headers: {
+      Accept: text/plain
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: text/plain
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Missing or invalid gateway secret
+  
+  request: {
+    url: {{baseUrl}}/metrics
+    method: GET
+    mode: none
+    headers: {
+      Accept: text/plain
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}

@@ -1,0 +1,500 @@
+info:
+  name: Refresh token
+  type: http
+  seq: 2
+  tags:
+    - auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/refresh"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Cookie
+      value: refresh_token={{refresh_token}}
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": "{{refresh_token}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 || (typeof res.getStatus === 'function' && res.getStatus() === 200)) {
+          var body = typeof res.getBody === 'function' ? res.getBody() : res.body;
+          if (body && body.access_token) {
+            bru.setEnvVar("access_token", body.access_token);
+          }
+          if (body && body.refresh_token) {
+            bru.setEnvVar("refresh_token", body.refresh_token);
+          }
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Native — new access + rotated refresh in body (Default native refresh body (import))
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900,
+            "refresh_token": "<new-opaque-refresh-placeholder>"
+          }
+  - name: Native — new access + rotated refresh in body (Native client sends opaque refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900,
+            "refresh_token": "<new-opaque-refresh-placeholder>"
+          }
+  - name: Native — new access + rotated refresh in body (Browser — empty object when cookie carries refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900,
+            "refresh_token": "<new-opaque-refresh-placeholder>"
+          }
+  - name: Browser — access only; new refresh in Set-Cookie (not modeled here) (Default native refresh body (import))
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900
+          }
+  - name: Browser — access only; new refresh in Set-Cookie (not modeled here) (Native client sends opaque refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900
+          }
+  - name: Browser — access only; new refresh in Set-Cookie (not modeled here) (Browser — empty object when cookie carries refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "<access-jwt-placeholder>",
+            "token_type": "Bearer",
+            "expires_in": 900
+          }
+  - name: invalidRequest (Default native refresh body (import))
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/invalid-request",
+            "title": "Bad Request",
+            "status": 400,
+            "detail": "Request validation failed.",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+  - name: invalidRequest (Native client sends opaque refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/invalid-request",
+            "title": "Bad Request",
+            "status": 400,
+            "detail": "Request validation failed.",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+  - name: invalidRequest (Browser — empty object when cookie carries refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/invalid-request",
+            "title": "Bad Request",
+            "status": 400,
+            "detail": "Request validation failed.",
+            "code": "AUTH_INVALID_REQUEST"
+          }
+  - name: refreshRejected (Default native refresh body (import))
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/refresh-rejected",
+            "title": "Unauthorized",
+            "status": 401,
+            "detail": "Refresh token is invalid or expired.",
+            "code": "TOKEN_REFRESH_REJECTED"
+          }
+  - name: refreshRejected (Native client sends opaque refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/refresh-rejected",
+            "title": "Unauthorized",
+            "status": 401,
+            "detail": "Refresh token is invalid or expired.",
+            "code": "TOKEN_REFRESH_REJECTED"
+          }
+  - name: refreshRejected (Browser — empty object when cookie carries refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/refresh-rejected",
+            "title": "Unauthorized",
+            "status": 401,
+            "detail": "Refresh token is invalid or expired.",
+            "code": "TOKEN_REFRESH_REJECTED"
+          }
+  - name: tooManyAttempts (Default native refresh body (import))
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/too-many-attempts",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": "Too many authentication attempts, please try again later.",
+            "code": "AUTH_TOO_MANY_ATTEMPTS"
+          }
+  - name: tooManyAttempts (Native client sends opaque refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: |-
+          {
+            "refresh_token": "{{refresh_token}}"
+          }
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/too-many-attempts",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": "Too many authentication attempts, please try again later.",
+            "code": "AUTH_TOO_MANY_ATTEMPTS"
+          }
+  - name: tooManyAttempts (Browser — empty object when cookie carries refresh)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Cookie
+          value: refresh_token=<opaque-refresh-placeholder>
+      body:
+        type: json
+        data: "{}"
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/auth/problems/too-many-attempts",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": "Too many authentication attempts, please try again later.",
+            "code": "AUTH_TOO_MANY_ATTEMPTS"
+          }
+
+docs: |
+  **Purpose:** Rotate the session — validate the current opaque refresh, issue a **new access JWT**, and (for native) a **new opaque refresh**; browser clients may receive a rotated refresh via **`Set-Cookie`**.
+
+  **Refresh source (priority):** (1) HttpOnly cookie named by env (default `refresh_token`) when present; (2) JSON field `refresh_token` for native clients when not using the cookie channel.
+
+  **Request body:** Optional. Native clients should send `{"refresh_token":"<opaque>"}` when not relying on the cookie. Browser clients should still send **`Content-Type: application/json`** and may use body `{}` when using cookie-only refresh.
+
+  **Headers:** **`Content-Type: application/json` required** (same as other `POST /auth/*`). Optional `Cookie` (see `CookieRefresh`). No `Accept` required.
+
+  **Success (`200`):** Same token shape as login (`RefreshSuccess`). Native responses may include `refresh_token`; browser responses may omit it from JSON when rotation is cookie-only.
+
+  **Errors:** `400` malformed body; `401` invalid, expired, missing, or **reused** refresh (distinguish via **`type`** in problem body — includes reuse / family revocation per SoT); `429` throttles.
+
+  **Auth:** No Bearer JWT on this route.

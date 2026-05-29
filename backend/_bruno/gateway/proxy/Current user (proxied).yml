@@ -1,0 +1,208 @@
+info:
+  name: Current user (proxied)
+  type: http
+  seq: 1
+  tags:
+    - proxy
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/me"
+  headers:
+    - name: Accept
+      value: application/json
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  variables:
+    - name: token
+      value: eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJyb2xlIjoiYWRtaW4iLCJvdV9pZCI6IjZhMTkwZDZjMWZlZTAzYzM4MzEzNzI0OSIsImJyYW5jaF9pZCI6IjZhMTkwZDZjMWZlZTAzYzM4MzEzNzI0YSIsInRva2VuX2dlbiI6MCwic3ViIjoiNmExNTNlNGM4NDEzNmQ5NDAzMzA5OTFlIiwiaWF0IjoxNzgwMDI5MTg2LCJleHAiOjE3ODAwMzAwODYsImlzcyI6Imh0dHBzOi8vYXV0aC5leGFtcGxlLmludmFsaWQiLCJhdWQiOiJnYXRld2F5In0.GSEFZahQVirpPRT9o-HO1x10TDwegxNiSekMbdENswrbHNIVZQduJvVjFw6iImPGpBF9tLzQmVfhkxP93FMhIXJ7cocDuAdpK-_OMw1fCjcdL0lKCMrglRNw_S8NEKmhs3i4GTuqOZeeidYhbyQRbnRoVEGkCwMva61ufFdqTaFGqFD7W8e5qtBuyoIT5hUp-Kcqc6bLHU-8_8Ul-f4rZ6qfVQ7704JLEP2RF21mzP3VQrHckgo0WBkbVXx9Qieq2PmmcvexyZvtKfmbIWnLqv0VnT-QiB2z1uJjSJLS1Urb2_QOLWzfssTG3LFTmfq23Cjc2wWETZY5qO0tdAXdgg
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Upstream success — ดู [`demo-service/openapi.yaml`](../services/.demo/demo-service/openapi.yaml)
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+  - name: Proxied route without Bearer JWT
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-jwt",
+            "title": "Authentication required",
+            "status": 401,
+            "detail": "Authorization header with Bearer token is required.",
+            "code": "GATEWAY_JWT_MISSING"
+          }
+  - name: JWKS verify failed or stale `token_gen` (Redis)
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-jwt",
+            "title": "Authentication failed",
+            "status": 401,
+            "detail": "Token verification failed.",
+            "code": "GATEWAY_JWT_REJECTED"
+          }
+  - name: Required tenant claims missing or empty
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-claim",
+            "title": "Invalid authentication token",
+            "status": 401,
+            "detail": "Required JWT claims for trusted headers are missing or invalid.",
+            "code": "GATEWAY_CLAIM_REJECTED"
+          }
+  - name: Path ไม่ตรง prefix ใน `ROUTES_JSON`
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-route",
+            "title": "Route not found",
+            "status": 404,
+            "detail": "No route configured for this path.",
+            "code": "GATEWAY_ROUTE_NOT_FOUND"
+          }
+  - name: Upstream connection refused or reset
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 502
+      statusText: Bad Gateway
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-upstream",
+            "title": "Upstream service is unavailable",
+            "status": 502,
+            "detail": "Could not reach upstream service.",
+            "code": "GATEWAY_UPSTREAM_UNAVAILABLE"
+          }
+  - name: Route table entry invalid at runtime
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 502
+      statusText: Bad Gateway
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-route",
+            "title": "Gateway routing is misconfigured",
+            "status": 502,
+            "detail": "Gateway route configuration is invalid.",
+            "code": "GATEWAY_ROUTE_NOT_CONFIGURED"
+          }
+  - name: Upstream exceeded `UPSTREAM_TIMEOUT_MS`
+    request:
+      url: "{{baseUrl}}/api/v1/me"
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+    response:
+      status: 504
+      statusText: Gateway Timeout
+      headers:
+        - name: Content-Type
+          value: application/problem+json
+      body:
+        type: json
+        data: |-
+          {
+            "type": "https://example.invalid/gateway/problems/gateway-upstream",
+            "title": "Upstream request timed out",
+            "status": 504,
+            "detail": "Upstream did not respond in time.",
+            "code": "GATEWAY_UPSTREAM_TIMEOUT"
+          }
+
+docs: |
+  **Proxied** ไป **demo-service** เมื่อ `ROUTES_JSON` มี prefix `/api/v1/me` (ดู [`routes.json`](./routes.json)).
+  Response **2xx** ตาม upstream — ด้านล่างเป็น **gateway edge errors** (`application/problem+json`) ก่อนถึง upstream

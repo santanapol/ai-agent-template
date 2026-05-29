@@ -251,7 +251,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
       assert.strictEqual(body.code, 'GATEWAY_UPSTREAM_UNAVAILABLE')
       const d = String(body.detail ?? '')
       assert.doesNotMatch(String(d), /\.demo/u)
-      assert.doesNotMatch(String(d), /crud-service/u)
+      assert.doesNotMatch(String(d), /demo-service/u)
       assert.doesNotMatch(String(d), /ROUTES_JSON/u)
     } finally {
       await deadApp.close()

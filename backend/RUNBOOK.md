@@ -1,6 +1,6 @@
 # 📘 Authorization Gateway System Runbook
 
-คู่มือปฏิบัติการสำหรับ Monorepo (`auth`, `gateway`, `service-demo`, `items`)
+คู่มือปฏิบัติการสำหรับ Monorepo (`auth`, `gateway`, `demo-service`, `items`)
 
 ## 1. ⚙️ Setup & Environment
 
@@ -52,7 +52,7 @@ _(ค่าเริ่มต้น: admin / ChangeMe!Admin-1)_
 
 1. **`auth`** (Port `3001`): `cd auth && npm run dev`
 2. **`gateway`** (Port `3002`): `cd gateway && npm run dev`
-3. **`service-demo`** (Port `3003`): `cd service-demo && npm run dev`
+3. **`demo-service`** (Port `3003`): `cd demo-service && npm run dev`
 
 ---
 

@@ -2,7 +2,12 @@ import rateLimit from '@fastify/rate-limit'
 import { buildRateLimitPluginOptions } from '../../lib/rate-limit.js'
 import { problemPayload } from '../../lib/problem.js'
 import { constantTimeSecretEqual, extractBearerToken } from '../../lib/internal-bearer.js'
-import { createUserBodySchema, revokeBodySchema, setPasswordBodySchema, userIdParamSchema } from './internal.validator.js'
+import {
+  createUserBodySchema,
+  revokeBodySchema,
+  setPasswordBodySchema,
+  userIdParamSchema
+} from './internal.validator.js'
 
 const RATE_LIMIT_INTERNAL = { max: 60, timeWindow: '1 minute' }
 
@@ -48,13 +53,19 @@ export default async function internalRoutePlugin(fastify, opts) {
 
     scope.post(
       '/internal/users/:user_id/password',
-      { schema: { params: userIdParamSchema, body: setPasswordBodySchema }, config: { rateLimit: RATE_LIMIT_INTERNAL } },
+      {
+        schema: { params: userIdParamSchema, body: setPasswordBodySchema },
+        config: { rateLimit: RATE_LIMIT_INTERNAL }
+      },
       (request, reply) => controller.setPassword(request, reply)
     )
 
     scope.post(
       '/internal/users/:user_id/sessions/revoke',
-      { schema: { params: userIdParamSchema, body: revokeBodySchema }, config: { rateLimit: RATE_LIMIT_INTERNAL } },
+      {
+        schema: { params: userIdParamSchema, body: revokeBodySchema },
+        config: { rateLimit: RATE_LIMIT_INTERNAL }
+      },
       (request, reply) => controller.revokeSessions(request, reply)
     )
   })

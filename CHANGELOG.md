@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this repository are recorded here. Each deployable service keeps its own SemVer in `package.json`; release notes below group changes by **repository snapshot**. For line-level history per service, see `backend/auth/CHANGELOG.md`, `backend/gateway/CHANGELOG.md`, and `backend/service/service-demo/CHANGELOG.md`.
+All notable changes to this repository are recorded here. Each deployable service keeps its own SemVer in `package.json`; release notes below group changes by **repository snapshot**. For line-level history per service, see `backend/auth/CHANGELOG.md`, `backend/gateway/CHANGELOG.md`, `backend/service/demo-service/CHANGELOG.md`, and `backend/service/staff/` package docs.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) per service `package.json` / OpenAPI `info.version` where applicable.
 
@@ -8,29 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **`backend/service/`** — group internal deployables: `service-demo/` (CRUD sample) and `staff/` (domain + architecture docs scaffold).
-- **Backoffice:** `src/lib/apiError.ts` and `src/components/staff/` — shared API error mapping; refactor `StaffManagement` into table + drawer components.
-- **service-demo:** `npm run init:db` and `npm run seed:example` — MongoDB indexes on `items` and dev sample data (`DEMO-001` … `DEMO-003`).
-- **service-demo:** `scripts/mongo-create-demo-user.md` — `demo_service_role` and `demo-service` MongoDB user for local auth.
-- **Repository layout:** `backend/` (auth, gateway, service-demo, items, ops docs) and `frontend/backoffice/` (Vite + React admin UI).
-- **Documentation:** Root [`README.md`](./README.md) — full-stack overview, document map, local ports, quick start.
-- **Backend:** [`backend/README.md`](./backend/README.md) — monorepo entry, gateway routes, prerequisites.
-- **Local dev:** [`backend/docker-compose.yml`](./backend/docker-compose.yml) — MongoDB 8 + Redis 8 for `token_gen` / auth dev stack.
+- **`backend/service/staff/`** — staff profiles API (Fastify :3004, OpenAPI, MongoDB, init/seed scripts, tests) behind gateway `/api/v1/staff`.
+- **`backend/service/demo-service/`** — CRUD sample (`/api/v1/me`, `/api/v1/items`); `init:db`, `seed:example`, and `mongo-create-demo-user.md` for local Mongo.
+- **`backend/_bruno/`** — shared Bruno collections for gateway and internal mesh smoke tests.
+- **Auth:** `internal-create-user` integration test; seed/init script updates for staff and demo alignment.
+- **Gateway:** `.spectral.yaml` and `routes.test.js` for route config validation.
+- **Backoffice:** `apiError.ts` and `components/staff/` (table + drawer); **username** on staff create form; Vitest coverage; profile lookup via `user_id` query param.
+- **Repository layout:** `backend/` (auth, gateway, services) and `frontend/backoffice/` (Vite + React admin UI).
+- **Documentation:** Root [`README.md`](./README.md), [`backend/README.md`](./backend/README.md), [`backend/docker-compose.yml`](./backend/docker-compose.yml) (MongoDB 8 + Redis 8).
+
 ### Changed
 
-- **Layout:** `backend/service-demo/` → `backend/service/service-demo/`; auth `domain.md` links staff docs under `backend/service/staff/`.
-- **Backoffice:** staff docs paths and `StaffManagement` / `MyProfile` UX; remove unused `App.css`.
-- **Staff spec docs:** clarify `service/staff` as **spec only**, normalize list-vs-lookup contract (`GET /profiles` vs `GET /profiles?user_id=...`), and align error format language to the project custom JSON wrapper.
-- **service-demo:** `/healthz` and `/readyz` — plain JSON probes (uptime from process start); readiness reports `dependencies`; `503` uses `application/problem+json` with `SERVICE_NOT_READY`.
-- **service-demo:** default database `DB_NAME` **`service-demo`** (was `api_example`); `.env.example` uses `demo-service` credentials.
-- **Monorepo paths:** Platform packages moved under `backend/` (was flat `auth/`, `gateway/`, `services/.demo/crud-service/` at repo root).
-- **Demo upstream:** `services/.demo/crud-service/` → `backend/service-demo/` (same role: `/api/v1/me`, `/api/v1/items`).
-- **Frontend:** Back-office UI under `frontend/backoffice/` (Vite dev proxy `/auth` → auth, `/api` → gateway).
-- **Local dev:** Redis image `redis:7-alpine` → `redis:8-alpine` in compose (carried from prior snapshot).
+- **Rename:** `backend/service/service-demo/` → **`backend/service/demo-service/`** (package `demo-service`; Bruno collections `demo-service`; default `DB_NAME` **`demo-service`**).
+- **Staff docs:** list vs lookup contract (`GET /profiles` vs `GET /profiles?user_id=...`); custom JSON error envelope language; ERD and architecture aligned with implementation.
+- **demo-service:** `/healthz` and `/readyz` — plain JSON probes; readiness `503` uses `application/problem+json` with `SERVICE_NOT_READY`.
+- **Auth / gateway:** OpenAPI and proxy alignment; `routes.json` documents staff upstream on **3004** and demo on **3003**.
+- **Backoffice:** `StaffManagement` / `MyProfile` UX; staff seed script force-updates profile data on re-run.
+- **Monorepo paths:** Platform packages under `backend/`; back-office UI under `frontend/backoffice/`.
 
 ### Removed
 
-- **`backend/items/`** — legacy Express items workspace copy (superseded by `service-demo` items API).
+- **`backend/service/service-demo/`** — replaced by `backend/service/demo-service/`.
+- **`backend/items/`** — legacy Express items workspace (superseded by demo-service items API).
 - **Root-flat layout:** Top-level `auth/`, `gateway/`, `services/` tree (replaced by `backend/`).
 - **`local-ports.md`:** Port index consolidated into root and `backend/README.md`.
 

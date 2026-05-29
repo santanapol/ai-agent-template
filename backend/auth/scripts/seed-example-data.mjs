@@ -5,7 +5,7 @@
  *   npm run seed:example
  *
  * รหัส default อยู่ใน repo เพื่อความสะดวก local เท่านั้น — ห้ามใช้ใน production
- * กำหนดเองได้: EXAMPLE_ADMIN_PASSWORD, EXAMPLE_DEMO_PASSWORD, EXAMPLE_VIEWER_PASSWORD
+ * กำหนดเองได้: EXAMPLE_ADMIN_PASSWORD, EXAMPLE_BRANCH_ADMIN_PASSWORD, EXAMPLE_STAFF_PASSWORD
  *
  * ล้าง token/throttle/audit ก่อน seed user: npm run seed:example -- --reset-sessions
  */
@@ -37,29 +37,35 @@ const argonOpts = {
   parallelism: parallel
 }
 
-// Dev seed: shared OU + branch for all example users
-const SEED_OU_ID = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId()
+// Dev seed: shared OU + branch for all example users (ซิงค์ให้ตรงกับ demo-service)
+const DEV_SEED_OU_ID = "6a190d6c1fee03c383137249"
+const DEV_SEED_BRANCH_ID = "6a190d6c1fee03c38313724a"
+
+const SEED_OU_ID = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId(DEV_SEED_OU_ID)
 const SEED_BRANCH_ID = process.env.SEED_BRANCH_ID
   ? new ObjectId(process.env.SEED_BRANCH_ID)
-  : new ObjectId()
+  : new ObjectId(DEV_SEED_BRANCH_ID)
 const SEED_PROG = 'scripts/seed-example-data.mjs'
 
-/** @type {{ username: string, password: string, role: string }[]} */
+/** @type {{ _id: ObjectId, username: string, password: string, role: string }[]} */
 const examples = [
   {
-    username: 'admin',
-    password: process.env.EXAMPLE_ADMIN_PASSWORD ?? 'DevExample-admin-1',
-    role: 'admin'
+    _id: new ObjectId('6a153e4c84136d940330991e'),
+    username: 'platform_admin',
+    password: process.env.EXAMPLE_ADMIN_PASSWORD ?? '1234',
+    role: 'platform_admin'
   },
   {
-    username: 'demo',
-    password: process.env.EXAMPLE_DEMO_PASSWORD ?? 'DevExample-demo-1',
-    role: 'user'
+    _id: new ObjectId('6a190d6db5711c10d35d85e8'),
+    username: 'branch_admin',
+    password: process.env.EXAMPLE_BRANCH_ADMIN_PASSWORD ?? '1234',
+    role: 'branch_admin'
   },
   {
-    username: 'viewer',
-    password: process.env.EXAMPLE_VIEWER_PASSWORD ?? 'DevExample-viewer-1',
-    role: 'viewer'
+    _id: new ObjectId('6a190d6db5711c10d35d85ea'),
+    username: 'staff',
+    password: process.env.EXAMPLE_STAFF_PASSWORD ?? '1234',
+    role: 'staff'
   }
 ]
 
@@ -80,53 +86,53 @@ const now = new Date()
 for (const row of examples) {
   const username = normalizeUsername(row.username)
   const password_hash = await argon2.hash(row.password, argonOpts)
-  await db.collection(AUTH_COLLECTIONS.USERS).findOneAndUpdate(
-    { username },
-    {
-      $set: {
-        username,
-        password_hash,
-        role: row.role,
-        upd_by: 'seed_script',
-        upd_date: now,
-        upd_prog: SEED_PROG
-      },
-      $setOnInsert: {
-        ou_id: SEED_OU_ID,
-        branch_id: SEED_BRANCH_ID,
-        access_token_gen: 0,
-        cr_by: 'seed_script',
-        cr_date: now,
-        cr_prog: SEED_PROG
-      }
-    },
+  const existingUser = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ _id: row._id })
+  const userDoc = {
+    _id: row._id,
+    ou_id: existingUser?.ou_id ?? SEED_OU_ID,
+    branch_id: existingUser?.branch_id ?? SEED_BRANCH_ID,
+    username,
+    password_hash,
+    role: row.role,
+    access_token_gen: existingUser?.access_token_gen ?? 0,
+    cr_by: existingUser?.cr_by ?? 'seed_script',
+    cr_date: existingUser?.cr_date ?? now,
+    cr_prog: existingUser?.cr_prog ?? SEED_PROG,
+    upd_by: 'seed_script',
+    upd_date: now,
+    upd_prog: SEED_PROG
+  }
+  
+  await db.collection(AUTH_COLLECTIONS.USERS).replaceOne(
+    { _id: row._id },
+    userDoc,
     { upsert: true }
   )
-  const doc = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ username })
-  const userId = doc?._id
+  const userId = row._id
   if (userId) {
-    await db.collection('auth_staff_profiles').findOneAndUpdate(
+    const existingProfile = await db.collection('staff_profiles').findOne({ user_id: userId })
+    const profileDoc = {
+      _id: existingProfile?._id ?? new ObjectId(),
+      user_id: userId,
+      ou_id: existingProfile?.ou_id ?? SEED_OU_ID,
+      branch_id: existingProfile?.branch_id ?? SEED_BRANCH_ID,
+      code: existingProfile?.code ?? `SEED-${username.toUpperCase()}`,
+      firstname: existingProfile?.firstname ?? 'Seed',
+      lastname: existingProfile?.lastname ?? username,
+      email: existingProfile?.email ?? `${username}@example.com`,
+      tel: existingProfile?.tel ?? '',
+      status: existingProfile?.status ?? 'active',
+      cr_by: existingProfile?.cr_by ?? 'seed_script',
+      cr_date: existingProfile?.cr_date ?? now,
+      cr_prog: existingProfile?.cr_prog ?? SEED_PROG,
+      upd_by: 'seed_script',
+      upd_date: now,
+      upd_prog: SEED_PROG
+    }
+    
+    await db.collection('staff_profiles').replaceOne(
       { user_id: userId },
-      {
-        $set: {
-          upd_by: 'seed_script',
-          upd_date: now,
-          upd_prog: SEED_PROG
-        },
-        $setOnInsert: {
-          ou_id: SEED_OU_ID,
-          branch_id: SEED_BRANCH_ID,
-          code: `SEED-${username.toUpperCase()}`,
-          firstname: 'Seed',
-          lastname: username,
-          email: `${username}@example.com`,
-          tel: '',
-          status: 'active',
-          cr_by: 'seed_script',
-          cr_date: now,
-          cr_prog: SEED_PROG
-        }
-      },
+      profileDoc,
       { upsert: true }
     )
   }

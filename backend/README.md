@@ -3,7 +3,7 @@
 Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge), และ internal services ที่รับ traffic ผ่าน gateway เท่านั้น
 
 > [!TIP]
-> **TL;DR:** Client รับ JWT จาก **auth** → เรียก **gateway** ด้วย `Authorization: Bearer` → **gateway** verify JWT, inject trusted headers, proxy ไป **upstream** (เช่น `service-demo`)
+> **TL;DR:** Client รับ JWT จาก **auth** → เรียก **gateway** ด้วย `Authorization: Bearer` → **gateway** verify JWT, inject trusted headers, proxy ไป **upstream** (เช่น `demo-service`)
 
 ## Monorepo layout
 
@@ -11,7 +11,7 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 | :--- | :--- | :--- | :---: |
 | [`auth/`](./auth/) | Login, refresh, JWT/JWKS, session revoke (`token_gen`) | Fastify (ESM) | **3001** |
 | [`gateway/`](./gateway/) | JWT verify, Redis `token_gen` gate, reverse proxy | Fastify (ESM) | **3002** |
-| [`service/service-demo/`](./service/service-demo/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
+| [`service/demo-service/`](./service/demo-service/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
 | [`service/staff/`](./service/staff/) | Staff API (**spec only** — docs scaffold) | — | **3004** (reserved) |
 
 Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
@@ -37,7 +37,7 @@ Client ──Bearer JWT──► gateway ──x-gateway-secret + x-user-*──
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes ระดับ repository |
 | [auth/docs/architecture.md](./auth/docs/architecture.md) | JWT issuance, JWKS, Redis revoke (auth SoT) |
 | [gateway/docs/architecture.md](./gateway/docs/architecture.md) | Routing, env, errors (gateway SoT) |
-| [service/service-demo/README.md](./service/service-demo/README.md) | Sample upstream + OpenAPI / Bruno |
+| [service/demo-service/README.md](./service/demo-service/README.md) | Sample upstream + OpenAPI / Bruno |
 | [service/staff/docs/](./service/staff/docs/) | Staff business + technical docs |
 
 ## Local ports
@@ -46,7 +46,7 @@ Client ──Bearer JWT──► gateway ──x-gateway-secret + x-user-*──
 | :--- | :---: | :--- |
 | **auth** | 3001 | JWKS: `http://127.0.0.1:3001/.well-known/jwks.json` |
 | **gateway** | 3002 | Public entry สำหรับ client |
-| **service-demo** | 3003 | Routed ใน [`gateway/routes.json`](./gateway/routes.json) |
+| **demo-service** | 3003 | Routed ใน [`gateway/routes.json`](./gateway/routes.json) |
 | **items** | 3000 | ค่าเริ่มต้นจาก `items/.env.example` (`PORT`) |
 | **MongoDB** | 27017 | `docker compose up -d` |
 | **Redis** | 6379 | `token_gen` — auth + gateway ใช้ `REDIS_URL` ร่วมกัน |
@@ -55,8 +55,8 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
 
 | Prefix | Upstream | Service |
 | :--- | :--- | :--- |
-| `/api/v1/items` | `:3003` | service-demo |
-| `/api/v1/me` | `:3003` | service-demo |
+| `/api/v1/items` | `:3003` | demo-service |
+| `/api/v1/me` | `:3003` | demo-service |
 | `/api/v1/staff` | `:3004` | staff (**spec only** — ยังไม่ bootstrap service) |
 | `/auth` | `:3001` | auth (proxy ผ่าน gateway) |
 
@@ -84,10 +84,10 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
    npm ci && npm run dev
    ```
 
-4. **service-demo** (optional)
+4. **demo-service** (optional)
 
    ```bash
-   cd service-demo && cp .env.example .env
+   cd demo-service && cp .env.example .env
    npm ci && npm run dev
    ```
 
@@ -95,7 +95,7 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
 
 ## Prerequisites
 
-- **Node.js** `>=24 <25` (auth, gateway, service-demo)
+- **Node.js** `>=24 <25` (auth, gateway, demo-service)
 - **npm** ตาม `packageManager` ในแต่ละ service
 - **Docker** สำหรับ MongoDB + Redis ใน local
 

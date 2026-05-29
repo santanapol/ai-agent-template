@@ -8,7 +8,7 @@ describe('upstreamProblemDetail', () => {
     const err = { code: 'ECONNREFUSED' }
     const d = upstreamProblemDetail(err)
     assert.doesNotMatch(String(d), /\.demo/u)
-    assert.doesNotMatch(String(d), /crud-service/u)
+    assert.doesNotMatch(String(d), /demo-service/u)
     assert.doesNotMatch(String(d), /ROUTES_JSON/u)
     assert.match(String(d), /connection refused/u)
   })

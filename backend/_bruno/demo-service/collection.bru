@@ -1,0 +1,16 @@
+meta {
+  name: demo-service
+}
+
+auth {
+  mode: apikey
+}
+
+auth:apikey {
+  key: x-gateway-secret
+  value: {{apiKey}}
+  placement: header
+}
+vars:pre-request {
+  apiKey: WSgEKTV8ci7UguW6qRDPsMJNBnI4l7lU
+}

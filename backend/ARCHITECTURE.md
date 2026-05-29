@@ -27,7 +27,7 @@
   - ห้าม Forward `Authorization` header ไปที่ Internal
   - ตั้งค่า Timeout ป้องกันการค้าง; ถ้าเชื่อมต่อไม่ได้ตอบ `502`/`504`; ถ้า Secret ผิดตอบ `403`
 
-### ⚙️ Internal APIs (เช่น `service-demo`, `items`)
+### ⚙️ Internal APIs (เช่น `demo-service`, `items`)
 
 - **Rules:**
   - ห้าม Verify JWT ซ้ำ (ถือว่า Gateway ทำแล้ว)

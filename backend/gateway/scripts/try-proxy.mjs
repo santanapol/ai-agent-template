@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * E2E: login ที่ auth → เรียก gateway พร้อม Bearer → upstream (**crud-service**)
+ * E2E: login ที่ auth → เรียก gateway พร้อม Bearer → upstream (**demo-service**)
  *
  * ต้องรัน concurrently:
  *   1) auth (เช่น :3001)
- *   2) `cd .demo/crud-service` แล้ว `npm run dev` (:3003 — ดู `.demo/crud-service/.env.example`)
+ *   2) `cd .demo/demo-service` แล้ว `npm run dev` (:3003 — ดู `.demo/demo-service/.env.example`)
  *   3) gateway `npm start` (:3002 + `ROUTES_JSON` ชี้ upstream :3003 สำหรับ `/api` + `/api/v1/items`, `GATEWAY_SECRET` ตรงกัน)
  *
  * ทางเลือก mock เดิม: `npm run dev:upstream` (:4000) + `TRY_PROXY_PATH=/api/ping`
@@ -88,9 +88,9 @@ console.log(bodyText)
 
 if (!proxied.ok && (proxied.status === 502 || proxied.status === 504)) {
   console.error(
-    '\nHint: upstream ไม่ขึ้นหรือ ROUTES_JSON ไม่ตรง path — ตัวอย่าง crud-service upstream (.demo/crud-service):\n' +
+    '\nHint: upstream ไม่ขึ้นหรือ ROUTES_JSON ไม่ตรง path — ตัวอย่าง demo-service upstream (.demo/demo-service):\n' +
       '  ROUTES_JSON=[{"prefix":"/api","upstream":"http://127.0.0.1:3003","stripPrefix":false}]\n' +
-      'และ GATEWAY_SECRET ต้องตรงกับ crud-service (`GATEWAY_SHARED_SECRET`)'
+      'และ GATEWAY_SECRET ต้องตรงกับ demo-service (`GATEWAY_SHARED_SECRET`)'
   )
 }
 

@@ -6,9 +6,9 @@
  *   node --env-file=.env scripts/init-db.mjs
  *
  * กำหนดค่า admin ผ่าน env (หรือใช้ default dev):
- *   ADMIN_USERNAME     default: admin
+ *   ADMIN_USERNAME     default: platform_admin
  *   ADMIN_PASSWORD     default: ChangeMe!Admin-1  (ห้ามใช้ใน production!)
- *   ADMIN_ROLE         default: admin
+ *   ADMIN_ROLE         default: platform_admin
  *   SEED_OU_ID         default: สร้าง ObjectId ใหม่
  *   SEED_BRANCH_ID     default: สร้าง ObjectId ใหม่
  */
@@ -30,9 +30,9 @@ if (!uri) {
   process.exit(1)
 }
 
-const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME ?? 'admin')
+const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME ?? 'platform_admin')
 const adminPassword = process.env.ADMIN_PASSWORD ?? 'ChangeMe!Admin-1'
-const adminRole = process.env.ADMIN_ROLE ?? 'admin'
+const adminRole = process.env.ADMIN_ROLE ?? 'platform_admin'
 
 const ouId = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId()
 const branchId = process.env.SEED_BRANCH_ID
@@ -166,39 +166,41 @@ if (existing) {
 // ─── 3. Admin Profile ───────────────────────────────────────────
 
 console.log('▶ สร้าง admin profile...')
-const existingProfile = await db.collection('auth_staff_profiles').findOne({ user_id: userId })
+if (userId) {
+  const existingProfile = await db.collection('staff_profiles').findOne({ user_id: userId })
 
-if (existingProfile) {
-  await db.collection('auth_staff_profiles').updateOne(
-    { _id: existingProfile._id },
-    {
-      $set: {
-        upd_by: 'init_db',
-        upd_date: now,
-        upd_prog: INIT_PROG
+  if (existingProfile) {
+    await db.collection('staff_profiles').updateOne(
+      { _id: existingProfile._id },
+      {
+        $set: {
+          upd_by: 'init_db',
+          upd_date: now,
+          upd_prog: INIT_PROG
+        }
       }
-    }
-  )
-  console.log('  ✔ Admin profile updated (existing)')
-} else {
-  await db.collection('auth_staff_profiles').insertOne({
-    user_id: userId,
-    ou_id: ouId,
-    branch_id: branchId,
-    code: 'ADMIN-000',
-    firstname: 'System',
-    lastname: 'Administrator',
-    email: '',
-    tel: '',
-    status: 'active',
-    cr_by: 'init_db',
-    cr_date: now,
-    cr_prog: INIT_PROG,
-    upd_by: 'init_db',
-    upd_date: now,
-    upd_prog: INIT_PROG
-  })
-  console.log('  ✔ Admin profile created (new)')
+    )
+    console.log('  ✔ Admin profile updated (existing)')
+  } else {
+    await db.collection('staff_profiles').insertOne({
+      user_id: userId,
+      ou_id: ouId,
+      branch_id: branchId,
+      code: 'ADMIN-000',
+      firstname: 'System',
+      lastname: 'Administrator',
+      email: '',
+      tel: '',
+      status: 'active',
+      cr_by: 'init_db',
+      cr_date: now,
+      cr_prog: INIT_PROG,
+      upd_by: 'init_db',
+      upd_date: now,
+      upd_prog: INIT_PROG
+    })
+    console.log('  ✔ Admin profile created (new)')
+  }
 }
 
 await client.close()

@@ -1,0 +1,5 @@
+node_modules/
+coverage/
+_mission-control/
+docs/
+package-lock.json

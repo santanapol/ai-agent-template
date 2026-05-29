@@ -2,13 +2,13 @@
 
 > **Package status:** **spec only** — ยังไม่มี `package.json` หรือ migration scripts ใน repo
 
-**SoT ฝั่ง persistence** สำหรับ **`auth_staff_profiles`** — ความหมายธุรกิจและ HTTP อยู่ [`./business-domain.md`](./business-domain.md)
+**SoT ฝั่ง persistence** สำหรับ **`staff_profiles`** — ความหมายธุรกิจและ HTTP อยู่ [`./business-domain.md`](./business-domain.md)
 
-| ชั้น SoT | เอกสาร |
-| :--- | :--- |
-| **Business** | [`./business-domain.md`](./business-domain.md) |
-| **Technical** | [`./technical-architecture.md`](./technical-architecture.md) |
-| **Persistence (ไฟล์นี้)** | ERD, constraints, indexes, search |
+| ชั้น SoT                  | เอกสาร                                                       |
+| :------------------------ | :----------------------------------------------------------- |
+| **Business**              | [`./business-domain.md`](./business-domain.md)               |
+| **Technical**             | [`./technical-architecture.md`](./technical-architecture.md) |
+| **Persistence (ไฟล์นี้)** | ERD, constraints, indexes, search                            |
 
 สอดคล้อง [`11-database-connection.md`](../../../../../../coding-standard/backend/11-database-connection.md), [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)
 
@@ -19,7 +19,7 @@
 ```mermaid
 flowchart LR
   subgraph staff_writes [staff writes]
-    P[(auth_staff_profiles)]
+    P[(staff_profiles)]
   end
   subgraph auth_writes [auth writes]
     U[(auth_users)]
@@ -71,23 +71,23 @@ erDiagram
   }
 ```
 
-## Collection: `auth_staff_profiles`
+## Collection: `staff_profiles`
 
 ### Field definitions
 
-| Field | BSON | Required | Constraints (MVP) |
-| :--- | :--- | :---: | :--- |
-| `_id` | ObjectId | yes | PK |
-| `user_id` | ObjectId | yes | FK → `auth_users._id`; **unique** |
-| `ou_id` | ObjectId | yes | immutable; ตรง user + tenant |
-| `branch_id` | ObjectId | yes | immutable |
-| `status` | string | yes | `active` \| `archived` |
-| `code` | string | yes | 1–32 chars; **unique** with `ou_id`+`branch_id` |
-| `firstname` | string | yes | 1–128 |
-| `lastname` | string | yes | 1–128 |
-| `email` | string | yes | max 254; lowercase; **not unique** in MVP |
-| `tel` | string | yes | E.164, max 16 |
-| `cr_*`, `upd_*` | string/date | yes | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
+| Field           | BSON        | Required | Constraints (MVP)                                                                          |
+| :-------------- | :---------- | :------: | :----------------------------------------------------------------------------------------- |
+| `_id`           | ObjectId    |   yes    | PK                                                                                         |
+| `user_id`       | ObjectId    |   yes    | FK → `auth_users._id`; **unique**                                                          |
+| `ou_id`         | ObjectId    |   yes    | immutable; ตรง user + tenant                                                               |
+| `branch_id`     | ObjectId    |   yes    | immutable                                                                                  |
+| `status`        | string      |   yes    | `active` \| `archived`                                                                     |
+| `code`          | string      |   yes    | 1–32 chars; **unique** with `ou_id`+`branch_id`                                            |
+| `firstname`     | string      |   yes    | 1–128                                                                                      |
+| `lastname`      | string      |   yes    | 1–128                                                                                      |
+| `email`         | string      |   yes    | max 254; lowercase; **not unique** in MVP                                                  |
+| `tel`           | string      |   yes    | E.164, max 16                                                                              |
+| `cr_*`, `upd_*` | string/date |   yes    | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
 
 **Out of scope:** `display_name`, `job_title`, `department`, `employment_status`
 
@@ -95,12 +95,12 @@ erDiagram
 
 ### Uniqueness & validation
 
-| Rule | Enforcement |
-| :--- | :--- |
-| 1 user → 1 profile | index `uniq_user_id` |
-| 1 code ต่อ OU+สาขา | index `uniq_ou_branch_code` |
-| Duplicate `email` / `tel` | **อนุญาต** ใน MVP |
-| `status` enum | แนะนำ MongoDB `$jsonSchema` + OpenAPI enum |
+| Rule                      | Enforcement                                |
+| :------------------------ | :----------------------------------------- |
+| 1 user → 1 profile        | index `uniq_user_id`                       |
+| 1 code ต่อ OU+สาขา        | index `uniq_ou_branch_code`                |
+| Duplicate `email` / `tel` | **อนุญาต** ใน MVP                          |
+| `status` enum             | แนะนำ MongoDB `$jsonSchema` + OpenAPI enum |
 
 ### Join `auth_users`
 
@@ -109,10 +109,10 @@ erDiagram
 
 ### Cross-service: archive / restore
 
-| Operation | Mongo | auth |
-| :--- | :--- | :--- |
-| Archive | `$set status: archived`, `upd_*` | revoke หลัง persist — [`./technical-architecture.md`](./technical-architecture.md) |
-| Restore | `$set status: active`, `upd_*` | ไม่เรียก auth |
+| Operation | Mongo                            | auth                                                                               |
+| :-------- | :------------------------------- | :--------------------------------------------------------------------------------- |
+| Archive   | `$set status: archived`, `upd_*` | revoke หลัง persist — [`./technical-architecture.md`](./technical-architecture.md) |
+| Restore   | `$set status: active`, `upd_*`   | ไม่เรียก auth                                                                      |
 
 ### Optimistic concurrency
 
@@ -121,12 +121,12 @@ erDiagram
 
 ## Indexes
 
-| Name | Keys | Type | Purpose |
-| :--- | :--- | :--- | :--- |
-| `uniq_user_id` | `{ user_id: 1 }` | unique | 1:1 user; lookup `GET /profiles?user_id=` |
-| `uniq_ou_branch_code` | `{ ou_id: 1, branch_id: 1, code: 1 }` | unique | business key |
-| `list_by_branch_status` | `{ ou_id: 1, branch_id: 1, status: 1, upd_date: -1 }` | non-unique | list ต่อสาขา + filter status |
-| `list_archived_by_ou` | `{ ou_id: 1, status: 1, upd_date: -1 }` | non-unique | archived list (platform_admin ข้ามสาขา) |
+| Name                    | Keys                                                  | Type       | Purpose                                   |
+| :---------------------- | :---------------------------------------------------- | :--------- | :---------------------------------------- |
+| `uniq_user_id`          | `{ user_id: 1 }`                                      | unique     | 1:1 user; lookup `GET /profiles?user_id=` |
+| `uniq_ou_branch_code`   | `{ ou_id: 1, branch_id: 1, code: 1 }`                 | unique     | business key                              |
+| `list_by_branch_status` | `{ ou_id: 1, branch_id: 1, status: 1, upd_date: -1 }` | non-unique | list ต่อสาขา + filter status              |
+| `list_archived_by_ou`   | `{ ou_id: 1, status: 1, upd_date: -1 }`               | non-unique | archived list (platform_admin ข้ามสาขา)   |
 
 ### Search (`q` parameter)
 
@@ -143,27 +143,39 @@ MVP แนะนำ **case-insensitive regex** บนฟิลด์ที่ม
 ```javascript
 // ตัวอย่าง — ปรับชื่อ DB/collection ตาม env
 db.runCommand({
-  collMod: 'auth_staff_profiles',
+  collMod: "staff_profiles",
   validator: {
     $jsonSchema: {
-      bsonType: 'object',
+      bsonType: "object",
       required: [
-        'user_id', 'ou_id', 'branch_id', 'status',
-        'code', 'firstname', 'lastname', 'email', 'tel',
-        'cr_by', 'cr_date', 'cr_prog', 'upd_by', 'upd_date', 'upd_prog'
+        "user_id",
+        "ou_id",
+        "branch_id",
+        "status",
+        "code",
+        "firstname",
+        "lastname",
+        "email",
+        "tel",
+        "cr_by",
+        "cr_date",
+        "cr_prog",
+        "upd_by",
+        "upd_date",
+        "upd_prog",
       ],
       properties: {
-        status: { enum: ['active', 'archived'] },
-        code: { bsonType: 'string', minLength: 1, maxLength: 32 },
-        firstname: { bsonType: 'string', minLength: 1, maxLength: 128 },
-        lastname: { bsonType: 'string', minLength: 1, maxLength: 128 },
-        email: { bsonType: 'string', maxLength: 254 },
-        tel: { bsonType: 'string', maxLength: 16 }
-      }
-    }
+        status: { enum: ["active", "archived"] },
+        code: { bsonType: "string", minLength: 1, maxLength: 32 },
+        firstname: { bsonType: "string", minLength: 1, maxLength: 128 },
+        lastname: { bsonType: "string", minLength: 1, maxLength: 128 },
+        email: { bsonType: "string", maxLength: 254 },
+        tel: { bsonType: "string", maxLength: 16 },
+      },
+    },
   },
-  validationLevel: 'moderate'
-})
+  validationLevel: "moderate",
+});
 ```
 
 ## Collection: `auth_users` (auth-owned)

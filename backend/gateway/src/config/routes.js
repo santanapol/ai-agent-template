@@ -39,7 +39,8 @@ export function loadRoutes(env) {
     normalized.push({
       prefix: r.prefix.replace(/\/+$/u, '') || '/',
       upstream: r.upstream.replace(/\/+$/u, ''),
-      stripPrefix: typeof r.stripPrefix === 'boolean' ? r.stripPrefix : true
+      stripPrefix: typeof r.stripPrefix === 'boolean' ? r.stripPrefix : true,
+      isPublic: typeof r.isPublic === 'boolean' ? r.isPublic : false
     })
   }
 

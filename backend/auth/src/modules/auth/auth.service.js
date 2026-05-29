@@ -273,64 +273,69 @@ export class AuthService {
     await this.repo.setReplacedBy(current._id, newId, session)
   }
 
+  async failRefreshUnauthorized({ now, ip, request_id, user_id, reason, type }) {
+    await this.recordFailures([ipThrottleKey(ip)], now)
+    await this.audit({
+      event_type: 'auth.refresh',
+      outcome: 'fail',
+      request_id,
+      user_id,
+      ip,
+      detail_safe: { reason }
+    })
+    return unauthorizedServiceOutcome(type)
+  }
+
   async refresh({ rawRefresh, refreshChannel, ip, request_id }) {
     const now = new Date()
     const useCookieChannel = refreshChannel === 'cookie'
 
     if (!rawRefresh) {
-      await this.recordFailures([ipThrottleKey(ip)], now)
-      await this.audit({
-        event_type: 'auth.refresh',
-        outcome: 'fail',
+      return this.failRefreshUnauthorized({
+        now,
+        ip,
         request_id,
         user_id: null,
-        ip,
-        detail_safe: { reason: 'missing_token' }
+        reason: 'missing_token',
+        type: this.types.invalidToken
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     const hash = hashRefreshToken(rawRefresh)
     const row = await this.repo.findRefreshByTokenHash(hash)
 
     if (!row) {
-      await this.recordFailures([ipThrottleKey(ip)], now)
-      await this.audit({
-        event_type: 'auth.refresh',
-        outcome: 'fail',
+      return this.failRefreshUnauthorized({
+        now,
+        ip,
         request_id,
         user_id: null,
-        ip,
-        detail_safe: { reason: 'not_found' }
+        reason: 'not_found',
+        type: this.types.invalidToken
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     if (row.revoked_at) {
       await this.repo.revokeFamilyActive(row.family_id, now)
-      await this.recordFailures([ipThrottleKey(ip)], now)
-      await this.audit({
-        event_type: 'auth.refresh',
-        outcome: 'fail',
+      return this.failRefreshUnauthorized({
+        now,
+        ip,
         request_id,
         user_id: row.user_id,
-        ip,
-        detail_safe: { reason: 'token_reuse' }
+        reason: 'token_reuse',
+        type: this.types.tokenReuse
       })
-      return unauthorizedServiceOutcome(this.types.tokenReuse)
     }
 
     if (row.expires_at <= now) {
-      await this.recordFailures([ipThrottleKey(ip)], now)
-      await this.audit({
-        event_type: 'auth.refresh',
-        outcome: 'fail',
+      return this.failRefreshUnauthorized({
+        now,
+        ip,
         request_id,
         user_id: row.user_id,
-        ip,
-        detail_safe: { reason: 'expired' }
+        reason: 'expired',
+        type: this.types.invalidToken
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
     const u = await this.repo.findUserById(row.user_id)
@@ -357,16 +362,14 @@ export class AuthService {
         }
       }
     } catch {
-      await this.recordFailures([ipThrottleKey(ip)], now)
-      await this.audit({
-        event_type: 'auth.refresh',
-        outcome: 'fail',
+      return this.failRefreshUnauthorized({
+        now,
+        ip,
         request_id,
         user_id: row.user_id,
-        ip,
-        detail_safe: { reason: 'concurrent_or_invalid' }
+        reason: 'concurrent_or_invalid',
+        type: this.types.invalidToken
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
     } finally {
       await session.endSession()
     }
@@ -425,42 +428,11 @@ export class AuthService {
   async revokeSessionsByUser({ user_id_hex, reason, correlation_id, request_id }) {
     const now = new Date()
     const userId = new ObjectId(user_id_hex)
-
-    const runTxn = async (session) =>
+    const result = await this.runUserTransaction((session) =>
       this.repo.bumpAccessTokenGenAndRevokeSessions(userId, now, session)
+    )
 
-    const session = this.mongoClient.startSession()
-    /** @type {{ found: boolean, access_token_gen: number, revoked_refresh_tokens: number }} */
-    let result = { found: false, access_token_gen: 0, revoked_refresh_tokens: 0 }
-    try {
-      try {
-        await session.withTransaction(async () => {
-          result = await runTxn(session)
-        })
-      } catch (e) {
-        if (isTransactionUnsupportedOnTopology(e)) {
-          result = await runTxn(undefined)
-        } else {
-          throw e
-        }
-      }
-    } finally {
-      await session.endSession()
-    }
-
-    if (!result.found) {
-      return {
-        ok: false,
-        status: 404,
-        problem: problemPayload({
-          type: this.types.userNotFound,
-          title: 'Not Found',
-          status: 404,
-          detail: 'User not found.',
-          code: 'AUTH_USER_NOT_FOUND'
-        })
-      }
-    }
+    if (!result.found) return this.userNotFoundProblem()
 
     await this.audit({
       event_type: 'auth.sessions_revoked_by_service',
@@ -471,24 +443,8 @@ export class AuthService {
       detail_safe: reason ? { reason } : null
     })
 
-    if (this.redisClient) {
-      try {
-        await setAccessTokenGenInRedis(this.redisClient, user_id_hex, result.access_token_gen)
-      } catch (err) {
-        this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen publish failed')
-        return {
-          ok: false,
-          status: 503,
-          problem: problemPayload({
-            type: this.types.notReady,
-            title: 'Service Unavailable',
-            status: 503,
-            detail: 'Unable to publish access token generation to Redis.',
-            code: 'AUTH_NOT_READY'
-          })
-        }
-      }
-    }
+    const redisResult = await this.publishTokenGenOrNotReady(user_id_hex, result.access_token_gen)
+    if (!redisResult.ok) return redisResult
 
     return {
       ok: true,
@@ -607,6 +563,20 @@ export class AuthService {
     return null
   }
 
+  userNotFoundProblem() {
+    return {
+      ok: false,
+      status: 404,
+      problem: problemPayload({
+        type: this.types.userNotFound,
+        title: 'Not Found',
+        status: 404,
+        detail: 'User not found.',
+        code: 'AUTH_USER_NOT_FOUND'
+      })
+    }
+  }
+
   async publishTokenGenOrNotReady(user_id_hex, access_token_gen) {
     if (!this.redisClient) return { ok: true }
     try {
@@ -663,19 +633,7 @@ export class AuthService {
       return this.repo.bumpAccessTokenGenAndRevokeSessions(userId, now, session)
     })
 
-    if (!result.found) {
-      return {
-        ok: false,
-        status: 404,
-        problem: problemPayload({
-          type: this.types.userNotFound,
-          title: 'Not Found',
-          status: 404,
-          detail: 'User not found.',
-          code: 'AUTH_USER_NOT_FOUND'
-        })
-      }
-    }
+    if (!result.found) return this.userNotFoundProblem()
 
     if (revoke_sessions !== false) {
       const redisResult = await this.publishTokenGenOrNotReady(user_id_hex, result.access_token_gen)
@@ -716,19 +674,7 @@ export class AuthService {
 
     const userId = new ObjectId(user_id_hex)
     const user = await this.repo.findUserById(userId)
-    if (!user) {
-      return {
-        ok: false,
-        status: 404,
-        problem: problemPayload({
-          type: this.types.userNotFound,
-          title: 'Not Found',
-          status: 404,
-          detail: 'User not found.',
-          code: 'AUTH_USER_NOT_FOUND'
-        })
-      }
-    }
+    if (!user) return this.userNotFoundProblem()
 
     const currentValid = await this.verifyPasswordHash(user.password_hash, current_password)
     if (!currentValid) {
@@ -770,19 +716,7 @@ export class AuthService {
       return this.repo.bumpAccessTokenGenAndRevokeSessions(userId, now, session)
     })
 
-    if (!txnResult.found) {
-      return {
-        ok: false,
-        status: 404,
-        problem: problemPayload({
-          type: this.types.userNotFound,
-          title: 'Not Found',
-          status: 404,
-          detail: 'User not found.',
-          code: 'AUTH_USER_NOT_FOUND'
-        })
-      }
-    }
+    if (!txnResult.found) return this.userNotFoundProblem()
 
     const redisResult = await this.publishTokenGenOrNotReady(
       user_id_hex,

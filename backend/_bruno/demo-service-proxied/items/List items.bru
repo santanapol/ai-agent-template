@@ -1,0 +1,229 @@
+meta {
+  name: List items
+  type: http
+  seq: 1
+  tags: [
+    items
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/items
+  body: none
+  auth: bearer
+}
+
+headers {
+  x-user-ou: 6a190c8cbdf95734c8e395e1
+  x-user-branch: 6a190c8cbdf95734c8e395e2
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+vars:pre-request {
+  access_token: eyJhbGciOiJSUzI1NiIsImtpZCI6ImRlZmF1bHQifQ.eyJyb2xlIjoiYWRtaW4iLCJvdV9pZCI6IjZhMTkwZDZjMWZlZTAzYzM4MzEzNzI0OSIsImJyYW5jaF9pZCI6IjZhMTkwZDZjMWZlZTAzYzM4MzEzNzI0YSIsInRva2VuX2dlbiI6MCwic3ViIjoiNmExNTNlNGM4NDEzNmQ5NDAzMzA5OTFlIiwiaWF0IjoxNzgwMDMwOTIyLCJleHAiOjE3ODAwMzE4MjIsImlzcyI6Imh0dHBzOi8vYXV0aC5leGFtcGxlLmludmFsaWQiLCJhdWQiOiJnYXRld2F5In0.BG1I7N1P9F7CQYs-k1RvKT0Yk0yxWYCjAUZsN1RXRxpmb4QBpZKB4IcLO1tRBSK1-P8OG62s-6souOw_lU3XAzRJ4Bz0I6gD3bc0BQZ0lIrZa6B04OKYj39D9OEhsXMhahONcAZjwqChU0EK92hLheYNUwo1ZfwUfG0bG6gA70gFJZs9bTGy2YsV-gKaGaElDmvMqLd5aC3x3HZ-pEnQ4tUjsYP7HwwgZc3T0VPsVcwhIsBFVOQbem7arG1Aidh8hk2TJICIexxSz6Br8iaCEnAgSRbU9UyUSEJvLJ3ibJG6Gp6PopQjdb6-SaCvuTqssZz-jGhTtXzQKUL2n-1Ltw
+}
+
+docs {
+  Paginated list of items scoped to the caller tenant (`ou_id` + `branch_id`).
+}
+
+example {
+  name: ok
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "success": true,
+          "code": "SUCCESS",
+          "message": null,
+          "data": [
+            {
+              "id": "507f1f77bcf86cd799439011",
+              "code": "ITEM-001",
+              "name": "Demo",
+              "description": null,
+              "status": "draft",
+              "tags": []
+            }
+          ],
+          "pagination": {
+            "page": 1,
+            "limit": 20,
+            "total": 1,
+            "totalPages": 1
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Invalid or duplicate request header
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Missing or invalid gateway secret
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 403 Response
+  description: Required user context is missing
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 403
+      text: Forbidden
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: rateLimited
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "success": false,
+          "code": "TOO_MANY_REQUESTS",
+          "message": "Too many requests, please try again later.",
+          "data": null,
+          "requestId": "018f3c2e-0000-7000-8000-000000000006"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Response
+  description: Internal server error
+  
+  request: {
+    url: {{baseUrl}}/api/v1/items
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}

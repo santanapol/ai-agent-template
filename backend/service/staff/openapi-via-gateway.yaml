@@ -1,0 +1,344 @@
+openapi: 3.1.0
+info:
+  title: staff-service
+  version: 0.1.0
+  contact:
+    name: engineering
+    url: https://example.invalid/staff-service
+  description: |
+    **Client import** for **`staff-service`** through **`gateway`** (default listen **`3002`**).
+
+    Send **`Authorization: Bearer <access JWT>`** only — gateway verifies JWT, injects mesh headers, and proxies to staff (`3004`).
+
+    Normative schemas and mesh contract: **[`./openapi.yaml`](./openapi.yaml)**.
+
+    Gateway routes: **[`../../../gateway/routes.json`](../../../gateway/routes.json)** (`/api/v1/staff` → `127.0.0.1:3004`).
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local gateway
+    variables:
+      port:
+        default: "3002"
+        description: gateway `PORT`.
+
+security:
+  - BearerJwt: []
+
+tags:
+  - name: profiles
+    description: Staff profiles via gateway (`/api/v1/staff/profiles`).
+
+paths:
+  /api/v1/staff/profiles:
+    get:
+      tags: [profiles]
+      summary: List or lookup profiles (via gateway)
+      description: |
+        Uses client Bearer JWT at gateway.
+        - List mode: omit `user_id` and use filters/pagination.
+        - Lookup mode: send `user_id` only (single object response).
+        Mixing `user_id` with list params returns `400 INVALID_PARAM`.
+      operationId: listOrLookupProfilesViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/UserIdLookup"
+        - $ref: "./openapi.yaml#/components/parameters/StatusFilter"
+        - $ref: "./openapi.yaml#/components/parameters/BranchIdFilter"
+        - $ref: "./openapi.yaml#/components/parameters/SearchQ"
+        - $ref: "./openapi.yaml#/components/parameters/SortProfiles"
+        - $ref: "./openapi.yaml#/components/parameters/Page"
+        - $ref: "./openapi.yaml#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+                  - $ref: "./openapi.yaml#/components/schemas/ListProfilesEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+    post:
+      tags: [profiles]
+      summary: Create profile (via gateway)
+      description: |
+        Admin create endpoint.
+        - Link mode: provide `user_id`, do not send `username`/`password`.
+        - Provision mode: omit `user_id` and send `username` + `password`.
+      operationId: createProfileViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/CreateProfile"
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            Location:
+              $ref: "./openapi.yaml#/components/headers/Location"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "409":
+          $ref: "./openapi.yaml#/components/responses/ProfileDuplicate"
+        "415":
+          $ref: "./openapi.yaml#/components/responses/UnsupportedMediaType"
+        "503":
+          $ref: "./openapi.yaml#/components/responses/ServiceUnavailable"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+  /api/v1/staff/profiles/{profileId}:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ProfileId"
+    get:
+      tags: [profiles]
+      summary: Get profile by id (via gateway)
+      description: Returns one profile by `profileId` when caller tenant scope is allowed.
+      operationId: getProfileByIdViaGateway
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidHeader"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+    patch:
+      tags: [profiles]
+      summary: Update profile (via gateway)
+      description: Partial update with optimistic concurrency via `If-Match` (ETag).
+      operationId: updateProfileViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/PatchProfile"
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/PatchProfile"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "412":
+          $ref: "./openapi.yaml#/components/responses/VersionConflict"
+        "415":
+          $ref: "./openapi.yaml#/components/responses/UnsupportedMediaType"
+        "428":
+          $ref: "./openapi.yaml#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+  /api/v1/staff/profiles/{profileId}/archive:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ProfileId"
+    post:
+      tags: [profiles]
+      summary: Archive profile (via gateway)
+      description: |
+        Admin lifecycle action with `If-Match`.
+        Persists archived status first, then revokes auth sessions; revoke failure returns
+        `503 STAFF_AUTH_REVOKE_PENDING`.
+      operationId: archiveProfileViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/IfMatch"
+      responses:
+        "200":
+          description: Archived
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidHeader"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "412":
+          $ref: "./openapi.yaml#/components/responses/VersionConflict"
+        "428":
+          $ref: "./openapi.yaml#/components/responses/PreconditionRequired"
+        "503":
+          $ref: "./openapi.yaml#/components/responses/StaffAuthRevokePending"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+  /api/v1/staff/profiles/{profileId}/restore:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ProfileId"
+    post:
+      tags: [profiles]
+      summary: Restore profile (via gateway)
+      description: Admin lifecycle action to restore an archived profile back to active with `If-Match`.
+      operationId: restoreProfileViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/IfMatch"
+      responses:
+        "200":
+          description: Restored
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/ProfileEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidHeader"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "412":
+          $ref: "./openapi.yaml#/components/responses/VersionConflict"
+        "428":
+          $ref: "./openapi.yaml#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+  /api/v1/staff/profiles/{profileId}/password:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ProfileId"
+    post:
+      tags: [profiles]
+      summary: Admin reset password (via gateway)
+      description: Admin-only password reset for another profile; returns `204` on success.
+      operationId: adminResetPasswordViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/AdminPasswordReset"
+      responses:
+        "204":
+          description: Password updated
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "503":
+          $ref: "./openapi.yaml#/components/responses/ServiceUnavailable"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token issued by auth; verified at gateway only.

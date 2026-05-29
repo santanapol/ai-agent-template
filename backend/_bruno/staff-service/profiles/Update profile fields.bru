@@ -1,0 +1,548 @@
+meta {
+  name: Update profile fields
+  type: http
+  seq: 4
+  tags: [
+    profiles
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+  body: json
+  auth: apikey
+}
+
+params:path {
+  profileId: {{profile_id}}
+}
+
+headers {
+  x-user-ou: {{ou_id}}
+  x-user-branch: {{branch_id}}
+  x-user-id: {{user_id}}
+  x-user-role: {{role}}
+  If-Match: "2026-05-28T00:00:00.000Z"
+}
+
+auth:apikey {
+  key: x-gateway-secret
+  value: {{apiKey}}
+  placement: header
+}
+
+body:json {
+  {
+    "code": "",
+    "firstname": "",
+    "lastname": "",
+    "email": "",
+    "tel": ""
+  }
+}
+
+docs {
+  Partial update with **`If-Match`** (weak ETag from `upd_date`).
+  Own profile: `code` in body is ignored. **Do not** send `status` or `password` here.
+  
+}
+
+example {
+  name: 200 Response
+  description: Success
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Request validation failed
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Missing or invalid gateway secret
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 403 Response
+  description: User or tenant context is invalid
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 403
+      text: Forbidden
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Profile not found
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 412 Response
+  description: Stale If-Match / ETag
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 412
+      text: Precondition Failed
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 415 Response
+  description: Unsupported Content-Type
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 415
+      text: Unsupported Media Type
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 428 Response
+  description: If-Match header required
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 428
+      text: Precondition Required
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 429 Response
+  description: Rate limit exceeded
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Response
+  description: Internal server error
+  
+  request: {
+    url: {{baseUrl}}/api/v1/staff/profiles/:profileId
+    method: PATCH
+    mode: json
+    params:path: {
+      profileId: {{profile_id}}
+    }
+  
+    headers: {
+      x-user-ou: {{ou_id}}
+      x-user-branch: {{branch_id}}
+      x-user-id: {{user_id}}
+      x-user-role: {{role}}
+      If-Match: "2026-05-28T00:00:00.000Z"
+    }
+  
+    body:json: {
+      {
+        "code": "",
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "tel": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}

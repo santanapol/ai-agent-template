@@ -1,0 +1,13 @@
+meta {
+  name: staff-service
+}
+
+auth {
+  mode: apikey
+}
+
+auth:apikey {
+  key: x-gateway-secret
+  value: {{apiKey}}
+  placement: header
+}

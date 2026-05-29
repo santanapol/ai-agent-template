@@ -1,0 +1,84 @@
+meta {
+  name: Liveness
+  type: http
+  seq: 1
+  tags: [
+    health
+  ]
+}
+
+get {
+  url: {{baseUrl}}/healthz
+  body: none
+  auth: inherit
+}
+
+docs {
+  Process liveness (`status`, ISO `timestamp`, `uptime` seconds).
+}
+
+example {
+  name: ok
+  
+  request: {
+    url: {{baseUrl}}/healthz
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "success": true,
+          "code": "SUCCESS",
+          "message": null,
+          "data": {
+            "status": "ok",
+            "timestamp": "2026-04-24T12:00:00.000Z",
+            "uptime": 12.34
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Response
+  description: Unexpected server error
+  
+  request: {
+    url: {{baseUrl}}/healthz
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}

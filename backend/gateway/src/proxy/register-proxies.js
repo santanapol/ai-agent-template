@@ -56,7 +56,7 @@ export async function registerProxies(fastify, opts) {
       prefix: route.prefix,
       http2: false,
       replyOptions,
-      preHandler: [fastify.verifyJwt, fastify.injectContext]
+      preHandler: route.isPublic ? [] : [fastify.verifyJwt, fastify.injectContext]
     }
     if (!route.stripPrefix) {
       proxyOpts.rewritePrefix = route.prefix

@@ -17,6 +17,7 @@
   {
     "prefix": "/auth",
     "upstream": "http://127.0.0.1:3001",
-    "stripPrefix": false
+    "stripPrefix": false,
+    "isPublic": true
   }
 ]

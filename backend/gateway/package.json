@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "spec:lint": "npx -y @stoplight/spectral-cli lint openapi.yaml --ruleset ../../../_coding-standards/spectral/org-api.yaml",
+    "spec:lint": "npx -y @stoplight/spectral-cli lint openapi.yaml --ruleset .spectral.yaml",
     "spec:codes": "node scripts/validate-gateway-openapi-problem-codes.mjs",
     "audit:check": "npm audit --audit-level=high",
     "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run spec:codes && npm test && npm run audit:check",

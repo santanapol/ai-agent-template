@@ -1,0 +1,2 @@
+extends:
+  - ../../../../../coding-standard/backend/spectral/org-api.yaml
