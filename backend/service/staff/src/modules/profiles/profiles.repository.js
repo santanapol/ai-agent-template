@@ -69,6 +69,9 @@ export async function findAuthUserById(userId) {
 }
 
 /**
+ * Check whether a staff profile is already linked to this auth user.
+ * Intentionally cross-tenant: one auth user must have at most one staff
+ * profile across the entire system — not just within a single OU/branch.
  * @param {string} userId hex24
  */
 export async function existsProfileByUserId(userId) {

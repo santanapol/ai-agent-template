@@ -530,25 +530,7 @@ export async function patchProfile(
 ) {
   assertPatchBodyAllowed(body);
 
-  const ifMatchRaw = Array.isArray(ifMatchHeader)
-    ? ifMatchHeader[0]
-    : ifMatchHeader;
-  if (!ifMatchRaw || !String(ifMatchRaw).trim()) {
-    throw new HttpError(
-      428,
-      CODES.PRECONDITION_REQUIRED,
-      "If-Match header is required for this operation.",
-    );
-  }
-
-  const ifMatchDate = decodeIfMatch(String(ifMatchRaw));
-  if (!ifMatchDate) {
-    throw new HttpError(
-      412,
-      CODES.VERSION_CONFLICT,
-      "Resource was modified by another request. Refresh and retry.",
-    );
-  }
+  const ifMatchDate = parseIfMatchHeader(ifMatchHeader);
 
   const scope = resolveGetByIdScope(userContext);
   const existing = await repository.findById(profileId, scope);
