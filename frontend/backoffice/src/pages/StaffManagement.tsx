@@ -236,6 +236,8 @@ const StaffManagement: React.FC = () => {
         message.success('Profile updated');
         setIsDrawerOpen(false);
         refresh();
+      } else if (!currentEtag.current) {
+        message.error('Cannot save: version token missing. Please close and reopen the form.');
       }
     } catch (err) {
       message.error(apiErrorMessage(err, isCreate ? 'Failed to create profile' : 'Failed to update profile'));
@@ -352,6 +354,7 @@ const StaffManagement: React.FC = () => {
         onSwitchToEdit={() => {
           const record = profiles.find((p) => p.id === editingId);
           if (record) void handleOpenDrawer('edit', record);
+          else message.error('Profile not found in current list. Please refresh.');
         }}
         onUpdatePassword={() => void handleUpdatePassword()}
       />
