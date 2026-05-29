@@ -65,9 +65,10 @@ export async function getProfileByUserId(
     '/api/v1/staff/profiles',
     { params: { user_id: userId } },
   );
-  const profile = res.data.data[0];
-  if (!profile) throw new Error('Profile not found');
-  return { profile, etag: extractETag(res) };
+  const results = res.data.data;
+  if (results.length === 0) throw new Error('Profile not found');
+  if (results.length > 1) throw new Error('Ambiguous user_id: multiple profiles returned');
+  return { profile: results[0], etag: extractETag(res) };
 }
 
 export async function createProfile(payload: CreateProfilePayload): Promise<StaffProfile> {
