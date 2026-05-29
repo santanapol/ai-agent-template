@@ -362,6 +362,10 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     branchId: userContext.branchId,
   };
 
+  // Optimistic duplicate-code check before provisioning. A concurrent
+  // request could still insert the same code between here and insertProfile;
+  // in that case MongoDB's unique index on (ou_id, branch_id, code) will
+  // raise a duplicate-key error (11000), which error-handler maps to 409.
   if (
     await repository.existsProfileByCode(
       tenantContext.ouId,
@@ -385,6 +389,9 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     branchId: tenantContext.branchId,
   });
 
+  // Defensive guard: provisionUser returns a fresh userId, so a duplicate
+  // here would indicate a bug in the auth service. Still checked to ensure
+  // the invariant "one staff profile per user" is enforced at this layer.
   if (await repository.existsProfileByUserId(userId)) {
     throw new HttpError(
       409,

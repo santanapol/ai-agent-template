@@ -17,6 +17,14 @@ import profileRoutes from "./modules/profiles/profiles.route.js";
 
 const PROBLEM_TYPE_BASE = "https://problems.zero-platform.internal/staff";
 
+function parseBodyLimitBytes(value) {
+  const str = String(value ?? "1mb").trim().toLowerCase();
+  if (str.endsWith("mb")) return Math.round(parseFloat(str) * 1024 * 1024);
+  if (str.endsWith("kb")) return Math.round(parseFloat(str) * 1024);
+  const n = parseInt(str, 10);
+  return Number.isFinite(n) && n > 0 ? n : 1048576;
+}
+
 /**
  * @param {import('./config/env.js').readEnv extends () => infer R ? R : never} env
  */
@@ -33,7 +41,7 @@ export default async function createApp(env) {
         ? headerValue
         : randomUUID();
     },
-    bodyLimit: 1048576,
+    bodyLimit: parseBodyLimitBytes(env.bodyLimit),
   });
 
   await app.register(helmet, { global: true, contentSecurityPolicy: false });
