@@ -18,6 +18,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const RoleGuard: React.FC<{ allowedRoles: string[]; children: React.ReactNode }> = ({
+  allowedRoles,
+  children,
+}) => {
+  const { user, loading } = useAuth();
+  if (loading) return <Spin size="large" fullscreen />;
+  if (!user || !allowedRoles.includes(user.role)) return <Navigate to="/403" replace />;
+  return <>{children}</>;
+};
+
 const AppRoutes: React.FC = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
@@ -31,7 +41,14 @@ const AppRoutes: React.FC = () => (
     >
       <Route index element={<Dashboard />} />
       <Route path="profile" element={<MyProfile />} />
-      <Route path="staff" element={<StaffManagement />} />
+      <Route
+        path="staff"
+        element={
+          <RoleGuard allowedRoles={['platform_admin', 'branch_admin']}>
+            <StaffManagement />
+          </RoleGuard>
+        }
+      />
       <Route path="403" element={<Error403 />} />
       <Route path="500" element={<Error500 />} />
     </Route>
