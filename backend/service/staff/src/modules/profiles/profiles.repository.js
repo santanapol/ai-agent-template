@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 import { getDatabase } from "../../config/database.js";
 import { STAFF_COLLECTIONS } from "../../config/mongo-collections.js";
 import { encodeEtagFromItemDoc } from "../../lib/etag.js";
