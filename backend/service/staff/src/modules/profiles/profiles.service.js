@@ -803,7 +803,12 @@ export async function archiveProfile(
       error instanceof HttpError &&
       error.code === CODES.STAFF_AUTH_REVOKE_PENDING
     ) {
+      // Archive is already committed to DB. Revoke exhausted retries but
+      // is handled asynchronously by the background reconciler. Increment
+      // the metric for alerting and return the archived profile — do NOT
+      // re-throw, as the operation succeeded from the caller's perspective.
       incrementAuthRevokePendingTotal();
+      return result;
     }
     throw error;
   }

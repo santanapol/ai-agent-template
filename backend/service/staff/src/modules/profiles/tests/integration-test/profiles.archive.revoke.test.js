@@ -127,7 +127,7 @@ if (!RUN) {
       }
     });
 
-    test("revoke fail after archive returns 503 STAFF_AUTH_REVOKE_PENDING and keeps archived", async () => {
+    test("revoke fail after archive returns 200 with archived profile", async () => {
       const getRes = await app.inject({
         method: "GET",
         url: `/api/v1/staff/profiles/${otherProfileId}`,
@@ -150,8 +150,9 @@ if (!RUN) {
         },
       });
 
-      assert.strictEqual(res.statusCode, 503, JSON.stringify(res.json()));
-      assert.strictEqual(res.json().code, CODES.STAFF_AUTH_REVOKE_PENDING);
+      assert.strictEqual(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.strictEqual(res.json().code, CODES.SUCCESS);
+      assert.strictEqual(res.json().data.status, "archived");
 
       const doc = await getDatabase()
         .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
