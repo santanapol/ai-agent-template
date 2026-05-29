@@ -40,6 +40,7 @@ export interface CreateProfilePayload {
   email: string;
   tel: string;
   /** Required when provisioning a new auth user (no `user_id`). */
+  username?: string;
   password?: string;
 }
 

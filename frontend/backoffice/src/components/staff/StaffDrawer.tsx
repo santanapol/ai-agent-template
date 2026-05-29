@@ -136,8 +136,15 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
             <>
               <Divider plain>Login credentials</Divider>
               <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-                Minimum {PASSWORD_MIN_LENGTH} characters. Username = Staff Code.
+                Minimum {PASSWORD_MIN_LENGTH} characters.
               </Typography.Paragraph>
+              <Form.Item
+                label="Username"
+                name="username"
+                rules={[{ required: true, message: 'Please enter username' }]}
+              >
+                <Input maxLength={128} autoComplete="off" />
+              </Form.Item>
               <Form.Item label="Password" name="password" rules={passwordFieldRules}>
                 <Input.Password autoComplete="new-password" />
               </Form.Item>

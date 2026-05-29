@@ -193,7 +193,7 @@ const StaffManagement: React.FC = () => {
   const handleSave = useCallback(async () => {
     const fieldNames =
       drawerMode === 'create'
-        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'password', 'confirmPassword']
+        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword']
         : ['firstname', 'lastname', 'email', 'tel'];
     const values = (await form.validateFields(fieldNames)) as DrawerFormValues;
 
@@ -205,6 +205,7 @@ const StaffManagement: React.FC = () => {
           lastname: values.lastname!,
           email: values.email!,
           tel: values.tel!,
+          username: values.username!,
           password: values.password!,
         });
         message.success('Profile created');
