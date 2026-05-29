@@ -3,6 +3,8 @@ import { ObjectId } from "mongodb";
 import { HttpError } from "../lib/http-error.js";
 import CODES from "../lib/error-codes.js";
 
+const VALID_ROLES = new Set(["staff", "branch_admin", "platform_admin"]);
+
 function readHeader(request, name) {
   const value = request.headers[name];
   if (typeof value !== "string") {
@@ -34,6 +36,14 @@ export default fp(async function userContextGuard(fastify) {
         403,
         CODES.MISSING_GATEWAY_USER_CONTEXT,
         "Missing required user context headers",
+      );
+    }
+
+    if (!VALID_ROLES.has(role)) {
+      throw new HttpError(
+        403,
+        CODES.INVALID_USER_CONTEXT,
+        "Invalid x-user-role",
       );
     }
 

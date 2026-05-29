@@ -70,8 +70,8 @@ const profileContactFields = {
   code: { type: "string", minLength: 1, maxLength: 32 },
   firstname: { type: "string", minLength: 1, maxLength: 128 },
   lastname: { type: "string", minLength: 1, maxLength: 128 },
-  email: { type: "string", maxLength: 254 },
-  tel: { type: "string", maxLength: 16 },
+  email: { type: "string", minLength: 6, maxLength: 254 },
+  tel: { type: "string", minLength: 4, maxLength: 16 },
 };
 
 export const createProfileBodySchema = {
