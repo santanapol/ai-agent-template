@@ -191,22 +191,23 @@ const StaffManagement: React.FC = () => {
   }, [editingId, form]);
 
   const handleSave = useCallback(async () => {
-    const fieldNames =
-      drawerMode === 'create'
+    const isCreate = drawerMode === 'create';
+    const fieldNames = isCreate
         ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword']
         : ['firstname', 'lastname', 'email', 'tel'];
     const values = (await form.validateFields(fieldNames)) as DrawerFormValues;
 
-    if (drawerMode === 'create') {
+    if (isCreate) {
       try {
+        const { code, firstname, lastname, email, tel, username, password } = values as Required<DrawerFormValues>;
         await staffApi.createProfile({
-          code: values.code!,
-          firstname: values.firstname!,
-          lastname: values.lastname!,
-          email: values.email!,
-          tel: values.tel!,
-          username: values.username!,
-          password: values.password!,
+          code,
+          firstname,
+          lastname,
+          email,
+          tel,
+          username,
+          password,
         });
         message.success('Profile created');
         setIsDrawerOpen(false);
@@ -220,12 +221,8 @@ const StaffManagement: React.FC = () => {
     }
 
     if (drawerMode === 'edit' && editingId && currentEtag.current) {
-      const payload: PatchProfilePayload = {
-        firstname: values.firstname,
-        lastname: values.lastname,
-        email: values.email,
-        tel: values.tel,
-      };
+      const { firstname, lastname, email, tel } = values;
+      const payload: PatchProfilePayload = { firstname, lastname, email, tel };
       try {
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
         message.success('Profile updated');
