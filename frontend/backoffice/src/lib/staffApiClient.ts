@@ -62,7 +62,8 @@ export async function getProfileByUserId(
   userId: string,
 ): Promise<{ profile: StaffProfile; etag: string | null }> {
   const res = await client.get<ApiEnvelope<StaffProfile>>(
-    `/api/v1/staff/profiles/by-user/${userId}`,
+    '/api/v1/staff/profiles',
+    { params: { user_id: userId } }
   );
   return { profile: res.data.data, etag: extractETag(res) };
 }
