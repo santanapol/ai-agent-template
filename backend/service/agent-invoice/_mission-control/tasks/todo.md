@@ -15,14 +15,14 @@
   - พัฒนา `Controller` & `Route`: รองรับ `POST /api/v1/agents/:agentId/fees`
   - **Verification:** เรียก POST ต้องบันทึกสำเร็จ (HTTP 201), ถ้าสร้างซ้ำต้องได้ HTTP 409 Conflict
 
-- [ ] **Task 3: PATCH API (Update Fee)**
+- [x] **Task 3: PATCH API (Update Fee)**
   - สร้าง JSON Schema สำหรับ Request Body (`fee_rate`, `upd_date`)
   - พัฒนา `Repository`: `updateFee(feeId, data, updDateForLocking)`
   - พัฒนา `Service`: จัดการ Logic เช็ค Optimistic Lock และอัปเดต `upd_*`
   - พัฒนา `Controller` & `Route`: รองรับ `PATCH /api/v1/agents/:agentId/fees/:feeId`
   - **Verification:** ส่ง `upd_date` ถูกต้องแก้ไขสำเร็จ, ส่งไม่ตรงต้อง Error (HTTP 409/412)
 
-- [ ] **Task 4: DELETE API (Hard Delete Fee)**
+- [x] **Task 4: DELETE API (Hard Delete Fee)**
   - สร้าง JSON Schema สำหรับ Validation
   - พัฒนา `Repository`: `deleteFee(feeId, agentId)`
   - พัฒนา `Service` & `Controller` & `Route`: รองรับ `DELETE /api/v1/agents/:agentId/fees/:feeId`

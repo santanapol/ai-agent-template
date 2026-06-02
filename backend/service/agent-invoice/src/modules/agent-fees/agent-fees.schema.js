@@ -86,3 +86,64 @@ export const createFeeSchema = {
     }
   }
 };
+
+export const updateFeeSchema = {
+  description: 'Update fee_rate with optimistic locking',
+  tags: ['Agent Fees'],
+  params: {
+    type: 'object',
+    required: ['agentId', 'feeId'],
+    properties: {
+      agentId: {
+        type: 'string',
+        pattern: '^[0-9a-fA-F]{24}$'
+      },
+      feeId: {
+        type: 'string',
+        pattern: '^[0-9a-fA-F]{24}$'
+      }
+    }
+  },
+  body: {
+    type: 'object',
+    required: ['fee_rate', 'upd_date'],
+    properties: {
+      fee_rate: { type: 'number', minimum: 0, maximum: 100 },
+      upd_date: { type: 'string', description: 'ISO string of the last known upd_date' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number' },
+        message: { type: 'string' }
+      }
+    }
+  }
+};
+
+export const deleteFeeSchema = {
+  description: 'Hard delete a fee override',
+  tags: ['Agent Fees'],
+  params: {
+    type: 'object',
+    required: ['agentId', 'feeId'],
+    properties: {
+      agentId: {
+        type: 'string',
+        pattern: '^[0-9a-fA-F]{24}$'
+      },
+      feeId: {
+        type: 'string',
+        pattern: '^[0-9a-fA-F]{24}$'
+      }
+    }
+  },
+  response: {
+    204: {
+      type: 'null',
+      description: 'Successfully deleted (No Content)'
+    }
+  }
+};
