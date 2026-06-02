@@ -1,5 +1,5 @@
 export const getFeesSchema = {
-  description: 'Get all fees overrides for a specific agent',
+  description: 'Get all fees overrides for a specific agent with pagination',
   tags: ['Agent Fees'],
   params: {
     type: 'object',
@@ -7,9 +7,15 @@ export const getFeesSchema = {
     properties: {
       agentId: {
         type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$', // MongoDB ObjectId format
-        description: 'The Agent ID'
+        pattern: '^[0-9a-fA-F]{24}$'
       }
+    }
+  },
+  querystring: {
+    type: 'object',
+    properties: {
+      page: { type: 'number', minimum: 1, default: 1 },
+      limit: { type: 'number', minimum: 1, maximum: 100, default: 20 }
     }
   },
   response: {
@@ -39,6 +45,14 @@ export const getFeesSchema = {
               upd_prog: { type: 'string' }
             }
           }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            total: { type: 'number' }
+          }
         }
       }
     }
@@ -48,6 +62,12 @@ export const getFeesSchema = {
 export const createFeeSchema = {
   description: 'Create a new fee override for an agent',
   tags: ['Agent Fees'],
+  headers: {
+    type: 'object',
+    properties: {
+      'x-user-id': { type: 'string' }
+    }
+  },
   params: {
     type: 'object',
     required: ['agentId'],
@@ -88,8 +108,15 @@ export const createFeeSchema = {
 };
 
 export const updateFeeSchema = {
-  description: 'Update fee_rate with optimistic locking',
+  description: 'Update fee_rate with optimistic locking via If-Match header',
   tags: ['Agent Fees'],
+  headers: {
+    type: 'object',
+    properties: {
+      'if-match': { type: 'string' },
+      'x-user-id': { type: 'string' }
+    }
+  },
   params: {
     type: 'object',
     required: ['agentId', 'feeId'],
@@ -106,10 +133,9 @@ export const updateFeeSchema = {
   },
   body: {
     type: 'object',
-    required: ['fee_rate', 'upd_date'],
+    required: ['fee_rate'],
     properties: {
-      fee_rate: { type: 'number', minimum: 0, maximum: 100 },
-      upd_date: { type: 'string', description: 'ISO string of the last known upd_date' }
+      fee_rate: { type: 'number', minimum: 0, maximum: 100 }
     }
   },
   response: {
@@ -126,6 +152,12 @@ export const updateFeeSchema = {
 export const deleteFeeSchema = {
   description: 'Hard delete a fee override',
   tags: ['Agent Fees'],
+  headers: {
+    type: 'object',
+    properties: {
+      'x-user-id': { type: 'string' }
+    }
+  },
   params: {
     type: 'object',
     required: ['agentId', 'feeId'],

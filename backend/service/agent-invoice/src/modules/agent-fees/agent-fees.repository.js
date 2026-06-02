@@ -2,10 +2,17 @@ import { ObjectId } from 'mongodb';
 
 const COLLECTION_NAME = 'agent_category_fees';
 
-export const findByAgentId = async (db, agentId) => {
+export const findByAgentId = async (db, agentId, skip = 0, limit = 20) => {
   return await db.collection(COLLECTION_NAME)
     .find({ agent_id: new ObjectId(agentId) })
+    .skip(skip)
+    .limit(limit)
     .toArray();
+};
+
+export const countByAgentId = async (db, agentId) => {
+  return await db.collection(COLLECTION_NAME)
+    .countDocuments({ agent_id: new ObjectId(agentId) });
 };
 
 export const findByUniqueFields = async (db, agentId, companyId, mainCateId) => {
@@ -17,7 +24,6 @@ export const findByUniqueFields = async (db, agentId, companyId, mainCateId) => 
 };
 
 export const createFee = async (db, feeData) => {
-  // convert agent_id string to ObjectId before inserting
   if (feeData.agent_id && typeof feeData.agent_id === 'string') {
     feeData.agent_id = new ObjectId(feeData.agent_id);
   }
@@ -25,7 +31,6 @@ export const createFee = async (db, feeData) => {
 };
 
 export const updateFee = async (db, feeId, previousUpdDate, updateData) => {
-  // Use optimistic locking: match by _id AND exact upd_date
   const query = {
     _id: new ObjectId(feeId),
     upd_date: new Date(previousUpdDate)

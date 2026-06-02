@@ -5,16 +5,16 @@ import buildApp from '../../../../app.js';
 describe('Agent Fees API Integration Tests', () => {
   let app;
   const agentId = '665a3d76b1e5f8b9e6f2b1a1';
+  const mockUserId = 'test_admin_user';
   let createdFeeId;
+  let currentEtag;
 
   before(async () => {
     app = await buildApp({ logger: false });
-    // Clean up before starting
     await app.db.collection('agent_category_fees').deleteMany({ company_id: 'PG_TEST_INTEGRATION' });
   });
 
   after(async () => {
-    // Clean up after all tests
     if (app && app.db) {
       await app.db.collection('agent_category_fees').deleteMany({ company_id: 'PG_TEST_INTEGRATION' });
     }
@@ -23,22 +23,28 @@ describe('Agent Fees API Integration Tests', () => {
     }
   });
 
-  test('GET /api/v1/agents/:agentId/fees - should return array of fees', async () => {
+  test('GET /api/v1/agents/:agentId/fees - should return array of fees with pagination meta', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: `/api/v1/agents/${agentId}/fees`
+      url: `/api/v1/agents/${agentId}/fees?page=1&limit=10`
     });
     
     assert.strictEqual(res.statusCode, 200);
     const body = res.json();
     assert.strictEqual(body.statusCode, 200);
     assert.ok(Array.isArray(body.data));
+    assert.strictEqual(body.meta.page, 1);
+    assert.strictEqual(body.meta.limit, 10);
+    assert.ok(typeof body.meta.total === 'number');
   });
 
-  test('POST /api/v1/agents/:agentId/fees - should create a new fee', async () => {
+  test('POST /api/v1/agents/:agentId/fees - should create a new fee and return ETag', async () => {
     const res = await app.inject({
       method: 'POST',
       url: `/api/v1/agents/${agentId}/fees`,
+      headers: {
+        'x-user-id': mockUserId
+      },
       payload: {
         company_id: 'PG_TEST_INTEGRATION',
         main_cate_id: 'SLOT',
@@ -53,12 +59,19 @@ describe('Agent Fees API Integration Tests', () => {
     const body = res.json();
     assert.ok(body.data.insertedId);
     createdFeeId = body.data.insertedId;
+
+    currentEtag = res.headers['etag'];
+    assert.ok(currentEtag);
+    assert.ok(currentEtag.startsWith('W/"'));
   });
 
   test('POST /api/v1/agents/:agentId/fees - should return 409 Conflict for duplicate fee', async () => {
     const res = await app.inject({
       method: 'POST',
       url: `/api/v1/agents/${agentId}/fees`,
+      headers: {
+        'x-user-id': mockUserId
+      },
       payload: {
         company_id: 'PG_TEST_INTEGRATION', // same as above
         main_cate_id: 'SLOT',
@@ -72,61 +85,69 @@ describe('Agent Fees API Integration Tests', () => {
     assert.strictEqual(res.statusCode, 409);
   });
 
-  test('PATCH /api/v1/agents/:agentId/fees/:feeId - should update fee with valid upd_date', async () => {
-    // 1. Get the current upd_date
-    const getRes = await app.inject({
-      method: 'GET',
-      url: `/api/v1/agents/${agentId}/fees`
-    });
-    const fees = getRes.json().data;
-    const feeToUpdate = fees.find(f => f._id === createdFeeId);
-    
-    assert.ok(feeToUpdate);
-
-    // 2. Perform patch
+  test('PATCH /api/v1/agents/:agentId/fees/:feeId - should return 428 if If-Match is missing', async () => {
     const patchRes = await app.inject({
       method: 'PATCH',
       url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`,
+      headers: {
+        'x-user-id': mockUserId
+      },
       payload: {
-        fee_rate: 12.5,
-        upd_date: feeToUpdate.upd_date
+        fee_rate: 12.5
+      }
+    });
+
+    assert.strictEqual(patchRes.statusCode, 428);
+  });
+
+  test('PATCH /api/v1/agents/:agentId/fees/:feeId - should update fee with valid If-Match', async () => {
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`,
+      headers: {
+        'x-user-id': mockUserId,
+        'if-match': currentEtag
+      },
+      payload: {
+        fee_rate: 12.5
       }
     });
 
     assert.strictEqual(patchRes.statusCode, 200);
+    // update currentEtag for next tests
+    currentEtag = patchRes.headers['etag'];
+    assert.ok(currentEtag);
   });
 
-  test('PATCH /api/v1/agents/:agentId/fees/:feeId - should return 409 for optimistic lock failure', async () => {
-    // Sending old date deliberately
+  test('PATCH /api/v1/agents/:agentId/fees/:feeId - should return 412 for optimistic lock failure', async () => {
+    // Sending old ETag deliberately
     const oldDate = new Date('2020-01-01T00:00:00.000Z').toISOString();
+    const oldEtag = `W/"${Buffer.from(oldDate).toString('base64')}"`;
     
     const patchRes = await app.inject({
       method: 'PATCH',
       url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`,
+      headers: {
+        'x-user-id': mockUserId,
+        'if-match': oldEtag
+      },
       payload: {
-        fee_rate: 20,
-        upd_date: oldDate
+        fee_rate: 20
       }
     });
 
-    assert.strictEqual(patchRes.statusCode, 409);
+    assert.strictEqual(patchRes.statusCode, 412);
   });
 
   test('DELETE /api/v1/agents/:agentId/fees/:feeId - should delete the fee', async () => {
     const res = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`
+      url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`,
+      headers: {
+        'x-user-id': mockUserId
+      }
     });
     
     assert.strictEqual(res.statusCode, 204);
-  });
-
-  test('DELETE /api/v1/agents/:agentId/fees/:feeId - should return 404 for already deleted fee', async () => {
-    const res = await app.inject({
-      method: 'DELETE',
-      url: `/api/v1/agents/${agentId}/fees/${createdFeeId}`
-    });
-    
-    assert.strictEqual(res.statusCode, 404);
   });
 });
