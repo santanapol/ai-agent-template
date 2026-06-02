@@ -8,7 +8,7 @@
   - พัฒนา `Controller` & `Route`: รองรับ `GET /api/v1/agents/:agentId/fees`
   - **Verification:** เรียก GET ต้องได้ Array ของ Fee พร้อม HTTP 200
 
-- [ ] **Task 2: POST API (Create Fee)**
+- [x] **Task 2: POST API (Create Fee)**
   - สร้าง JSON Schema สำหรับ Request Body (`company_id`, `main_cate_id`, `fee_rate`)
   - พัฒนา `Repository`: `createFee(data)` 
   - พัฒนา `Service`: ตรวจสอบ Unique (`agent_id, company_id, main_cate_id`) และเพิ่ม `cr_*`, `upd_*`

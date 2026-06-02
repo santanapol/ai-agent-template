@@ -44,3 +44,45 @@ export const getFeesSchema = {
     }
   }
 };
+
+export const createFeeSchema = {
+  description: 'Create a new fee override for an agent',
+  tags: ['Agent Fees'],
+  params: {
+    type: 'object',
+    required: ['agentId'],
+    properties: {
+      agentId: {
+        type: 'string',
+        pattern: '^[0-9a-fA-F]{24}$'
+      }
+    }
+  },
+  body: {
+    type: 'object',
+    required: ['company_id', 'main_cate_id', 'fee_rate'],
+    properties: {
+      company_id: { type: 'string' },
+      main_cate_id: { type: 'string' },
+      platform_name: { type: 'string' },
+      game_provider: { type: 'string' },
+      game_category: { type: 'string' },
+      fee_rate: { type: 'number', minimum: 0, maximum: 100 }
+    }
+  },
+  response: {
+    201: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            insertedId: { type: 'string' }
+          }
+        }
+      }
+    }
+  }
+};
