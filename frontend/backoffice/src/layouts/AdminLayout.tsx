@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Space, Typography, theme } from 'antd';
-import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,12 +12,15 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const { token } = theme.useToken();
   const { user, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
 
   const isStaffAdmin =
     user?.role === 'platform_admin' || user?.role === 'branch_admin';
 
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: '/agents', icon: <ShopOutlined />, label: 'Agent Fees' },
+    { key: '/invoices', icon: <FileTextOutlined />, label: 'Invoices' },
     { key: '/profile', icon: <UserOutlined />, label: 'My Profile' },
     ...(isStaffAdmin
       ? [{ key: '/staff', icon: <TeamOutlined />, label: 'Staff Management' }]
@@ -46,7 +49,15 @@ const AdminLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={250} theme="light" style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        breakpoint="lg"
+        width={250}
+        theme="light"
+        style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
+      >
         <div
           style={{
             padding: token.paddingLG,

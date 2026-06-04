@@ -61,14 +61,13 @@ export async function getProfileById(id: string): Promise<{ profile: StaffProfil
 export async function getProfileByUserId(
   userId: string,
 ): Promise<{ profile: StaffProfile; etag: string | null }> {
-  const res = await client.get<ApiEnvelope<StaffProfile[]>>(
+  const res = await client.get<ApiEnvelope<StaffProfile>>(
     '/api/v1/staff/profiles',
     { params: { user_id: userId } },
   );
-  const results = res.data.data;
-  if (results.length === 0) throw new Error('Profile not found');
-  if (results.length > 1) throw new Error('Ambiguous user_id: multiple profiles returned');
-  return { profile: results[0], etag: extractETag(res) };
+  const profile = res.data.data;
+  if (!profile) throw new Error('Profile not found');
+  return { profile, etag: extractETag(res) };
 }
 
 export async function createProfile(payload: CreateProfilePayload): Promise<StaffProfile> {

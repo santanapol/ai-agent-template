@@ -1,0 +1,429 @@
+openapi: "3.1.0"
+
+info:
+  title: agent-invoice-service
+  version: "1.0.0"
+  description: Invoice & Agent Fee Management Service
+
+servers:
+  - url: http://agent-invoice-service:3000
+    description: Internal service URL
+
+security:
+  - gatewaySecret: []
+
+tags:
+  - name: agent-fees
+    description: Agent fee override management
+  - name: system
+    description: Health and readiness probes
+
+components:
+  securitySchemes:
+    gatewaySecret:
+      type: apiKey
+      in: header
+      name: x-gateway-secret
+
+  parameters:
+    xUserOu:
+      name: x-user-ou
+      in: header
+      required: true
+      schema:
+        type: string
+    xUserBranch:
+      name: x-user-branch
+      in: header
+      required: true
+      schema:
+        type: string
+    xUserId:
+      name: x-user-id
+      in: header
+      required: true
+      schema:
+        type: string
+    xUserRole:
+      name: x-user-role
+      in: header
+      required: true
+      schema:
+        type: string
+    xRequestId:
+      name: x-request-id
+      in: header
+      required: false
+      schema:
+        type: string
+    ifMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+      description: "Weak ETag from previous GET or mutating response (e.g. W/\"...\")"
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [success, code, message, data, requestId]
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+          example: RESOURCE_NOT_FOUND
+        message:
+          type: string
+        data:
+          type: "null"
+        requestId:
+          type: string
+
+    AgentFee:
+      type: object
+      properties:
+        _id:
+          type: string
+        agent_id:
+          type: string
+        ou_id:
+          type: string
+        branch_id:
+          type: string
+        company_id:
+          type: string
+        main_cate_id:
+          type: string
+        platform_name:
+          type: string
+        game_provider:
+          type: string
+        game_category:
+          type: string
+        fee_rate:
+          type: number
+        cr_by:
+          type: string
+        cr_date:
+          type: string
+          format: date-time
+        cr_prog:
+          type: string
+        upd_by:
+          type: string
+        upd_date:
+          type: string
+          format: date-time
+        upd_prog:
+          type: string
+
+paths:
+  /healthz:
+    get:
+      tags: [system]
+      summary: Liveness probe
+      security: []
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: integer
+
+  /readyz:
+    get:
+      tags: [system]
+      summary: Readiness probe
+      security: []
+      responses:
+        "200":
+          description: Service and dependencies are ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  dependencies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        status:
+                          type: string
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agents/{agentId}/fees:
+    get:
+      tags: [agent-fees]
+      summary: List fee overrides for an agent
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentFee"
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+    post:
+      tags: [agent-fees]
+      summary: Create a new fee override
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company_id, main_cate_id, fee_rate]
+              properties:
+                company_id:
+                  type: string
+                main_cate_id:
+                  type: string
+                platform_name:
+                  type: string
+                game_provider:
+                  type: string
+                game_category:
+                  type: string
+                fee_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "201":
+          description: Created
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: "Weak ETag for optimistic locking"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: CREATED
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      insertedId:
+                        type: string
+        "409":
+          description: Duplicate fee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agents/{agentId}/fees/{feeId}:
+    patch:
+      tags: [agent-fees]
+      summary: Update fee_rate with optimistic locking
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/ifMatch"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: feeId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fee_rate]
+              properties:
+                fee_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "200":
+          description: Updated
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: "null"
+        "412":
+          description: Version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "428":
+          description: Precondition required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+    delete:
+      tags: [agent-fees]
+      summary: Hard delete a fee override (requires If-Match)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/ifMatch"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: feeId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: "null"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "428":
+          description: Precondition required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"

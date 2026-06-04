@@ -1,27 +1,19 @@
 import fp from 'fastify-plugin';
-import { MongoClient } from 'mongodb';
+import { connectDatabase, closeDatabase } from '../config/database.js';
 
-async function dbPlugin(fastify, options) {
-  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zero_platform';
-  
-  try {
-    const client = new MongoClient(uri);
-    await client.connect();
-    
-    const db = client.db();
-    
-    fastify.decorate('db', db);
-    fastify.decorate('mongoClient', client);
+async function dbPlugin(fastify) {
+  const { db, sourceDb } = await connectDatabase();
 
-    fastify.addHook('onClose', async (instance) => {
-      await instance.mongoClient.close();
-    });
-
-    fastify.log.info('Connected to MongoDB');
-  } catch (error) {
-    fastify.log.error('Failed to connect to MongoDB');
-    throw error;
+  fastify.decorate('db', db);
+  if (sourceDb) {
+    fastify.decorate('sourceDb', sourceDb);
   }
+
+  fastify.addHook('onClose', async () => {
+    await closeDatabase();
+  });
+
+  fastify.log.info('Connected to MongoDB');
 }
 
 export default fp(dbPlugin, { name: 'db-plugin' });

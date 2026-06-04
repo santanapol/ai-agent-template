@@ -27,4 +27,21 @@ describe("etag", () => {
     assert.strictEqual(decodeIfMatch("invalid"), null);
     assert.strictEqual(decodeIfMatch(null), null);
   });
+
+  test("encodeEtagFromItemDoc falls back to cr_date when upd_date absent", () => {
+    const cr = new Date("2026-05-28T09:00:00.000Z");
+    const etag = encodeEtagFromItemDoc({ cr_date: cr });
+    assert.strictEqual(decodeIfMatch(etag).toISOString(), cr.toISOString());
+  });
+
+  test("encodeEtagFromItemDoc returns epoch etag for null doc", () => {
+    const etag = encodeEtagFromItemDoc(null);
+    const decoded = decodeIfMatch(etag);
+    assert.strictEqual(decoded.toISOString(), new Date(0).toISOString());
+  });
+
+  test("decodeIfMatch returns null when base64 decodes to non-date string", () => {
+    const garbage = `W/"${Buffer.from("not-a-date").toString("base64url")}"`;
+    assert.strictEqual(decodeIfMatch(garbage), null);
+  });
 });

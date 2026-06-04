@@ -6,13 +6,21 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "test": "node --test src/**/*.test.js"
+    "dev": "node --watch --env-file=.env src/server.js",
+    "test": "node --test --env-file=.env src/**/*.test.js"
   },
   "dependencies": {
-    "fastify": "^5.1.0",
-    "fastify-plugin": "^5.0.1",
-    "mongodb": "^6.11.0",
-    "dotenv": "^16.4.5"
+    "fastify": "^5.8.5",
+    "fastify-plugin": "^5.1.0",
+    "mongodb": "^7.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "prettier": "^3.8.1"
   }
 }

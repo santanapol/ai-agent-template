@@ -22,7 +22,10 @@ export default async function profileRoutes(fastify, _options) {
   );
   fastify.post(
     "/",
-    { schema: schema.createProfileSchema },
+    {
+      schema: schema.createProfileSchema,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
     controller.createProfile,
   );
   fastify.patch(
@@ -32,7 +35,10 @@ export default async function profileRoutes(fastify, _options) {
   );
   fastify.post(
     "/:profileId/archive",
-    { schema: schema.lifecycleActionSchema },
+    {
+      schema: schema.lifecycleActionSchema,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
     controller.archiveProfile,
   );
   fastify.post(
@@ -42,7 +48,10 @@ export default async function profileRoutes(fastify, _options) {
   );
   fastify.post(
     "/:profileId/password",
-    { schema: schema.adminPasswordSchema },
+    {
+      schema: schema.adminPasswordSchema,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
     controller.resetProfilePassword,
   );
 }

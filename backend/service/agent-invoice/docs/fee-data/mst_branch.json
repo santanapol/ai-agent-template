@@ -1,0 +1,1170 @@
+/* 1 createdAt:2025-10-01T02:47:28.000Z*/
+{
+    "_id": ObjectId("68dc9640a7b21988ca9a987d"),
+    "branch_name": "NEW AGENT TEST Demo",
+    "branch_code": "NEWA"
+},
+/* 2 createdAt:2025-09-25T10:22:00.000Z*/
+{
+    "_id": ObjectId("68d517c8c963af978658991b"),
+    "branch_name": "Champion168",
+    "branch_code": "CP"
+},
+/* 3 createdAt:2025-09-18T13:27:45.000Z*/
+{
+    "_id": ObjectId("68cc08d1999e627a86bbb2c3"),
+    "branch_name": "小帥",
+    "branch_code": "1111"
+},
+/* 4 createdAt:2025-09-18T13:01:33.000Z*/
+{
+    "_id": ObjectId("68cc02ad999e627a86bba9f5"),
+    "branch_name": "測試",
+    "branch_code": "TEST"
+},
+/* 5 createdAt:2025-09-18T09:29:23.000Z*/
+{
+    "_id": ObjectId("68cbd0f3999e627a86bba759"),
+    "branch_name": "二毛",
+    "branch_code": "918W"
+},
+/* 6 createdAt:2025-09-07T12:12:28.000Z*/
+{
+    "_id": ObjectId("68bd76acc963af9786589913"),
+    "branch_name": "SHOKGAME",
+    "branch_code": "SG8"
+},
+/* 7 createdAt:2025-09-01T04:16:29.000Z*/
+{
+    "_id": ObjectId("68b51e1dc963af9786589912"),
+    "branch_name": "DGSpin168",
+    "branch_code": "DG"
+},
+/* 8 createdAt:2025-08-20T05:31:05.000Z*/
+{
+    "_id": ObjectId("68a55d99c963af97865898ff"),
+    "branch_name": "AYA168",
+    "branch_code": "AA"
+},
+/* 9 createdAt:2025-08-13T01:46:48.000Z*/
+{
+    "_id": ObjectId("689bee88c963af97865898fe"),
+    "branch_name": "Mint88",
+    "branch_code": "M8"
+},
+/* 10 createdAt:2025-08-08T03:21:16.000Z*/
+{
+    "_id": ObjectId("68956d2cc963af97865898fc"),
+    "branch_name": "That88",
+    "branch_code": "T8"
+},
+/* 11 createdAt:2025-07-11T03:01:55.000Z*/
+{
+    "_id": ObjectId("68707ea3999e627a86bb6254"),
+    "branch_name": "100FA DEMO",
+    "branch_code": "D100"
+},
+/* 12 createdAt:2025-07-09T03:46:08.000Z*/
+{
+    "_id": ObjectId("686de600c963af97865898f2"),
+    "branch_name": "Vang68",
+    "branch_code": "VG68"
+},
+/* 13 createdAt:2025-06-15T20:32:56.000Z*/
+{
+    "_id": ObjectId("684f2df8999e627a86bae8aa"),
+    "branch_name": "07w283",
+    "branch_code": "1030"
+},
+/* 14 createdAt:2025-05-28T04:22:36.000Z*/
+{
+    "_id": ObjectId("68368f8c999e627a86ba98c1"),
+    "branch_name": "小葵",
+    "branch_code": "ZZ66"
+},
+/* 15 createdAt:2025-05-27T13:05:52.000Z*/
+{
+    "_id": ObjectId("6835b8b0999e627a86ba88a5"),
+    "branch_name": "007",
+    "branch_code": "07WA"
+},
+/* 16 createdAt:2025-05-27T13:03:33.000Z*/
+{
+    "_id": ObjectId("6835b825999e627a86ba87e2"),
+    "branch_name": "07代理(2025/8月結束)",
+    "branch_code": "07W"
+},
+/* 17 createdAt:2025-05-27T12:41:04.000Z*/
+{
+    "_id": ObjectId("6835b2e0999e627a86ba8391"),
+    "branch_name": "小黃",
+    "branch_code": "EE12"
+},
+/* 18 createdAt:2025-05-27T12:24:17.000Z*/
+{
+    "_id": ObjectId("6835aef1999e627a86ba8081"),
+    "branch_name": "阿凱",
+    "branch_code": "ASD"
+},
+/* 19 createdAt:2025-05-27T12:18:10.000Z*/
+{
+    "_id": ObjectId("6835ad82999e627a86ba7df2"),
+    "branch_name": "07",
+    "branch_code": "07BB"
+},
+/* 20 createdAt:2025-05-27T12:16:28.000Z*/
+{
+    "_id": ObjectId("6835ad1c999e627a86ba7d3a"),
+    "branch_name": "停用1",
+    "branch_code": "07B"
+},
+/* 21 createdAt:2025-05-27T12:03:49.000Z*/
+{
+    "_id": ObjectId("6835aa25999e627a86ba73ba"),
+    "branch_name": "停用2",
+    "branch_code": "07A"
+},
+/* 22 createdAt:2024-12-25T06:07:09.000Z*/
+{
+    "_id": ObjectId("676ba10dc963af97865898dd"),
+    "branch_name": "GOLDNOVA",
+    "branch_code": "GN"
+},
+/* 23 createdAt:2024-12-25T03:30:30.000Z*/
+{
+    "_id": ObjectId("676b7c56c963af97865898dc"),
+    "branch_name": "Bigboss4king",
+    "branch_code": "B4K"
+},
+/* 24 createdAt:2024-12-04T08:34:10.000Z*/
+{
+    "_id": ObjectId("67501402999e627a86ba6226"),
+    "branch_name": "tw166",
+    "branch_code": "TW66"
+},
+/* 25 createdAt:2024-12-03T09:37:12.000Z*/
+{
+    "_id": ObjectId("674ed148999e627a86ba4700"),
+    "branch_name": "pdtw666",
+    "branch_code": "TW44"
+},
+/* 26 createdAt:2024-12-03T05:32:34.000Z*/
+{
+    "_id": ObjectId("674e97f2999e627a86ba3cb6"),
+    "branch_name": "T777",
+    "branch_code": "T777"
+},
+/* 27 createdAt:2024-12-02T03:57:33.000Z*/
+{
+    "_id": ObjectId("674d302dc963af97865898d6"),
+    "branch_name": "VIPBA",
+    "branch_code": "VPBA"
+},
+/* 28 createdAt:2024-11-11T06:48:10.000Z*/
+{
+    "_id": ObjectId("6731a8aac963af97865898d5"),
+    "branch_name": "Bigboss9world",
+    "branch_code": "B9W"
+},
+/* 29 createdAt:2024-10-10T04:43:14.000Z*/
+{
+    "_id": ObjectId("67075b62c963af97865898d0"),
+    "branch_name": "CHK999",
+    "branch_code": "CK"
+},
+/* 30 createdAt:2024-10-04T08:03:27.000Z*/
+{
+    "_id": ObjectId("66ffa14ff1386b57daf7d7f0"),
+    "branch_name": "停用3",
+    "branch_code": "C555"
+},
+/* 31 createdAt:2024-09-14T15:19:37.000Z*/
+{
+    "_id": ObjectId("66e5a989f1386b57daf73732"),
+    "branch_name": "佑佑",
+    "branch_code": "VP22"
+},
+/* 32 createdAt:2024-09-13T02:01:27.000Z*/
+{
+    "_id": ObjectId("66e39cf7f1386b57daf72cd8"),
+    "branch_name": "威老闆",
+    "branch_code": "VIP7"
+},
+/* 33 createdAt:2024-09-11T04:57:48.000Z*/
+{
+    "_id": ObjectId("66e1234cf1386b57daf72301"),
+    "branch_name": "牛奶",
+    "branch_code": "VP99"
+},
+/* 34 createdAt:2024-09-06T10:28:18.000Z*/
+{
+    "_id": ObjectId("66dad942f1386b57daf6dd91"),
+    "branch_name": "777AF",
+    "branch_code": "777A"
+},
+/* 35 createdAt:2024-09-05T17:47:27.000Z*/
+{
+    "_id": ObjectId("66d9eeaf30b0a4ca5c6a75b3"),
+    "branch_name": "小郭",
+    "branch_code": "PP11"
+},
+/* 36 createdAt:2024-09-05T17:39:34.000Z*/
+{
+    "_id": ObjectId("66d9ecd630b0a4ca5c6a7469"),
+    "branch_name": "竹",
+    "branch_code": "MOD1"
+},
+/* 37 createdAt:2024-09-05T09:27:48.000Z*/
+{
+    "_id": ObjectId("66d9799430b0a4ca5c6a6da6"),
+    "branch_name": "停用4",
+    "branch_code": "U888"
+},
+/* 38 createdAt:2024-08-31T16:41:48.000Z*/
+{
+    "_id": ObjectId("66d347cc30b0a4ca5c6a3235"),
+    "branch_name": "停用5",
+    "branch_code": "M678"
+},
+/* 39 createdAt:2024-08-30T04:30:53.000Z*/
+{
+    "_id": ObjectId("66d14afd30b0a4ca5c6a07e3"),
+    "branch_name": "艾文",
+    "branch_code": "AP22"
+},
+/* 40 createdAt:2024-08-23T09:23:13.000Z*/
+{
+    "_id": ObjectId("66c85501c963af97865898cd"),
+    "branch_name": "NET88TH",
+    "branch_code": "NT"
+},
+/* 41 createdAt:2024-08-22T12:18:49.000Z*/
+{
+    "_id": ObjectId("66c72ca930b0a4ca5c69e5f9"),
+    "branch_name": "停用6",
+    "branch_code": "K888"
+},
+/* 42 createdAt:2024-08-21T06:10:57.000Z*/
+{
+    "_id": ObjectId("66c584f130b0a4ca5c69e0be"),
+    "branch_name": "台南",
+    "branch_code": "SQ21"
+},
+/* 43 createdAt:2024-08-21T04:42:33.000Z*/
+{
+    "_id": ObjectId("66c5703930b0a4ca5c69dd18"),
+    "branch_name": "吉",
+    "branch_code": "Z111"
+},
+/* 44 createdAt:2024-08-19T06:24:33.000Z*/
+{
+    "_id": ObjectId("66c2e521c963af97865898cc"),
+    "branch_name": "RLF789",
+    "branch_code": "RL"
+},
+/* 45 createdAt:2024-08-18T09:07:29.000Z*/
+{
+    "_id": ObjectId("66c1b9d130b0a4ca5c69af61"),
+    "branch_name": "停用7",
+    "branch_code": "T123"
+},
+/* 46 createdAt:2024-08-18T02:16:44.000Z*/
+{
+    "_id": ObjectId("66c1598c30b0a4ca5c699a4e"),
+    "branch_name": "停用8",
+    "branch_code": "L168"
+},
+/* 47 createdAt:2024-08-16T09:46:41.000Z*/
+{
+    "_id": ObjectId("66bf200130b0a4ca5c698d1a"),
+    "branch_name": "印良5成代",
+    "branch_code": "WE01"
+},
+/* 48 createdAt:2024-08-15T06:10:31.000Z*/
+{
+    "_id": ObjectId("66bd9bd730b0a4ca5c6985ba"),
+    "branch_name": "停用9",
+    "branch_code": "C688"
+},
+/* 49 createdAt:2024-08-14T18:13:14.000Z*/
+{
+    "_id": ObjectId("66bcf3ba30b0a4ca5c697f82"),
+    "branch_name": "停用10",
+    "branch_code": "Y006"
+},
+/* 50 createdAt:2024-08-14T17:52:24.000Z*/
+{
+    "_id": ObjectId("66bceed830b0a4ca5c697ba7"),
+    "branch_name": "停用11",
+    "branch_code": "V001"
+},
+/* 51 createdAt:2024-08-14T17:20:13.000Z*/
+{
+    "_id": ObjectId("66bce74d30b0a4ca5c697812"),
+    "branch_name": "停用12",
+    "branch_code": "C168"
+},
+/* 52 createdAt:2024-08-14T12:09:40.000Z*/
+{
+    "_id": ObjectId("66bc9e8430b0a4ca5c6968ab"),
+    "branch_name": "778G",
+    "branch_code": "778G"
+},
+/* 53 createdAt:2024-08-14T08:41:03.000Z*/
+{
+    "_id": ObjectId("66bc6d9ff8782436b34022de"),
+    "branch_name": "apple666",
+    "branch_code": "A666"
+},
+/* 54 createdAt:2024-08-14T04:32:00.000Z*/
+{
+    "_id": ObjectId("66bc3340f8782436b3402145"),
+    "branch_name": "停用13",
+    "branch_code": "Z008"
+},
+/* 55 createdAt:2024-08-13T07:17:47.000Z*/
+{
+    "_id": ObjectId("66bb089bf8782436b3401c9d"),
+    "branch_name": "779F",
+    "branch_code": "779F"
+},
+/* 56 createdAt:2024-08-12T06:58:13.000Z*/
+{
+    "_id": ObjectId("66b9b285f8782436b33ffd0c"),
+    "branch_name": "778F",
+    "branch_code": "778F"
+},
+/* 57 createdAt:2024-08-11T08:59:29.000Z*/
+{
+    "_id": ObjectId("66b87d71c963af97865898c9"),
+    "branch_name": "777 FA",
+    "branch_code": "777F"
+},
+/* 58 createdAt:2024-07-11T06:24:45.000Z*/
+{
+    "_id": ObjectId("668f7aadc963af97865898c8"),
+    "branch_name": "77wpay",
+    "branch_code": "WP"
+},
+/* 59 createdAt:2024-07-08T09:54:47.000Z*/
+{
+    "_id": ObjectId("668bb767c963af97865898c7"),
+    "branch_name": "WWLVIP",
+    "branch_code": "WWL"
+},
+/* 60 createdAt:2024-06-29T06:47:18.000Z*/
+{
+    "_id": ObjectId("667fadf6f8782436b33fe256"),
+    "branch_name": "Apple",
+    "branch_code": "55CC"
+},
+/* 61 createdAt:2024-06-12T16:29:14.000Z*/
+{
+    "_id": ObjectId("6669ccdaf8782436b33fd77e"),
+    "branch_name": "77rich",
+    "branch_code": "77FA"
+},
+/* 62 createdAt:2024-06-11T10:42:01.000Z*/
+{
+    "_id": ObjectId("666829f9f8782436b33fd31f"),
+    "branch_name": "191FA",
+    "branch_code": "191F"
+},
+/* 63 createdAt:2024-06-11T08:06:05.000Z*/
+{
+    "_id": ObjectId("6668056dc963af97865898b2"),
+    "branch_name": "16FA DEMO",
+    "branch_code": "D16F"
+},
+/* 64 createdAt:2024-05-31T10:38:08.000Z*/
+{
+    "_id": ObjectId("6659a89072d27289094ecb17"),
+    "branch_name": "停用14",
+    "branch_code": "Q008"
+},
+/* 65 createdAt:2024-05-30T02:29:15.000Z*/
+{
+    "_id": ObjectId("6657e47bc963af97865898b1"),
+    "branch_name": "Spin368",
+    "branch_code": "SP"
+},
+/* 66 createdAt:2024-05-23T11:12:28.000Z*/
+{
+    "_id": ObjectId("664f249c72d27289094ec479"),
+    "branch_name": "99cyuan",
+    "branch_code": "99FA"
+},
+/* 67 createdAt:2024-05-23T04:16:53.000Z*/
+{
+    "_id": ObjectId("664ec335c963af97865898b0"),
+    "branch_name": "Jgk1991",
+    "branch_code": "JGK"
+},
+/* 68 createdAt:2024-05-13T01:55:20.000Z*/
+{
+    "_id": ObjectId("6641730820281503006165e5"),
+    "branch_name": "88sandi",
+    "branch_code": "88FA"
+},
+/* 69 createdAt:2024-04-26T02:13:12.000Z*/
+{
+    "_id": ObjectId("662b0db85c7a367579c5ee96"),
+    "branch_name": "常樂",
+    "branch_code": "RI99"
+},
+/* 70 createdAt:2024-04-26T02:09:27.000Z*/
+{
+    "_id": ObjectId("662b0cd75c7a367579c5ed7e"),
+    "branch_name": "RICH",
+    "branch_code": "RI88"
+},
+/* 71 createdAt:2024-04-25T16:25:11.000Z*/
+{
+    "_id": ObjectId("662a83e75c7a367579c5e80a"),
+    "branch_name": "LISBON40",
+    "branch_code": "LB40"
+},
+/* 72 createdAt:2024-04-25T12:15:23.000Z*/
+{
+    "_id": ObjectId("662a495b5c7a367579c5dae9"),
+    "branch_name": "jeff",
+    "branch_code": "JEFF"
+},
+/* 73 createdAt:2024-04-25T12:13:05.000Z*/
+{
+    "_id": ObjectId("662a48d15c7a367579c5da62"),
+    "branch_name": "andy",
+    "branch_code": "ANDY"
+},
+/* 74 createdAt:2024-04-24T19:36:36.000Z*/
+{
+    "_id": ObjectId("66295f44e3c416db691018ec"),
+    "branch_name": "LISBON39",
+    "branch_code": "LB39"
+},
+/* 75 createdAt:2024-04-24T16:34:04.000Z*/
+{
+    "_id": ObjectId("6629347c26108dfebf22d9fa"),
+    "branch_name": "LISBON38",
+    "branch_code": "LB38"
+},
+/* 76 createdAt:2024-04-24T13:43:39.000Z*/
+{
+    "_id": ObjectId("66290c8b26108dfebf22ce95"),
+    "branch_name": "VENICE99",
+    "branch_code": "VN99"
+},
+/* 77 createdAt:2024-04-24T12:47:34.000Z*/
+{
+    "_id": ObjectId("6628ff6626108dfebf22c41f"),
+    "branch_name": "LISBON37",
+    "branch_code": "LB37"
+},
+/* 78 createdAt:2024-04-24T12:13:47.000Z*/
+{
+    "_id": ObjectId("6628f77b26108dfebf22b7de"),
+    "branch_name": "90FA DEMO",
+    "branch_code": "D90F"
+},
+/* 79 createdAt:2024-04-24T11:45:39.000Z*/
+{
+    "_id": ObjectId("6628f0e3c963af9786589897"),
+    "branch_name": "Taiwan Demo",
+    "branch_code": "D80F"
+},
+/* 80 createdAt:2024-04-24T11:10:52.000Z*/
+{
+    "_id": ObjectId("6628e8bcc963af9786589895"),
+    "branch_name": "BERLIN88",
+    "branch_code": "BL88"
+},
+/* 81 createdAt:2024-04-24T08:49:45.000Z*/
+{
+    "_id": ObjectId("6628c7a926108dfebf22a47a"),
+    "branch_name": "19fa",
+    "branch_code": "19FA"
+},
+/* 82 createdAt:2024-04-24T08:22:20.000Z*/
+{
+    "_id": ObjectId("6628c13c26108dfebf22a1bc"),
+    "branch_name": "18fa",
+    "branch_code": "18FA"
+},
+/* 83 createdAt:2024-04-24T06:12:53.000Z*/
+{
+    "_id": ObjectId("6628a2e526108dfebf22940c"),
+    "branch_name": "停用15",
+    "branch_code": "A001"
+},
+/* 84 createdAt:2024-04-23T06:43:36.000Z*/
+{
+    "_id": ObjectId("6627589826108dfebf228e3a"),
+    "branch_name": "17fa",
+    "branch_code": "17FA"
+},
+/* 85 createdAt:2024-04-17T11:19:05.000Z*/
+{
+    "_id": ObjectId("661fb029c963af9786589894"),
+    "branch_name": "MRICH88",
+    "branch_code": "MR88"
+},
+/* 86 createdAt:2024-04-11T02:42:38.000Z*/
+{
+    "_id": ObjectId("66174e1ece69f0433241d8fe"),
+    "branch_name": "16Fa",
+    "branch_code": "16FA"
+},
+/* 87 createdAt:2024-04-11T01:45:03.000Z*/
+{
+    "_id": ObjectId("6617409fce69f0433241d8fd"),
+    "branch_name": "80Fa",
+    "branch_code": "80FA"
+},
+/* 88 createdAt:2024-04-11T01:39:45.000Z*/
+{
+    "_id": ObjectId("66173f61ce69f0433241d8fc"),
+    "branch_name": "TeeYai 168",
+    "branch_code": "T168"
+},
+/* 89 createdAt:2024-04-02T17:44:22.000Z*/
+{
+    "_id": ObjectId("660c43f6ce69f0433241d8fb"),
+    "branch_name": "Royal777",
+    "branch_code": "RY"
+},
+/* 90 createdAt:2024-03-20T06:04:26.000Z*/
+{
+    "_id": ObjectId("65fa7c6ace69f0433241d8f7"),
+    "branch_name": "bigboss25th",
+    "branch_code": "B25"
+},
+/* 91 createdAt:2024-03-17T08:41:32.000Z*/
+{
+    "_id": ObjectId("65f6acbcce69f0433241d8f5"),
+    "branch_name": "FACAI888",
+    "branch_code": "FAC8"
+},
+/* 92 createdAt:2024-03-11T15:31:33.000Z*/
+{
+    "_id": ObjectId("65ef23d5ce69f0433241d8e5"),
+    "branch_name": "Bangkok777",
+    "branch_code": "BK"
+},
+/* 93 createdAt:2024-01-23T05:11:15.000Z*/
+{
+    "_id": ObjectId("65af4a73ce69f0433241d8dc"),
+    "branch_name": "Bigbossceo",
+    "branch_code": "CEO"
+},
+/* 94 createdAt:2024-01-18T11:38:36.000Z*/
+{
+    "_id": ObjectId("65a90dbcce69f0433241d8da"),
+    "branch_name": "bigboss878",
+    "branch_code": "B878"
+},
+/* 95 createdAt:2024-01-18T08:05:51.000Z*/
+{
+    "_id": ObjectId("65a8dbdfdc61acca8886ddd8"),
+    "branch_name": "One Page LITE IV",
+    "branch_code": "OPL4"
+},
+/* 96 createdAt:2024-01-15T03:08:58.000Z*/
+{
+    "_id": ObjectId("65a4a1cace69f0433241d8d9"),
+    "branch_name": "Vwin24",
+    "branch_code": "VWIN"
+},
+/* 97 createdAt:2024-01-12T10:26:38.000Z*/
+{
+    "_id": ObjectId("65a113dece69f0433241d8d8"),
+    "branch_name": "One Page LITE",
+    "branch_code": "OPL2"
+},
+/* 98 createdAt:2023-12-22T04:19:32.000Z*/
+{
+    "_id": ObjectId("65850e54ce69f0433241d8d3"),
+    "branch_name": "ONEPAGE LITE",
+    "branch_code": "OPL"
+},
+/* 99 createdAt:2023-12-08T02:33:07.000Z*/
+{
+    "_id": ObjectId("65728063ce69f0433241d8ce"),
+    "branch_name": "Bigboss369",
+    "branch_code": "B369"
+},
+/* 100 createdAt:2023-11-21T10:33:36.000Z*/
+{
+    "_id": ObjectId("655c8780ce69f0433241d8cc"),
+    "branch_name": "Vegas7TH",
+    "branch_code": "VT"
+},
+/* 101 createdAt:2023-11-16T14:29:28.000Z*/
+{
+    "_id": ObjectId("65562748ce69f0433241d8ca"),
+    "branch_name": "Bigboss168",
+    "branch_code": "B168"
+},
+/* 102 createdAt:2023-11-14T06:04:24.000Z*/
+{
+    "_id": ObjectId("65530de8ce69f0433241d8c7"),
+    "branch_name": "FU889",
+    "branch_code": "FU"
+},
+/* 103 createdAt:2023-10-22T15:09:38.000Z*/
+{
+    "_id": ObjectId("65353b327bca8f6fe16df79f"),
+    "branch_name": "Bigboss98",
+    "branch_code": "B98"
+},
+/* 104 createdAt:2023-10-08T15:14:14.000Z*/
+{
+    "_id": ObjectId("6522c7467bca8f6fe16df79d"),
+    "branch_name": "KINGRICH88",
+    "branch_code": "KR"
+},
+/* 105 createdAt:2023-08-28T04:27:01.000Z*/
+{
+    "_id": ObjectId("64ec22157bca8f6fe16df785"),
+    "branch_name": "Bigboss666",
+    "branch_code": "B66"
+},
+/* 106 createdAt:2023-07-13T01:38:48.000Z*/
+{
+    "_id": ObjectId("64af55a87bca8f6fe16df776"),
+    "branch_name": "DEMO_77JILI",
+    "branch_code": "DMJL"
+},
+/* 107 createdAt:2023-07-06T03:58:39.000Z*/
+{
+    "_id": ObjectId("64a63bef7bca8f6fe16df76a"),
+    "branch_name": "JKF888",
+    "branch_code": "JKF8"
+},
+/* 108 createdAt:2023-07-06T02:16:08.000Z*/
+{
+    "_id": ObjectId("64a623e87bca8f6fe16df768"),
+    "branch_name": "Bigboss69",
+    "branch_code": "B69"
+},
+/* 109 createdAt:2023-06-22T03:34:26.000Z*/
+{
+    "_id": ObjectId("6493c1427bca8f6fe16df75c"),
+    "branch_name": "Demo Korea",
+    "branch_code": "KDEM"
+},
+/* 110 createdAt:2023-06-21T18:21:39.000Z*/
+{
+    "_id": ObjectId("64933fb37bca8f6fe16df75b"),
+    "branch_name": "777Peso",
+    "branch_code": "PE"
+},
+/* 111 createdAt:2023-06-21T18:13:04.000Z*/
+{
+    "_id": ObjectId("64933db07bca8f6fe16df75a"),
+    "branch_name": "Vegas",
+    "branch_code": "VS"
+},
+/* 112 createdAt:2023-06-03T03:13:44.000Z*/
+{
+    "_id": ObjectId("647aafe87bca8f6fe16df74e"),
+    "branch_name": "Demo Taiwan",
+    "branch_code": "TDEM"
+},
+/* 113 createdAt:2023-05-12T06:09:21.000Z*/
+{
+    "_id": ObjectId("645dd8117f50c24d7d3cfd30"),
+    "branch_name": "Bigboss555",
+    "branch_code": "B555"
+},
+/* 114 createdAt:2023-05-01T08:06:00.000Z*/
+{
+    "_id": ObjectId("644f72e87f50c24d7d3cfd2f"),
+    "branch_name": "MM VIP BET",
+    "branch_code": "VB"
+},
+/* 115 createdAt:2023-04-26T08:19:08.000Z*/
+{
+    "_id": ObjectId("6448de7c7f50c24d7d3cfd2d"),
+    "branch_name": "Tester",
+    "branch_code": "TST"
+},
+/* 116 createdAt:2023-04-21T10:47:37.000Z*/
+{
+    "_id": ObjectId("644269c97f50c24d7d3cfd2c"),
+    "branch_name": "JAPAN WEBSITE",
+    "branch_code": "JP"
+},
+/* 117 createdAt:2023-03-30T08:39:55.000Z*/
+{
+    "_id": ObjectId("64254adb7f50c24d7d3cfd21"),
+    "branch_name": "SSB LANDING",
+    "branch_code": "LSSB"
+},
+/* 118 createdAt:2023-03-29T04:51:47.000Z*/
+{
+    "_id": ObjectId("6423c3e37f50c24d7d3cfd1f"),
+    "branch_name": "MANILA AUTO",
+    "branch_code": "MDEM"
+},
+/* 119 createdAt:2023-03-13T10:20:24.000Z*/
+{
+    "_id": ObjectId("640ef8e89a527c7968a0965e"),
+    "branch_name": "77JILIAG",
+    "branch_code": "JLAG"
+},
+/* 120 createdAt:2023-03-09T05:35:07.000Z*/
+{
+    "_id": ObjectId("6409700b9a527c7968a0965d"),
+    "branch_name": "CHILL168",
+    "branch_code": "CH"
+},
+/* 121 createdAt:2023-03-09T05:32:40.000Z*/
+{
+    "_id": ObjectId("64096f789a527c7968a0965c"),
+    "branch_name": "BLMPAY88",
+    "branch_code": "B8"
+},
+/* 122 createdAt:2023-02-20T12:17:03.000Z*/
+{
+    "_id": ObjectId("63f364bf5605506f48ed40d7"),
+    "branch_name": "Bigboss789",
+    "branch_code": "B789"
+},
+/* 123 createdAt:2023-02-06T08:58:45.000Z*/
+{
+    "_id": ObjectId("63e0c1455605506f48ed40c1"),
+    "branch_name": "Bigboss222",
+    "branch_code": "B222"
+},
+/* 124 createdAt:2023-02-03T08:06:09.000Z*/
+{
+    "_id": ObjectId("63dcc0715605506f48ed40c0"),
+    "branch_name": "Bigboss89",
+    "branch_code": "B89"
+},
+/* 125 createdAt:2023-01-20T03:40:00.000Z*/
+{
+    "_id": ObjectId("63ca0d105605506f48ed40be"),
+    "branch_name": "Development AG 2",
+    "branch_code": "DEA2"
+},
+/* 126 createdAt:2023-01-20T03:38:31.000Z*/
+{
+    "_id": ObjectId("63ca0cb75605506f48ed40bd"),
+    "branch_name": "Development AG 1",
+    "branch_code": "DEA1"
+},
+/* 127 createdAt:2023-01-20T03:36:07.000Z*/
+{
+    "_id": ObjectId("63ca0c275605506f48ed40bc"),
+    "branch_name": "Development MA 2",
+    "branch_code": "DEV2"
+},
+/* 128 createdAt:2023-01-20T03:33:23.000Z*/
+{
+    "_id": ObjectId("63ca0b835605506f48ed40bb"),
+    "branch_name": "Development MA 1",
+    "branch_code": "DEVM"
+},
+/* 129 createdAt:2023-01-20T03:20:59.000Z*/
+{
+    "_id": ObjectId("63ca089b5605506f48ed40ba"),
+    "branch_name": "Development",
+    "branch_code": "DEV"
+},
+/* 130 createdAt:2022-12-16T06:48:14.000Z*/
+{
+    "_id": ObjectId("639c14ae5605506f48ed40b2"),
+    "branch_name": "GAICHON168",
+    "branch_code": "GCB"
+},
+/* 131 createdAt:2022-12-16T06:33:06.000Z*/
+{
+    "_id": ObjectId("639c11225605506f48ed40b1"),
+    "branch_name": "KINGKMC",
+    "branch_code": "KM"
+},
+/* 132 createdAt:2022-12-14T04:15:32.000Z*/
+{
+    "_id": ObjectId("63994de45605506f48ed40ae"),
+    "branch_name": "BIGBOSS BET PREMIUM 2",
+    "branch_code": "BPM2"
+},
+/* 133 createdAt:2022-12-14T04:09:24.000Z*/
+{
+    "_id": ObjectId("63994c745605506f48ed40ad"),
+    "branch_name": "BIGBOSS BET STANDARD 2",
+    "branch_code": "BST2"
+},
+/* 134 createdAt:2022-12-14T04:05:06.000Z*/
+{
+    "_id": ObjectId("63994b725605506f48ed40ac"),
+    "branch_name": "BIGBOSS BET PREMIUM",
+    "branch_code": "BPM"
+},
+/* 135 createdAt:2022-12-14T04:02:56.000Z*/
+{
+    "_id": ObjectId("63994af05605506f48ed40ab"),
+    "branch_name": "BIGBOSS BET STANDARD",
+    "branch_code": "BST"
+},
+/* 136 createdAt:2022-12-14T02:59:16.000Z*/
+{
+    "_id": ObjectId("63993c045605506f48ed40a9"),
+    "branch_name": "BIGBOSS AUTO",
+    "branch_code": "BDEM"
+},
+/* 137 createdAt:2022-12-13T12:19:25.000Z*/
+{
+    "_id": ObjectId("63986dcd5605506f48ed40a8"),
+    "branch_name": "BIGBOSS BET",
+    "branch_code": "BIGB"
+},
+/* 138 createdAt:2022-12-12T02:25:08.000Z*/
+{
+    "_id": ObjectId("63969104416b9e5b19557b80"),
+    "branch_name": "GON168",
+    "branch_code": "GO"
+},
+/* 139 createdAt:2022-11-25T04:51:15.000Z*/
+{
+    "_id": ObjectId("638049c3f84c0256c9d947db"),
+    "branch_name": "BET7UCKY",
+    "branch_code": "B7"
+},
+/* 140 createdAt:2022-11-22T02:08:35.000Z*/
+{
+    "_id": ObjectId("637c2f23f84c0256c9d947da"),
+    "branch_name": "MADDOG",
+    "branch_code": "MD"
+},
+/* 141 createdAt:2022-11-20T07:38:37.000Z*/
+{
+    "_id": ObjectId("6379d97df84c0256c9d947c4"),
+    "branch_name": "GAMINGCOACH",
+    "branch_code": "GMC"
+},
+/* 142 createdAt:2022-11-10T12:30:10.000Z*/
+{
+    "_id": ObjectId("636ceed2f84c0256c9d947b7"),
+    "branch_name": "11JJArm",
+    "branch_code": "1234"
+},
+/* 143 createdAt:2022-11-02T04:40:36.000Z*/
+{
+    "_id": ObjectId("6361f4c4f84c0256c9d947b3"),
+    "branch_name": "MANILABET",
+    "branch_code": "MNLB"
+},
+/* 144 createdAt:2022-11-01T08:55:17.000Z*/
+{
+    "_id": ObjectId("6360def5f84c0256c9d947ad"),
+    "branch_name": "MANILA888",
+    "branch_code": "MNL"
+},
+/* 145 createdAt:2022-10-31T08:37:05.000Z*/
+{
+    "_id": ObjectId("635f8931f84c0256c9d947aa"),
+    "branch_name": "oxslotgame",
+    "branch_code": "OX"
+},
+/* 146 createdAt:2022-10-26T08:58:50.000Z*/
+{
+    "_id": ObjectId("6358f6caf84c0256c9d947a9"),
+    "branch_name": "LD58",
+    "branch_code": "LD58"
+},
+/* 147 createdAt:2022-10-15T03:20:22.000Z*/
+{
+    "_id": ObjectId("634a26f6f84c0256c9d94797"),
+    "branch_name": "Dragonwin99",
+    "branch_code": "KDG"
+},
+/* 148 createdAt:2022-10-07T07:38:21.000Z*/
+{
+    "_id": ObjectId("633fd76df84c0256c9d9478d"),
+    "branch_name": "ELG99",
+    "branch_code": "JAL9"
+},
+/* 149 createdAt:2022-09-21T04:09:08.000Z*/
+{
+    "_id": ObjectId("632a8e645a6530b301d31371"),
+    "branch_name": "8RICHD",
+    "branch_code": "RD"
+},
+/* 150 createdAt:2022-09-09T04:11:51.000Z*/
+{
+    "_id": ObjectId("631abd075a6530b301d31361"),
+    "branch_name": "AYA777",
+    "branch_code": "AYA7"
+},
+/* 151 createdAt:2022-09-02T05:01:43.000Z*/
+{
+    "_id": ObjectId("63118e375a6530b301d3135c"),
+    "branch_name": "viv",
+    "branch_code": "131B"
+},
+/* 152 createdAt:2022-09-01T05:39:42.000Z*/
+{
+    "_id": ObjectId("6310459e5a6530b301d31359"),
+    "branch_name": "Dummy Demo",
+    "branch_code": "DPH"
+},
+/* 153 createdAt:2022-08-19T07:09:48.000Z*/
+{
+    "_id": ObjectId("62ff373c62a9ce40d5f531d7"),
+    "branch_name": "Royal Plazza Club",
+    "branch_code": "RP"
+},
+/* 154 createdAt:2022-08-15T08:47:55.000Z*/
+{
+    "_id": ObjectId("62fa083b62a9ce40d5f531d1"),
+    "branch_name": "ShweBo777",
+    "branch_code": "SB"
+},
+/* 155 createdAt:2022-08-15T07:56:36.000Z*/
+{
+    "_id": ObjectId("62f9fc3462a9ce40d5f531d0"),
+    "branch_name": "MM777",
+    "branch_code": "MM"
+},
+/* 156 createdAt:2022-08-08T03:10:24.000Z*/
+{
+    "_id": ObjectId("62f07ea0936961e525d54b77"),
+    "branch_name": "JJ",
+    "branch_code": "11JJ"
+},
+/* 157 createdAt:2022-08-03T09:36:05.000Z*/
+{
+    "_id": ObjectId("62ea4185936961e525d54b76"),
+    "branch_name": "TM369",
+    "branch_code": "TM"
+},
+/* 158 createdAt:2022-07-21T04:08:53.000Z*/
+{
+    "_id": ObjectId("62d8d155936961e525d54b70"),
+    "branch_name": "Tiger",
+    "branch_code": "TG"
+},
+/* 159 createdAt:2022-07-21T03:55:15.000Z*/
+{
+    "_id": ObjectId("62d8ce23936961e525d54b6f"),
+    "branch_name": "Mr Piao",
+    "branch_code": "22AA"
+},
+/* 160 createdAt:2022-07-19T07:18:33.000Z*/
+{
+    "_id": ObjectId("62d65ac9936961e525d54b6c"),
+    "branch_name": "VIP",
+    "branch_code": "VIP"
+},
+/* 161 createdAt:2022-07-19T06:46:01.000Z*/
+{
+    "_id": ObjectId("62d65329936961e525d54b69"),
+    "branch_name": "1668",
+    "branch_code": "1668"
+},
+/* 162 createdAt:2022-07-07T12:56:36.000Z*/
+{
+    "_id": ObjectId("62c6d804749e4ed883875af5"),
+    "branch_name": "168g.bet",
+    "branch_code": "168B"
+},
+/* 163 createdAt:2022-07-07T11:07:21.000Z*/
+{
+    "_id": ObjectId("62c6be69fdc5669316dbd53a"),
+    "branch_name": "GMaster Bet",
+    "branch_code": "GBET"
+},
+/* 164 createdAt:2022-07-07T05:09:47.000Z*/
+{
+    "_id": ObjectId("62c66a9b7ba90ae7f53c0781"),
+    "branch_name": "Newwave6668",
+    "branch_code": "NW"
+},
+/* 165 createdAt:2022-07-02T07:10:17.000Z*/
+{
+    "_id": ObjectId("62bfef59b3b0e94917dec09c"),
+    "branch_name": "Bp Esports 131",
+    "branch_code": "BP"
+},
+/* 166 createdAt:2022-06-20T05:29:25.000Z*/
+{
+    "_id": ObjectId("62b005b589bbb30a4be933a6"),
+    "branch_name": "Roma26",
+    "branch_code": "RM26"
+},
+/* 167 createdAt:2022-06-16T07:49:12.000Z*/
+{
+    "_id": ObjectId("62aae07889bbb30a4be93038"),
+    "branch_name": "GGbet789",
+    "branch_code": "GG"
+},
+/* 168 createdAt:2022-06-08T05:57:43.000Z*/
+{
+    "_id": ObjectId("62a03a5777569388bbd974fc"),
+    "branch_name": "MMB777",
+    "branch_code": "MB"
+},
+/* 169 createdAt:2022-05-31T08:52:58.000Z*/
+{
+    "_id": ObjectId("6295d76a6b5deff1c0f3c908"),
+    "branch_name": "777 Vegas",
+    "branch_code": "VG"
+},
+/* 170 createdAt:2022-05-10T06:41:05.000Z*/
+{
+    "_id": ObjectId("627a0901dff639937e4f61b3"),
+    "branch_name": "Yangon777",
+    "branch_code": "YG"
+},
+/* 171 createdAt:2022-05-09T08:23:25.000Z*/
+{
+    "_id": ObjectId("6278cf7ddff639937e4f600f"),
+    "branch_name": "SLOTMONEY",
+    "branch_code": "SM"
+},
+/* 172 createdAt:2022-03-25T06:08:56.000Z*/
+{
+    "_id": ObjectId("623d5c78dc6fb2163d3b78f4"),
+    "branch_name": "SlotGame",
+    "branch_code": "SG"
+},
+/* 173 createdAt:2022-02-14T02:55:14.000Z*/
+{
+    "_id": ObjectId("6209c49218dc9d2ba70d85bd"),
+    "branch_name": "Luckyauto789",
+    "branch_code": "LK89"
+},
+/* 174 createdAt:2022-02-08T04:58:14.000Z*/
+{
+    "_id": ObjectId("6201f8662046c602297c3653"),
+    "branch_name": "Inwa777",
+    "branch_code": "IN"
+},
+/* 175 createdAt:2022-01-31T07:30:09.000Z*/
+{
+    "_id": ObjectId("61f790013c3f072912dfbb3f"),
+    "branch_name": "Myanmar",
+    "branch_code": "MY"
+},
+/* 176 createdAt:2022-01-19T06:54:53.000Z*/
+{
+    "_id": ObjectId("61e7b5bd3c3f072912dfb3d8"),
+    "branch_name": "SEXY666",
+    "branch_code": "SEXY"
+},
+/* 177 createdAt:2022-01-18T04:26:53.000Z*/
+{
+    "_id": ObjectId("61e6418d3c3f072912dfb267"),
+    "branch_name": "77jili",
+    "branch_code": "JL"
+},
+/* 178 createdAt:2022-01-06T08:12:11.000Z*/
+{
+    "_id": ObjectId("61d6a45b4482787fd33a2e64"),
+    "branch_name": "777mha",
+    "branch_code": "MHA"
+},
+/* 179 createdAt:2021-12-02T04:21:35.000Z*/
+{
+    "_id": ObjectId("61a849cf8d7c3521380d48f7"),
+    "branch_name": "777mebet",
+    "branch_code": "7WM"
+},
+/* 180 createdAt:2021-10-26T06:46:49.000Z*/
+{
+    "_id": ObjectId("6177a459ea10c77082b3d894"),
+    "branch_name": "Sport Korea 88",
+    "branch_code": "SK"
+},
+/* 181 createdAt:2021-08-27T05:32:11.000Z*/
+{
+    "_id": ObjectId("612878db78100024b68871d7"),
+    "branch_name": "RichGame",
+    "branch_code": "RG"
+},
+/* 182 createdAt:2021-03-30T09:54:04.000Z*/
+{
+    "_id": ObjectId("6062f53c56a00548480d77b3"),
+    "branch_name": "Integration Team",
+    "branch_code": "IT"
+},
+/* 183 createdAt:2021-02-11T07:36:31.000Z*/
+{
+    "_id": ObjectId("6024de7f137bf616540a9528"),
+    "branch_name": "FIN789",
+    "branch_code": "TY"
+},
+/* 184 createdAt:2021-02-01T09:33:52.000Z*/
+{
+    "_id": ObjectId("6017cb00b3a2dd3b72c17477"),
+    "branch_name": "RX ChiangmaiT",
+    "branch_code": "RXCN"
+},
+/* 185 createdAt:2021-01-29T07:37:01.000Z*/
+{
+    "_id": ObjectId("6013bb1ddb4e0b07447cc523"),
+    "branch_name": "RX CE Office",
+    "branch_code": "RXCE"
+},
+/* 186 createdAt:2021-01-21T06:20:29.000Z*/
+{
+    "_id": ObjectId("60091d2df8968f655b2e514c"),
+    "branch_name": "RX Dindang",
+    "branch_code": "RXDD"
+},
+/* 187 createdAt:2021-01-21T04:57:21.000Z*/
+{
+    "_id": ObjectId("600909b1f8968f655b2e5070"),
+    "branch_name": "Relax EX Master",
+    "branch_code": "RX"
+},
+/* 188 createdAt:2021-01-12T10:30:35.000Z*/
+{
+    "_id": ObjectId("5ffd7a4bd294216b363b281b"),
+    "branch_name": "RM Chiangmai",
+    "branch_code": "RMCX"
+},
+/* 189 createdAt:2020-12-14T05:02:14.000Z*/
+{
+    "_id": ObjectId("5fd6f1d6dac64572856c1fb1"),
+    "branch_name": "RMshop",
+    "branch_code": "RMSP"
+},
+/* 190 createdAt:2020-11-29T11:02:39.000Z*/
+{
+    "_id": ObjectId("5fc37fcf229ce55a4c6bb4fd"),
+    "branch_name": "VVIP",
+    "branch_code": "VV"
+},
+/* 191 createdAt:2020-11-16T05:50:33.000Z*/
+{
+    "_id": ObjectId("5fb21329229ce55a4c6bb111"),
+    "branch_name": "7winbets",
+    "branch_code": "RM"
+},
+/* 192 createdAt:2020-11-02T15:19:24.000Z*/
+{
+    "_id": ObjectId("5fa0237c229ce55a4c6bac6a"),
+    "branch_name": "Champ Master",
+    "branch_code": "CC"
+},
+/* 193 createdAt:2020-10-27T10:17:15.000Z*/
+{
+    "_id": ObjectId("5f97f3ab229ce55a4c6baa77"),
+    "branch_name": "ADD",
+    "branch_code": "FA"
+},
+/* 194 createdAt:2020-09-02T15:09:47.000Z*/
+{
+    "_id": ObjectId("5f4fb5bb3156af7a2db9e5a0"),
+    "branch_name": "777WW",
+    "branch_code": "7W"
+},
+/* 195 createdAt:2020-07-20T06:19:13.000Z*/
+{
+    "_id": ObjectId("5f15376190dca67d99289794"),
+    "branch_name": "7W168",
+    "branch_code": "MK"
+}

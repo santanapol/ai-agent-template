@@ -19,5 +19,10 @@
     "upstream": "http://127.0.0.1:3001",
     "stripPrefix": false,
     "isPublic": true
+  },
+  {
+    "prefix": "/api/v1/agent-invoice",
+    "upstream": "http://127.0.0.1:3000",
+    "stripPrefix": false
   }
 ]

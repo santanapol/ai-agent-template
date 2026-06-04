@@ -35,6 +35,55 @@ describe("mapAuthProblemToHttpError", () => {
     assert.strictEqual(error.status, 503);
     assert.strictEqual(error.code, CODES.SERVICE_UNAVAILABLE);
   });
+
+  test("maps 404 AUTH_USER_NOT_FOUND to RESOURCE_NOT_FOUND", () => {
+    const error = mapAuthProblemToHttpError(404, {
+      code: "AUTH_USER_NOT_FOUND",
+      detail: "User 507f... was not found in ou abc",
+    });
+    assert.strictEqual(error.status, 404);
+    assert.strictEqual(error.code, CODES.RESOURCE_NOT_FOUND);
+  });
+
+  test("does NOT forward auth detail verbatim for 400 policy violation", () => {
+    const leaked = "password SuperSecret123! is too simple";
+    const error = mapAuthProblemToHttpError(400, {
+      code: "AUTH_PASSWORD_POLICY_VIOLATION",
+      detail: leaked,
+    });
+    assert.strictEqual(error.status, 400);
+    assert.strictEqual(error.code, CODES.INVALID_PARAM);
+    assert.ok(
+      !error.message.includes("SuperSecret123!"),
+      `message must not leak password: got "${error.message}"`,
+    );
+  });
+
+  test("does NOT forward auth detail verbatim for 409 duplicate", () => {
+    const error = mapAuthProblemToHttpError(409, {
+      code: "AUTH_USER_ALREADY_EXISTS",
+      detail: "User john.doe@internal already registered",
+    });
+    assert.strictEqual(error.status, 409);
+    assert.strictEqual(error.code, CODES.DUPLICATE);
+    assert.ok(
+      !error.message.includes("john.doe@internal"),
+      `message must not leak username: got "${error.message}"`,
+    );
+  });
+
+  test("does NOT forward auth detail verbatim for 404", () => {
+    const error = mapAuthProblemToHttpError(404, {
+      code: "AUTH_USER_NOT_FOUND",
+      detail: "No user with id 507f1f77bcf86cd799439099 in ou 622a...",
+    });
+    assert.strictEqual(error.status, 404);
+    assert.strictEqual(error.code, CODES.RESOURCE_NOT_FOUND);
+    assert.ok(
+      !error.message.includes("507f1f77bcf86cd799439099"),
+      `message must not leak internal id: got "${error.message}"`,
+    );
+  });
 });
 
 describe("createAuthInternalClient", () => {

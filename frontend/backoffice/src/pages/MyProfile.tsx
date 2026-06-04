@@ -8,7 +8,6 @@ import {
   Input,
   Spin,
   Typography,
-  message,
   theme,
 } from 'antd';
 import { KeyOutlined, SaveOutlined } from '@ant-design/icons';
@@ -24,12 +23,14 @@ import {
 } from '../lib/passwordPolicy';
 import axios from 'axios';
 import { apiErrorMessage } from '../lib/apiError';
+import { useAppFeedback } from '../hooks/useAppFeedback';
 
 const { Title, Text } = Typography;
 
 const MyProfile: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { message } = useAppFeedback();
   const { token } = theme.useToken();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -80,7 +81,7 @@ const MyProfile: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [form, userSub, reloadKey]);
+  }, [form, message, userSub, reloadKey]);
 
   const handleSave = async () => {
     if (!profile || !currentEtag.current) return;
@@ -177,11 +178,11 @@ const MyProfile: React.FC = () => {
 
       <Spin spinning={loading}>
         {loadError && !profile ? (
-          <Card bordered={false} style={{ borderRadius: token.borderRadius }}>
+          <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
             <Text type="danger">{loadError}</Text>
           </Card>
         ) : profile ? (
-          <Card bordered={false} style={{ borderRadius: token.borderRadius, maxWidth: 720 }}>
+          <Card variant="borderless" style={{ borderRadius: token.borderRadius, maxWidth: 720 }}>
             <Descriptions
               column={1}
               size="small"
@@ -243,7 +244,7 @@ const MyProfile: React.FC = () => {
 
       {profile ? (
         <Card
-          bordered={false}
+          variant="borderless"
           title="Change password"
           style={{ borderRadius: token.borderRadius, maxWidth: 720, marginTop: token.marginLG }}
         >

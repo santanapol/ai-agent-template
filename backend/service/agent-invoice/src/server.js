@@ -1,14 +1,12 @@
 import buildApp from './app.js';
 
 const start = async () => {
+  const app = await buildApp();
   try {
-    const app = await buildApp();
     const port = process.env.PORT || 3000;
-    
     await app.listen({ port, host: '0.0.0.0' });
-    app.log.info(`Server listening on http://localhost:${port}`);
   } catch (err) {
-    console.error('Error starting server:', err);
+    app.log.error(err, 'Error starting server');
     process.exit(1);
   }
 };

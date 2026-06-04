@@ -1,4 +1,5 @@
 import { getRuntimeEnv } from "../../config/runtime-env.js";
+import logger from "../../config/logger.js";
 import { HttpError } from "../../lib/http-error.js";
 import CODES from "../../lib/error-codes.js";
 import { STAFF_AUDIT_EVENT_TYPES } from "../../lib/audit/audit-events.js";
@@ -389,35 +390,41 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     branchId: tenantContext.branchId,
   });
 
-  // Defensive guard: provisionUser returns a fresh userId, so a duplicate
-  // here would indicate a bug in the auth service. Still checked to ensure
-  // the invariant "one staff profile per user" is enforced at this layer.
-  if (await repository.existsProfileByUserId(userId)) {
-    throw new HttpError(
-      409,
-      CODES.DUPLICATE,
-      "A staff profile already exists for this user",
+  let created;
+  try {
+    created = await repository.insertProfile(
+      { ...fields, user_id: userId },
+      tenantContext,
+      routeTemplate,
     );
+  } catch (insertError) {
+    // Best-effort cleanup: deactivate the orphan auth user so a retry
+    // won't hit a 409 from auth service. If deactivation fails, the
+    // orphan is logged for manual reconciliation.
+    await authClient.deactivateUser(userId).catch((deactivateErr) => {
+      logger.error(
+        { err: deactivateErr, orphanUserId: userId },
+        "failed to deactivate orphan auth user after insertProfile failure",
+      );
+    });
+    throw insertError;
   }
 
-  const created = await repository.insertProfile(
-    { ...fields, user_id: userId },
-    tenantContext,
-    routeTemplate,
-  );
-
-  await writeAuditEvent({
-    eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_CREATE,
-    userContext: {
-      userId: userContext.userId,
-      ouId: tenantContext.ouId,
-      branchId: tenantContext.branchId,
-    },
-    routeTemplate,
-    profileId: created.profile.id,
-    targetUserId: userId,
-    payload: { code: fields.code },
-  });
+  try {
+    await writeAuditEvent({
+      eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_CREATE,
+      userContext: tenantContext,
+      routeTemplate,
+      profileId: created.profile.id,
+      targetUserId: userId,
+      payload: { code: fields.code },
+    });
+  } catch (auditErr) {
+    logger.error(
+      { err: auditErr },
+      "audit write failed after profile create (provision)",
+    );
+  }
 
   return created;
 }
@@ -452,14 +459,6 @@ async function createProfileLinked(body, userContext, routeTemplate) {
 
   const tenantContext = tenantContextFromAuthUser(authUser, userContext.userId);
 
-  if (await repository.existsProfileByUserId(userId)) {
-    throw new HttpError(
-      409,
-      CODES.DUPLICATE,
-      "A staff profile already exists for this user",
-    );
-  }
-
   if (
     await repository.existsProfileByCode(
       tenantContext.ouId,
@@ -480,20 +479,21 @@ async function createProfileLinked(body, userContext, routeTemplate) {
     routeTemplate,
   );
 
-  const auditContext = {
-    userId: userContext.userId,
-    ouId: tenantContext.ouId,
-    branchId: tenantContext.branchId,
-  };
-
-  await writeAuditEvent({
-    eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_CREATE,
-    userContext: auditContext,
-    routeTemplate,
-    profileId: created.profile.id,
-    targetUserId: userId,
-    payload: { code: fields.code },
-  });
+  try {
+    await writeAuditEvent({
+      eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_CREATE,
+      userContext: tenantContext,
+      routeTemplate,
+      profileId: created.profile.id,
+      targetUserId: userId,
+      payload: { code: fields.code },
+    });
+  } catch (auditErr) {
+    logger.error(
+      { err: auditErr },
+      "audit write failed after profile create (link)",
+    );
+  }
 
   return created;
 }
@@ -554,7 +554,11 @@ export async function patchProfile(
   const patchBody = { ...body };
   const isOwnProfile = existing.profile.user_id === userContext.userId;
   if (isOwnProfile && patchBody.code !== undefined) {
-    delete patchBody.code;
+    throw new HttpError(
+      400,
+      CODES.INVALID_PARAM,
+      "code cannot be changed on own profile",
+    );
   }
 
   const fields = normalizePatchFields(patchBody);
@@ -607,18 +611,25 @@ export async function patchProfile(
     );
   }
 
-  await writeAuditEvent({
-    eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_UPDATE,
-    userContext: {
-      userId: userContext.userId,
-      ouId: existing.profile.ou_id,
-      branchId: existing.profile.branch_id,
-    },
-    routeTemplate,
-    profileId: updated.profile.id,
-    targetUserId: updated.profile.user_id,
-    payload: fields,
-  });
+  try {
+    const auditPayload = { ...fields };
+    if (auditPayload.email !== undefined) auditPayload.email = "[REDACTED]";
+    if (auditPayload.tel !== undefined) auditPayload.tel = "[REDACTED]";
+    await writeAuditEvent({
+      eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_UPDATE,
+      userContext: {
+        userId: userContext.userId,
+        ouId: existing.profile.ou_id,
+        branchId: existing.profile.branch_id,
+      },
+      routeTemplate,
+      profileId: updated.profile.id,
+      targetUserId: updated.profile.user_id,
+      payload: auditPayload,
+    });
+  } catch (auditErr) {
+    logger.error({ err: auditErr }, "audit write failed after profile patch");
+  }
 
   return updated;
 }
@@ -739,18 +750,25 @@ async function transitionProfileStatus(
     );
   }
 
-  await writeAuditEvent({
-    eventType,
-    userContext: {
-      userId: userContext.userId,
-      ouId: existing.profile.ou_id,
-      branchId: existing.profile.branch_id,
-    },
-    routeTemplate,
-    profileId: updated.profile.id,
-    targetUserId: updated.profile.user_id,
-    payload: { status: nextStatus },
-  });
+  try {
+    await writeAuditEvent({
+      eventType,
+      userContext: {
+        userId: userContext.userId,
+        ouId: existing.profile.ou_id,
+        branchId: existing.profile.branch_id,
+      },
+      routeTemplate,
+      profileId: updated.profile.id,
+      targetUserId: updated.profile.user_id,
+      payload: { status: nextStatus },
+    });
+  } catch (auditErr) {
+    logger.error(
+      { err: auditErr },
+      "audit write failed after profile status transition",
+    );
+  }
 
   return updated;
 }

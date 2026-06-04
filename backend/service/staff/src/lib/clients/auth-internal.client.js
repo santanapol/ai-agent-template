@@ -18,35 +18,39 @@ const AUTH_DUPLICATE_CODES = new Set([
 
 /**
  * Map auth RFC 7807 problem+json to staff HttpError.
+ *
+ * SECURITY: detail/title from auth service is intentionally NOT forwarded
+ * to the caller. Auth error details may contain passwords, usernames, or
+ * internal IDs. We map each auth error category to a predefined safe
+ * message instead.
+ *
  * @param {number} status
  * @param {{ code?: string, detail?: string, title?: string } | undefined} problem
  */
 export function mapAuthProblemToHttpError(status, problem) {
   const authCode = problem?.code;
-  const detail =
-    typeof problem?.detail === "string" && problem.detail.trim()
-      ? problem.detail
-      : typeof problem?.title === "string"
-        ? problem.title
-        : "Auth request failed";
 
   if (status === 409 || AUTH_DUPLICATE_CODES.has(authCode)) {
-    return new HttpError(409, CODES.DUPLICATE, detail);
+    return new HttpError(
+      409,
+      CODES.DUPLICATE,
+      "A user with this identity already exists",
+    );
   }
 
   if (status === 400 || AUTH_INVALID_REQUEST_CODES.has(authCode)) {
-    return new HttpError(400, CODES.INVALID_PARAM, detail);
+    return new HttpError(
+      400,
+      CODES.INVALID_PARAM,
+      "Password does not meet policy requirements",
+    );
   }
 
   if (status === 404 || authCode === "AUTH_USER_NOT_FOUND") {
-    return new HttpError(404, CODES.RESOURCE_NOT_FOUND, detail);
-  }
-
-  if (status === 503 || status >= 500 || authCode === "AUTH_NOT_READY") {
     return new HttpError(
-      503,
-      CODES.SERVICE_UNAVAILABLE,
-      "Auth service is temporarily unavailable",
+      404,
+      CODES.RESOURCE_NOT_FOUND,
+      "The requested auth user was not found",
     );
   }
 
@@ -217,6 +221,27 @@ export function createAuthInternalClient(config) {
         );
       }
     },
+
+    /**
+     * Best-effort deactivation for orphan cleanup.
+     * @param {string} userId
+     */
+    async deactivateUser(userId) {
+      try {
+        const response = await http.post(
+          `${baseUrl}/internal/users/${userId}/deactivate`,
+          { reason: "staff.orphan_cleanup" },
+          {
+            headers: authInternalHeaders(config.serviceSecret),
+            timeout: timeoutMs,
+            validateStatus: () => true,
+          },
+        );
+        return response.status === 200 || response.status === 204;
+      } catch (_error) {
+        return false;
+      }
+    },
   };
 }
 
@@ -257,13 +282,7 @@ async function tryRevokeUserSessions(
     );
 
     return response.status === 200 || response.status === 204;
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return false;
-    }
-    if (isAxiosError(error)) {
-      return false;
-    }
+  } catch (_error) {
     return false;
   }
 }
@@ -301,10 +320,20 @@ export function getAuthInternalClient(env) {
 
 /** @param {ReturnType<typeof createAuthInternalClient> | null} client */
 export function setAuthInternalClientForTests(client) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "setAuthInternalClientForTests is not allowed in production",
+    );
+  }
   testClientOverride = client;
 }
 
 export function resetAuthInternalClientForTests() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "resetAuthInternalClientForTests is not allowed in production",
+    );
+  }
   testClientOverride = null;
   defaultClient = null;
   cachedEnvForClient = null;

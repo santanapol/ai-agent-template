@@ -427,11 +427,11 @@ export async function updateProfileStatus(
   routeTemplate,
   ifMatchDate,
 ) {
-  const baseFilter = {
+  const idScopeFilter = {
     _id: toObjectId(profileId),
     ...buildScopeFilter(scope),
-    status: expectedStatus,
   };
+  const baseFilter = { ...idScopeFilter, status: expectedStatus };
   const versionFilter = { ...baseFilter, upd_date: ifMatchDate };
   const now = new Date();
 
@@ -445,7 +445,6 @@ export async function updateProfileStatus(
   });
 
   if (result.matchedCount === 1) {
-    const idScopeFilter = { _id: toObjectId(profileId), ...buildScopeFilter(scope) };
     const doc = await profilesCollection().findOne(idScopeFilter);
     if (!doc) {
       return null;
@@ -457,10 +456,7 @@ export async function updateProfileStatus(
     };
   }
 
-  const doc = await profilesCollection().findOne({
-    _id: toObjectId(profileId),
-    ...buildScopeFilter(scope),
-  });
+  const doc = await profilesCollection().findOne(idScopeFilter);
   if (!doc) {
     return null;
   }

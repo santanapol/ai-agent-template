@@ -2,13 +2,34 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Sarabun', sans-serif;
-  background-color: #F9FAFB; /* Gray-50 */
 }
 
-/* Make layout full height */
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+@media print {
+  .ant-layout-sider, .ant-layout-header {
+    display: none !important;
+  }
+  .ant-layout, .ant-layout-content, body {
+    background: white !important;
+  }
+  .ant-layout-content {
+    padding: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .ant-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Force color printing for tags and text */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

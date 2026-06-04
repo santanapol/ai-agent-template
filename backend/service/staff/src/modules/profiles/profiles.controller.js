@@ -4,9 +4,7 @@ import * as service from "./profiles.service.js";
 
 function getRouteTemplate(request) {
   return (
-    request.routeOptions.url ||
-    request.routerPath ||
-    request.url.split("?")[0]
+    request.routeOptions.url || request.routerPath || request.url.split("?")[0]
   );
 }
 

@@ -1,0 +1,33 @@
+import * as repo from './master-data.repository.js';
+
+export const getGameCompaniesHandler = async (request, reply) => {
+  try {
+    const data = await repo.getGameCompanies(request.server.sourceDb);
+    return {
+      success: true,
+      code: 'SUCCESS',
+      message: 'Fetched game companies',
+      data: data,
+      requestId: request.requestId
+    };
+  } catch (err) {
+    request.log.error(err);
+    throw err;
+  }
+};
+
+export const getGameCategoriesHandler = async (request, reply) => {
+  try {
+    const data = await repo.getGameCategories(request.server.sourceDb);
+    return {
+      success: true,
+      code: 'SUCCESS',
+      message: 'Fetched game categories',
+      data: data,
+      requestId: request.requestId
+    };
+  } catch (err) {
+    request.log.error(err);
+    throw err;
+  }
+};

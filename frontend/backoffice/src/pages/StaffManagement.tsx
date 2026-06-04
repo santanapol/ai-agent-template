@@ -4,14 +4,12 @@ import {
   Input,
   Select,
   Typography,
-  Modal,
-  message,
   Card,
   Flex,
   Form,
   theme,
 } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import type {
   StaffProfile,
@@ -21,13 +19,22 @@ import type {
 import * as staffApi from '../lib/staffApiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { apiErrorMessage } from '../lib/apiError';
+import { useAppFeedback } from '../hooks/useAppFeedback';
 import StaffTable from '../components/staff/StaffTable';
 import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../components/staff/StaffDrawer';
 
 const { Title } = Typography;
+const { Search } = Input;
+
+const STATUS_OPTIONS: { value: ProfileStatus; label: string }[] = [
+  { value: 'all', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+];
 
 const StaffManagement: React.FC = () => {
   const { user } = useAuth();
+  const { message, modal } = useAppFeedback();
   const [profiles, setProfiles] = useState<StaffProfile[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [drawerLoading, setDrawerLoading] = useState(false);
@@ -85,7 +92,7 @@ const StaffManagement: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, statusFilter, currentPage, pageSize, refreshToken]);
+  }, [debouncedSearch, message, statusFilter, currentPage, pageSize, refreshToken]);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
@@ -143,7 +150,7 @@ const StaffManagement: React.FC = () => {
         setDrawerLoading(false);
       }
     },
-    [form],
+    [form, message],
   );
 
   const handleCloseDrawer = useCallback(() => {
@@ -172,7 +179,7 @@ const StaffManagement: React.FC = () => {
       return;
     }
 
-    Modal.confirm({
+    modal.confirm({
       title: 'Reset password?',
       content: 'This will sign the user out of all devices.',
       okText: 'Update password',
@@ -193,7 +200,7 @@ const StaffManagement: React.FC = () => {
         }
       },
     });
-  }, [editingId, form]);
+  }, [editingId, form, message, modal]);
 
   const handleSave = useCallback(async () => {
     const isCreate = drawerMode === 'create';
@@ -244,11 +251,11 @@ const StaffManagement: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [form, drawerMode, editingId, refresh]);
+  }, [form, drawerMode, editingId, message, refresh]);
 
   const handleArchive = useCallback(
     (record: StaffProfile) => {
-      Modal.confirm({
+      modal.confirm({
         title: 'Archive Staff Profile?',
         content:
           'Are you sure you want to archive this staff member? Their active session will be revoked immediately and they will need to log in again if restored.',
@@ -268,12 +275,12 @@ const StaffManagement: React.FC = () => {
         },
       });
     },
-    [refresh],
+    [message, modal, refresh],
   );
 
   const handleRestore = useCallback(
     (record: StaffProfile) => {
-      Modal.confirm({
+      modal.confirm({
         title: 'Restore Staff Profile?',
         content: 'This profile will become active again. The user must log in to create a new session.',
         okText: 'Restore',
@@ -291,7 +298,7 @@ const StaffManagement: React.FC = () => {
         },
       });
     },
-    [refresh],
+    [message, modal, refresh],
   );
 
   return (
@@ -307,9 +314,8 @@ const StaffManagement: React.FC = () => {
 
       <Card styles={{ body: { padding: token.paddingLG } }}>
         <Flex gap={token.margin} style={{ marginBottom: token.marginLG }}>
-          <Input
+          <Search
             placeholder="Search code, name..."
-            prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
             style={{ width: 300 }}
             value={rawSearch}
             onChange={(e) => setRawSearch(e.target.value)}
@@ -317,16 +323,13 @@ const StaffManagement: React.FC = () => {
           />
           <Select
             value={statusFilter}
+            options={STATUS_OPTIONS}
             style={{ width: 150 }}
             onChange={(val: ProfileStatus) => {
               setStatusFilter(val);
               setPaginationConfig((prev) => ({ ...prev, current: 1 }));
             }}
-          >
-            <Select.Option value="all">All Status</Select.Option>
-            <Select.Option value="active">Active</Select.Option>
-            <Select.Option value="archived">Archived</Select.Option>
-          </Select>
+          />
         </Flex>
 
         <StaffTable

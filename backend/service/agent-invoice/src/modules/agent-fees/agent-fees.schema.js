@@ -1,14 +1,35 @@
+const trustedHeaders = {
+  type: 'object',
+  properties: {
+    'x-gateway-secret': { type: 'string' },
+    'x-user-ou': { type: 'string' },
+    'x-user-branch': { type: 'string' },
+    'x-user-id': { type: 'string' },
+    'x-user-role': { type: 'string' },
+    'x-request-id': { type: 'string' }
+  }
+};
+
+const errorResponse = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    code: { type: 'string' },
+    message: { type: 'string' },
+    data: { type: 'null' },
+    requestId: { type: 'string' }
+  }
+};
+
 export const getFeesSchema = {
-  description: 'Get all fees overrides for a specific agent with pagination',
-  tags: ['Agent Fees'],
+  description: 'Get all fee overrides for a specific agent with pagination',
+  tags: ['agent-fees'],
+  headers: trustedHeaders,
   params: {
     type: 'object',
     required: ['agentId'],
     properties: {
-      agentId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      }
+      agentId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' }
     }
   },
   querystring: {
@@ -22,7 +43,8 @@ export const getFeesSchema = {
     200: {
       type: 'object',
       properties: {
-        statusCode: { type: 'number' },
+        success: { type: 'boolean' },
+        code: { type: 'string' },
         message: { type: 'string' },
         data: {
           type: 'array',
@@ -46,7 +68,7 @@ export const getFeesSchema = {
             }
           }
         },
-        meta: {
+        pagination: {
           type: 'object',
           properties: {
             page: { type: 'number' },
@@ -55,27 +77,21 @@ export const getFeesSchema = {
           }
         }
       }
-    }
+    },
+    '4xx': errorResponse,
+    '5xx': errorResponse
   }
 };
 
 export const createFeeSchema = {
   description: 'Create a new fee override for an agent',
-  tags: ['Agent Fees'],
-  headers: {
-    type: 'object',
-    properties: {
-      'x-user-id': { type: 'string' }
-    }
-  },
+  tags: ['agent-fees'],
+  headers: trustedHeaders,
   params: {
     type: 'object',
     required: ['agentId'],
     properties: {
-      agentId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      }
+      agentId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' }
     }
   },
   body: {
@@ -94,7 +110,8 @@ export const createFeeSchema = {
     201: {
       type: 'object',
       properties: {
-        statusCode: { type: 'number' },
+        success: { type: 'boolean' },
+        code: { type: 'string' },
         message: { type: 'string' },
         data: {
           type: 'object',
@@ -103,32 +120,28 @@ export const createFeeSchema = {
           }
         }
       }
-    }
+    },
+    '4xx': errorResponse,
+    '5xx': errorResponse
   }
 };
 
 export const updateFeeSchema = {
   description: 'Update fee_rate with optimistic locking via If-Match header',
-  tags: ['Agent Fees'],
+  tags: ['agent-fees'],
   headers: {
-    type: 'object',
+    ...trustedHeaders,
     properties: {
-      'if-match': { type: 'string' },
-      'x-user-id': { type: 'string' }
+      ...trustedHeaders.properties,
+      'if-match': { type: 'string' }
     }
   },
   params: {
     type: 'object',
     required: ['agentId', 'feeId'],
     properties: {
-      agentId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      },
-      feeId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      }
+      agentId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
+      feeId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' }
     }
   },
   body: {
@@ -142,40 +155,46 @@ export const updateFeeSchema = {
     200: {
       type: 'object',
       properties: {
-        statusCode: { type: 'number' },
-        message: { type: 'string' }
+        success: { type: 'boolean' },
+        code: { type: 'string' },
+        message: { type: 'string' },
+        data: { type: 'null' }
       }
-    }
+    },
+    '4xx': errorResponse,
+    '5xx': errorResponse
   }
 };
 
 export const deleteFeeSchema = {
-  description: 'Hard delete a fee override',
-  tags: ['Agent Fees'],
+  description: 'Hard delete a fee override (requires If-Match for optimistic lock)',
+  tags: ['agent-fees'],
   headers: {
-    type: 'object',
+    ...trustedHeaders,
     properties: {
-      'x-user-id': { type: 'string' }
+      ...trustedHeaders.properties,
+      'if-match': { type: 'string' }
     }
   },
   params: {
     type: 'object',
     required: ['agentId', 'feeId'],
     properties: {
-      agentId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      },
-      feeId: {
-        type: 'string',
-        pattern: '^[0-9a-fA-F]{24}$'
-      }
+      agentId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
+      feeId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' }
     }
   },
   response: {
-    204: {
-      type: 'null',
-      description: 'Successfully deleted (No Content)'
-    }
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        code: { type: 'string' },
+        message: { type: 'string' },
+        data: { type: 'null' }
+      }
+    },
+    '4xx': errorResponse,
+    '5xx': errorResponse
   }
 };

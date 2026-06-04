@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Table, Button, Badge, Typography, Space, theme } from 'antd';
+import { Table, Button, Badge, Typography, Space, Tooltip, theme } from 'antd';
 import { EyeOutlined, EditOutlined, InboxOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { StaffProfile } from '../../types/staff';
@@ -60,12 +60,12 @@ const StaffTable: React.FC<StaffTableProps> = ({
         key: 'status',
         render: (status: StaffProfile['status']) => (
           <Badge
-            status={status === 'active' ? 'success' : 'error'}
+            status={status === 'active' ? 'success' : 'default'}
             text={
               <span
                 style={{
                   textTransform: 'capitalize',
-                  color: status === 'active' ? token.colorSuccess : token.colorError,
+                  color: status === 'active' ? token.colorSuccess : token.colorTextSecondary,
                 }}
               >
                 {status}
@@ -79,34 +79,42 @@ const StaffTable: React.FC<StaffTableProps> = ({
         key: 'actions',
         render: (_, record) => (
           <Space>
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              aria-label="View profile"
-              onClick={() => onView(record)}
-            />
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              aria-label="Edit profile"
-              onClick={() => onEdit(record)}
-            />
+            <Tooltip title="View profile">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                aria-label="View profile"
+                onClick={() => onView(record)}
+              />
+            </Tooltip>
+            <Tooltip title="Edit profile">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                aria-label="Edit profile"
+                onClick={() => onEdit(record)}
+              />
+            </Tooltip>
             {record.status === 'active' ? (
-              <Button
-                type="text"
-                danger
-                icon={<InboxOutlined />}
-                aria-label="Archive profile"
-                onClick={() => onArchive(record)}
-              />
+              <Tooltip title="Archive profile">
+                <Button
+                  type="text"
+                  danger
+                  icon={<InboxOutlined />}
+                  aria-label="Archive profile"
+                  onClick={() => onArchive(record)}
+                />
+              </Tooltip>
             ) : (
-              <Button
-                type="text"
-                style={{ color: token.colorSuccess }}
-                icon={<ReloadOutlined />}
-                aria-label="Restore profile"
-                onClick={() => onRestore(record)}
-              />
+              <Tooltip title="Restore profile">
+                <Button
+                  type="text"
+                  style={{ color: token.colorSuccess }}
+                  icon={<ReloadOutlined />}
+                  aria-label="Restore profile"
+                  onClick={() => onRestore(record)}
+                />
+              </Tooltip>
             )}
           </Space>
         ),

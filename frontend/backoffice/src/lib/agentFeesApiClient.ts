@@ -23,7 +23,7 @@ function extractETag(response: any): string | null {
 }
 
 export async function listAgentFees(agentId: string, params: ListFeesParams = {}) {
-  const res = await client.get<ApiEnvelope<AgentFee[]>>(`/api/v1/agents/${agentId}/fees`, { params });
+  const res = await client.get<ApiEnvelope<AgentFee[]>>(`/api/v1/agent-invoice/agents/${agentId}/fees`, { params });
   return {
     data: res.data.data,
     total: res.data.pagination?.total || 0,
@@ -31,13 +31,13 @@ export async function listAgentFees(agentId: string, params: ListFeesParams = {}
 }
 
 export async function createAgentFee(agentId: string, payload: CreateFeePayload) {
-  const res = await client.post<ApiEnvelope<unknown>>(`/api/v1/agents/${agentId}/fees`, payload);
+  const res = await client.post<ApiEnvelope<unknown>>(`/api/v1/agent-invoice/agents/${agentId}/fees`, payload);
   return { data: res.data.data, etag: extractETag(res) };
 }
 
 export async function updateAgentFee(agentId: string, feeId: string, payload: UpdateFeePayload, etag: string) {
   const formattedEtag = etag.startsWith('W/"') ? etag : `W/"${etag}"`;
-  const res = await client.patch<ApiEnvelope<unknown>>(`/api/v1/agents/${agentId}/fees/${feeId}`, payload, {
+  const res = await client.patch<ApiEnvelope<unknown>>(`/api/v1/agent-invoice/agents/${agentId}/fees/${feeId}`, payload, {
     headers: { 'If-Match': formattedEtag },
   });
   return { data: res.data.data, etag: extractETag(res) };
@@ -45,17 +45,17 @@ export async function updateAgentFee(agentId: string, feeId: string, payload: Up
 
 export async function deleteAgentFee(agentId: string, feeId: string, etag: string) {
   const formattedEtag = etag.startsWith('W/"') ? etag : `W/"${etag}"`;
-  await client.delete(`/api/v1/agents/${agentId}/fees/${feeId}`, {
+  await client.delete(`/api/v1/agent-invoice/agents/${agentId}/fees/${feeId}`, {
     headers: { 'If-Match': formattedEtag },
   });
 }
 
 export async function getGameCompanies() {
-  const res = await client.get<ApiEnvelope<GameCompany[]>>('/api/v1/agent-fees/master-data/game-companies');
+  const res = await client.get<ApiEnvelope<GameCompany[]>>('/api/v1/agent-invoice/master-data/game-companies');
   return res.data.data;
 }
 
 export async function getGameCategories() {
-  const res = await client.get<ApiEnvelope<GameCategory[]>>('/api/v1/agent-fees/master-data/game-categories');
+  const res = await client.get<ApiEnvelope<GameCategory[]>>('/api/v1/agent-invoice/master-data/game-categories');
   return res.data.data;
 }

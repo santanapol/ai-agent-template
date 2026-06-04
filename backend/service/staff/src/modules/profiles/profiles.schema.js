@@ -9,7 +9,6 @@ export const profileIdParamsSchema = {
   },
 };
 
-
 export const lookupProfilesQuerySchema = {
   type: "object",
   required: ["user_id"],
@@ -31,7 +30,7 @@ export const listOrLookupProfilesSchema = {
         enum: ["active", "archived", "all"],
       },
       branch_id: { type: "string", pattern: objectIdPattern },
-      q: { type: "string", maxLength: 128 },
+      q: { type: "string", maxLength: 64 },
       sort: {
         type: "string",
         pattern: "^-?(code|firstname|lastname|upd_date)$",

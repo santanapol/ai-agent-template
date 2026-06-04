@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Card, message, theme } from 'antd';
+import { Form, Input, Button, Typography, Card, Spin, theme } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppFeedback } from '../hooks/useAppFeedback';
 
 const { Title, Text } = Typography;
 
@@ -22,8 +23,12 @@ function authErrorMessage(err: unknown): string {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { token } = theme.useToken();
-  const { login } = useAuth();
+  const { message } = useAppFeedback();
+  const { user, loading, login } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+
+  if (loading) return <Spin size="large" fullscreen />;
+  if (user) return <Navigate to="/" replace />;
 
   const onFinish = async (values: { username: string; password: string }) => {
     setSubmitting(true);

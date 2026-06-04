@@ -1,30 +1,32 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zero_platform';
-
-async function run() {
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    console.log('Connected to database.');
-
-    const db = client.db();
-    const collection = db.collection('agent_category_fees');
-
-    // Create unique compound index
-    console.log('Creating unique index on agent_id, company_id, main_cate_id...');
-    await collection.createIndex(
-      { agent_id: 1, company_id: 1, main_cate_id: 1 },
-      { unique: true, name: 'agent_company_cate_unique' }
-    );
-    console.log('Index created successfully!');
-
-  } catch (error) {
-    console.error('Error creating index:', error);
-  } finally {
-    await client.close();
-  }
+if (!process.env.MONGODB_URI || !process.env.DB_NAME) {
+  process.stderr.write('[setup-indexes] Missing MONGODB_URI or DB_NAME\n');
+  process.exit(1);
 }
 
-run();
+const client = new MongoClient(process.env.MONGODB_URI);
+
+async function run() {
+  await client.connect();
+  const db = client.db(process.env.DB_NAME);
+  const collection = db.collection('agent_category_fees');
+
+  await collection.createIndex(
+    { agent_id: 1, ou_id: 1, branch_id: 1, company_id: 1, main_cate_id: 1 },
+    { unique: true, background: true, name: 'agent_tenant_company_cate_unique' }
+  );
+
+  await collection.createIndex(
+    { ou_id: 1, branch_id: 1, agent_id: 1 },
+    { background: true, name: 'tenant_agent_lookup' }
+  );
+}
+
+run()
+  .then(() => process.stdout.write('[setup-indexes] Indexes created successfully.\n'))
+  .catch((err) => {
+    process.stderr.write(`[setup-indexes] Error: ${err.message}\n`);
+    process.exit(1);
+  })
+  .finally(() => client.close());

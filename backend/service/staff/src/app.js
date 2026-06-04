@@ -18,7 +18,9 @@ import profileRoutes from "./modules/profiles/profiles.route.js";
 const PROBLEM_TYPE_BASE = "https://problems.zero-platform.internal/staff";
 
 function parseBodyLimitBytes(value) {
-  const str = String(value ?? "1mb").trim().toLowerCase();
+  const str = String(value ?? "1mb")
+    .trim()
+    .toLowerCase();
   if (str.endsWith("mb")) return Math.round(parseFloat(str) * 1024 * 1024);
   if (str.endsWith("kb")) return Math.round(parseFloat(str) * 1024);
   const n = parseInt(str, 10);
@@ -83,6 +85,19 @@ export default async function createApp(env) {
         sharedSecret: env.gatewaySharedSecret,
       });
       await api.register(userContextGuard);
+
+      await api.register(import("@fastify/rate-limit"), {
+        max: 60,
+        timeWindow: "1 minute",
+        keyGenerator: (req) =>
+          `${req.userContext?.userId ?? req.ip}:${req.routeOptions?.url ?? req.url}`,
+        errorResponseBuilder: (_req, context) => ({
+          success: false,
+          code: CODES.TOO_MANY_REQUESTS,
+          message: `Rate limit exceeded. Retry in ${Math.ceil(context.ttl / 1000)} seconds.`,
+          data: null,
+        }),
+      });
 
       /** Internal probe — removed when profiles routes land (T08+). */
       api.get("/_mesh-probe", async (request) => {

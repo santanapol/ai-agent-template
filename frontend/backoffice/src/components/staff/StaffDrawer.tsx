@@ -70,9 +70,10 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   return (
     <Drawer
       title={drawerTitle}
-      width={500}
+      size={500}
       onClose={onClose}
       open={open}
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={onClose}>Cancel</Button>

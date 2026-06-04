@@ -1,0 +1,49 @@
+/* 1 createdAt:2025-10-02T16:36:32.000Z*/
+{
+    "_id": ObjectId("68deaa106de79a6bd4ec9962"),
+    "manin_cate_name": {
+        "en": "Arcade"
+    }
+},
+/* 2 createdAt:2021-09-14T08:31:12.000Z*/
+{
+    "_id": ObjectId("61405dd02afe5917faf3655f"),
+    "manin_cate_name": {
+        "en": "Virtual Sport"
+    }
+},
+/* 3 createdAt:2020-09-27T13:30:52.000Z*/
+{
+    "_id": ObjectId("5f70940c14e24b3862261639"),
+    "manin_cate_name": {
+        "en": "Sport"
+    }
+},
+/* 4 createdAt:2020-07-20T11:20:47.000Z*/
+{
+    "_id": ObjectId("5f157e0f0cd3be22cc236a6b"),
+    "manin_cate_name": {
+        "en": "Fishing"
+    }
+},
+/* 5 createdAt:2020-07-20T11:20:23.000Z*/
+{
+    "_id": ObjectId("5f157df70cd3be22cc236a69"),
+    "manin_cate_name": {
+        "en": "Table"
+    }
+},
+/* 6 createdAt:2020-07-20T11:20:04.000Z*/
+{
+    "_id": ObjectId("5f157de40cd3be22cc236a67"),
+    "manin_cate_name": {
+        "en": "Live Casino"
+    }
+},
+/* 7 createdAt:2020-07-20T11:19:48.000Z*/
+{
+    "_id": ObjectId("5f157dd40cd3be22cc236a65"),
+    "manin_cate_name": {
+        "en": "Slot"
+    }
+}

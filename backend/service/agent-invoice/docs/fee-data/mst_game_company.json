@@ -1,0 +1,581 @@
+/* 1 createdAt:2025-10-30T10:05:25.000Z*/
+{
+	"_id": ObjectId("69033865095918b66b06a10d"),
+	"name": "MG",
+	"desc": "MICRO GAMING (NEW)",
+	"platform": "MGP"
+},
+/* 2 createdAt:2025-10-22T07:28:58.000Z*/
+{
+	"_id": ObjectId("68f887ba06b05618bb7339f2"),
+	"name": "OMG",
+	"desc": "OMG GAME",
+	"platform": "OMG"
+},
+/* 3 createdAt:2025-09-19T07:19:08.000Z*/
+{
+	"_id": ObjectId("68cd03ec08db769447b795e1"),
+	"name": "BUFFALO",
+	"desc": "AFRICAN BUFFALO",
+	"platform": "ABF"
+},
+/* 4 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f74"),
+	"name": "DG",
+	"desc": "DREAM GAMING",
+	"platform": "GDG_DG"
+},
+/* 5 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f71"),
+	"name": "SPRIBE",
+	"desc": "SPRIBE",
+	"platform": "GDG_SPB"
+},
+/* 6 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6f"),
+	"name": "TADA",
+	"desc": "TADA",
+	"platform": "GDG_TADA"
+},
+/* 7 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6e"),
+	"name": "PLAYSON",
+	"desc": "PLAYSON",
+	"platform": "GDG_PS"
+},
+/* 8 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6d"),
+	"name": "RUBY",
+	"desc": "RUBY PLAY",
+	"platform": "GDG_RUBY"
+},
+/* 9 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6c"),
+	"name": "JILI",
+	"desc": "JILI",
+	"platform": "GDG_JILI"
+},
+/* 10 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6b"),
+	"name": "3OAKS",
+	"desc": "3OAKS",
+	"platform": "GDG_OAK"
+},
+/* 11 createdAt:2025-08-28T03:46:08.000Z*/
+{
+	"_id": ObjectId("68afd1007e416a14c6232f6a"),
+	"name": "JDB",
+	"desc": "JDB",
+	"platform": "GDG_JDB"
+},
+/* 12 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f69"),
+	"name": "FA CHAI",
+	"desc": "FA CHAI",
+	"platform": "GDG_FC"
+},
+/* 13 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f68"),
+	"name": "CQ9",
+	"desc": "CQ9",
+	"platform": "GDG_CQ9"
+},
+/* 14 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f67"),
+	"name": "POPOK",
+	"desc": "POPOK",
+	"platform": "GDG_POK"
+},
+/* 15 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f66"),
+	"name": "MASCOT",
+	"desc": "MASCOT",
+	"platform": "GDG_MC"
+},
+/* 16 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f65"),
+	"name": "EVOPLAY",
+	"desc": "EVOPLAY",
+	"platform": "GDG_EP"
+},
+/* 17 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f64"),
+	"name": "POPIPLAY",
+	"desc": "POPIPLAY",
+	"platform": "GDG_POP"
+},
+/* 18 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f63"),
+	"name": "HACKSAW",
+	"desc": "HACKSAW",
+	"platform": "GDG_HS"
+},
+/* 19 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f62"),
+	"name": "BOOONGO",
+	"desc": "BOOONGO",
+	"platform": "GDG_BNG"
+},
+/* 20 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f60"),
+	"name": "HABANERO",
+	"desc": "HABANERO",
+	"platform": "GDG_HB"
+},
+/* 21 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f5f"),
+	"name": "PG SOFT",
+	"desc": "PG SOFT",
+	"platform": "GDG_PG"
+},
+/* 22 createdAt:2025-08-28T03:46:07.000Z*/
+{
+	"_id": ObjectId("68afd0ff7e416a14c6232f5e"),
+	"name": "PP",
+	"desc": "PRAGMATIC PLAY",
+	"platform": "GDG_PP"
+},
+/* 23 createdAt:2025-06-11T07:12:03.000Z*/
+{
+	"_id": ObjectId("68492c43868da1804d5a5dee"),
+	"name": "ATG",
+	"desc": "ATG GAMES",
+	"platform": "ATG"
+},
+/* 24 createdAt:2025-01-27T04:21:15.000Z*/
+{
+	"_id": ObjectId("679709bbde121d368491765e"),
+	"name": "AVIATRIX",
+	"desc": "AVIATRIX",
+	"platform": "AVT"
+},
+/* 25 createdAt:2024-10-25T02:33:55.000Z*/
+{
+	"_id": ObjectId("671b0393c18b17039646625f"),
+	"name": "VA",
+	"desc": "VICTORY ARK GAMING",
+	"platform": "VA"
+},
+/* 26 createdAt:2024-05-17T10:14:00.000Z*/
+{
+	"_id": ObjectId("66472de81b096df531906056"),
+	"name": "DRAGON GAMING",
+	"desc": "DRAGON GAMING",
+	"platform": "DGM"
+},
+/* 27 createdAt:2023-09-06T09:48:34.000Z*/
+{
+	"_id": ObjectId("64f84af28f47e3525191cb3e"),
+	"name": "GCLUB",
+	"desc": "GCLUB",
+	"platform": "RGC"
+},
+/* 28 createdAt:2023-09-06T09:48:34.000Z*/
+{
+	"_id": ObjectId("64f84af28f47e3525191cb3d"),
+	"name": "RSG",
+	"desc": "ROYAL SLOT GAMING",
+	"platform": "RSG"
+},
+/* 29 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511047"),
+	"name": "FAZI",
+	"desc": "FAZI",
+	"platform": "GIS_FZ"
+},
+/* 30 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511046"),
+	"name": "EZUGI",
+	"desc": "EZUGI",
+	"platform": "GIS_EZ"
+},
+/* 31 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511045"),
+	"name": "EVOPLAY",
+	"desc": "EVOPLAY",
+	"platform": "GIS_EVP"
+},
+/* 32 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511044"),
+	"name": "EVOLUTION GIS",
+	"desc": "EVOLUTION GIS",
+	"platform": "GIS_EVO"
+},
+/* 33 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511042"),
+	"name": "ESPRESSO",
+	"desc": "ESPRESSO GAMES",
+	"platform": "GIS_EPG"
+},
+/* 34 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511041"),
+	"name": "ENDORPHINA",
+	"desc": "ENDORPHINA",
+	"platform": "GIS_EDP"
+},
+/* 35 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511040"),
+	"name": "ELBET",
+	"desc": "ELBET",
+	"platform": "GIS_EB"
+},
+/* 36 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103f"),
+	"name": "DLV",
+	"desc": "DLV",
+	"platform": "GIS_DLV"
+},
+/* 37 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103e"),
+	"name": "CT",
+	"desc": "CT INTERACTIVE",
+	"platform": "GIS_CTI"
+},
+/* 38 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103d"),
+	"name": "CONCEPT",
+	"desc": "CONCEPT GAMING",
+	"platform": "GIS_CCG"
+},
+/* 39 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103c"),
+	"name": "COGG",
+	"desc": "COGG STUDIOS",
+	"platform": "GIS_COG"
+},
+/* 40 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103b"),
+	"name": "CALETA",
+	"desc": "CALETA",
+	"platform": "GIS_CLT"
+},
+/* 41 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc51103a"),
+	"name": "BOOMING",
+	"desc": "BOOMING GAMES",
+	"platform": "GIS_BMG"
+},
+/* 42 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511039"),
+	"name": "BOLDPLAY",
+	"desc": "BOLDPLAY",
+	"platform": "GIS_BOP"
+},
+/* 43 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511038"),
+	"name": "BLUEPRINT",
+	"desc": "BLUEPRINT",
+	"platform": "GIS_BLP"
+},
+/* 44 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511037"),
+	"name": "BF",
+	"desc": "BF GAMES",
+	"platform": "GIS_BF"
+},
+/* 45 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511036"),
+	"name": "BETSOFT",
+	"desc": "BETSOFT",
+	"platform": "GIS_BS"
+},
+/* 46 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511035"),
+	"name": "BETGAMES",
+	"desc": "BETGAMES",
+	"platform": "GIS_BTG"
+},
+/* 47 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511034"),
+	"name": "BELATRA",
+	"desc": "BELATRA GAMES",
+	"platform": "GIS_BLG"
+},
+/* 48 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511033"),
+	"name": "AVIATRIX GIS",
+	"desc": "AVIATRIX GIS",
+	"platform": "GIS_AT"
+},
+/* 49 createdAt:2023-06-26T10:51:02.000Z*/
+{
+	"_id": ObjectId("64996d96ebc4be31bc511032"),
+	"name": "AMIGO",
+	"desc": "AMIGO GAMING",
+	"platform": "GIS_AMG"
+},
+/* 50 createdAt:2023-06-21T09:16:29.000Z*/
+{
+	"_id": ObjectId("6492bfedadfe4ef7bac8e29d"),
+	"name": "THUNDERKICK",
+	"desc": "THUNDERKICK",
+	"platform": "GIS_TDK"
+},
+/* 51 createdAt:2023-06-21T09:15:58.000Z*/
+{
+	"_id": ObjectId("6492bfceadfe4ef7bac8e29c"),
+	"name": "SPRIBE",
+	"desc": "SPRIBE",
+	"platform": "GIS_SP"
+},
+/* 52 createdAt:2023-06-21T09:15:21.000Z*/
+{
+	"_id": ObjectId("6492bfa9adfe4ef7bac8e29b"),
+	"name": "PLATIPUS",
+	"desc": "PLATIPUS",
+	"platform": "GIS_PTP"
+},
+/* 53 createdAt:2023-06-21T09:14:31.000Z*/
+{
+	"_id": ObjectId("6492bf77adfe4ef7bac8e29a"),
+	"name": "MASCOT",
+	"desc": "MASCOT GAMING",
+	"platform": "GIS_MCG"
+},
+/* 54 createdAt:2023-06-21T09:12:59.000Z*/
+{
+	"_id": ObjectId("6492bf1badfe4ef7bac8e299"),
+	"name": "BGAMING",
+	"desc": "BGAMING",
+	"platform": "GIS_BG"
+},
+/* 55 createdAt:2023-06-21T09:12:28.000Z*/
+{
+	"_id": ObjectId("6492befcadfe4ef7bac8e298"),
+	"name": "BNG",
+	"desc": "BOOONGO",
+	"platform": "GIS_3OAKS"
+},
+/* 56 createdAt:2023-05-30T10:32:38.000Z*/
+{
+	"_id": ObjectId("6475d0c60a376b020857afff"),
+	"name": "DG",
+	"desc": "DREAM GAMING",
+	"platform": "DG"
+},
+/* 57 createdAt:2023-02-20T03:44:49.000Z*/
+{
+	"_id": ObjectId("63f2ecb1d291ebb5abbdcec4"),
+	"name": "R88",
+	"desc": "RICH88",
+	"platform": "R88"
+},
+/* 58 createdAt:2022-07-20T05:53:08.000Z*/
+{
+	"_id": ObjectId("62d79844931d6829fbcf89fd"),
+	"name": "SEXY VIP",
+	"desc": "SEXY VIP",
+	"platform": "SEXYBCRTVIP"
+},
+/* 59 createdAt:2021-12-20T07:29:41.000Z*/
+{
+	"_id": ObjectId("61c030e55bced1494394215b"),
+	"name": "UG",
+	"desc": "UNITED GAMING",
+	"platform": "UG"
+},
+/* 60 createdAt:2021-12-08T09:55:17.000Z*/
+{
+	"_id": ObjectId("61b081055909fe393b251432"),
+	"name": "BTI",
+	"desc": "SBTECH SPORSTBOOK",
+	"platform": "SB"
+},
+/* 61 createdAt:2021-12-08T09:55:05.000Z*/
+{
+	"_id": ObjectId("61b080f95909fe393b251431"),
+	"name": "SABA",
+	"desc": "GAMINGSOFT IBC SPORTSBOOK",
+	"platform": "IB"
+},
+/* 62 createdAt:2021-11-25T09:04:36.000Z*/
+{
+	"_id": ObjectId("619f51a45909fe393b2513f7"),
+	"name": "CHOICE",
+	"desc": "Choice gaming",
+	"platform": "AG"
+},
+/* 63 createdAt:2021-11-24T21:16:44.000Z*/
+{
+	"_id": ObjectId("619eabbc5909fe393b2513f5"),
+	"name": "FUNKY",
+	"desc": "FUNKY GAMES",
+	"platform": "FK"
+},
+/* 64 createdAt:2021-11-19T09:07:42.000Z*/
+{
+	"_id": ObjectId("6197695e5909fe393b2513f3"),
+	"name": "BBIN",
+	"desc": "BBIN",
+	"platform": "GB"
+},
+/* 65 createdAt:2021-11-19T08:32:51.000Z*/
+{
+	"_id": ObjectId("619761335909fe393b2513f1"),
+	"name": "EVOLUTION",
+	"desc": "EVOLUTION GAMING",
+	"platform": "GE"
+},
+/* 66 createdAt:2021-11-18T07:39:40.000Z*/
+{
+	"_id": ObjectId("6196033c5909fe393b2513ef"),
+	"name": "SBO",
+	"desc": "SBOBET SPORTSBOOK",
+	"platform": "SO"
+},
+/* 67 createdAt:2021-11-17T08:02:26.000Z*/
+{
+	"_id": ObjectId("6194b7125909fe393b2513e3"),
+	"name": "WM",
+	"desc": "WM CASINO",
+	"platform": "WC"
+},
+/* 68 createdAt:2021-11-16T13:23:59.000Z*/
+{
+	"_id": ObjectId("6193b0ef5909fe393b2513e1"),
+	"name": "WBET",
+	"desc": "WBET SPORTSBOOK",
+	"platform": "WB"
+},
+/* 69 createdAt:2021-11-12T11:43:50.000Z*/
+{
+	"_id": ObjectId("618e5376fe1d1c02b0e5f2e9"),
+	"name": "SA",
+	"desc": "SA GAMING",
+	"platform": "SA"
+},
+/* 70 createdAt:2021-10-28T12:12:09.000Z*/
+{
+	"_id": ObjectId("617a9399130f371a70e08a61"),
+	"name": "JOKER",
+	"desc": "JOKER",
+	"platform": "JK"
+},
+/* 71 createdAt:2021-09-14T08:28:36.000Z*/
+{
+	"_id": ObjectId("61405d342afe5917faf3655e"),
+	"name": "PP",
+	"desc": "PRAGMATIC PLAY",
+	"platform": "PP"
+},
+/* 72 createdAt:2020-09-27T13:28:31.000Z*/
+{
+	"_id": ObjectId("5f70937f14e24b3862261638"),
+	"name": "CMD368",
+	"desc": "FLASH TECH",
+	"platform": "FT"
+},
+/* 73 createdAt:2020-08-27T12:47:53.000Z*/
+{
+	"_id": ObjectId("5f47ab7951b1d4483f508ff5"),
+	"name": "CQ9",
+	"desc": "CQ9",
+	"platform": "CQ9"
+},
+/* 74 createdAt:2020-08-27T12:47:22.000Z*/
+{
+	"_id": ObjectId("5f47ab5a51b1d4483f508ff3"),
+	"name": "JDB",
+	"desc": "JDB",
+	"platform": "JDB"
+},
+/* 75 createdAt:2020-08-03T10:03:20.000Z*/
+{
+	"_id": ObjectId("5f27e0e88eab0d2e14518936"),
+	"name": "JILI",
+	"desc": "JILI",
+	"platform": "JiLi"
+},
+/* 76 createdAt:2020-07-20T11:15:10.000Z*/
+{
+	"_id": ObjectId("5f157cbe0cd3be22cc236a60"),
+	"name": "FC",
+	"desc": "FC SLOT",
+	"platform": "FC"
+},
+/* 77 createdAt:2020-07-20T11:14:41.000Z*/
+{
+	"_id": ObjectId("5f157ca10cd3be22cc236a5f"),
+	"name": "PG",
+	"desc": "POCKET GAMES",
+	"platform": "PG"
+},
+/* 78 createdAt:2020-07-20T11:14:20.000Z*/
+{
+	"_id": ObjectId("5f157c8c0cd3be22cc236a5e"),
+	"name": "YL",
+	"desc": "YL FISHING",
+	"platform": "YL"
+},
+/* 79 createdAt:2020-07-20T11:13:45.000Z*/
+{
+	"_id": ObjectId("5f157c690cd3be22cc236a5d"),
+	"name": "RT",
+	"desc": "RED TIGER",
+	"platform": "RT"
+},
+/* 80 createdAt:2020-07-20T11:13:09.000Z*/
+{
+	"_id": ObjectId("5f157c450cd3be22cc236a5c"),
+	"name": "KM",
+	"desc": "KINGMIDAS",
+	"platform": "KINGMAKER"
+},
+/* 81 createdAt:2020-07-20T11:12:54.000Z*/
+{
+	"_id": ObjectId("5f157c360cd3be22cc236a5b"),
+	"name": "SG",
+	"desc": "SPADE",
+	"platform": "SPADE"
+},
+/* 82 createdAt:2020-07-20T11:12:42.000Z*/
+{
+	"_id": ObjectId("5f157c2a0cd3be22cc236a5a"),
+	"name": "COCKFIGHT",
+	"desc": "COCKFIGHT",
+	"platform": "SV388"
+},
+/* 83 createdAt:2020-07-20T11:11:53.000Z*/
+{
+	"_id": ObjectId("5f157bf90cd3be22cc236a58"),
+	"name": "SEXY",
+	"desc": "SEXY CASINO",
+	"platform": "SEXYBCRT"
+}

@@ -46,6 +46,46 @@ describe("normalize utils", () => {
     assert.strictEqual(fields.code, undefined);
   });
 
+  test("normalizeEmail rejects invalid format (no @ separator)", () => {
+    assert.throws(
+      () => normalizeEmail("notanemail.com"),
+      (error) => error instanceof HttpError && error.status === 400,
+    );
+  });
+
+  test("normalizeEmail rejects string with no TLD after dot", () => {
+    assert.throws(
+      () => normalizeEmail("user@domain"),
+      (error) => error instanceof HttpError && error.status === 400,
+    );
+  });
+
+  test("normalizeTel rejects non-digit characters after +", () => {
+    assert.throws(
+      () => normalizeTel("+66abc1234"),
+      (error) => error instanceof HttpError && error.status === 400,
+    );
+  });
+
+  test("normalizeUsername throws for empty string after trim", () => {
+    assert.throws(
+      () => normalizeUsername("   "),
+      (error) => error instanceof HttpError && error.status === 400,
+    );
+  });
+
+  test("normalizeUsername throws for string exceeding 128 characters", () => {
+    assert.throws(
+      () => normalizeUsername("a".repeat(129)),
+      (error) => error instanceof HttpError && error.status === 400,
+    );
+  });
+
+  test("normalizePatchFields returns empty object when no patchable fields provided", () => {
+    const fields = normalizePatchFields({});
+    assert.deepStrictEqual(fields, {});
+  });
+
   test("normalizeProfileFields trims contact fields", () => {
     const fields = normalizeProfileFields({
       code: " EMP-01 ",
