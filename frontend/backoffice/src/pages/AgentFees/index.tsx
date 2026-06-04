@@ -130,12 +130,17 @@ const AgentFeesPage: React.FC = () => {
     originalFeesRef.current = new Map();
 
     // Reset all to unchecked first
-    Object.values(checkboxRefs.current).forEach(cb => {
-       if (cb) {
-         cb.checked = false;
-         const evt = new Event('change', { bubbles: true });
-         cb.dispatchEvent(evt); // Trigger the disabled state sync
-       }
+    Object.keys(checkboxRefs.current).forEach(key => {
+      const cbEl = checkboxRefs.current[key];
+      const rateEl = rateRefs.current[key];
+      if (cbEl && rateEl) {
+        cbEl.checked = false;
+        rateEl.disabled = true;
+        rateEl.style.borderColor = '#f0f0f0';
+        rateEl.style.color = '#00000040';
+        rateEl.style.background = '#f5f5f5';
+        rateEl.style.cursor = 'not-allowed';
+      }
     });
 
     // Apply fetched fees
@@ -146,14 +151,13 @@ const AgentFeesPage: React.FC = () => {
       const cbEl = checkboxRefs.current[key];
       const rateEl = rateRefs.current[key];
       
-      if (cbEl) {
+      if (cbEl && rateEl) {
         cbEl.checked = true;
-        // Trigger event to re-enable input
-        const evt = new Event('change', { bubbles: true });
-        cbEl.dispatchEvent(evt);
-      }
-      
-      if (rateEl) {
+        rateEl.disabled = false;
+        rateEl.style.borderColor = '#d9d9d9';
+        rateEl.style.color = '#000000d9';
+        rateEl.style.background = '#fff';
+        rateEl.style.cursor = 'text';
         rateEl.value = String(f.fee_rate);
       }
     });
