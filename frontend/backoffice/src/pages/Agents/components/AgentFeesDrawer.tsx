@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Drawer, Table, Button, Typography, Tag } from 'antd';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgentFees } from '../hooks/useAgentFees';
+import AgentFeeModal from './AgentFeeModal';
 import type { Agent } from '../../../types/agents';
+import type { CreateFeePayload } from '../../../types/agentFees';
 
 
 const { Title } = Typography;
@@ -14,9 +16,10 @@ interface AgentFeesDrawerProps {
 }
 
 const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose }) => {
-  const { fees, companies, categories, loading, total, fetchFees, fetchMasterData } = useAgentFees(agent?._id || '');
+  const { fees, companies, categories, loading, total, fetchFees, fetchMasterData, createFee } = useAgentFees(agent?._id || '');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -42,6 +45,14 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
   const getCategoryName = (categoryId: string) => {
     const cat = categories.find(c => c._id === categoryId);
     return cat ? cat.name.en : categoryId;
+  };
+
+  const handleCreate = async (values: CreateFeePayload) => {
+    const success = await createFee(values);
+    if (success) {
+      setIsModalOpen(false);
+      fetchFees({ page, limit: pageSize });
+    }
   };
 
   const columns = [
@@ -74,7 +85,7 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
       open={open}
     >
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="primary">
+        <Button type="primary" onClick={() => setIsModalOpen(true)}>
           Add Fee Rate
         </Button>
       </div>
@@ -91,6 +102,15 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
           showSizeChanger: true,
         }}
         onChange={handleTableChange}
+      />
+
+      <AgentFeeModal
+        open={isModalOpen}
+        loading={loading}
+        companies={companies}
+        categories={categories}
+        onOk={handleCreate}
+        onCancel={() => setIsModalOpen(false)}
       />
     </Drawer>
   );

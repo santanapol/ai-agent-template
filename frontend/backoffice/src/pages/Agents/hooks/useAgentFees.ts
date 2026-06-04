@@ -37,6 +37,25 @@ export function useAgentFees(agentId: string) {
     }
   }, []);
 
+  const createFee = useCallback(async (payload: any) => {
+    if (!agentId) return false;
+    setLoading(true);
+    try {
+      await api.createAgentFee(agentId, payload);
+      message.success('Fee created successfully');
+      return true;
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        message.error('Fee override for this company and category already exists.');
+      } else {
+        message.error(err.response?.data?.message || 'Failed to create agent fee');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
   return {
     fees,
     companies,
@@ -44,6 +63,7 @@ export function useAgentFees(agentId: string) {
     loading,
     total,
     fetchFees,
-    fetchMasterData
+    fetchMasterData,
+    createFee
   };
 }
