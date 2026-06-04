@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import type { DecodedUser, TokenResponse } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/staffApiClient';
+import { setAgentAccessToken, setAgentRefreshCallback } from '../lib/agentsApiClient';
+import { setAgentFeesAccessToken } from '../lib/agentFeesApiClient';
 
 interface AuthContextValue {
   user: DecodedUser | null;
@@ -35,18 +37,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!decoded) return;
     setUser(decoded);
     setAccessToken(data.access_token);
+    setAgentAccessToken(data.access_token);
+    setAgentFeesAccessToken(data.access_token);
     authApi.setAuthAccessToken(data.access_token);
   }, []);
 
   const clearSession = useCallback(() => {
     setUser(null);
     setAccessToken(null);
+    setAgentAccessToken(null);
+    setAgentFeesAccessToken(null);
     authApi.setAuthAccessToken(null);
   }, []);
 
-  // Register the refresh callback so staffApiClient can retry on 401
+  // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
   useEffect(() => {
-    setRefreshCallback(async () => {
+    const refreshFn = async () => {
       try {
         const fresh = await authApi.refresh();
         applyToken(fresh);
@@ -55,7 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearSession();
         return null;
       }
-    });
+    };
+    setRefreshCallback(refreshFn);
+    setAgentRefreshCallback(refreshFn);
   }, [applyToken, clearSession]);
 
   // On mount: attempt to restore session via HttpOnly refresh cookie

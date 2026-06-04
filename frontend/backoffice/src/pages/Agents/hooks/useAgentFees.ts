@@ -1,0 +1,49 @@
+import { useState, useCallback } from 'react';
+import { message } from 'antd';
+import * as api from '../../../lib/agentFeesApiClient';
+import type { AgentFee, GameCompany, GameCategory, ListFeesParams } from '../../../types/agentFees';
+
+export function useAgentFees(agentId: string) {
+  const [fees, setFees] = useState<AgentFee[]>([]);
+  const [companies, setCompanies] = useState<GameCompany[]>([]);
+  const [categories, setCategories] = useState<GameCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+
+  const fetchFees = useCallback(async (params: ListFeesParams = { page: 1, limit: 10 }) => {
+    if (!agentId) return;
+    setLoading(true);
+    try {
+      const data = await api.listAgentFees(agentId, params);
+      setFees(data.data || []);
+      setTotal(data.total || 0);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to fetch agent fees');
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  const fetchMasterData = useCallback(async () => {
+    try {
+      const [comps, cats] = await Promise.all([
+        api.getGameCompanies(),
+        api.getGameCategories()
+      ]);
+      setCompanies(comps || []);
+      setCategories(cats || []);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to fetch master data');
+    }
+  }, []);
+
+  return {
+    fees,
+    companies,
+    categories,
+    loading,
+    total,
+    fetchFees,
+    fetchMasterData
+  };
+}
