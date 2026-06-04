@@ -268,7 +268,7 @@ const AgentFeesPage: React.FC = () => {
             styles={{ body: { padding: 0 } }}
           >
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #f0f0f0' }}>
-              <Title level={5} style={{ margin: 0 }}>{company.name.en}</Title>
+              <Title level={5} style={{ margin: 0 }}>{company.name}</Title>
             </div>
             <FeeTableHeader />
             {categories.map(cat => {
@@ -277,7 +277,7 @@ const AgentFeesPage: React.FC = () => {
                 <FeeRow
                   key={key}
                   rowKey={key}
-                  categoryName={cat.name.en}
+                  categoryName={cat.name}
                   isEnabled={enabledKeys.has(key)}
                   defaultRate={agent?.default_fee_rate ?? 0}
                   onToggle={handleToggle}
