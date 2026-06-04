@@ -35,18 +35,18 @@ export async function createAgentFee(agentId: string, payload: CreateFeePayload)
   return { data: res.data.data, etag: extractETag(res) };
 }
 
-export async function updateAgentFee(agentId: string, feeId: string, payload: UpdateFeePayload, etag: string) {
-  const formattedEtag = etag.startsWith('W/"') ? etag : `W/"${etag}"`;
+export async function updateAgentFee(agentId: string, feeId: string, payload: UpdateFeePayload, dateISO: string) {
+  const etag = `W/"${btoa(dateISO)}"`;
   const res = await client.patch<ApiEnvelope<unknown>>(`/api/v1/agent-invoice/agents/${agentId}/fees/${feeId}`, payload, {
-    headers: { 'If-Match': formattedEtag },
+    headers: { 'If-Match': etag },
   });
   return { data: res.data.data, etag: extractETag(res) };
 }
 
-export async function deleteAgentFee(agentId: string, feeId: string, etag: string) {
-  const formattedEtag = etag.startsWith('W/"') ? etag : `W/"${etag}"`;
+export async function deleteAgentFee(agentId: string, feeId: string, dateISO: string) {
+  const etag = `W/"${btoa(dateISO)}"`;
   await client.delete(`/api/v1/agent-invoice/agents/${agentId}/fees/${feeId}`, {
-    headers: { 'If-Match': formattedEtag },
+    headers: { 'If-Match': etag },
   });
 }
 
