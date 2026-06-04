@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Card, Button, Typography, Switch, Space, Tag, Spin,
+  Card, Button, Typography, Space, Tag, Spin,
   Breadcrumb, message, InputNumber, Divider, Row, Col
 } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
@@ -12,91 +12,67 @@ import type { AgentFee } from '../../types/agentFees';
 
 const { Title, Text } = Typography;
 
-// ─── Fee Table Header ────────────────────────────────────────────────────────
-const ROW_GRID = '1fr 120px 200px';
-
-const FeeTableHeader: React.FC = React.memo(() => (
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: ROW_GRID,
-    padding: '8px 16px',
-    background: '#fafafa',
-    borderBottom: '2px solid #e8e8e8',
-    fontWeight: 600,
-    fontSize: 12,
-    color: '#8c8c8c',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  }}>
-    <span>Category</span>
-    <span>Override</span>
-    <span>Fee Rate (%)</span>
-  </div>
-));
-
-// ─── Fee Row — memoized, zero re-renders on typing ───────────────────────────
-interface FeeRowProps {
+// ─── Matrix Cell — pure DOM updates for zero lag ──────────────────────────────
+interface MatrixCellProps {
   rowKey: string;
-  categoryName: string;
-  isEnabled: boolean;
   defaultRate: number;
-  onToggle: (key: string, enabled: boolean) => void;
-  setRef: (key: string, el: HTMLInputElement | null) => void;
+  setRateRef: (key: string, el: HTMLInputElement | null) => void;
+  setCheckboxRef: (key: string, el: HTMLInputElement | null) => void;
 }
 
-const FeeRow = React.memo(({ rowKey, categoryName, isEnabled, defaultRate, onToggle, setRef }: FeeRowProps) => (
-  <div
-    style={{
-      display: 'grid',
-      gridTemplateColumns: ROW_GRID,
-      alignItems: 'center',
-      padding: '10px 16px',
-      borderBottom: '1px solid #f0f0f0',
-      transition: 'background 0.15s',
-    }}
-    onMouseEnter={e => (e.currentTarget.style.background = '#fafffe')}
-    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-  >
-    <div>
-      <Tag color="purple" style={{ margin: 0 }}>{categoryName}</Tag>
-    </div>
-    <div>
-      <Switch
-        checked={isEnabled}
-        onChange={checked => onToggle(rowKey, checked)}
-        checkedChildren="ON"
-        unCheckedChildren="OFF"
-        size="small"
-      />
-    </div>
-    <div>
+const MatrixCell = React.memo(({ rowKey, defaultRate, setRateRef, setCheckboxRef }: MatrixCellProps) => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
       <input
-        ref={el => setRef(rowKey, el)}
-        type="number"
-        min={0}
-        max={100}
-        step={1}
-        defaultValue={defaultRate}
-        disabled={!isEnabled}
-        style={{
-          width: '100%',
-          padding: '5px 10px',
-          border: `1px solid ${isEnabled ? '#d9d9d9' : '#f0f0f0'}`,
-          borderRadius: 6,
-          fontSize: 14,
-          color: isEnabled ? '#000000d9' : '#00000040',
-          background: isEnabled ? '#fff' : '#f5f5f5',
-          cursor: isEnabled ? 'text' : 'not-allowed',
-          outline: 'none',
-          transition: 'border-color 0.2s, color 0.2s',
-          boxSizing: 'border-box',
+        type="checkbox"
+        ref={el => setCheckboxRef(rowKey, el)}
+        style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
+        onChange={(e) => {
+          const isEnabled = e.target.checked;
+          const inputEl = document.getElementById(`input-${rowKey}`) as HTMLInputElement | null;
+          if (inputEl) {
+            inputEl.disabled = !isEnabled;
+            inputEl.style.borderColor = isEnabled ? '#d9d9d9' : '#f0f0f0';
+            inputEl.style.color = isEnabled ? '#000000d9' : '#00000040';
+            inputEl.style.background = isEnabled ? '#fff' : '#f5f5f5';
+            inputEl.style.cursor = isEnabled ? 'text' : 'not-allowed';
+            if (!isEnabled) {
+              inputEl.value = String(defaultRate); // Reset to default visually when disabled
+            }
+          }
         }}
-        onFocus={e => { if (isEnabled) e.currentTarget.style.borderColor = '#2563EB'; }}
-        onBlur={e => { e.currentTarget.style.borderColor = isEnabled ? '#d9d9d9' : '#f0f0f0'; }}
       />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input
+          id={`input-${rowKey}`}
+          type="number"
+          min={0}
+          max={100}
+          step={1}
+          defaultValue={defaultRate}
+          disabled={true}
+          ref={el => setRateRef(rowKey, el)}
+          style={{
+            width: 50,
+            padding: '2px 14px 2px 6px',
+            border: '1px solid #f0f0f0',
+            borderRadius: 4,
+            fontSize: 13,
+            color: '#00000040',
+            background: '#f5f5f5',
+            cursor: 'not-allowed',
+            outline: 'none',
+            transition: 'border-color 0.2s, color 0.2s',
+            textAlign: 'right'
+          }}
+          onFocus={e => { if (!e.currentTarget.disabled) e.currentTarget.style.borderColor = '#2563EB'; }}
+          onBlur={e => { if (!e.currentTarget.disabled) e.currentTarget.style.borderColor = '#d9d9d9'; }}
+        />
+        <span style={{ position: 'absolute', right: 4, fontSize: 10, color: '#aaa', pointerEvents: 'none' }}>%</span>
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const AgentFeesPage: React.FC = () => {
@@ -114,8 +90,9 @@ const AgentFeesPage: React.FC = () => {
 
   const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(id || '');
 
-  const [enabledKeys, setEnabledKeys] = useState<Set<string>>(new Set());
+  // DOM refs for matrix inputs and checkboxes
   const rateRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const checkboxRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const originalFeesRef = useRef<Map<string, AgentFee>>(new Map());
 
   // ── Load agent ────────────────────────────────────────────────────────────
@@ -147,21 +124,39 @@ const AgentFeesPage: React.FC = () => {
     if (agent?.ou_id) fetchMasterData(agent.ou_id);
   }, [agent?.ou_id, fetchMasterData]);
 
-  // ── Sync fees to input refs ───────────────────────────────────────────────
+  // ── Sync fees to input refs (Imperative updates to avoid lag) ───────────
   useEffect(() => {
     if (loading) return;
-    const enabled = new Set<string>();
     originalFeesRef.current = new Map();
 
-    fees.forEach(f => {
-      const key = `${f.company_id}_${f.main_cate_id}`;
-      enabled.add(key);
-      originalFeesRef.current.set(key, f);
-      const el = rateRefs.current[key];
-      if (el) el.value = String(f.fee_rate);
+    // Reset all to unchecked first
+    Object.values(checkboxRefs.current).forEach(cb => {
+       if (cb) {
+         cb.checked = false;
+         const evt = new Event('change', { bubbles: true });
+         cb.dispatchEvent(evt); // Trigger the disabled state sync
+       }
     });
 
-    setEnabledKeys(enabled);
+    // Apply fetched fees
+    fees.forEach(f => {
+      const key = `${f.company_id}_${f.main_cate_id}`;
+      originalFeesRef.current.set(key, f);
+      
+      const cbEl = checkboxRefs.current[key];
+      const rateEl = rateRefs.current[key];
+      
+      if (cbEl) {
+        cbEl.checked = true;
+        // Trigger event to re-enable input
+        const evt = new Event('change', { bubbles: true });
+        cbEl.dispatchEvent(evt);
+      }
+      
+      if (rateEl) {
+        rateEl.value = String(f.fee_rate);
+      }
+    });
   }, [fees, loading]);
 
   // ── Save agent info (default_fee_rate) ────────────────────────────────────
@@ -174,6 +169,14 @@ const AgentFeesPage: React.FC = () => {
       agentEtagRef.current = result.etag;
       setDraftRate(result.agent.default_fee_rate);
       setEditingRate(false);
+      
+      // Update unchecked default visual values
+      Object.entries(checkboxRefs.current).forEach(([key, cb]) => {
+        if (cb && !cb.checked) {
+          const rateEl = rateRefs.current[key];
+          if (rateEl) rateEl.value = String(draftRate);
+        }
+      });
       message.success('Agent updated successfully');
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Failed to update agent');
@@ -182,26 +185,12 @@ const AgentFeesPage: React.FC = () => {
     }
   }, [agent, draftRate]);
 
-  // ── Toggle fee row ────────────────────────────────────────────────────────
-  const handleToggle = useCallback((key: string, checked: boolean) => {
-    setEnabledKeys(prev => {
-      const next = new Set(prev);
-      if (checked) {
-        next.add(key);
-        const el = rateRefs.current[key];
-        const original = originalFeesRef.current.get(key);
-        if (el && original && el.value === String(agent?.default_fee_rate ?? 0)) {
-          el.value = String(original.fee_rate);
-        }
-      } else {
-        next.delete(key);
-      }
-      return next;
-    });
-  }, [agent?.default_fee_rate]);
-
-  const setRef = useCallback((key: string, el: HTMLInputElement | null) => {
+  const setRateRef = useCallback((key: string, el: HTMLInputElement | null) => {
     rateRefs.current[key] = el;
+  }, []);
+
+  const setCheckboxRef = useCallback((key: string, el: HTMLInputElement | null) => {
+    checkboxRefs.current[key] = el;
   }, []);
 
   // ── Save all fees ─────────────────────────────────────────────────────────
@@ -215,10 +204,13 @@ const AgentFeesPage: React.FC = () => {
     companies.forEach(company => {
       categories.forEach(category => {
         const key = `${company._id}_${category._id}`;
-        const isEnabled = enabledKeys.has(key);
+        
+        const cbEl = checkboxRefs.current[key];
+        const isEnabled = cbEl ? cbEl.checked : false;
+        
         const original = originalFeesRef.current.get(key);
         const rawRate = rateRefs.current[key]?.value;
-        const rate = rawRate !== undefined ? Number(rawRate) : agent.default_fee_rate;
+        const rate = rawRate !== undefined && rawRate !== '' ? Number(rawRate) : agent.default_fee_rate;
 
         if (isEnabled) {
           if (!original) {
@@ -239,7 +231,7 @@ const AgentFeesPage: React.FC = () => {
 
     const success = await bulkSave(creates, updates, deletes);
     if (success) fetchFees({ page: 1, limit: 1000 });
-  }, [agent, companies, categories, enabledKeys, bulkSave, fetchFees]);
+  }, [agent, companies, categories, bulkSave, fetchFees]);
 
   if (agentLoading) {
     return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }} />;
@@ -364,42 +356,79 @@ const AgentFeesPage: React.FC = () => {
         </Row>
       </Card>
 
-      {/* ── Fee Matrix ───────────────────────────────────────────────────── */}
+      {/* ── Fee Matrix Table ───────────────────────────────────────────────── */}
       <Spin spinning={loading && companies.length === 0}>
-        {companies.map((company, idx) => (
-          <Card
-            key={company._id}
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              marginBottom: idx === companies.length - 1 ? 0 : 16,
-              boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.08)',
-              overflow: 'hidden',
-            }}
-            styles={{ body: { padding: 0 } }}
-          >
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #f0f0f0' }}>
-              <Title level={5} style={{ margin: 0 }}>
-                {company.provider_name?.en || company.name}
-              </Title>
-            </div>
-            <FeeTableHeader />
-            {categories.map(cat => {
-              const key = `${company._id}_${cat._id}`;
-              return (
-                <FeeRow
-                  key={key}
-                  rowKey={key}
-                  categoryName={cat.manin_cate_name?.en || cat.name}
-                  isEnabled={enabledKeys.has(key)}
-                  defaultRate={agent?.default_fee_rate ?? 0}
-                  onToggle={handleToggle}
-                  setRef={setRef}
-                />
-              );
-            })}
-          </Card>
-        ))}
+        <div style={{ 
+          background: '#fff', 
+          borderRadius: 12, 
+          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.08)',
+          overflowX: 'auto' 
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
+            <thead>
+              <tr>
+                <th style={{ 
+                  position: 'sticky', left: 0, zIndex: 1,
+                  background: '#fafafa',
+                  padding: '12px 16px', 
+                  textAlign: 'left', 
+                  borderBottom: '2px solid #e8e8e8',
+                  borderRight: '1px solid #e8e8e8',
+                  fontWeight: 600, fontSize: 12, color: '#8c8c8c', textTransform: 'uppercase',
+                  minWidth: 150
+                }}>
+                  Provider Name
+                </th>
+                {categories.map(cat => (
+                  <th key={cat._id} style={{
+                    background: '#fafafa',
+                    padding: '12px 16px',
+                    textAlign: 'center',
+                    borderBottom: '2px solid #e8e8e8',
+                    borderRight: '1px solid #f0f0f0',
+                    fontWeight: 600, fontSize: 12, color: '#8c8c8c', textTransform: 'uppercase'
+                  }}>
+                    {cat.manin_cate_name?.en || cat.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {companies.map((company, index) => (
+                <tr key={company._id} style={{ 
+                  borderBottom: index === companies.length - 1 ? 'none' : '1px solid #f0f0f0',
+                }}>
+                  <td style={{ 
+                    position: 'sticky', left: 0, zIndex: 1,
+                    background: '#fff', // Solid background so text doesn't overlap when scrolling
+                    padding: '12px 16px',
+                    fontWeight: 500,
+                    borderRight: '1px solid #e8e8e8',
+                  }}>
+                    {company.provider_name?.en || company.name}
+                  </td>
+                  {categories.map(cat => {
+                    const key = `${company._id}_${cat._id}`;
+                    return (
+                      <td key={cat._id} style={{ 
+                        padding: '8px 16px',
+                        borderRight: '1px solid #f0f0f0',
+                        background: '#fafafa'
+                      }}>
+                        <MatrixCell
+                          rowKey={key}
+                          defaultRate={agent?.default_fee_rate ?? 0}
+                          setRateRef={setRateRef}
+                          setCheckboxRef={setCheckboxRef}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Spin>
     </Space>
   );
