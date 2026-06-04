@@ -109,6 +109,7 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
         loading={loading}
         companies={companies}
         categories={categories}
+        currentFees={fees}
         onOk={handleCreate}
         onCancel={() => setIsModalOpen(false)}
       />
