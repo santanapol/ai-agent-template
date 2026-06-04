@@ -165,9 +165,13 @@ const AgentFeesPage: React.FC = () => {
     setSavingAgent(true);
     try {
       const result = await updateAgent(agent._id, { default_fee_rate: draftRate }, agent.upd_date);
-      setAgent(result.agent);
+      
+      const newUpdDate = result.etag ? atob(result.etag.replace(/^W\/"|"/g, '')) : agent.upd_date;
+      const updatedAgent = { ...agent, default_fee_rate: draftRate, upd_date: newUpdDate };
+      
+      setAgent(updatedAgent);
       agentEtagRef.current = result.etag;
-      setDraftRate(result.agent.default_fee_rate);
+      setDraftRate(draftRate);
       setEditingRate(false);
       
       // Update unchecked default visual values

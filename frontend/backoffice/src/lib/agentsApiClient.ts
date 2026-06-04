@@ -68,14 +68,14 @@ export async function updateAgent(
   id: string,
   payload: UpdateAgentPayload,
   dateISO: string,
-): Promise<{ agent: Agent; etag: string | null }> {
+): Promise<{ etag: string | null }> {
   const etag = `W/"${btoa(dateISO)}"`;
-  const res = await client.put<ApiEnvelope<Agent>>(
+  const res = await client.put<ApiEnvelope<null>>(
     `/api/v1/agent-invoice/agents/${id}`,
     payload,
     { headers: { 'If-Match': etag } },
   );
-  return { agent: res.data.data, etag: extractETag(res) };
+  return { etag: extractETag(res) };
 }
 
 export async function softDeleteAgent(id: string, dateISO: string): Promise<void> {
