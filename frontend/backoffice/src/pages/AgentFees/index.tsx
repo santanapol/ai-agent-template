@@ -157,7 +157,7 @@ const AgentFeesPage: React.FC = () => {
         rateEl.value = String(f.fee_rate);
       }
     });
-  }, [fees, loading]);
+  }, [fees, loading, companies.length, categories.length]);
 
   // ── Save agent info (default_fee_rate) ────────────────────────────────────
   const handleSaveAgentInfo = useCallback(async () => {
