@@ -1,34 +1,54 @@
 import React, { useEffect, useState } from 'react';
-import { Drawer, Table, Button, Typography, Switch, InputNumber, Collapse, Space, Tag, Spin } from 'antd';
-import { useAgentFees } from '../hooks/useAgentFees';
-import type { Agent } from '../../../types/agents';
-import type { AgentFee } from '../../../types/agentFees';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Table, Button, Typography, Switch, InputNumber, Collapse, Space, Tag, Spin, Breadcrumb, message } from 'antd';
+import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
+import { useAgentFees } from '../Agents/hooks/useAgentFees';
+import { getAgentById } from '../../lib/agentsApiClient';
+import type { Agent } from '../../types/agents';
+import type { AgentFee } from '../../types/agentFees';
 
 const { Title, Text } = Typography;
-
-interface AgentFeesDrawerProps {
-  agent: Agent | null;
-  open: boolean;
-  onClose: () => void;
-}
 
 interface DraftFee {
   enabled: boolean;
   rate: number;
 }
 
-const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose }) => {
-  const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(agent?._id || '');
+const AgentFeesPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const [agentLoading, setAgentLoading] = useState(true);
+
+  const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(id || '');
   
   // Key format: `${companyId}_${categoryId}`
   const [draftFees, setDraftFees] = useState<Record<string, DraftFee>>({});
 
   useEffect(() => {
-    if (open) {
+    if (!id) return;
+    const fetchAgentData = async () => {
+      try {
+        setAgentLoading(true);
+        const data = await getAgentById(id);
+        setAgent(data.agent);
+      } catch (err) {
+        message.error('Failed to load agent details');
+        navigate('/agents');
+      } finally {
+        setAgentLoading(false);
+      }
+    };
+    fetchAgentData();
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (id) {
       fetchMasterData();
       fetchFees({ page: 1, limit: 1000 });
     }
-  }, [open, fetchMasterData, fetchFees]);
+  }, [id, fetchMasterData, fetchFees]);
 
   useEffect(() => {
     if (!loading) {
@@ -105,14 +125,13 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
     });
 
     if (creates.length === 0 && updates.length === 0 && deletes.length === 0) {
-      onClose(); // Nothing changed
+      message.info('No changes to save');
       return;
     }
 
     const success = await bulkSave(creates, updates, deletes);
     if (success) {
       fetchFees({ page: 1, limit: 1000 });
-      onClose();
     }
   };
 
@@ -164,46 +183,61 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
     }
   ];
 
+  if (agentLoading) {
+    return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }} />;
+  }
+
   return (
-    <Drawer
-      title={
-        <Space direction="vertical" size={0}>
-          <Title level={4} style={{ margin: 0 }}>Agent Fees: {agent?.branch_name}</Title>
-          <Text type="secondary">Default Rate: {agent?.default_fee_rate}%</Text>
+    <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+      <Breadcrumb
+        items={[
+          { title: <a onClick={() => navigate('/agents')}>Agents</a> },
+          { title: 'Manage Fees' },
+        ]}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space align="center" size="middle">
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/agents')} />
+          <div>
+            <Title level={3} style={{ margin: 0 }}>
+              Fees: {agent?.branch_name} <Text type="secondary" style={{ fontSize: 16 }}>({agent?.branch_code})</Text>
+            </Title>
+            <Text type="secondary">Default Rate: {agent?.default_fee_rate}%</Text>
+          </div>
         </Space>
-      }
-      placement="right"
-      width={700}
-      onClose={onClose}
-      open={open}
-      footer={
-        <div style={{ textAlign: 'right' }}>
-          <Button onClick={onClose} style={{ marginRight: 8 }}>
-            Cancel
-          </Button>
-          <Button type="primary" onClick={handleSaveAll} loading={loading}>
-            Save Changes
-          </Button>
-        </div>
-      }
-    >
-      <Spin spinning={loading && companies.length === 0}>
-        <Collapse accordion>
-          {companies.map(company => (
-            <Collapse.Panel header={<strong style={{ fontSize: 16 }}>{company.name.en}</strong>} key={company._id}>
-              <Table 
-                columns={columns(company._id)} 
-                dataSource={categories} 
-                rowKey="_id"
-                pagination={false}
-                size="small"
-              />
-            </Collapse.Panel>
-          ))}
-        </Collapse>
-      </Spin>
-    </Drawer>
+        
+        <Button 
+          type="primary" 
+          icon={<SaveOutlined />} 
+          onClick={handleSaveAll} 
+          loading={loading}
+          size="large"
+          style={{ borderRadius: 6 }}
+        >
+          Save All Changes
+        </Button>
+      </div>
+
+      <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+        <Spin spinning={loading && companies.length === 0}>
+          <Collapse defaultActiveKey={companies.length > 0 ? [companies[0]._id] : []}>
+            {companies.map(company => (
+              <Collapse.Panel header={<strong style={{ fontSize: 16 }}>{company.name.en}</strong>} key={company._id}>
+                <Table 
+                  columns={columns(company._id)} 
+                  dataSource={categories} 
+                  rowKey="_id"
+                  pagination={false}
+                  size="small"
+                />
+              </Collapse.Panel>
+            ))}
+          </Collapse>
+        </Spin>
+      </Card>
+    </Space>
   );
 };
 
-export default AgentFeesDrawer;
+export default AgentFeesPage;

@@ -3,8 +3,8 @@ import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, InputN
 import { SearchOutlined, SyncOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgents } from './hooks/useAgents';
+import { useNavigate } from 'react-router-dom';
 import type { Agent } from '../../types/agents';
-import AgentFeesDrawer from './components/AgentFeesDrawer';
 
 const { Title } = Typography;
 
@@ -19,8 +19,7 @@ const AgentsList: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   
-  const [isFeesDrawerOpen, setIsFeesDrawerOpen] = useState(false);
-  const [selectedAgentForFees, setSelectedAgentForFees] = useState<Agent | null>(null);
+  const navigate = useNavigate();
   
   const [syncForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -128,10 +127,7 @@ const AgentsList: React.FC = () => {
         <Space size="middle">
           <Button 
             type="text" 
-            onClick={() => {
-              setSelectedAgentForFees(record);
-              setIsFeesDrawerOpen(true);
-            }}
+            onClick={() => navigate(`/agents/${record._id}/fees`)}
             style={{ color: '#10B981' }}
           >
             Manage Fees
@@ -272,16 +268,6 @@ const AgentsList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-
-      {/* Fees Drawer */}
-      <AgentFeesDrawer
-        agent={selectedAgentForFees}
-        open={isFeesDrawerOpen}
-        onClose={() => {
-          setIsFeesDrawerOpen(false);
-          setSelectedAgentForFees(null);
-        }}
-      />
     </Space>
   );
 };

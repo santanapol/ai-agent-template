@@ -9,6 +9,7 @@ import MyProfile from './pages/MyProfile';
 import InvoiceList from './pages/InvoiceList';
 import InvoiceDetail from './pages/InvoiceDetail';
 import AgentsList from './pages/Agents';
+import AgentFeesPage from './pages/AgentFees';
 import Login from './pages/Login';
 import Error403 from './pages/Error403';
 import Error404 from './pages/Error404';
@@ -62,6 +63,7 @@ const router = createBrowserRouter([
       { path: 'invoices', element: <InvoiceList /> },
       { path: 'invoices/:id', element: <InvoiceDetail /> },
       { path: 'agents', element: <AgentsList /> },
+      { path: 'agents/:id/fees', element: <AgentFeesPage /> },
       {
         path: 'staff',
         element: (
