@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Typography, Switch, InputNumber, Collapse, Space, Tag, Spin, Breadcrumb, message } from 'antd';
+import { Card, Table, Button, Typography, Switch, InputNumber, Space, Tag, Spin, Breadcrumb, message } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import { useAgentFees } from '../Agents/hooks/useAgentFees';
 import { getAgentById } from '../../lib/agentsApiClient';
@@ -221,19 +221,19 @@ const AgentFeesPage: React.FC = () => {
 
       <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
         <Spin spinning={loading && companies.length === 0}>
-          <Collapse defaultActiveKey={companies.length > 0 ? [companies[0]._id] : []}>
-            {companies.map(company => (
-              <Collapse.Panel header={<strong style={{ fontSize: 16 }}>{company.name.en}</strong>} key={company._id}>
-                <Table 
-                  columns={columns(company._id)} 
-                  dataSource={categories} 
-                  rowKey="_id"
-                  pagination={false}
-                  size="small"
-                />
-              </Collapse.Panel>
-            ))}
-          </Collapse>
+          {companies.map((company, index) => (
+            <div key={company._id} style={{ marginBottom: index === companies.length - 1 ? 0 : 32 }}>
+              <Title level={4} style={{ marginBottom: 16 }}>{company.name.en}</Title>
+              <Table 
+                columns={columns(company._id)} 
+                dataSource={categories} 
+                rowKey="_id"
+                pagination={false}
+                size="small"
+                bordered
+              />
+            </div>
+          ))}
         </Spin>
       </Card>
     </Space>
