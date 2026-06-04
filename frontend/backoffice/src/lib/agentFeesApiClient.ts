@@ -50,12 +50,12 @@ export async function deleteAgentFee(agentId: string, feeId: string, etag: strin
   });
 }
 
-export async function getGameCompanies() {
-  const res = await client.get<ApiEnvelope<GameCompany[]>>('/api/v1/agent-invoice/master-data/game-companies');
+export async function getGameCompanies(ou_id?: string) {
+  const res = await client.get<ApiEnvelope<GameCompany[]>>('/api/v1/agent-invoice/master-data/game-companies', { params: { ou_id } });
   return res.data.data;
 }
 
-export async function getGameCategories() {
-  const res = await client.get<ApiEnvelope<GameCategory[]>>('/api/v1/agent-invoice/master-data/game-categories');
+export async function getGameCategories(ou_id?: string) {
+  const res = await client.get<ApiEnvelope<GameCategory[]>>('/api/v1/agent-invoice/master-data/game-categories', { params: { ou_id } });
   return res.data.data;
 }

@@ -14,14 +14,17 @@ export interface AgentFee {
 
 export interface GameCompany {
   _id: string;
+  ou_id: string;
   name: string;
-  game_platform?: string;
+  provider_name?: { en?: string; th?: string };
   active?: string;
 }
 
 export interface GameCategory {
   _id: string;
+  ou_id: string;
   name: string;
+  manin_cate_name?: { en?: string; th?: string };
   active?: string;
 }
 

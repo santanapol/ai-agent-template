@@ -132,10 +132,16 @@ const AgentFeesPage: React.FC = () => {
   // ── Load master data + fees ────────────────────────────────────────────
   useEffect(() => {
     if (id) {
-      fetchMasterData();
       fetchFees({ page: 1, limit: 1000 });
     }
-  }, [id, fetchMasterData, fetchFees]);
+  }, [id, fetchFees]);
+
+  // Fetch master data only after agent (and its ou_id) is known
+  useEffect(() => {
+    if (agent?.ou_id) {
+      fetchMasterData(agent.ou_id);
+    }
+  }, [agent?.ou_id, fetchMasterData]);
 
   // ── When fees arrive: update enabled set + imperatively set input values
   useEffect(() => {
@@ -268,7 +274,9 @@ const AgentFeesPage: React.FC = () => {
             styles={{ body: { padding: 0 } }}
           >
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #f0f0f0' }}>
-              <Title level={5} style={{ margin: 0 }}>{company.name}</Title>
+              <Title level={5} style={{ margin: 0 }}>
+                {company.provider_name?.en || company.name}
+              </Title>
             </div>
             <FeeTableHeader />
             {categories.map(cat => {
@@ -277,7 +285,7 @@ const AgentFeesPage: React.FC = () => {
                 <FeeRow
                   key={key}
                   rowKey={key}
-                  categoryName={cat.name}
+                  categoryName={cat.manin_cate_name?.en || cat.name}
                   isEnabled={enabledKeys.has(key)}
                   defaultRate={agent?.default_fee_rate ?? 0}
                   onToggle={handleToggle}

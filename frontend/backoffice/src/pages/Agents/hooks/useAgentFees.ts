@@ -24,11 +24,11 @@ export function useAgentFees(agentId: string) {
     }
   }, [agentId]);
 
-  const fetchMasterData = useCallback(async () => {
+  const fetchMasterData = useCallback(async (ou_id?: string) => {
     try {
       const [comps, cats] = await Promise.all([
-        api.getGameCompanies(),
-        api.getGameCategories()
+        api.getGameCompanies(ou_id),
+        api.getGameCategories(ou_id)
       ]);
       setCompanies(comps || []);
       setCategories(cats || []);

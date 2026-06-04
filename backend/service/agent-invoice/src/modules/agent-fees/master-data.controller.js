@@ -2,7 +2,8 @@ import * as repo from './master-data.repository.js';
 
 export const getGameCompaniesHandler = async (request, reply) => {
   try {
-    const data = await repo.getGameCompanies(request.server.sourceDb);
+    const { ou_id } = request.query;
+    const data = await repo.getGameCompanies(request.server.sourceDb, ou_id);
     return {
       success: true,
       code: 'SUCCESS',
@@ -18,7 +19,8 @@ export const getGameCompaniesHandler = async (request, reply) => {
 
 export const getGameCategoriesHandler = async (request, reply) => {
   try {
-    const data = await repo.getGameCategories(request.server.sourceDb);
+    const { ou_id } = request.query;
+    const data = await repo.getGameCategories(request.server.sourceDb, ou_id);
     return {
       success: true,
       code: 'SUCCESS',
