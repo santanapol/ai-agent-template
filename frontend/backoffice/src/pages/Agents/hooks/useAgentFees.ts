@@ -56,6 +56,44 @@ export function useAgentFees(agentId: string) {
     }
   }, [agentId]);
 
+  const updateFee = useCallback(async (feeId: string, payload: any, etag: string) => {
+    if (!agentId) return false;
+    setLoading(true);
+    try {
+      await api.updateAgentFee(agentId, feeId, payload, etag);
+      message.success('Fee updated successfully');
+      return true;
+    } catch (err: any) {
+      if (err.response?.status === 412) {
+        message.warning('This record was modified by someone else. Please refresh and try again.');
+      } else {
+        message.error(err.response?.data?.message || 'Failed to update fee');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  const deleteFee = useCallback(async (feeId: string, etag: string) => {
+    if (!agentId) return false;
+    setLoading(true);
+    try {
+      await api.deleteAgentFee(agentId, feeId, etag);
+      message.success('Fee deleted successfully');
+      return true;
+    } catch (err: any) {
+      if (err.response?.status === 412) {
+        message.warning('This record was modified by someone else. Please refresh and try again.');
+      } else {
+        message.error(err.response?.data?.message || 'Failed to delete fee');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
   return {
     fees,
     companies,
@@ -64,6 +102,8 @@ export function useAgentFees(agentId: string) {
     total,
     fetchFees,
     fetchMasterData,
-    createFee
+    createFee,
+    updateFee,
+    deleteFee
   };
 }

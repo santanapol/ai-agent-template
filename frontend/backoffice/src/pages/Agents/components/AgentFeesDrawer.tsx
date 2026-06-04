@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Drawer, Table, Button, Typography, Tag } from 'antd';
+import { Drawer, Table, Button, Typography, Tag, Space, Popconfirm } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgentFees } from '../hooks/useAgentFees';
 import AgentFeeModal from './AgentFeeModal';
+import AgentFeeEditModal from './AgentFeeEditModal';
 import type { Agent } from '../../../types/agents';
-import type { CreateFeePayload } from '../../../types/agentFees';
+import type { CreateFeePayload, UpdateFeePayload, AgentFee } from '../../../types/agentFees';
 
 
 const { Title } = Typography;
@@ -16,10 +18,12 @@ interface AgentFeesDrawerProps {
 }
 
 const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose }) => {
-  const { fees, companies, categories, loading, total, fetchFees, fetchMasterData, createFee } = useAgentFees(agent?._id || '');
+  const { fees, companies, categories, loading, total, fetchFees, fetchMasterData, createFee, updateFee, deleteFee } = useAgentFees(agent?._id || '');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingFee, setEditingFee] = useState<AgentFee | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -55,6 +59,22 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
     }
   };
 
+  const handleUpdate = async (feeId: string, values: UpdateFeePayload, etag: string) => {
+    const success = await updateFee(feeId, values, etag);
+    if (success) {
+      setIsEditModalOpen(false);
+      setEditingFee(null);
+      fetchFees({ page, limit: pageSize });
+    }
+  };
+
+  const handleDelete = async (fee: AgentFee) => {
+    const success = await deleteFee(fee._id, fee.upd_date);
+    if (success) {
+      fetchFees({ page, limit: pageSize });
+    }
+  };
+
   const columns = [
     {
       title: 'Company',
@@ -73,6 +93,37 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
       dataIndex: 'fee_rate',
       key: 'fee_rate',
       render: (rate: number) => <strong>{rate}%</strong>,
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_: unknown, record: AgentFee) => (
+        <Space size="middle">
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => {
+              setEditingFee(record);
+              setIsEditModalOpen(true);
+            }}
+            style={{ color: '#2563EB' }}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Delete this fee?"
+            description="Are you sure you want to delete this fee override?"
+            onConfirm={() => handleDelete(record)}
+            okText="Yes"
+            cancelText="No"
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="text" danger icon={<DeleteOutlined />}>
+              Delete
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
     }
   ];
 
@@ -112,6 +163,17 @@ const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose 
         currentFees={fees}
         onOk={handleCreate}
         onCancel={() => setIsModalOpen(false)}
+      />
+
+      <AgentFeeEditModal
+        open={isEditModalOpen}
+        loading={loading}
+        fee={editingFee}
+        onOk={handleUpdate}
+        onCancel={() => {
+          setIsEditModalOpen(false);
+          setEditingFee(null);
+        }}
       />
     </Drawer>
   );
