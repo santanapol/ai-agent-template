@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, InputNumber, Popconfirm, Select, Checkbox } from 'antd';
-import { SearchOutlined, SyncOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox } from 'antd';
+import { SearchOutlined, SyncOutlined, SettingOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgents } from './hooks/useAgents';
 import { useNavigate } from 'react-router-dom';
@@ -9,20 +9,16 @@ import type { Agent } from '../../types/agents';
 const { Title } = Typography;
 
 const AgentsList: React.FC = () => {
-  const { agents, unsyncedBranches, total, loading, loadingUnsynced, fetchAgents, fetchUnsyncedBranches, syncData, updateData, deleteData } = useAgents();
+  const { agents, unsyncedBranches, total, loading, loadingUnsynced, fetchAgents, fetchUnsyncedBranches, syncData, deleteData } = useAgents();
   const [searchText, setSearchText] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  
+
   const navigate = useNavigate();
-  
   const [syncForm] = Form.useForm();
-  const [editForm] = Form.useForm();
 
   useEffect(() => {
     fetchAgents({ page, limit: pageSize, search: searchText });
@@ -57,28 +53,6 @@ const AgentsList: React.FC = () => {
     }
   };
 
-  const handleEdit = (record: Agent) => {
-    setEditingAgent(record);
-    editForm.setFieldsValue({ default_fee_rate: record.default_fee_rate });
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdate = async () => {
-    try {
-      const values = await editForm.validateFields();
-      if (editingAgent) {
-        const success = await updateData(editingAgent._id, { default_fee_rate: values.default_fee_rate }, editingAgent.upd_date);
-        if (success) {
-          setIsEditModalOpen(false);
-          setEditingAgent(null);
-          fetchAgents({ page, limit: pageSize, search: searchText });
-        }
-      }
-    } catch {
-      // Form validation failed
-    }
-  };
-
   const handleDelete = async (record: Agent) => {
     const success = await deleteData(record._id, record.upd_date);
     if (success) {
@@ -107,7 +81,7 @@ const AgentsList: React.FC = () => {
       ),
     },
     {
-      title: 'Fee Rate (%)',
+      title: 'Default Fee (%)',
       dataIndex: 'default_fee_rate',
       key: 'default_fee_rate',
       render: (rate: number) => <strong>{rate}%</strong>,
@@ -125,33 +99,32 @@ const AgentsList: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: Agent) => (
         <Space size="middle">
-          <Button 
-            type="text" 
+          <Button
+            type="primary"
+            icon={<SettingOutlined />}
             onClick={() => navigate(`/agents/${record._id}/fees`)}
-            style={{ color: '#10B981' }}
+            size="small"
           >
-            Manage Fees
+            Manage
           </Button>
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)}
-            style={{ color: '#2563EB' }}
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+            onClick={() => {
+              Modal.confirm({
+                title: 'Delete this agent?',
+                content: `Are you sure you want to delete "${record.branch_name}"?`,
+                okText: 'Delete',
+                okButtonProps: { danger: true },
+                cancelText: 'Cancel',
+                onOk: () => handleDelete(record),
+              });
+            }}
           >
-            Edit
+            Delete
           </Button>
-          <Popconfirm
-            title="Delete this agent?"
-            description="Are you sure you want to delete this agent?"
-            onConfirm={() => handleDelete(record)}
-            okText="Yes"
-            cancelText="No"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
-          </Popconfirm>
         </Space>
       ),
     },
@@ -161,9 +134,9 @@ const AgentsList: React.FC = () => {
     <Space direction="vertical" size="large" style={{ display: 'flex' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={3} style={{ margin: 0 }}>Agent Fee Management</Title>
-        <Button 
-          type="primary" 
-          icon={<SyncOutlined />} 
+        <Button
+          type="primary"
+          icon={<SyncOutlined />}
           onClick={handleOpenSyncModal}
           style={{ borderRadius: 6 }}
         >
@@ -213,23 +186,23 @@ const AgentsList: React.FC = () => {
             label="Branch"
             rules={[{ required: true, message: 'Please select a branch!' }]}
           >
-            <Select 
-              showSearch 
-              loading={loadingUnsynced} 
-              placeholder="Select a branch to sync" 
+            <Select
+              showSearch
+              loading={loadingUnsynced}
+              placeholder="Select a branch to sync"
               size="large"
-              options={unsyncedBranches.map(b => ({ 
-                value: b.branch_id, 
-                label: `${b.branch_code} - ${b.branch_name}${b.active === false ? ' [Inactive]' : ''}` 
+              options={unsyncedBranches.map(b => ({
+                value: b.branch_id,
+                label: `${b.branch_code} - ${b.branch_name}${b.active === false ? ' [Inactive]' : ''}`
               }))}
-              filterOption={(input, option) => 
+              filterOption={(input, option) =>
                 ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
               }
             />
           </Form.Item>
           <Form.Item>
-            <Checkbox 
-              checked={showInactive} 
+            <Checkbox
+              checked={showInactive}
               onChange={(e) => {
                 const checked = e.target.checked;
                 setShowInactive(checked);
@@ -238,33 +211,6 @@ const AgentsList: React.FC = () => {
             >
               Show Inactive branches
             </Checkbox>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        title="Edit Agent Fee Rate"
-        open={isEditModalOpen}
-        onOk={handleUpdate}
-        onCancel={() => { setIsEditModalOpen(false); setEditingAgent(null); }}
-        confirmLoading={loading}
-        okText="Update"
-      >
-        <Form form={editForm} layout="vertical">
-          <Form.Item
-            name="default_fee_rate"
-            label="Default Fee Rate (%)"
-            rules={[{ required: true, message: 'Fee rate is required' }]}
-          >
-            <InputNumber 
-              min={0} 
-              max={100} 
-              formatter={(value) => `${value}%`}
-              parser={(value) => (value ? value.replace('%', '') : '') as any}
-              style={{ width: '100%' }} 
-              size="large"
-            />
           </Form.Item>
         </Form>
       </Modal>

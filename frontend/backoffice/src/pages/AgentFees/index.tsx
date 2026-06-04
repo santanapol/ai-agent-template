@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Typography, Switch, Space, Tag, Spin, Breadcrumb, message } from 'antd';
-import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  Card, Button, Typography, Switch, Space, Tag, Spin,
+  Breadcrumb, message, InputNumber, Divider, Row, Col
+} from 'antd';
+import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useAgentFees } from '../Agents/hooks/useAgentFees';
-import { getAgentById } from '../../lib/agentsApiClient';
+import { getAgentById, updateAgent } from '../../lib/agentsApiClient';
 import type { Agent } from '../../types/agents';
 import type { AgentFee } from '../../types/agentFees';
 
 const { Title, Text } = Typography;
 
-// ─── Column Header ──────────────────────────────────────────────────────────
+// ─── Fee Table Header ────────────────────────────────────────────────────────
 const ROW_GRID = '1fr 120px 200px';
 
 const FeeTableHeader: React.FC = React.memo(() => (
@@ -31,7 +34,7 @@ const FeeTableHeader: React.FC = React.memo(() => (
   </div>
 ));
 
-// ─── Single Row — React.memo prevents all other rows from re-rendering ────
+// ─── Fee Row — memoized, zero re-renders on typing ───────────────────────────
 interface FeeRowProps {
   rowKey: string;
   categoryName: string;
@@ -42,14 +45,15 @@ interface FeeRowProps {
 }
 
 const FeeRow = React.memo(({ rowKey, categoryName, isEnabled, defaultRate, onToggle, setRef }: FeeRowProps) => (
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: ROW_GRID,
-    alignItems: 'center',
-    padding: '10px 16px',
-    borderBottom: '1px solid #f0f0f0',
-    transition: 'background 0.15s',
-  }}
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: ROW_GRID,
+      alignItems: 'center',
+      padding: '10px 16px',
+      borderBottom: '1px solid #f0f0f0',
+      transition: 'background 0.15s',
+    }}
     onMouseEnter={e => (e.currentTarget.style.background = '#fafffe')}
     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
   >
@@ -66,7 +70,6 @@ const FeeRow = React.memo(({ rowKey, categoryName, isEnabled, defaultRate, onTog
       />
     </div>
     <div>
-      {/* Uncontrolled native input — zero re-render on keystroke */}
       <input
         ref={el => setRef(rowKey, el)}
         type="number"
@@ -95,24 +98,27 @@ const FeeRow = React.memo(({ rowKey, categoryName, isEnabled, defaultRate, onTog
   </div>
 ));
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 const AgentFeesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [agent, setAgent] = useState<Agent | null>(null);
   const [agentLoading, setAgentLoading] = useState(true);
+  const agentEtagRef = useRef<string | null>(null);
+
+  // Agent info inline edit state
+  const [editingRate, setEditingRate] = useState(false);
+  const [draftRate, setDraftRate] = useState<number>(0);
+  const [savingAgent, setSavingAgent] = useState(false);
 
   const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(id || '');
 
-  // Only React state needed — drives Switch disabled/enabled visual
   const [enabledKeys, setEnabledKeys] = useState<Set<string>>(new Set());
-
-  // DOM refs for rate inputs — reading values on Save, zero re-renders
   const rateRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const originalFeesRef = useRef<Map<string, AgentFee>>(new Map());
 
-  // ── Load agent ─────────────────────────────────────────────────────────
+  // ── Load agent ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -120,6 +126,8 @@ const AgentFeesPage: React.FC = () => {
         setAgentLoading(true);
         const data = await getAgentById(id);
         setAgent(data.agent);
+        agentEtagRef.current = data.etag;
+        setDraftRate(data.agent.default_fee_rate);
       } catch {
         message.error('Failed to load agent details');
         navigate('/agents');
@@ -129,24 +137,19 @@ const AgentFeesPage: React.FC = () => {
     })();
   }, [id, navigate]);
 
-  // ── Load master data + fees ────────────────────────────────────────────
+  // ── Load fees ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (id) {
-      fetchFees({ page: 1, limit: 1000 });
-    }
+    if (id) fetchFees({ page: 1, limit: 1000 });
   }, [id, fetchFees]);
 
-  // Fetch master data only after agent (and its ou_id) is known
+  // ── Load master data after agent (for ou_id) ─────────────────────────────
   useEffect(() => {
-    if (agent?.ou_id) {
-      fetchMasterData(agent.ou_id);
-    }
+    if (agent?.ou_id) fetchMasterData(agent.ou_id);
   }, [agent?.ou_id, fetchMasterData]);
 
-  // ── When fees arrive: update enabled set + imperatively set input values
+  // ── Sync fees to input refs ───────────────────────────────────────────────
   useEffect(() => {
     if (loading) return;
-
     const enabled = new Set<string>();
     originalFeesRef.current = new Map();
 
@@ -154,7 +157,6 @@ const AgentFeesPage: React.FC = () => {
       const key = `${f.company_id}_${f.main_cate_id}`;
       enabled.add(key);
       originalFeesRef.current.set(key, f);
-      // Imperatively set input value — no React re-render needed
       const el = rateRefs.current[key];
       if (el) el.value = String(f.fee_rate);
     });
@@ -162,13 +164,30 @@ const AgentFeesPage: React.FC = () => {
     setEnabledKeys(enabled);
   }, [fees, loading]);
 
-  // ── Toggle handler — stable reference, only re-renders the toggled row
+  // ── Save agent info (default_fee_rate) ────────────────────────────────────
+  const handleSaveAgentInfo = useCallback(async () => {
+    if (!agent || !agent.upd_date) return;
+    setSavingAgent(true);
+    try {
+      const result = await updateAgent(agent._id, { default_fee_rate: draftRate }, agent.upd_date);
+      setAgent(result.agent);
+      agentEtagRef.current = result.etag;
+      setDraftRate(result.agent.default_fee_rate);
+      setEditingRate(false);
+      message.success('Agent updated successfully');
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to update agent');
+    } finally {
+      setSavingAgent(false);
+    }
+  }, [agent, draftRate]);
+
+  // ── Toggle fee row ────────────────────────────────────────────────────────
   const handleToggle = useCallback((key: string, checked: boolean) => {
     setEnabledKeys(prev => {
       const next = new Set(prev);
       if (checked) {
         next.add(key);
-        // Restore previous rate or keep current
         const el = rateRefs.current[key];
         const original = originalFeesRef.current.get(key);
         if (el && original && el.value === String(agent?.default_fee_rate ?? 0)) {
@@ -181,13 +200,12 @@ const AgentFeesPage: React.FC = () => {
     });
   }, [agent?.default_fee_rate]);
 
-  // ── Stable ref setter — avoids re-creating callback per row
   const setRef = useCallback((key: string, el: HTMLInputElement | null) => {
     rateRefs.current[key] = el;
   }, []);
 
-  // ── Save — reads DOM values directly, zero state reads
-  const handleSaveAll = useCallback(async () => {
+  // ── Save all fees ─────────────────────────────────────────────────────────
+  const handleSaveFees = useCallback(async () => {
     if (!agent) return;
 
     const creates: any[] = [];
@@ -232,34 +250,121 @@ const AgentFeesPage: React.FC = () => {
       <Breadcrumb
         items={[
           { title: <a onClick={() => navigate('/agents')}>Agents</a> },
-          { title: 'Manage Fees' },
+          { title: agent?.branch_name || 'Manage' },
         ]}
       />
 
+      {/* ── Page Header ──────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space align="center" size="middle">
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/agents')} />
           <div>
             <Title level={3} style={{ margin: 0 }}>
-              Fees: {agent?.branch_name}{' '}
-              <Text type="secondary" style={{ fontSize: 16 }}>({agent?.branch_code})</Text>
+              {agent?.branch_name}
+              <Tag color={agent?.active ? 'success' : 'error'} style={{ marginLeft: 12, fontSize: 13 }}>
+                {agent?.active ? 'Active' : 'Inactive'}
+              </Tag>
             </Title>
-            <Text type="secondary">Default Rate: {agent?.default_fee_rate}%</Text>
+            <Text type="secondary">{agent?.branch_code} · {agent?.branch_type}</Text>
           </div>
         </Space>
-
         <Button
           type="primary"
           icon={<SaveOutlined />}
-          onClick={handleSaveAll}
+          onClick={handleSaveFees}
           loading={loading}
           size="large"
           style={{ borderRadius: 6 }}
         >
-          Save All Changes
+          Save Fees
         </Button>
       </div>
 
+      {/* ── Agent Info Card (editable) ───────────────────────────────────── */}
+      <Card
+        bordered={false}
+        style={{ borderRadius: 12, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.08)' }}
+      >
+        <Row gutter={[32, 0]} align="middle">
+          <Col>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Default Fee Rate
+            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              {editingRate ? (
+                <>
+                  <InputNumber
+                    value={draftRate}
+                    min={0}
+                    max={100}
+                    formatter={v => `${v}%`}
+                    parser={v => (v ? Number(v.replace('%', '')) : 0) as any}
+                    onChange={v => setDraftRate(v ?? 0)}
+                    size="small"
+                    style={{ width: 100 }}
+                    autoFocus
+                  />
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<CheckOutlined />}
+                    loading={savingAgent}
+                    onClick={handleSaveAgentInfo}
+                  />
+                  <Button
+                    size="small"
+                    icon={<CloseOutlined />}
+                    onClick={() => { setEditingRate(false); setDraftRate(agent?.default_fee_rate ?? 0); }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Text strong style={{ fontSize: 20 }}>{agent?.default_fee_rate}%</Text>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => { setEditingRate(true); setDraftRate(agent?.default_fee_rate ?? 0); }}
+                    style={{ color: '#2563EB' }}
+                  />
+                </>
+              )}
+            </div>
+          </Col>
+          <Col>
+            <Divider type="vertical" style={{ height: 40 }} />
+          </Col>
+          <Col>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Currency
+            </Text>
+            <div style={{ marginTop: 4 }}>
+              <Text strong style={{ fontSize: 16 }}>{agent?.currency || '—'}</Text>
+            </div>
+          </Col>
+          <Col>
+            <Divider type="vertical" style={{ height: 40 }} />
+          </Col>
+          <Col>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Companies
+            </Text>
+            <div style={{ marginTop: 4 }}>
+              <Text strong style={{ fontSize: 16 }}>{companies.length}</Text>
+            </div>
+          </Col>
+          <Col>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Categories
+            </Text>
+            <div style={{ marginTop: 4 }}>
+              <Text strong style={{ fontSize: 16 }}>{categories.length}</Text>
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* ── Fee Matrix ───────────────────────────────────────────────────── */}
       <Spin spinning={loading && companies.length === 0}>
         {companies.map((company, idx) => (
           <Card
