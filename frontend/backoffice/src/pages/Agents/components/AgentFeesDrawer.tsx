@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Drawer, Table, Button, Typography, Tag, Space, Popconfirm } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { TablePaginationConfig } from 'antd/es/table';
+import { Drawer, Table, Button, Typography, Switch, InputNumber, Collapse, Space, Tag, Spin } from 'antd';
 import { useAgentFees } from '../hooks/useAgentFees';
-import AgentFeeModal from './AgentFeeModal';
-import AgentFeeEditModal from './AgentFeeEditModal';
 import type { Agent } from '../../../types/agents';
-import type { CreateFeePayload, UpdateFeePayload, AgentFee } from '../../../types/agentFees';
+import type { AgentFee } from '../../../types/agentFees';
 
-
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 interface AgentFeesDrawerProps {
   agent: Agent | null;
@@ -17,164 +12,196 @@ interface AgentFeesDrawerProps {
   onClose: () => void;
 }
 
+interface DraftFee {
+  enabled: boolean;
+  rate: number;
+}
+
 const AgentFeesDrawer: React.FC<AgentFeesDrawerProps> = ({ agent, open, onClose }) => {
-  const { fees, companies, categories, loading, total, fetchFees, fetchMasterData, createFee, updateFee, deleteFee } = useAgentFees(agent?._id || '');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingFee, setEditingFee] = useState<AgentFee | null>(null);
+  const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(agent?._id || '');
+  
+  // Key format: `${companyId}_${categoryId}`
+  const [draftFees, setDraftFees] = useState<Record<string, DraftFee>>({});
 
   useEffect(() => {
     if (open) {
       fetchMasterData();
-      fetchFees({ page: 1, limit: pageSize });
-      setPage(1);
+      fetchFees({ page: 1, limit: 1000 });
     }
-  }, [open, fetchMasterData, fetchFees, pageSize]);
+  }, [open, fetchMasterData, fetchFees]);
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    const newPage = pagination.current || 1;
-    const newPageSize = pagination.pageSize || 10;
-    setPage(newPage);
-    setPageSize(newPageSize);
-    fetchFees({ page: newPage, limit: newPageSize });
+  useEffect(() => {
+    if (!loading) {
+      const initial: Record<string, DraftFee> = {};
+      fees.forEach(f => {
+        initial[`${f.company_id}_${f.main_cate_id}`] = { enabled: true, rate: f.fee_rate };
+      });
+      setDraftFees(initial);
+    }
+  }, [fees, loading]);
+
+  const handleToggle = (companyId: string, categoryId: string, checked: boolean) => {
+    const key = `${companyId}_${categoryId}`;
+    setDraftFees(prev => ({
+      ...prev,
+      [key]: {
+        enabled: checked,
+        rate: prev[key]?.rate || agent?.default_fee_rate || 0
+      }
+    }));
   };
 
-  const getCompanyName = (companyId: string) => {
-    const comp = companies.find(c => c._id === companyId);
-    return comp ? comp.name.en : companyId;
+  const handleRateChange = (companyId: string, categoryId: string, val: number | null) => {
+    if (val === null) return;
+    const key = `${companyId}_${categoryId}`;
+    setDraftFees(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        rate: val
+      }
+    }));
   };
 
-  const getCategoryName = (categoryId: string) => {
-    const cat = categories.find(c => c._id === categoryId);
-    return cat ? cat.name.en : categoryId;
-  };
+  const handleSaveAll = async () => {
+    if (!agent) return;
+    
+    const creates: any[] = [];
+    const updates: any[] = [];
+    const deletes: any[] = [];
 
-  const handleCreate = async (values: CreateFeePayload) => {
-    const success = await createFee(values);
+    const originalMap = new Map<string, AgentFee>();
+    fees.forEach(f => originalMap.set(`${f.company_id}_${f.main_cate_id}`, f));
+
+    companies.forEach(company => {
+      categories.forEach(category => {
+        const key = `${company._id}_${category._id}`;
+        const draft = draftFees[key];
+        const original = originalMap.get(key);
+
+        if (draft?.enabled) {
+          if (!original) {
+            creates.push({
+              company_id: company._id,
+              main_cate_id: category._id,
+              fee_rate: draft.rate
+            });
+          } else if (original.fee_rate !== draft.rate) {
+            updates.push({
+              id: original._id,
+              payload: { fee_rate: draft.rate },
+              etag: original.upd_date
+            });
+          }
+        } else {
+          if (original) {
+            deletes.push({
+              id: original._id,
+              etag: original.upd_date
+            });
+          }
+        }
+      });
+    });
+
+    if (creates.length === 0 && updates.length === 0 && deletes.length === 0) {
+      onClose(); // Nothing changed
+      return;
+    }
+
+    const success = await bulkSave(creates, updates, deletes);
     if (success) {
-      setIsModalOpen(false);
-      fetchFees({ page, limit: pageSize });
+      fetchFees({ page: 1, limit: 1000 });
+      onClose();
     }
   };
 
-  const handleUpdate = async (feeId: string, values: UpdateFeePayload, etag: string) => {
-    const success = await updateFee(feeId, values, etag);
-    if (success) {
-      setIsEditModalOpen(false);
-      setEditingFee(null);
-      fetchFees({ page, limit: pageSize });
-    }
-  };
-
-  const handleDelete = async (fee: AgentFee) => {
-    const success = await deleteFee(fee._id, fee.upd_date);
-    if (success) {
-      fetchFees({ page, limit: pageSize });
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Company',
-      dataIndex: 'company_id',
-      key: 'company_id',
-      render: (id: string) => <Tag color="blue">{getCompanyName(id)}</Tag>,
-    },
+  const columns = (companyId: string) => [
     {
       title: 'Category',
-      dataIndex: 'main_cate_id',
-      key: 'main_cate_id',
-      render: (id: string) => <Tag color="purple">{getCategoryName(id)}</Tag>,
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: any) => <Tag color="purple">{name.en}</Tag>,
+    },
+    {
+      title: 'Override Fee',
+      key: 'override',
+      width: 120,
+      render: (_: any, record: any) => {
+        const key = `${companyId}_${record._id}`;
+        const draft = draftFees[key];
+        return (
+          <Switch 
+            checked={draft?.enabled || false}
+            onChange={(checked) => handleToggle(companyId, record._id, checked)}
+            checkedChildren="ON"
+            unCheckedChildren="OFF"
+          />
+        );
+      }
     },
     {
       title: 'Fee Rate (%)',
-      dataIndex: 'fee_rate',
       key: 'fee_rate',
-      render: (rate: number) => <strong>{rate}%</strong>,
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_: unknown, record: AgentFee) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => {
-              setEditingFee(record);
-              setIsEditModalOpen(true);
-            }}
-            style={{ color: '#2563EB' }}
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Delete this fee?"
-            description="Are you sure you want to delete this fee override?"
-            onConfirm={() => handleDelete(record)}
-            okText="Yes"
-            cancelText="No"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
+      width: 200,
+      render: (_: any, record: any) => {
+        const key = `${companyId}_${record._id}`;
+        const draft = draftFees[key];
+        const isEnabled = draft?.enabled || false;
+        return (
+          <InputNumber
+            min={0}
+            max={100}
+            formatter={(value) => `${value}%`}
+            parser={(value) => (value ? Number(value.replace('%', '')) : 0) as any}
+            value={isEnabled ? draft?.rate : agent?.default_fee_rate}
+            onChange={(val) => handleRateChange(companyId, record._id, val)}
+            disabled={!isEnabled}
+            style={{ width: '100%' }}
+          />
+        );
+      }
     }
   ];
 
   return (
     <Drawer
-      title={<Title level={4} style={{ margin: 0 }}>Agent Fees: {agent?.branch_name} ({agent?.branch_code})</Title>}
+      title={
+        <Space direction="vertical" size={0}>
+          <Title level={4} style={{ margin: 0 }}>Agent Fees: {agent?.branch_name}</Title>
+          <Text type="secondary">Default Rate: {agent?.default_fee_rate}%</Text>
+        </Space>
+      }
       placement="right"
       width={700}
       onClose={onClose}
       open={open}
+      footer={
+        <div style={{ textAlign: 'right' }}>
+          <Button onClick={onClose} style={{ marginRight: 8 }}>
+            Cancel
+          </Button>
+          <Button type="primary" onClick={handleSaveAll} loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      }
     >
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="primary" onClick={() => setIsModalOpen(true)}>
-          Add Fee Rate
-        </Button>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={fees}
-        rowKey="_id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-        }}
-        onChange={handleTableChange}
-      />
-
-      <AgentFeeModal
-        open={isModalOpen}
-        loading={loading}
-        companies={companies}
-        categories={categories}
-        currentFees={fees}
-        onOk={handleCreate}
-        onCancel={() => setIsModalOpen(false)}
-      />
-
-      <AgentFeeEditModal
-        open={isEditModalOpen}
-        loading={loading}
-        fee={editingFee}
-        onOk={handleUpdate}
-        onCancel={() => {
-          setIsEditModalOpen(false);
-          setEditingFee(null);
-        }}
-      />
+      <Spin spinning={loading && companies.length === 0}>
+        <Collapse accordion>
+          {companies.map(company => (
+            <Collapse.Panel header={<strong style={{ fontSize: 16 }}>{company.name.en}</strong>} key={company._id}>
+              <Table 
+                columns={columns(company._id)} 
+                dataSource={categories} 
+                rowKey="_id"
+                pagination={false}
+                size="small"
+              />
+            </Collapse.Panel>
+          ))}
+        </Collapse>
+      </Spin>
     </Drawer>
   );
 };

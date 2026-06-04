@@ -10,7 +10,7 @@ export function useAgentFees(agentId: string) {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  const fetchFees = useCallback(async (params: ListFeesParams = { page: 1, limit: 10 }) => {
+  const fetchFees = useCallback(async (params: ListFeesParams = { page: 1, limit: 1000 }) => {
     if (!agentId) return;
     setLoading(true);
     try {
@@ -94,6 +94,35 @@ export function useAgentFees(agentId: string) {
     }
   }, [agentId]);
 
+  const bulkSave = useCallback(async (
+    creates: any[],
+    updates: { id: string; payload: any; etag: string }[],
+    deletes: { id: string; etag: string }[]
+  ) => {
+    if (!agentId) return false;
+    setLoading(true);
+    try {
+      const promises: Promise<any>[] = [];
+      
+      creates.forEach(c => promises.push(api.createAgentFee(agentId, c)));
+      updates.forEach(u => promises.push(api.updateAgentFee(agentId, u.id, u.payload, u.etag)));
+      deletes.forEach(d => promises.push(api.deleteAgentFee(agentId, d.id, d.etag)));
+      
+      await Promise.all(promises);
+      message.success('All fee updates saved successfully');
+      return true;
+    } catch (err: any) {
+      if (err.response?.status === 412) {
+        message.warning('Some records were modified by someone else. Please refresh and try again.');
+      } else {
+        message.error(err.response?.data?.message || 'Failed to save fee updates');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
   return {
     fees,
     companies,
@@ -104,6 +133,7 @@ export function useAgentFees(agentId: string) {
     fetchMasterData,
     createFee,
     updateFee,
-    deleteFee
+    deleteFee,
+    bulkSave
   };
 }
