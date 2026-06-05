@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/agent-invoice/`** — agents and agent-fees API (list/create/update/delete fees; agent CRUD; master-data lookups) with integration tests and gateway route prefix **`agent-invoice`**.
+- **agent-invoice seeds:** split Mongo bootstrap into `seed_agents.js`, `seed_indexes.js`, and `seed-agent_fees_seed.js`; document optional `SOURCE_MONGODB_URI` in `.env.example`.
+- **Backoffice — Agent Fees:** dedicated `/agent-fees` route with matrix table UI, `MatrixCell` component, create/edit/delete flows, and `agentFeesApiClient` / `agentsApiClient` with shared token refresh.
 - **`backend/service/staff/`** — staff profiles API (Fastify :3004, OpenAPI, MongoDB, init/seed scripts, tests) behind gateway `/api/v1/staff`.
 - **`backend/service/demo-service/`** — CRUD sample (`/api/v1/me`, `/api/v1/items`); `init:db`, `seed:example`, and `mongo-create-demo-user.md` for local Mongo.
 - **`backend/_bruno/`** — shared Bruno collections for gateway and internal mesh smoke tests.
@@ -19,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **agent-invoice ERD/docs:** branch schema adds `branch_id`, `branch_desc`, `ref_fee_branch_id`, `active`; `branch_type` enum **`MA` | `AG`**; fee/agent controllers use shared error mapping and `If-Match` ETag helpers.
+- **Backoffice — Agents:** inline edit + manage fees on one page; types expose `ref_fee_branch_id` / `ref_fee_branch_name`; optional `default_fee_rate` on patch payload.
+- **Backoffice — Auth:** register agent-fees API refresh callback alongside staff/agents clients.
 - **Rename:** `backend/service/service-demo/` → **`backend/service/demo-service/`** (package `demo-service`; Bruno collections `demo-service`; default `DB_NAME` **`demo-service`**).
 - **Staff docs:** list vs lookup contract (`GET /profiles` vs `GET /profiles?user_id=...`); custom JSON error envelope language; ERD and architecture aligned with implementation.
 - **demo-service:** `/healthz` and `/readyz` — plain JSON probes; readiness `503` uses `application/problem+json` with `SERVICE_NOT_READY`.
@@ -28,10 +34,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
+- **`backend/service/agent-invoice/_mission-control/`** — completed build spec/plan/todo artifacts.
+- **`frontend/backoffice/_mission-control/`** — raw invoice requirement draft files.
 - **`backend/service/service-demo/`** — replaced by `backend/service/demo-service/`.
 - **`backend/items/`** — legacy Express items workspace (superseded by demo-service items API).
 - **Root-flat layout:** Top-level `auth/`, `gateway/`, `services/` tree (replaced by `backend/`).
 - **`local-ports.md`:** Port index consolidated into root and `backend/README.md`.
+
+### Fixed
+
+- **Backoffice — Agent Fees:** ETag encoding on update/delete; matrix table race when mapping fee data to DOM; input enablement when syncing initial fee values; default fee rate update error handling.
+- **Backoffice — Staff/Auth:** `getProfileByUserId` handles single-object lookup response; JWT decode hardening; role-based route guard for `/staff`; profile/staff drawer and password-form validation edge cases.
+- **agent-invoice:** `ObjectId` conversion for master-data queries filtered by `ou_id`; field-name mapping for game company/category display.
 
 ## [0.2.0] - 2026-05-21
 

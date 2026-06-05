@@ -1,6 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import buildApp from '../../../../app.js';
+import { ObjectId } from 'mongodb';
 
 describe('Agent Fees API Integration Tests', () => {
   let app;
@@ -21,15 +22,22 @@ describe('Agent Fees API Integration Tests', () => {
 
   before(async () => {
     app = await buildApp({ logger: false });
-    await app.db.collection('agent_category_fees').deleteMany({
-      company_id: 'PG_TEST_INTEGRATION'
+    await app.db.collection('agents').insertOne({
+      _id: new ObjectId(agentId),
+      ou_id: new ObjectId(ouId),
+      branch_id: new ObjectId(branchId),
+      active: true
+    });
+    await app.db.collection('agent_fees').deleteMany({
+      cr_by: mockUserId
     });
   });
 
   after(async () => {
     if (app && app.db) {
-      await app.db.collection('agent_category_fees').deleteMany({
-        company_id: 'PG_TEST_INTEGRATION'
+      await app.db.collection('agents').deleteOne({ _id: new ObjectId(agentId) });
+      await app.db.collection('agent_fees').deleteMany({
+        cr_by: mockUserId
       });
     }
     if (app) await app.close();
@@ -59,12 +67,11 @@ describe('Agent Fees API Integration Tests', () => {
       url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
       headers: baseHeaders,
       payload: {
-        company_id: 'PG_TEST_INTEGRATION',
-        main_cate_id: 'SLOT',
-        platform_name: 'TEST_PLATFORM',
-        game_provider: 'PG Soft',
-        game_category: 'Slot',
-        fee_rate: 10
+        game_company_id: '000000000000000000000001',
+        game_main_cate_id: '000000000000000000000002',
+        gcomp_cost: 8,
+        agent_known_fee: 10,
+        agent_fee: 10
       }
     });
 
@@ -86,12 +93,10 @@ describe('Agent Fees API Integration Tests', () => {
       url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
       headers: baseHeaders,
       payload: {
-        company_id: 'PG_TEST_INTEGRATION',
-        main_cate_id: 'SLOT',
-        platform_name: 'TEST_PLATFORM',
-        game_provider: 'PG Soft',
-        game_category: 'Slot',
-        fee_rate: 15
+        game_company_id: '000000000000000000000001',
+        game_main_cate_id: '000000000000000000000002',
+        agent_known_fee: 15,
+        agent_fee: 15
       }
     });
 
@@ -108,7 +113,7 @@ describe('Agent Fees API Integration Tests', () => {
       method: 'PATCH',
       url: `/api/v1/agent-invoice/agents/${agentId}/fees/${createdFeeId}`,
       headers: baseHeaders,
-      payload: { fee_rate: 12.5 }
+      payload: { agent_known_fee: 12.5 }
     });
 
     assert.strictEqual(res.statusCode, 428);
@@ -124,7 +129,7 @@ describe('Agent Fees API Integration Tests', () => {
       method: 'PATCH',
       url: `/api/v1/agent-invoice/agents/${agentId}/fees/${createdFeeId}`,
       headers: { ...baseHeaders, 'if-match': currentEtag },
-      payload: { fee_rate: 12.5 }
+      payload: { agent_known_fee: 12.5 }
     });
 
     assert.strictEqual(res.statusCode, 200);
@@ -144,7 +149,7 @@ describe('Agent Fees API Integration Tests', () => {
       method: 'PATCH',
       url: `/api/v1/agent-invoice/agents/${agentId}/fees/${createdFeeId}`,
       headers: { ...baseHeaders, 'if-match': oldEtag },
-      payload: { fee_rate: 20 }
+      payload: { agent_known_fee: 20 }
     });
 
     assert.strictEqual(res.statusCode, 412);
@@ -207,25 +212,23 @@ describe('Agent Fees API Integration Tests', () => {
       url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
       headers: baseHeaders,
       payload: {
-        company_id: 'PG_TENANT_ISOLATION_TEST',
-        main_cate_id: 'POKER',
-        fee_rate: 5
+        game_company_id: '000000000000000000000001',
+        game_main_cate_id: '000000000000000000000003',
+        agent_known_fee: 5,
+        agent_fee: 5
       }
     });
     assert.strictEqual(createRes.statusCode, 201);
 
-    // GET from a different tenant — should not see the fee
+    // GET from a different tenant — should fail because the agent doesn't belong to this OU
     const listRes = await app.inject({
       method: 'GET',
       url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
       headers: otherHeaders
     });
-    assert.strictEqual(listRes.statusCode, 200);
-    const body = listRes.json();
-    const found = body.data.find((f) => f.company_id === 'PG_TENANT_ISOLATION_TEST');
-    assert.strictEqual(found, undefined, 'Fee should not be visible from another tenant');
+    assert.strictEqual(listRes.statusCode, 404);
 
     // Cleanup
-    await app.db.collection('agent_category_fees').deleteMany({ company_id: 'PG_TENANT_ISOLATION_TEST' });
+    // Handled by after() hook
   });
 });

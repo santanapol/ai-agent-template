@@ -32,8 +32,10 @@ const agentResponseObj = {
     branch_type: { type: 'string' },
     branch_desc: { type: 'string' },
     parent_branch_id: { type: 'string' },
+    ref_fee_branch_id: { type: 'string', nullable: true },
+    ref_fee_branch_name: { type: 'string', nullable: true },
     currency: { type: 'string' },
-    default_fee_rate: { type: 'number' },
+    default_fee_rate: { type: ['number', 'null'] },
     active: { type: 'boolean' },
     cr_by: { type: 'string' },
     cr_date: { type: 'string' },
@@ -114,11 +116,12 @@ export const createAgentSchema = {
   headers: trustedHeaders,
   body: {
     type: 'object',
-    required: ['branch_code', 'branch_name', 'branch_type', 'currency'],
+    required: ['branch_id', 'branch_code', 'branch_name', 'branch_type', 'currency'],
     properties: {
+      branch_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
       branch_code: { type: 'string' },
       branch_name: { type: 'string' },
-      branch_type: { type: 'string', enum: ['vip', 'affiliate'] },
+      branch_type: { type: 'string', enum: ['MA', 'AG'] },
       branch_desc: { type: 'string' },
       parent_branch_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
       currency: { type: 'string' },
@@ -166,9 +169,15 @@ export const updateAgentSchema = {
     type: 'object',
     properties: {
       branch_name: { type: 'string' },
-      branch_type: { type: 'string', enum: ['vip', 'affiliate'] },
+      branch_type: { type: 'string', enum: ['MA', 'AG'] },
       branch_desc: { type: 'string' },
       parent_branch_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
+      ref_fee_branch_id: {
+        anyOf: [
+          { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
+          { type: 'null' }
+        ]
+      },
       currency: { type: 'string' },
       default_fee_rate: { type: 'number', minimum: 0, maximum: 100 }
     }

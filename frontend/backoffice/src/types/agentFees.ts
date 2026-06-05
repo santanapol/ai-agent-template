@@ -1,11 +1,12 @@
 export interface AgentFee {
   _id: string;
-  agent_id: string;
   ou_id: string;
   branch_id: string;
-  company_id: string;
-  main_cate_id: string;
-  fee_rate: number;
+  game_company_id: string;
+  game_main_cate_id: string;
+  gcomp_cost: number;
+  agent_known_fee: number;
+  agent_fee: number;
   cr_by: string;
   cr_date: string;
   upd_by: string;
@@ -34,11 +35,15 @@ export interface ListFeesParams {
 }
 
 export interface CreateFeePayload {
-  company_id: string;
-  main_cate_id: string;
-  fee_rate: number;
+  game_company_id: string;
+  game_main_cate_id: string;
+  gcomp_cost: number;
+  agent_known_fee: number;
+  agent_fee: number;
 }
 
 export interface UpdateFeePayload {
-  fee_rate: number;
+  gcomp_cost?: number;
+  agent_known_fee?: number;
+  agent_fee?: number;
 }

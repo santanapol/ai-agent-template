@@ -16,30 +16,72 @@ const extractContext = (request) => ({
   requestId: request.requestId
 });
 
+const handleError = (error, reply, requestId) => {
+  const statusMap = {
+    400: 'INVALID_PARAM',
+    404: 'RESOURCE_NOT_FOUND',
+    409: 'DUPLICATE',
+    412: 'VERSION_CONFLICT',
+    428: 'PRECONDITION_REQUIRED'
+  };
+
+  if (statusMap[error.statusCode]) {
+    return reply.status(error.statusCode).send({
+      success: false,
+      code: statusMap[error.statusCode],
+      message: error.message,
+      data: null,
+      requestId
+    });
+  }
+  throw error;
+};
+
+const extractUpdDateISO = (request) => {
+  const ifMatch = request.headers['if-match'];
+  if (!ifMatch) {
+    const error = new Error('If-Match header is required for this operation.');
+    error.statusCode = 428;
+    throw error;
+  }
+  const updDateISO = decodeETag(ifMatch);
+  if (!updDateISO) {
+    const error = new Error('Invalid If-Match ETag format.');
+    error.statusCode = 400;
+    throw error;
+  }
+  return updDateISO;
+};
+
 export const getFeesHandler = async (request, reply) => {
   const { agentId } = request.params;
   const { page, limit } = request.query;
-  const { ouId, branchId } = extractContext(request);
+  const { ouId } = extractContext(request);
   const db = request.server.db;
+  const requestId = request.requestId;
 
-  const { fees, total } = await service.getFeesByAgentId(db, agentId, ouId, branchId, page, limit);
+  try {
+    const { fees, total } = await service.getFeesByAgentId(db, agentId, ouId, page, limit);
 
-  return reply.status(200).send({
-    success: true,
-    code: 'SUCCESS',
-    message: 'Success.',
-    data: fees,
-    pagination: { page, limit, total }
-  });
+    return reply.status(200).send({
+      success: true,
+      code: 'SUCCESS',
+      message: 'Success.',
+      data: fees,
+      pagination: { page, limit, total }
+    });
+  } catch (error) {
+    return handleError(error, reply, requestId);
+  }
 };
 
 export const createFeeHandler = async (request, reply) => {
   const { agentId } = request.params;
-  const { ouId, branchId, userId, requestId } = extractContext(request);
+  const { ouId, userId, requestId } = extractContext(request);
   const db = request.server.db;
 
   try {
-    const result = await service.createFeeByAgentId(db, agentId, ouId, branchId, request.body, userId);
+    const result = await service.createFeeByAgentId(db, agentId, ouId, request.body, userId);
     reply.header('ETag', generateETag(result.upd_date));
 
     return reply.status(201).send({
@@ -49,49 +91,19 @@ export const createFeeHandler = async (request, reply) => {
       data: { insertedId: result.insertedId.toString() }
     });
   } catch (error) {
-    if (error.statusCode === 409) {
-      return reply.status(409).send({
-        success: false,
-        code: 'DUPLICATE',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
 export const updateFeeHandler = async (request, reply) => {
   const { agentId, feeId } = request.params;
-  const { ouId, branchId, userId, requestId } = extractContext(request);
+  const { ouId, userId, requestId } = extractContext(request);
   const db = request.server.db;
 
-  const ifMatch = request.headers['if-match'];
-  if (!ifMatch) {
-    return reply.status(428).send({
-      success: false,
-      code: 'PRECONDITION_REQUIRED',
-      message: 'If-Match header is required for this operation.',
-      data: null,
-      requestId
-    });
-  }
-
-  const updDateISO = decodeETag(ifMatch);
-  if (!updDateISO) {
-    return reply.status(400).send({
-      success: false,
-      code: 'INVALID_PARAM',
-      message: 'Invalid If-Match ETag format.',
-      data: null,
-      requestId
-    });
-  }
-
   try {
+    const updDateISO = extractUpdDateISO(request);
     const result = await service.updateFeeByAgentId(
-      db, agentId, feeId, ouId, branchId, request.body.fee_rate, updDateISO, userId
+      db, agentId, feeId, ouId, request.body, updDateISO, userId
     );
     reply.header('ETag', generateETag(result.upd_date));
 
@@ -102,46 +114,18 @@ export const updateFeeHandler = async (request, reply) => {
       data: null
     });
   } catch (error) {
-    if (error.statusCode === 412) {
-      return reply.status(412).send({
-        success: false,
-        code: 'VERSION_CONFLICT',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    if (error.statusCode === 404) {
-      return reply.status(404).send({
-        success: false,
-        code: 'RESOURCE_NOT_FOUND',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
 export const deleteFeeHandler = async (request, reply) => {
   const { agentId, feeId } = request.params;
-  const { ouId, branchId, requestId } = extractContext(request);
+  const { ouId, requestId } = extractContext(request);
   const db = request.server.db;
 
-  const ifMatch = request.headers['if-match'];
-  if (!ifMatch) {
-    return reply.status(428).send({
-      success: false,
-      code: 'PRECONDITION_REQUIRED',
-      message: 'If-Match header is required for this operation.',
-      data: null,
-      requestId
-    });
-  }
-
   try {
-    await service.deleteFeeByAgentId(db, agentId, feeId, ouId, branchId);
+    extractUpdDateISO(request);
+    await service.deleteFeeByAgentId(db, agentId, feeId, ouId);
 
     return reply.status(200).send({
       success: true,
@@ -150,15 +134,6 @@ export const deleteFeeHandler = async (request, reply) => {
       data: null
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return reply.status(404).send({
-        success: false,
-        code: 'RESOURCE_NOT_FOUND',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };

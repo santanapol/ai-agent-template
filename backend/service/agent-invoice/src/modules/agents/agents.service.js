@@ -21,19 +21,14 @@ export const getAgentDetail = async (db, id, ouId) => {
 };
 
 export const createAgent = async (db, ouId, payload, userId) => {
-  let feeRate = payload.default_fee_rate;
-  if (feeRate === null || feeRate === undefined) {
-    const error = new Error('default_fee_rate cannot be null. Assumed 0% but operation stopped.');
-    error.statusCode = 400;
-    throw error;
-  }
-
   const now = new Date();
   const prog = '/api/v1/agent-invoice/agents';
   const agentData = {
     ...payload,
+    branch_id: new ObjectId(payload.branch_id),
     ou_id: new ObjectId(ouId),
     parent_branch_id: payload.parent_branch_id ? new ObjectId(payload.parent_branch_id) : null,
+    ref_fee_branch_id: payload.ref_fee_branch_id ? new ObjectId(payload.ref_fee_branch_id) : null,
     active: true,
     cr_by: userId,
     cr_date: now,
@@ -48,12 +43,6 @@ export const createAgent = async (db, ouId, payload, userId) => {
 };
 
 export const updateAgent = async (db, id, ouId, payload, updDateStr, userId) => {
-  if (payload.default_fee_rate === null) {
-    const error = new Error('default_fee_rate cannot be null. Assumed 0% but operation stopped.');
-    error.statusCode = 400;
-    throw error;
-  }
-
   const now = new Date();
   const updateData = {
     ...payload,
@@ -64,6 +53,10 @@ export const updateAgent = async (db, id, ouId, payload, updDateStr, userId) => 
 
   if (payload.parent_branch_id !== undefined) {
     updateData.parent_branch_id = payload.parent_branch_id ? new ObjectId(payload.parent_branch_id) : null;
+  }
+
+  if (payload.ref_fee_branch_id !== undefined) {
+    updateData.ref_fee_branch_id = payload.ref_fee_branch_id ? new ObjectId(payload.ref_fee_branch_id) : null;
   }
 
   const result = await repository.updateAgent(db, id, ouId, updDateStr, updateData);
@@ -134,6 +127,7 @@ export const syncAgent = async (db, ouId, branchId, userId) => {
       branch_desc: sourceData.branch_desc || null,
       branch_type: sourceData.branch_type,
       parent_branch_id: sourceData.reference_branch ? new ObjectId(sourceData.reference_branch) : null,
+      ref_fee_branch_id: null,
       currency: sourceData.currency,
       default_fee_rate: 0,
       active: true,

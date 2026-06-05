@@ -90,12 +90,12 @@ const AdminLayout: React.FC = () => {
           }}
         >
           <Space size="large">
-            <Space direction="vertical" size={0} style={{ textAlign: 'right', lineHeight: '1.2' }}>
+            <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
               <Text strong>{user?.sub ?? '—'}</Text>
               <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
                 Role: {user?.role ?? '—'} | Branch: {user?.branch_id ?? '—'}
               </Text>
-            </Space>
+            </div>
             <Dropdown menu={userMenu} placement="bottomRight">
               <Avatar style={{ backgroundColor: token.colorPrimary, cursor: 'pointer' }} icon={<UserOutlined />} />
             </Dropdown>

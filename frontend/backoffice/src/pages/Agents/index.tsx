@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox } from 'antd';
-import { SearchOutlined, SyncOutlined, SettingOutlined, DeleteOutlined } from '@ant-design/icons';
+import { SearchOutlined, SyncOutlined, SettingOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgents } from './hooks/useAgents';
 import { useNavigate } from 'react-router-dom';
@@ -81,10 +81,20 @@ const AgentsList: React.FC = () => {
       ),
     },
     {
+      title: 'Ref Fee Branch',
+      dataIndex: 'ref_fee_branch_id',
+      key: 'ref_fee_branch_id',
+      render: (refId: any, record: Agent) => {
+        if (!refId) return <Typography.Text type="secondary">—</Typography.Text>;
+        const normalizedRefId = typeof refId === 'object' && refId.$oid ? refId.$oid : String(refId);
+        return record.ref_fee_branch_name ? <Tag icon={<LinkOutlined />}>{record.ref_fee_branch_name}</Tag> : <Typography.Text type="secondary">{normalizedRefId}</Typography.Text>;
+      },
+    },
+    {
       title: 'Default Fee (%)',
       dataIndex: 'default_fee_rate',
       key: 'default_fee_rate',
-      render: (rate: number) => <strong>{rate}%</strong>,
+      render: (rate?: number) => <strong>{rate ?? 0}%</strong>,
     },
     {
       title: 'Status',

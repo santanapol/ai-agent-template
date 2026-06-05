@@ -12,6 +12,9 @@ const createMockDb = (overrides = {}) => {
         })
       })
     }),
+    aggregate: () => ({
+      toArray: async () => [{ _id: '123', branch_name: 'Test Branch' }]
+    }),
     countDocuments: async () => 1,
     insertOne: async () => ({ insertedId: new ObjectId() }),
     updateOne: async () => ({ matchedCount: 1 }),
@@ -34,24 +37,7 @@ test('getAgents should return agents and total from repository', async (t) => {
   assert.strictEqual(result.agents[0].branch_name, 'Test Branch');
 });
 
-test('createAgent should throw error if default_fee_rate is null', async (t) => {
-  const dbMock = createMockDb();
-  const payload = {
-    branch_name: 'Missing Fee',
-    default_fee_rate: null
-  };
-  
-  await assert.rejects(
-    async () => {
-      await service.createAgent(dbMock, '000000000000000000000123', payload, 'user1');
-    },
-    (err) => {
-      assert.strictEqual(err.statusCode, 400);
-      assert.match(err.message, /default_fee_rate cannot be null/);
-      return true;
-    }
-  );
-});
+
 
 test('createAgent should success if default_fee_rate is provided', async (t) => {
   let insertCalled = false;
@@ -75,23 +61,7 @@ test('createAgent should success if default_fee_rate is provided', async (t) => 
   assert.ok(result.upd_date);
 });
 
-test('updateAgent should throw error if default_fee_rate is null', async (t) => {
-  const dbMock = createMockDb();
-  const payload = {
-    default_fee_rate: null
-  };
-  
-  await assert.rejects(
-    async () => {
-      await service.updateAgent(dbMock, '111111111111111111111111', '000000000000000000000123', payload, new Date().toISOString(), 'user1');
-    },
-    (err) => {
-      assert.strictEqual(err.statusCode, 400);
-      assert.match(err.message, /default_fee_rate cannot be null/);
-      return true;
-    }
-  );
-});
+
 
 test('updateAgent should throw 412 if matchedCount is 0', async (t) => {
   const dbMock = createMockDb({

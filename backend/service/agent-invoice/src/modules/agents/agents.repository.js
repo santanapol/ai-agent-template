@@ -12,11 +12,29 @@ export const listAgents = async (db, ouId, search, skip = 0, limit = 20) => {
     ];
   }
 
-  return db.collection(COLLECTION_NAME)
-    .find(query)
-    .skip(skip)
-    .limit(limit)
-    .toArray();
+  return db.collection(COLLECTION_NAME).aggregate([
+    { $match: query },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: COLLECTION_NAME,
+        localField: 'ref_fee_branch_id',
+        foreignField: 'branch_id',
+        as: 'ref_agent'
+      }
+    },
+    {
+      $addFields: {
+        ref_fee_branch_name: { $arrayElemAt: ['$ref_agent.branch_name', 0] }
+      }
+    },
+    {
+      $project: {
+        ref_agent: 0
+      }
+    }
+  ]).toArray();
 };
 
 export const countAgents = async (db, ouId, search) => {

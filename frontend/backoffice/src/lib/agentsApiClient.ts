@@ -40,8 +40,8 @@ function extractETag(res: AxiosResponse): string | null {
   return typeof raw === 'string' ? raw : null;
 }
 
-export async function listAgents(params: ListAgentsParams = {}) {
-  const res = await client.get<ApiEnvelope<Agent[]>>('/api/v1/agent-invoice/agents', { params });
+export async function listAgents(params: ListAgentsParams = {}, signal?: AbortSignal) {
+  const res = await client.get<ApiEnvelope<Agent[]>>('/api/v1/agent-invoice/agents', { params, signal });
   return {
     data: res.data.data,
     total: res.data.pagination?.total || 0,
@@ -54,8 +54,8 @@ export async function listUnsyncedBranches(includeInactive = false) {
   return res.data;
 }
 
-export async function getAgentById(id: string): Promise<{ agent: Agent; etag: string | null }> {
-  const res = await client.get<ApiEnvelope<Agent>>(`/api/v1/agent-invoice/agents/${id}`);
+export async function getAgentById(id: string, signal?: AbortSignal): Promise<{ agent: Agent; etag: string | null }> {
+  const res = await client.get<ApiEnvelope<Agent>>(`/api/v1/agent-invoice/agents/${id}`, { signal });
   return { agent: res.data.data, etag: extractETag(res) };
 }
 

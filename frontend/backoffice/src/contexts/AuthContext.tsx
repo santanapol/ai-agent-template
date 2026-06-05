@@ -3,7 +3,7 @@ import type { DecodedUser, TokenResponse } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/staffApiClient';
 import { setAgentAccessToken, setAgentRefreshCallback } from '../lib/agentsApiClient';
-import { setAgentFeesAccessToken } from '../lib/agentFeesApiClient';
+import { setAgentFeesAccessToken, setAgentFeesRefreshCallback } from '../lib/agentFeesApiClient';
 
 interface AuthContextValue {
   user: DecodedUser | null;
@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setRefreshCallback(refreshFn);
     setAgentRefreshCallback(refreshFn);
+    setAgentFeesRefreshCallback(refreshFn);
   }, [applyToken, clearSession]);
 
   // On mount: attempt to restore session via HttpOnly refresh cookie

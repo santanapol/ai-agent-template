@@ -12,7 +12,7 @@ describe('useAgentFees', () => {
 
   it('should fetch fees and update state', async () => {
     const mockFees = [
-      { _id: '1', fee_rate: 10, company_id: 'C1', main_cate_id: 'M1' }
+      { _id: '1', gcomp_cost: 6, agent_known_fee: 10, agent_fee: 10, game_company_id: 'C1', game_main_cate_id: 'M1' }
     ];
     vi.mocked(api.listAgentFees).mockResolvedValueOnce({
       data: mockFees as any,
@@ -28,7 +28,7 @@ describe('useAgentFees', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.fees).toEqual(mockFees);
     expect(result.current.total).toBe(1);
-    expect(api.listAgentFees).toHaveBeenCalledWith('agent123', { page: 1, limit: 10 });
+    expect(api.listAgentFees).toHaveBeenCalledWith('agent123', { page: 1, limit: 1000 }, undefined);
   });
 
   it('should fetch master data', async () => {

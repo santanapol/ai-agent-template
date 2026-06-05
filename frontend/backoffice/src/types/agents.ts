@@ -7,6 +7,8 @@ export interface Agent {
   branch_type: string;
   branch_desc?: string;
   parent_branch_id?: string;
+  ref_fee_branch_id?: string | null;
+  ref_fee_branch_name?: string | null;
   currency: string;
   default_fee_rate: number;
   active: boolean;
@@ -32,6 +34,7 @@ export interface ListAgentsParams {
 }
 
 export interface UpdateAgentPayload {
-  default_fee_rate: number;
+  default_fee_rate?: number;
   active?: boolean;
+  ref_fee_branch_id?: string | null;
 }

@@ -52,13 +52,13 @@ export const getFeesSchema = {
             type: 'object',
             properties: {
               _id: { type: 'string' },
-              agent_id: { type: 'string' },
-              company_id: { type: 'string' },
-              main_cate_id: { type: 'string' },
-              platform_name: { type: 'string' },
-              game_provider: { type: 'string' },
-              game_category: { type: 'string' },
-              fee_rate: { type: 'number' },
+              ou_id: { type: 'string' },
+              branch_id: { type: 'string' },
+              game_company_id: { type: 'string' },
+              game_main_cate_id: { type: 'string' },
+              gcomp_cost: { type: 'number' },
+              agent_known_fee: { type: 'number' },
+              agent_fee: { type: 'number' },
               cr_by: { type: 'string' },
               cr_date: { type: 'string' },
               cr_prog: { type: 'string' },
@@ -96,14 +96,13 @@ export const createFeeSchema = {
   },
   body: {
     type: 'object',
-    required: ['company_id', 'main_cate_id', 'fee_rate'],
+    required: ['game_company_id', 'game_main_cate_id', 'agent_known_fee', 'agent_fee'],
     properties: {
-      company_id: { type: 'string' },
-      main_cate_id: { type: 'string' },
-      platform_name: { type: 'string' },
-      game_provider: { type: 'string' },
-      game_category: { type: 'string' },
-      fee_rate: { type: 'number', minimum: 0, maximum: 100 }
+      game_company_id: { type: 'string' },
+      game_main_cate_id: { type: 'string' },
+      gcomp_cost: { type: 'number', minimum: 0, maximum: 100 },
+      agent_known_fee: { type: 'number', minimum: 0, maximum: 100 },
+      agent_fee: { type: 'number', minimum: 0, maximum: 100 }
     }
   },
   response: {
@@ -146,9 +145,11 @@ export const updateFeeSchema = {
   },
   body: {
     type: 'object',
-    required: ['fee_rate'],
+    minProperties: 1,
     properties: {
-      fee_rate: { type: 'number', minimum: 0, maximum: 100 }
+      gcomp_cost: { type: 'number', minimum: 0, maximum: 100 },
+      agent_known_fee: { type: 'number', minimum: 0, maximum: 100 },
+      agent_fee: { type: 'number', minimum: 0, maximum: 100 }
     }
   },
   response: {

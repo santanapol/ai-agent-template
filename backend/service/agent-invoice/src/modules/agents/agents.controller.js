@@ -16,6 +16,55 @@ const extractContext = (request) => ({
   requestId: request.requestId
 });
 
+const handleError = (error, reply, requestId) => {
+  const statusMap = {
+    400: 'INVALID_PARAM',
+    404: 'RESOURCE_NOT_FOUND',
+    409: 'DUPLICATE',
+    412: 'VERSION_CONFLICT',
+    428: 'PRECONDITION_REQUIRED',
+    500: 'INTERNAL_ERROR'
+  };
+
+  if (error.statusCode && statusMap[error.statusCode]) {
+    return reply.status(error.statusCode).send({
+      success: false,
+      code: statusMap[error.statusCode],
+      message: error.message,
+      data: null,
+      requestId
+    });
+  }
+  
+  // Fallback to 500 for unhandled errors directly returned in endpoints like syncAgent
+  if (!error.statusCode && error.message) {
+      return reply.status(500).send({
+      success: false,
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+      data: null,
+      requestId
+    });
+  }
+  throw error;
+};
+
+const extractUpdDateISO = (request) => {
+  const ifMatch = request.headers['if-match'];
+  if (!ifMatch) {
+    const error = new Error('If-Match header is required for this operation.');
+    error.statusCode = 428;
+    throw error;
+  }
+  const updDateISO = decodeETag(ifMatch);
+  if (!updDateISO) {
+    const error = new Error('Invalid If-Match ETag format.');
+    error.statusCode = 400;
+    throw error;
+  }
+  return updDateISO;
+};
+
 export const getAgentsHandler = async (request, reply) => {
   const { page, limit, search } = request.query;
   const { ouId } = extractContext(request);
@@ -48,16 +97,7 @@ export const getAgentDetailHandler = async (request, reply) => {
       data: agent
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return reply.status(404).send({
-        success: false,
-        code: 'RESOURCE_NOT_FOUND',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
@@ -76,16 +116,7 @@ export const createAgentHandler = async (request, reply) => {
       data: { insertedId: result.insertedId.toString() }
     });
   } catch (error) {
-    if (error.statusCode === 400) {
-      return reply.status(400).send({
-        success: false,
-        code: 'INVALID_PARAM',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
@@ -94,29 +125,8 @@ export const updateAgentHandler = async (request, reply) => {
   const { ouId, userId, requestId } = extractContext(request);
   const db = request.server.db;
 
-  const ifMatch = request.headers['if-match'];
-  if (!ifMatch) {
-    return reply.status(428).send({
-      success: false,
-      code: 'PRECONDITION_REQUIRED',
-      message: 'If-Match header is required for this operation.',
-      data: null,
-      requestId
-    });
-  }
-
-  const updDateISO = decodeETag(ifMatch);
-  if (!updDateISO) {
-    return reply.status(400).send({
-      success: false,
-      code: 'INVALID_PARAM',
-      message: 'Invalid If-Match ETag format.',
-      data: null,
-      requestId
-    });
-  }
-
   try {
+    const updDateISO = extractUpdDateISO(request);
     const result = await service.updateAgent(db, id, ouId, request.body, updDateISO, userId);
     reply.header('ETag', generateETag(result.upd_date));
 
@@ -127,25 +137,7 @@ export const updateAgentHandler = async (request, reply) => {
       data: null
     });
   } catch (error) {
-    if (error.statusCode === 400) {
-      return reply.status(400).send({
-        success: false,
-        code: 'INVALID_PARAM',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    if (error.statusCode === 412) {
-      return reply.status(412).send({
-        success: false,
-        code: 'VERSION_CONFLICT',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
@@ -154,29 +146,8 @@ export const deleteAgentHandler = async (request, reply) => {
   const { ouId, userId, requestId } = extractContext(request);
   const db = request.server.db;
 
-  const ifMatch = request.headers['if-match'];
-  if (!ifMatch) {
-    return reply.status(428).send({
-      success: false,
-      code: 'PRECONDITION_REQUIRED',
-      message: 'If-Match header is required for this operation.',
-      data: null,
-      requestId
-    });
-  }
-
-  const updDateISO = decodeETag(ifMatch);
-  if (!updDateISO) {
-    return reply.status(400).send({
-      success: false,
-      code: 'INVALID_PARAM',
-      message: 'Invalid If-Match ETag format.',
-      data: null,
-      requestId
-    });
-  }
-
   try {
+    const updDateISO = extractUpdDateISO(request);
     const result = await service.softDeleteAgent(db, id, ouId, updDateISO, userId);
     reply.header('ETag', generateETag(result.upd_date));
 
@@ -187,16 +158,7 @@ export const deleteAgentHandler = async (request, reply) => {
       data: null
     });
   } catch (error) {
-    if (error.statusCode === 412) {
-      return reply.status(412).send({
-        success: false,
-        code: 'VERSION_CONFLICT',
-        message: error.message,
-        data: null,
-        requestId
-      });
-    }
-    throw error;
+    return handleError(error, reply, requestId);
   }
 };
 
@@ -214,13 +176,7 @@ export const syncAgentHandler = async (request, reply) => {
       data: result
     });
   } catch (error) {
-    return reply.status(500).send({
-      success: false,
-      code: 'INTERNAL_ERROR',
-      message: error.message,
-      data: null,
-      requestId
-    });
+    return handleError(error, reply, requestId);
   }
 };
 
@@ -238,12 +194,6 @@ export const getUnsyncedBranchesHandler = async (request, reply) => {
       data: unsynced
     });
   } catch (error) {
-    return reply.status(500).send({
-      success: false,
-      code: 'INTERNAL_ERROR',
-      message: error.message,
-      data: null,
-      requestId
-    });
+    return handleError(error, reply, requestId);
   }
 };

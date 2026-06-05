@@ -1,18 +1,34 @@
 import { ObjectId } from 'mongodb';
 import * as repository from './agent-fees.repository.js';
 
-export const getFeesByAgentId = async (db, agentId, ouId, branchId, page = 1, limit = 20) => {
+const resolveTargetBranchId = async (db, agentId, ouId) => {
+  const agent = await db.collection('agents').findOne({
+    _id: new ObjectId(agentId),
+    ou_id: new ObjectId(ouId),
+    active: { $ne: false }
+  });
+  if (!agent) {
+    const error = new Error('Agent not found or inactive.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return agent.branch_id;
+};
+
+export const getFeesByAgentId = async (db, agentId, ouId, page = 1, limit = 20) => {
+  const targetBranchId = await resolveTargetBranchId(db, agentId, ouId);
   const skip = (page - 1) * limit;
   const [fees, total] = await Promise.all([
-    repository.findByAgentId(db, agentId, ouId, branchId, skip, limit),
-    repository.countByAgentId(db, agentId, ouId, branchId)
+    repository.findByTargetBranchId(db, ouId, targetBranchId, skip, limit),
+    repository.countByTargetBranchId(db, ouId, targetBranchId)
   ]);
   return { fees, total };
 };
 
-export const createFeeByAgentId = async (db, agentId, ouId, branchId, payload, userId) => {
+export const createFeeByAgentId = async (db, agentId, ouId, payload, userId) => {
+  const targetBranchId = await resolveTargetBranchId(db, agentId, ouId);
   const existing = await repository.findByUniqueFields(
-    db, agentId, ouId, branchId, payload.company_id, payload.main_cate_id
+    db, ouId, targetBranchId, payload.game_company_id, payload.game_main_cate_id
   );
   if (existing) {
     const error = new Error('Fee override for this company and category already exists.');
@@ -24,9 +40,10 @@ export const createFeeByAgentId = async (db, agentId, ouId, branchId, payload, u
   const prog = '/api/v1/agent-invoice/agents/:agentId/fees';
   const feeData = {
     ...payload,
-    agent_id: new ObjectId(agentId),
-    ou_id: ouId,
-    branch_id: branchId,
+    game_company_id: new ObjectId(payload.game_company_id),
+    game_main_cate_id: new ObjectId(payload.game_main_cate_id),
+    ou_id: new ObjectId(ouId),
+    branch_id: targetBranchId,
     cr_by: userId,
     cr_date: now,
     cr_prog: prog,
@@ -39,16 +56,17 @@ export const createFeeByAgentId = async (db, agentId, ouId, branchId, payload, u
   return { insertedId: insertResult.insertedId, upd_date: now.toISOString() };
 };
 
-export const updateFeeByAgentId = async (db, agentId, feeId, ouId, branchId, feeRate, updDateStr, userId) => {
+export const updateFeeByAgentId = async (db, agentId, feeId, ouId, updatePayload, updDateStr, userId) => {
+  const targetBranchId = await resolveTargetBranchId(db, agentId, ouId);
   const now = new Date();
   const updateData = {
-    fee_rate: feeRate,
+    ...updatePayload,
     upd_by: userId,
     upd_date: now,
     upd_prog: '/api/v1/agent-invoice/agents/:agentId/fees/:feeId'
   };
 
-  const result = await repository.updateFee(db, feeId, ouId, branchId, updDateStr, updateData);
+  const result = await repository.updateFee(db, feeId, ouId, targetBranchId, updDateStr, updateData);
 
   if (result.matchedCount === 0) {
     const error = new Error('Resource was modified by another request. Refresh and retry.');
@@ -59,8 +77,9 @@ export const updateFeeByAgentId = async (db, agentId, feeId, ouId, branchId, fee
   return { upd_date: now.toISOString() };
 };
 
-export const deleteFeeByAgentId = async (db, agentId, feeId, ouId, branchId) => {
-  const result = await repository.deleteFee(db, feeId, agentId, ouId, branchId);
+export const deleteFeeByAgentId = async (db, agentId, feeId, ouId) => {
+  const targetBranchId = await resolveTargetBranchId(db, agentId, ouId);
+  const result = await repository.deleteFee(db, feeId, ouId, targetBranchId);
 
   if (result.deletedCount === 0) {
     const error = new Error('Fee record not found or already deleted.');

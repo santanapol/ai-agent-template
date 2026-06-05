@@ -47,12 +47,16 @@
 {
   _id: ObjectId,
   ou_id: ObjectId,                     // Organizational Unit ID [Index]
+  branch_id: ObjectId,                 // Branch ID
   branch_code: String,                 // รหัสย่อ เช่น "RY", "1668" (Unique ภายใน ou_id)
   branch_name: String,                 // ชื่อเต็ม เช่น "Royal777"
-  branch_type: String,                 // Enum: 'vip' | 'affiliate'
+  branch_desc: String,                 // รายละเอียดสาขา
+  branch_type: String,                 // Enum: 'MA' | 'AG'
   parent_branch_id: ObjectId,          // อ้างอิง branches._id แม่ข่าย (nullable)
-  currency: String,                    // เช่น 'thb', 'mmk'
+  ref_fee_branch_id: ObjectId,         // อ้างอิง fee จาก agent อื่น (nullable)
+  currency: String,                    // เช่น 'thb', 'mmk' (lowercase)
   default_fee_rate: Decimal128,        // Default fee (%) เมื่อไม่มี category fee (nullable)
+  active: Boolean,                     // สถานะการเปิดใช้งาน
   cr_by: String,
   cr_date: Date,
   cr_prog: String,
@@ -65,10 +69,13 @@
 **Field Descriptions:**
 
 - `ou_id` — หน่วยงานภายใน organization สำหรับจัดกลุ่ม Branch (ObjectId)
+- `branch_id` — รหัส Branch สำหรับใช้อ้างอิง (ObjectId)
 - `branch_code` — รหัสย่อ; **ไม่ซ้ำภายใน `ou_id`**
-- `branch_type` — ประเภท Branch (`vip` | `affiliate`)
+- `branch_type` — ประเภท Branch (`MA` | `AG`)
+- `ref_fee_branch_id` — อ้างอิงเรทค่าธรรมเนียมจาก Agent อื่น (ObjectId)
 - `parent_branch_id` — ลำดับชั้น Branch (nullable)
-- `default_fee_rate` — ค่าธรรมเนียมเริ่มต้น (%) **Optional**; ใช้เมื่อไม่มี record ใน `branch_category_fees`
+- `default_fee_rate` — ค่าธรรมเนียมเริ่มต้น (%) **Optional**; ใช้เมื่อไม่มี record ใน `branch_category_fees` (Decimal128)
+- `active` — สถานะการเปิดใช้งาน (Boolean)
 - `cr_*` / `upd_*` — Audit และ optimistic locking
 
 ---
@@ -154,11 +161,13 @@ db.agent_fees.createIndex(
 │                           AGENTS                                │
 ├─────────────────────────────────────────────────────────────────┤
 │ _id (ObjectId) [PK]                                             │
-│ ou_id (ObjectId) [Index]                                          │
+│ ou_id (ObjectId) [Index]                                        │
+│ branch_id (ObjectId) [Index]                                    │
 │ branch_code (String) [Unique w/ ou]                             │
-│ branch_name, branch_type                                        │
-│ parent_branch_id (ObjectId, nullable) [Index]                     │
-│ currency, default_fee_rate (nullable)                           │
+│ branch_name, branch_desc, branch_type                           │
+│ parent_branch_id (ObjectId, nullable) [Index]                   │
+│ ref_fee_branch_id (ObjectId, nullable)                          │
+│ currency, default_fee_rate (Decimal128, nullable), active       │
 │ cr_by, cr_date, cr_prog, upd_by, upd_date, upd_prog             │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -197,12 +206,16 @@ db.agent_fees.createIndex(
 {
   "_id": { "$oid": "665f0a1b2c3d4e5f6a7b8c9d" },
   "ou_id": { "$oid": "5f4f9d57266ed249e45ecef5" },
+  "branch_id": { "$oid": "5f4fb5bb3156af7a2db9e5a0" },
   "branch_code": "RY",
   "branch_name": "Royal777",
-  "branch_type": "vip",
+  "branch_desc": "Royal777 Master Branch",
+  "branch_type": "MA",
   "parent_branch_id": null,
+  "ref_fee_branch_id": null,
   "currency": "thb",
   "default_fee_rate": { "$numberDecimal": "20.00" },
+  "active": true,
   "cr_by": "user-001",
   "cr_date": { "$date": "2024-05-31T08:00:00.000Z" },
   "cr_prog": "POST /api/branches",
@@ -218,19 +231,11 @@ db.agent_fees.createIndex(
 {
   "_id": { "$oid": "665f0a1b2c3d4e5f6a7b8c9e" },
   "ou_id": { "$oid": "5f4f9d57266ed249e45ecef5" },
-  "ou_name": "7WCASINO",
   "branch_id": { "$oid": "665f0a1b2c3d4e5f6a7b8c9d" },
-  "branch_code": "RY",
-  "branch_name": "Royal777",
-  "currency": "THB",
   "game_company_id": { "$oid": "64f84af28f47e3525191cb3d" },
-  "game_company_name": "RSG",
-  "description": "ROYAL SLOT GAMING",
-  "platform": "RSG",
   "game_main_cate_id": { "$oid": "5f157e0f0cd3be22cc236a6b" },
-  "game_main_cate_name": "FISHING",
   "gcomp_cost": 6,
-  "gcomp_fee": 6,
+  "agent_known_fee": 6,
   "agent_fee": 9,
   "cr_by": "user-001",
   "cr_date": { "$date": "2024-05-31T09:00:00.000Z" },
@@ -281,10 +286,13 @@ Optional; ถ้าไม่มี category fee และไม่มี default
 | `branch_code` | Required | |
 | `(ou_id, branch_id)` | Unique | Compound index |
 | `branch_name` | Required | |
-| `branch_type` | Enum: `vip`, `affiliate` | Required |
+| `branch_desc` | Optional | |
+| `branch_type` | Enum: `MA`, `AG` | Required |
+| `parent_branch_id` | Optional, ObjectId | ต้องชี้ `agents._id` ภาย OU เดียวกัน |
+| `ref_fee_branch_id`| Optional, ObjectId | อ้างอิง fee จาก agent อื่น |
 | `currency` | Required | lowercase ISO-style เช่น `thb` |
 | `default_fee_rate` | Optional, 0–100 if set | Decimal128 |
-| `parent_branch_id` | Optional | ต้องชี้ `agents._id` ภาย OU เดียวกัน |
+| `active` | Required | Boolean |
 
 ### `agent_fees`
 
@@ -293,7 +301,7 @@ Optional; ถ้าไม่มี category fee และไม่มี default
 | `ou_id` | Required | |
 | `branch_id` | Required, ObjectId | FK → `agents._id` |
 | `game_company_id`, `game_main_cate_id` | Required, ObjectId | |
-| `gcomp_cost`, `gcomp_fee`, `agent_fee` | Required | Number |
+| `gcomp_cost`, `agent_known_fee`, `agent_fee` | Required | Number |
 | `(ou_id, branch_id, game_company_id, game_main_cate_id)` | Indexed | |
 
 ---
