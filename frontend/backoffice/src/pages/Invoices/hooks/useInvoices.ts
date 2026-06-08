@@ -92,7 +92,7 @@ export function useInvoices() {
       setInvoice(res.data);
       return res.data;
     } catch (error: unknown) {
-      message.error(apiErrorMessage(error, 'Failed to fetch invoice'));
+      message.error({ content: apiErrorMessage(error, 'Failed to fetch invoice'), key: `fetch-invoice-detail-${id}` });
       return null;
     } finally {
       setDetailLoading(false);
@@ -108,7 +108,7 @@ export function useInvoices() {
       setTransactions(items);
       return items;
     } catch (error: unknown) {
-      message.error(apiErrorMessage(error, 'Failed to fetch transactions'));
+      message.error({ content: apiErrorMessage(error, 'Failed to fetch transactions'), key: `fetch-invoice-transactions-${id}` });
       return [];
     } finally {
       setTransactionsLoading(false);

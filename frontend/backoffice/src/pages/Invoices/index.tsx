@@ -14,9 +14,9 @@ import {
   message,
 } from 'antd';
 import { SearchOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import type { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { useInvoices } from './hooks/useInvoices';
 import { formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
@@ -37,15 +37,35 @@ const InvoiceList: React.FC = () => {
     generateInvoices,
   } = useInvoices();
 
-  const [searchText, setSearchText] = useState('');
-  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>();
-  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>();
-  const [billingMonth, setBillingMonth] = useState<string | undefined>();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [searchText, setSearchText] = useState(searchParams.get('search') ?? '');
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
+    searchParams.get('branch_id') ?? undefined,
+  );
+  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>(
+    (searchParams.get('status') as InvoiceStatus | null) ?? undefined,
+  );
+  const [billingMonth, setBillingMonth] = useState<string | undefined>(
+    searchParams.get('billing_month') ?? undefined,
+  );
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [pageSize, setPageSize] = useState(Number(searchParams.get('page_size')) || 10);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm<{ month: Dayjs; branch_id?: string }>();
+
+  // Keep filter/pagination state in the URL so it survives back-navigation from the detail page (I11)
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (searchText) params.search = searchText;
+    if (selectedBranchId) params.branch_id = selectedBranchId;
+    if (selectedStatus) params.status = selectedStatus;
+    if (billingMonth) params.billing_month = billingMonth;
+    if (page !== 1) params.page = String(page);
+    if (pageSize !== 10) params.page_size = String(pageSize);
+    setSearchParams(params, { replace: true });
+  }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, setSearchParams]);
 
   useEffect(() => {
     fetchInvoices({
@@ -116,12 +136,18 @@ const InvoiceList: React.FC = () => {
       render: (status: string) => <Tag color={statusTagColor(status)}>{status}</Tag>,
     },
     {
-      title: 'Net Win',
-      dataIndex: 'net_win',
-      key: 'net_win',
-      align: 'right',
-      render: (val: number | null) => formatMoney(val),
+      title: 'Billing Month',
+      dataIndex: 'billing_month',
+      key: 'billing_month',
+      render: (val: string | null | undefined) => val || '-',
     },
+    {
+      title: 'Due Date',
+      dataIndex: 'due_date',
+      key: 'due_date',
+      render: (date: string | null) => (date ? new Date(date).toLocaleDateString('th-TH') : '-'),
+    },
+
     {
       title: 'Amount',
       dataIndex: 'amount',
@@ -129,12 +155,7 @@ const InvoiceList: React.FC = () => {
       align: 'right',
       render: (val: number | null) => formatMoney(val),
     },
-    {
-      title: 'Created Date',
-      dataIndex: 'cr_date',
-      key: 'cr_date',
-      render: (date: string) => new Date(date).toLocaleString('th-TH'),
-    },
+
     {
       title: 'Action',
       key: 'action',
@@ -152,7 +173,7 @@ const InvoiceList: React.FC = () => {
   ];
 
   return (
-    <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>
@@ -172,6 +193,7 @@ const InvoiceList: React.FC = () => {
           <Input.Search
             placeholder="Search Invoice No"
             prefix={<SearchOutlined />}
+            defaultValue={searchText}
             onSearch={onSearch}
             style={{ width: 250 }}
             allowClear
@@ -213,6 +235,7 @@ const InvoiceList: React.FC = () => {
             picker="month"
             placeholder="Billing Month"
             style={{ width: 180 }}
+            value={billingMonth ? dayjs(billingMonth, 'YYYY-MM') : null}
             onChange={(val) => {
               setBillingMonth(val ? val.format('YYYY-MM') : undefined);
               setPage(1);
@@ -264,7 +287,7 @@ const InvoiceList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </Space>
+    </div>
   );
 };
 

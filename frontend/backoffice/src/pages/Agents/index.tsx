@@ -77,7 +77,7 @@ const AgentsList: React.FC = () => {
       dataIndex: 'branch_type',
       key: 'branch_type',
       render: (text: string) => (
-        <Tag color={text === 'MAIN' ? 'purple' : 'default'}>{text}</Tag>
+        <Tag color={text === 'MA' ? 'purple' : 'default'}>{text}</Tag>
       ),
     },
     {
@@ -141,7 +141,7 @@ const AgentsList: React.FC = () => {
   ];
 
   return (
-    <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+    <Space orientation="vertical" size="large" style={{ display: 'flex' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={3} style={{ margin: 0 }}>Agent Fee Management</Title>
         <Button
@@ -154,7 +154,7 @@ const AgentsList: React.FC = () => {
         </Button>
       </div>
 
-      <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+      <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
         <div style={{ marginBottom: 16 }}>
           <Input.Search
             placeholder="Search by branch code or name..."

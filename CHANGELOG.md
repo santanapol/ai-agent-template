@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Backoffice — Invoice detail:** redesigned summary as a single-card invoice layout (`Row`/`Col` header, bill-to/details, status tag) replacing `Descriptions` + `Badge.Ribbon`; transactions sorted by game-provider name; game-category names rendered via new `formatCategoryName` helper (snake_case → Title Case); PDF/Excel export use the sorted list and switch to `message.useMessage()` (`contextHolder`) for export toasts; `formatMoney` always shows 2 decimals; `statusTagColor`/`ribbonColor` color mapping adjusted (`PENDING` → warning/orange, `READY` → processing/blue).
 - **Auth / gateway — `TZ=UTC` on Windows:** `loadEnv` trims CRLF from `.env.defaults`; root `.gitattributes` keeps `*.env.defaults` LF-only.
 - **agent-invoice — tenant isolation:** invoice list/detail/transactions/status/generate/calculate-fee queries filter by `ou_id` from `x-user-ou`.
 - **Backoffice — Invoices:** branch filters and create form use `GET /api/v1/invoices/agent` instead of agents list; `AuthContext` wires invoices client token refresh.
@@ -60,6 +61,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Backoffice — Staff/Auth:** `getProfileByUserId` handles single-object lookup response; JWT decode hardening; role-based route guard for `/staff`; profile/staff drawer and password-form validation edge cases.
 - **agent-invoice:** `ObjectId` conversion for master-data queries filtered by `ou_id`; field-name mapping for game company/category display.
 - **agent-invoice agents:** sync/unsynced branch listing uses repository helpers instead of ad-hoc collection access.
+- **Backoffice — Auth (critical):** dedupe concurrent `POST /auth/refresh` calls behind a single shared in-flight promise in `AuthContext`; previously every full-page navigation fired two competing refreshes against the single-use rotating refresh-token cookie, the loser got `TOKEN_REFRESH_REJECTED`, and could force an unexpected logout mid-session.
+- **Backoffice — Agents:** branch-type tag now matches the API's actual `MA`/`AG` values (was checking for `MAIN`, so the purple "MA" tag never rendered); `Space`/`Card` props migrated to Ant Design 6 (`orientation`, `variant="borderless"`).
+- **Backoffice — AdminLayout:** sidebar brand title no longer wraps into vertical single-character lines when the sider is collapsed/narrow; shows "ZP" when collapsed and "Zero Platform" when expanded.
+- **Backoffice — Agent Fees:** "Remove Reference" confirm modal now uses a danger (red) OK button to match "Set Reference Agent", consistent with other destructive actions; fee matrix now renders the referenced agent's actual fee overrides instead of an empty table (filters compared against the agent's own — empty — fee data instead of the referenced agent's `refFees`); empty-state copy in the fee table is contextual (no overrides on the referenced agent vs. hidden providers vs. no providers) instead of generic "No Data".
+- **Backoffice — Agent Fees `MatrixCell`:** stop silently clamping out-of-range fee input (0–100) on blur, which made the spec'd "Invalid values: ..." save-time validation message unreachable; out-of-range values now surface that message as intended.
+- **Backoffice — Invoices:** dedupe the "Failed to fetch invoice"/"Failed to fetch transactions" toasts (previously stacked up to 4 identical alerts on a missing invoice, compounded by React StrictMode's double-effect in dev) by keying `message.error` per invoice id; list filters, search text, and pagination are now persisted in the URL query string so they survive `ArrowLeft` back-navigation from the invoice detail page (I11).
 
 ## [0.2.0] - 2026-05-21
 

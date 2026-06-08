@@ -78,9 +78,9 @@ export const MatrixCell = React.memo(React.forwardRef<MatrixCellRef, MatrixCellP
     if (feeValue !== '') {
       let num = Number(feeValue);
       if (isNaN(num)) num = 0;
-      if (num < 0) num = 0;
-      if (num > 100) num = 100;
-      // Round to 2 decimal places
+      // Round to 2 decimal places — out-of-range values (0–100) are intentionally
+      // left as-is so Save can surface "Invalid values: ..." per field, rather than
+      // silently rewriting what the user typed.
       num = Math.round(num * 100) / 100;
       setFeeValue(num);
     }

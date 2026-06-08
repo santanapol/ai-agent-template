@@ -63,10 +63,14 @@ const AdminLayout: React.FC = () => {
             padding: token.paddingLG,
             textAlign: 'center',
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            overflow: 'hidden',
           }}
         >
-          <Typography.Title level={4} style={{ margin: 0, color: token.colorPrimary }}>
-            Zero Platform
+          <Typography.Title
+            level={4}
+            style={{ margin: 0, color: token.colorPrimary, whiteSpace: 'nowrap' }}
+          >
+            {collapsed ? 'ZP' : 'Zero Platform'}
           </Typography.Title>
         </div>
         <Menu

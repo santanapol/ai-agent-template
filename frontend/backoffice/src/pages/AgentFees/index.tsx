@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Button, Typography, Space, Tag, Spin, Select,
   Breadcrumb, InputNumber, Row, Col, Alert,
-  Card, Statistic, Table, Affix, Checkbox, Tooltip, theme, Skeleton
+  Card, Statistic, Table, Affix, Checkbox, Tooltip, theme, Skeleton, Empty
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons';
@@ -188,7 +188,7 @@ const AgentFeesPage: React.FC = () => {
         ? `Fee configuration will reference "${refAgent?.branch_name ?? normalized}". Your ${fees.length} own fee override(s) will be deleted. Continue?`
         : 'Remove reference and manage fee overrides independently?',
       okText: 'Confirm',
-      okButtonProps: normalized && fees.length > 0 ? { danger: true } : {},
+      okButtonProps: { danger: true },
       onOk: async () => {
         setSavingRef(true);
         try {
@@ -311,6 +311,8 @@ const AgentFeesPage: React.FC = () => {
     await doSave();
   }, [agent, isRefMode, collectChanges, bulkSave, fetchFees, message, modal]);
 
+  const displayFees = useMemo(() => (isRefMode ? refFees : fees), [isRefMode, refFees, fees]);
+
   const filteredCompanies = useMemo(() => {
     let result = [...companies].sort((a, b) => {
       const nameA = a.provider_name?.en || a.name || '';
@@ -321,23 +323,23 @@ const AgentFeesPage: React.FC = () => {
     if (hideEmptyProviders) {
       result = result.filter(company => {
         return categories.some(cat => {
-          const fee = fees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
+          const fee = displayFees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
           return fee != null;
         });
       });
     }
 
     return result;
-  }, [companies, categories, fees, hideEmptyProviders]);
+  }, [companies, categories, displayFees, hideEmptyProviders]);
 
   const usedCompaniesCount = useMemo(() => {
     return companies.filter(company => {
       return categories.some(cat => {
-        const fee = fees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
+        const fee = displayFees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
         return fee != null;
       });
     }).length;
-  }, [companies, categories, fees]);
+  }, [companies, categories, displayFees]);
 
   if (agentLoading) {
     return (
@@ -537,6 +539,20 @@ const AgentFeesPage: React.FC = () => {
           loading={(loading || refFeesLoading) && companies.length === 0}
           bordered
           size="middle"
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  isRefMode
+                    ? `${refAgentName} has no fee overrides configured — providers will use the default fee rate.`
+                    : hideEmptyProviders
+                      ? "No providers have fee overrides yet. Uncheck \"Hide providers without fees\" to see all providers."
+                      : 'No providers found.'
+                }
+              />
+            ),
+          }}
         />
       </Card>
     </div>

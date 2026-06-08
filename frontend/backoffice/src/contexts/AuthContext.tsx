@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { DecodedUser, TokenResponse } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/staffApiClient';
@@ -54,31 +54,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
+  // Each API client carries its own 401-retry interceptor, so a single navigation can
+  // trigger several of them concurrently. The refresh-token cookie is single-use and
+  // rotates on every call, so firing more than one `/auth/refresh` at once causes all
+  // but the first to be rejected (and can force an unwanted logout). Share one in-flight
+  // promise across all callers so concurrent 401s wait on the same refresh.
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+
+  const refreshFn = useCallback(() => {
+    if (!refreshPromiseRef.current) {
+      refreshPromiseRef.current = authApi
+        .refresh()
+        .then((fresh) => {
+          applyToken(fresh);
+          return fresh.access_token;
+        })
+        .catch(() => {
+          clearSession();
+          return null;
+        })
+        .finally(() => {
+          refreshPromiseRef.current = null;
+        });
+    }
+    return refreshPromiseRef.current;
+  }, [applyToken, clearSession]);
+
   useEffect(() => {
-    const refreshFn = async () => {
-      try {
-        const fresh = await authApi.refresh();
-        applyToken(fresh);
-        return fresh.access_token;
-      } catch {
-        clearSession();
-        return null;
-      }
-    };
     setRefreshCallback(refreshFn);
     setAgentRefreshCallback(refreshFn);
     setAgentFeesRefreshCallback(refreshFn);
     setInvoicesRefreshCallback(refreshFn);
-  }, [applyToken, clearSession]);
+  }, [refreshFn]);
 
-  // On mount: attempt to restore session via HttpOnly refresh cookie
+  // On mount: attempt to restore session via HttpOnly refresh cookie.
+  // Routed through refreshFn so it shares the in-flight promise with any
+  // 401-triggered refresh that fires around the same time (see refreshFn above).
   useEffect(() => {
-    authApi
-      .refresh()
-      .then(applyToken)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [applyToken]);
+    refreshFn().finally(() => setLoading(false));
+  }, [refreshFn]);
 
   const login = useCallback(
     async (username: string, password: string) => {

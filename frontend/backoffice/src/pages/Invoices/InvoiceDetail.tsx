@@ -7,12 +7,12 @@ import {
   Button,
   Typography,
   Space,
-  Descriptions,
   Divider,
   message,
-  Badge,
   Skeleton,
   Tooltip,
+  Row,
+  Col,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -26,12 +26,13 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import type { ColumnsType } from 'antd/es/table';
 import { useInvoices } from './hooks/useInvoices';
-import { formatFee, formatMoney, ribbonColor, statusTagColor } from './utils';
+import { formatFee, formatMoney, ribbonColor, statusTagColor, formatCategoryName } from './utils';
 import type { InvoiceTransaction } from '../../types/invoice';
 
 const { Title, Text } = Typography;
 
 const InvoiceDetail: React.FC = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
@@ -51,6 +52,10 @@ const InvoiceDetail: React.FC = () => {
     fetchTransactions(id);
   }, [id, fetchInvoiceDetail, fetchTransactions]);
 
+  const sortedTransactions = React.useMemo(() => {
+    return [...transactions].sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+  }, [transactions]);
+
   if (detailLoading) {
     return (
       <Card>
@@ -62,12 +67,12 @@ const InvoiceDetail: React.FC = () => {
   if (!invoice) {
     return (
       <Card>
-        <Space direction="vertical" align="center" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: 16 }}>
           <Title level={3}>Invoice Not Found</Title>
           <Button onClick={() => navigate('/invoices')} icon={<ArrowLeftOutlined />}>
             Back to Invoices
           </Button>
-        </Space>
+        </div>
       </Card>
     );
   }
@@ -83,7 +88,7 @@ const InvoiceDetail: React.FC = () => {
       title: 'Game Category',
       dataIndex: 'main_category_name',
       key: 'main_category_name',
-      render: (val: string | null | undefined) => val || '-',
+      render: (val: string | null | undefined) => formatCategoryName(val),
     },
     {
       title: 'Net Win',
@@ -142,16 +147,16 @@ const InvoiceDetail: React.FC = () => {
     doc.text(`Branch: ${invoice.branch_name || '-'}`, 120, 38);
     doc.text(`Organization Unit: ${invoice.ou_name || '-'}`, 120, 44);
 
-    const tableBody = transactions.map((t) => [
+    const tableBody = sortedTransactions.map((t) => [
       t.company_name || '-',
-      t.main_category_name || '-',
+      formatCategoryName(t.main_category_name),
       formatMoney(t.net_win),
       formatFee(t.fee),
       formatMoney(t.amount),
     ]);
 
-    const totalNetWin = transactions.reduce((sum, t) => sum + t.net_win, 0);
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
+    const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
 
     tableBody.push(['Total', '', formatMoney(totalNetWin), '-', formatMoney(totalAmount)]);
 
@@ -175,7 +180,7 @@ const InvoiceDetail: React.FC = () => {
     });
 
     doc.save(`invoice_${invoice.iv_no}.pdf`);
-    message.success('PDF exported successfully!');
+    messageApi.success('PDF exported successfully!');
   };
 
   const handleExportExcel = () => {
@@ -195,18 +200,18 @@ const InvoiceDetail: React.FC = () => {
       ['Game Provider', 'Game Category', 'Net Win', 'Fee (%)', 'Amount'],
     ];
 
-    transactions.forEach((t) => {
+    sortedTransactions.forEach((t) => {
       wsData.push([
         t.company_name || '-',
-        t.main_category_name || '-',
+        formatCategoryName(t.main_category_name),
         t.net_win,
         t.fee === 'N/A' ? 'N/A' : t.fee,
         t.amount,
       ]);
     });
 
-    const totalNetWin = transactions.reduce((sum, t) => sum + t.net_win, 0);
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
+    const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
     wsData.push(['Total', '', totalNetWin, '', totalAmount]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -215,14 +220,15 @@ const InvoiceDetail: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
     XLSX.writeFile(wb, `invoice_${invoice.iv_no}.xlsx`);
-    message.success('Excel exported successfully!');
+    messageApi.success('Excel exported successfully!');
   };
 
   const isReady = invoice.status === 'READY';
   const amount = invoice.amount ?? 0;
 
   return (
-    <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {contextHolder}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space align="center" size="middle">
           <Button className="no-print" icon={<ArrowLeftOutlined />} onClick={() => navigate('/invoices')} />
@@ -251,88 +257,77 @@ const InvoiceDetail: React.FC = () => {
         </Space>
       </div>
 
-      <Badge.Ribbon
-        text={invoice.status}
-        color={ribbonColor(invoice.status)}
-        style={{ top: -10, padding: '0 16px', fontSize: 14 }}
-      >
-        <Card>
-          <Descriptions title="Summary" bordered column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}>
-            <Descriptions.Item label="Invoice No">
-              <Text strong>{invoice.iv_no}</Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Tag color={statusTagColor(invoice.status)}>{invoice.status}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Billing Month">{invoice.billing_month || '-'}</Descriptions.Item>
+      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <Card style={{ width: '100%', maxWidth: 900, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} styles={{ body: { padding: '40px 48px' } }}>
+          {/* Header */}
+          <Row justify="space-between" align="top" style={{ marginBottom: 40 }}>
+            <Col>
+              <Title level={2} style={{ margin: 0, color: '#1677ff', letterSpacing: 2 }}>INVOICE</Title>
+              <Text type="secondary">Zero Platform</Text>
+            </Col>
+            <Col style={{ textAlign: 'right' }}>
+              <Title level={4} style={{ margin: 0, color: '#595959' }}>#{invoice.iv_no}</Title>
+              <Tag color={statusTagColor(invoice.status)} style={{ marginTop: 8, fontSize: 14, padding: '2px 10px' }}>
+                {invoice.status}
+              </Tag>
+            </Col>
+          </Row>
 
-            <Descriptions.Item label="Organization Unit">{invoice.ou_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Branch">{invoice.branch_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Due Date">
-              <Text type={isReady ? 'danger' : 'secondary'} strong={isReady}>
-                {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('th-TH') : '-'}
-              </Text>
-            </Descriptions.Item>
-
-            <Descriptions.Item label="Created By">{invoice.cr_by || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Created Date">
-              {new Date(invoice.cr_date).toLocaleString('th-TH')}
-            </Descriptions.Item>
-            <Descriptions.Item label=""></Descriptions.Item>
-          </Descriptions>
-
-          <Divider />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-            <Title level={4}>Transactions</Title>
-            <Space size="large">
-              <div style={{ textAlign: 'right' }}>
-                <Text type="secondary">Total Net Win</Text>
-                <div style={{ fontSize: 18, fontWeight: 600, color: '#1677ff' }}>
-                  {formatMoney(invoice.net_win)}
+          {/* Bill To & Details */}
+          <Row justify="space-between" style={{ marginBottom: 32 }}>
+            <Col span={12}>
+              <Text type="secondary" strong style={{ fontSize: 12, letterSpacing: 1 }}>BILL TO</Text><br />
+              <Text strong style={{ fontSize: 16 }}>{invoice.branch_name || '-'}</Text><br />
+              <Text type="secondary">Billing Month: {invoice.billing_month || '-'}</Text>
+            </Col>
+            <Col span={12} style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'right', width: '100%' }}>
+                <div>
+                  <Text type="secondary" style={{ marginRight: 8 }}>Created Date:</Text>
+                  <Text strong>{new Date(invoice.cr_date).toLocaleDateString('th-TH')}</Text>
                 </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <Text type="secondary">Total Amount</Text>
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: amount < 0 ? '#cf1322' : '#3f8600',
-                  }}
-                >
-                  {formatMoney(amount)}
+                <div>
+                  <Text type="secondary" style={{ marginRight: 8 }}>Due Date:</Text>
+                  <Text type={isReady ? 'danger' : 'secondary'} strong={isReady}>
+                    {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('th-TH') : '-'}
+                  </Text>
                 </div>
+                {invoice.status === 'PAID' && invoice.upd_date && (
+                  <div>
+                    <Text type="secondary" style={{ marginRight: 8 }}>Paid Date:</Text>
+                    <Text type="success" strong>{new Date(invoice.upd_date).toLocaleDateString('th-TH')}</Text>
+                  </div>
+                )}
               </div>
-            </Space>
-          </div>
+            </Col>
+          </Row>
 
+          <Divider style={{ margin: '24px 0' }} />
+
+          {/* Table */}
           <Table
+            size="small"
             columns={columns}
-            dataSource={transactions}
+            dataSource={sortedTransactions}
             rowKey="_id"
             loading={transactionsLoading}
             pagination={false}
-            summary={() => (
-              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 'bold' }}>
-                <Table.Summary.Cell index={0} colSpan={2}>
-                  Total
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="right">
-                  {formatMoney(transactions.reduce((acc, curr) => acc + curr.net_win, 0))}
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="right">
-                  -
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="right">
-                  {formatMoney(transactions.reduce((acc, curr) => acc + curr.amount, 0))}
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            )}
           />
+
+          {/* Totals */}
+          <Row justify="end" style={{ marginTop: 24 }}>
+            <Col xs={24} sm={12} md={8}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12 }}>
+                <Text strong style={{ fontSize: 16 }}>Total Amount</Text>
+                <Title level={4} style={{ margin: 0, color: amount < 0 ? '#cf1322' : '#3f8600' }}>
+                  {formatMoney(amount)}
+                </Title>
+              </div>
+            </Col>
+          </Row>
         </Card>
-      </Badge.Ribbon>
-    </Space>
+      </div>
+    </div>
   );
 };
 
