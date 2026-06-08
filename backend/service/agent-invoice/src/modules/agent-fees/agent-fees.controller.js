@@ -124,8 +124,8 @@ export const deleteFeeHandler = async (request, reply) => {
   const db = request.server.db;
 
   try {
-    extractUpdDateISO(request);
-    await service.deleteFeeByAgentId(db, agentId, feeId, ouId);
+    const updDateISO = extractUpdDateISO(request);
+    await service.deleteFeeByAgentId(db, agentId, feeId, ouId, updDateISO);
 
     return reply.status(200).send({
       success: true,

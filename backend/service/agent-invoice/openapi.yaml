@@ -13,8 +13,12 @@ security:
   - gatewaySecret: []
 
 tags:
+  - name: agents
+    description: Agent management
   - name: agent-fees
     description: Agent fee override management
+  - name: master-data
+    description: Reference data (game companies, categories)
   - name: system
     description: Health and readiness probes
 
@@ -63,6 +67,27 @@ components:
       schema:
         type: string
       description: "Weak ETag from previous GET or mutating response (e.g. W/\"...\")"
+    agentIdPath:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{24}$"
+    agentIdInPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{24}$"
+    feeIdPath:
+      name: feeId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{24}$"
 
   schemas:
     ErrorEnvelope:
@@ -82,28 +107,72 @@ components:
         requestId:
           type: string
 
-    AgentFee:
+    Agent:
       type: object
       properties:
         _id:
-          type: string
-        agent_id:
           type: string
         ou_id:
           type: string
         branch_id:
           type: string
-        company_id:
+        branch_code:
           type: string
-        main_cate_id:
+        branch_name:
           type: string
-        platform_name:
+        branch_type:
           type: string
-        game_provider:
+          enum: [MA, AG]
+        branch_desc:
           type: string
-        game_category:
+        parent_branch_id:
           type: string
-        fee_rate:
+        ref_fee_branch_id:
+          type: string
+          nullable: true
+        ref_fee_branch_name:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        default_fee_rate:
+          type: number
+          nullable: true
+        active:
+          type: boolean
+        cr_by:
+          type: string
+        cr_date:
+          type: string
+          format: date-time
+        cr_prog:
+          type: string
+        upd_by:
+          type: string
+        upd_date:
+          type: string
+          format: date-time
+        upd_prog:
+          type: string
+
+    AgentFee:
+      type: object
+      properties:
+        _id:
+          type: string
+        ou_id:
+          type: string
+        branch_id:
+          type: string
+        game_company_id:
+          type: string
+        game_main_cate_id:
+          type: string
+        gcomp_cost:
+          type: number
+        agent_known_fee:
+          type: number
+        agent_fee:
           type: number
         cr_by:
           type: string
@@ -118,6 +187,22 @@ components:
           type: string
           format: date-time
         upd_prog:
+          type: string
+
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: string
+          example: SUCCESS
+        message:
+          type: string
+        data:
+          type: "null"
+        requestId:
           type: string
 
 paths:
@@ -174,7 +259,373 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
-  /api/v1/agents/{agentId}/fees:
+  /api/v1/agent-invoice/agents:
+    get:
+      tags: [agents]
+      summary: List agents with pagination
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Agent"
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+    post:
+      tags: [agents]
+      summary: Create a new agent
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [branch_id, branch_code, branch_name, branch_type, currency]
+              properties:
+                branch_id:
+                  type: string
+                  pattern: "^[0-9a-fA-F]{24}$"
+                branch_code:
+                  type: string
+                branch_name:
+                  type: string
+                branch_type:
+                  type: string
+                  enum: [MA, AG]
+                branch_desc:
+                  type: string
+                parent_branch_id:
+                  type: string
+                  pattern: "^[0-9a-fA-F]{24}$"
+                currency:
+                  type: string
+                default_fee_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "201":
+          description: Created
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: "Weak ETag for optimistic locking"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: CREATED
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      insertedId:
+                        type: string
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agent-invoice/agents/sync:
+    post:
+      tags: [agents]
+      summary: Sync one branch from source database (gpp_777ww.su_branch)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [branch_id]
+              properties:
+                branch_id:
+                  type: string
+                  pattern: "^[0-9a-fA-F]{24}$"
+      responses:
+        "200":
+          description: Synced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      syncedId:
+                        type: string
+                      branch_code:
+                        type: string
+        "404":
+          description: Branch not found in source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agent-invoice/agents/unsynced:
+    get:
+      tags: [agents]
+      summary: List branches in source DB not yet synced to this service
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        branch_id:
+                          type: string
+                        branch_code:
+                          type: string
+                        branch_name:
+                          type: string
+                        active:
+                          type: boolean
+
+  /api/v1/agent-invoice/agents/{id}:
+    get:
+      tags: [agents]
+      summary: Get agent detail (returns ETag)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - $ref: "#/components/parameters/agentIdInPath"
+      responses:
+        "200":
+          description: Success
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: "Weak ETag for optimistic locking"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Agent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+    put:
+      tags: [agents]
+      summary: Update agent details with optimistic locking
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/ifMatch"
+        - $ref: "#/components/parameters/xRequestId"
+        - $ref: "#/components/parameters/agentIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch_name:
+                  type: string
+                branch_type:
+                  type: string
+                  enum: [MA, AG]
+                branch_desc:
+                  type: string
+                parent_branch_id:
+                  type: string
+                  pattern: "^[0-9a-fA-F]{24}$"
+                ref_fee_branch_id:
+                  oneOf:
+                    - type: string
+                      pattern: "^[0-9a-fA-F]{24}$"
+                    - type: "null"
+                currency:
+                  type: string
+                default_fee_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "200":
+          description: Updated
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "412":
+          description: Version conflict (stale ETag)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "428":
+          description: Precondition required (If-Match missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+    delete:
+      tags: [agents]
+      summary: Soft delete an agent (requires If-Match)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/ifMatch"
+        - $ref: "#/components/parameters/xRequestId"
+        - $ref: "#/components/parameters/agentIdInPath"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "412":
+          description: Version conflict (stale ETag)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "428":
+          description: Precondition required (If-Match missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agent-invoice/agents/{agentId}/fees:
     get:
       tags: [agent-fees]
       summary: List fee overrides for an agent
@@ -184,12 +635,7 @@ paths:
         - $ref: "#/components/parameters/xUserId"
         - $ref: "#/components/parameters/xUserRole"
         - $ref: "#/components/parameters/xRequestId"
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-fA-F]{24}$"
+        - $ref: "#/components/parameters/agentIdPath"
         - name: page
           in: query
           schema:
@@ -237,6 +683,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 
     post:
       tags: [agent-fees]
@@ -247,31 +699,30 @@ paths:
         - $ref: "#/components/parameters/xUserId"
         - $ref: "#/components/parameters/xUserRole"
         - $ref: "#/components/parameters/xRequestId"
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-fA-F]{24}$"
+        - $ref: "#/components/parameters/agentIdPath"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [company_id, main_cate_id, fee_rate]
+              required: [game_company_id, game_main_cate_id, agent_known_fee, agent_fee]
               properties:
-                company_id:
+                game_company_id:
                   type: string
-                main_cate_id:
+                  pattern: "^[0-9a-fA-F]{24}$"
+                game_main_cate_id:
                   type: string
-                platform_name:
-                  type: string
-                game_provider:
-                  type: string
-                game_category:
-                  type: string
-                fee_rate:
+                  pattern: "^[0-9a-fA-F]{24}$"
+                gcomp_cost:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                agent_known_fee:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                agent_fee:
                   type: number
                   minimum: 0
                   maximum: 100
@@ -300,6 +751,12 @@ paths:
                     properties:
                       insertedId:
                         type: string
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
         "409":
           description: Duplicate fee
           content:
@@ -307,10 +764,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
-  /api/v1/agents/{agentId}/fees/{feeId}:
+  /api/v1/agent-invoice/agents/{agentId}/fees/{feeId}:
     patch:
       tags: [agent-fees]
-      summary: Update fee_rate with optimistic locking
+      summary: Update fee fields with optimistic locking (at least one field required)
       parameters:
         - $ref: "#/components/parameters/xUserOu"
         - $ref: "#/components/parameters/xUserBranch"
@@ -318,27 +775,25 @@ paths:
         - $ref: "#/components/parameters/xUserRole"
         - $ref: "#/components/parameters/ifMatch"
         - $ref: "#/components/parameters/xRequestId"
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-fA-F]{24}$"
-        - name: feeId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-fA-F]{24}$"
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/feeIdPath"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [fee_rate]
+              minProperties: 1
               properties:
-                fee_rate:
+                gcomp_cost:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                agent_known_fee:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                agent_fee:
                   type: number
                   minimum: 0
                   maximum: 100
@@ -352,25 +807,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  code:
-                    type: string
-                    example: SUCCESS
-                  message:
-                    type: string
-                  data:
-                    type: "null"
+                $ref: "#/components/schemas/SuccessEnvelope"
         "412":
-          description: Version conflict
+          description: Version conflict (stale ETag)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "428":
-          description: Precondition required
+          description: Precondition required (If-Match missing)
           content:
             application/json:
               schema:
@@ -378,7 +823,7 @@ paths:
 
     delete:
       tags: [agent-fees]
-      summary: Hard delete a fee override (requires If-Match)
+      summary: Hard delete a fee override (requires If-Match for optimistic lock)
       parameters:
         - $ref: "#/components/parameters/xUserOu"
         - $ref: "#/components/parameters/xUserBranch"
@@ -386,21 +831,47 @@ paths:
         - $ref: "#/components/parameters/xUserRole"
         - $ref: "#/components/parameters/ifMatch"
         - $ref: "#/components/parameters/xRequestId"
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-fA-F]{24}$"
-        - name: feeId
-          in: path
-          required: true
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/feeIdPath"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "412":
+          description: Version conflict (stale ETag)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "428":
+          description: Precondition required (If-Match missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/agent-invoice/master-data/game-companies:
+    get:
+      tags: [master-data]
+      summary: List game companies (filtered by ou_id when provided)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: ou_id
+          in: query
+          required: false
           schema:
             type: string
             pattern: "^[0-9a-fA-F]{24}$"
       responses:
         "200":
-          description: Deleted
+          description: Success
           content:
             application/json:
               schema:
@@ -414,15 +885,75 @@ paths:
                   message:
                     type: string
                   data:
-                    type: "null"
-        "404":
-          description: Not found
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                        ou_id:
+                          type: string
+                        name:
+                          type: string
+                        provider_name:
+                          type: string
+                        active:
+                          type: string
+        "400":
+          description: Validation error (invalid ou_id format)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
-        "428":
-          description: Precondition required
+
+  /api/v1/agent-invoice/master-data/game-categories:
+    get:
+      tags: [master-data]
+      summary: List game categories (filtered by ou_id when provided)
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: ou_id
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                        ou_id:
+                          type: string
+                        name:
+                          type: string
+                        main_cate_name:
+                          type: string
+                        active:
+                          type: string
+        "400":
+          description: Validation error (invalid ou_id format)
           content:
             application/json:
               schema:

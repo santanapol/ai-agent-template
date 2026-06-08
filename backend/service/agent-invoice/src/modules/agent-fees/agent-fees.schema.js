@@ -36,7 +36,7 @@ export const getFeesSchema = {
     type: 'object',
     properties: {
       page: { type: 'number', minimum: 1, default: 1 },
-      limit: { type: 'number', minimum: 1, maximum: 1000, default: 20 }
+      limit: { type: 'number', minimum: 1, maximum: 100, default: 20 }
     }
   },
   response: {
@@ -98,8 +98,8 @@ export const createFeeSchema = {
     type: 'object',
     required: ['game_company_id', 'game_main_cate_id', 'agent_known_fee', 'agent_fee'],
     properties: {
-      game_company_id: { type: 'string' },
-      game_main_cate_id: { type: 'string' },
+      game_company_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
+      game_main_cate_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' },
       gcomp_cost: { type: 'number', minimum: 0, maximum: 100 },
       agent_known_fee: { type: 'number', minimum: 0, maximum: 100 },
       agent_fee: { type: 'number', minimum: 0, maximum: 100 }
