@@ -94,11 +94,24 @@ export const softDeleteAgent = async (db, id, ouId, previousUpdDate, updateData)
   );
 };
 
-// For sync (upsert logic if needed, but spec says one-time manual sync)
 export const upsertAgentSync = async (db, ouId, branchId, agentData) => {
   return db.collection(COLLECTION_NAME).updateOne(
     { ou_id: new ObjectId(ouId), branch_id: new ObjectId(branchId) },
     { $set: agentData },
     { upsert: true }
   );
+};
+
+export const syncUpdateAgent = async (db, id, updateData) => {
+  return db.collection(COLLECTION_NAME).updateOne(
+    { _id: id },
+    { $set: updateData }
+  );
+};
+
+export const getAgentBranchIds = async (db, ouId) => {
+  return db.collection(COLLECTION_NAME)
+    .find({ ou_id: new ObjectId(ouId) })
+    .project({ branch_id: 1 })
+    .toArray();
 };

@@ -173,6 +173,22 @@ describe('Agent Fees API Integration Tests', () => {
     assert.strictEqual(body.code, 'PRECONDITION_REQUIRED');
   });
 
+  test('DELETE /api/v1/agent-invoice/agents/:agentId/fees/:feeId — 412 VERSION_CONFLICT for stale ETag', async () => {
+    const oldDate = new Date('2020-01-01T00:00:00.000Z').toISOString();
+    const staleEtag = `W/"${Buffer.from(oldDate).toString('base64')}"`;
+
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/agent-invoice/agents/${agentId}/fees/${createdFeeId}`,
+      headers: { ...baseHeaders, 'if-match': staleEtag }
+    });
+
+    assert.strictEqual(res.statusCode, 412);
+    const body = res.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.code, 'VERSION_CONFLICT');
+  });
+
   test('DELETE /api/v1/agent-invoice/agents/:agentId/fees/:feeId — deletes fee with valid If-Match', async () => {
     const res = await app.inject({
       method: 'DELETE',
@@ -197,6 +213,44 @@ describe('Agent Fees API Integration Tests', () => {
     const body = res.json();
     assert.strictEqual(body.success, false);
     assert.strictEqual(body.code, 'GATEWAY_SECRET_REJECTED');
+  });
+
+  test('POST — 400 INVALID_PARAM when game_company_id is not a valid ObjectId', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
+      headers: baseHeaders,
+      payload: {
+        game_company_id: 'not-a-valid-objectid',
+        game_main_cate_id: '000000000000000000000002',
+        agent_known_fee: 10,
+        agent_fee: 10
+      }
+    });
+
+    assert.strictEqual(res.statusCode, 400);
+    const body = res.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.code, 'INVALID_PARAM');
+  });
+
+  test('POST — 400 INVALID_PARAM when game_main_cate_id is not a valid ObjectId', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/agent-invoice/agents/${agentId}/fees`,
+      headers: baseHeaders,
+      payload: {
+        game_company_id: '000000000000000000000001',
+        game_main_cate_id: 'not-a-valid-objectid',
+        agent_known_fee: 10,
+        agent_fee: 10
+      }
+    });
+
+    assert.strictEqual(res.statusCode, 400);
+    const body = res.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.code, 'INVALID_PARAM');
   });
 
   test('Tenant isolation — fees created under one ou/branch are not visible from another', async () => {

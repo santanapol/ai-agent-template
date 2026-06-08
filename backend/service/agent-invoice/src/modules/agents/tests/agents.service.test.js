@@ -103,12 +103,135 @@ test('softDeleteAgent should throw 412 if matchedCount is 0', async (t) => {
   );
 });
 
-test('syncAgent should throw 404 if branch code not found', async (t) => {
-  const dbMock = createMockDb();
-  
-  // To test this purely, we would need to mock mongodb MongoClient which is hard inside the module
-  // For the sake of this phase, let's assume we want to skip external DB test or we mock MongoClient.
-  // We can skip this test in unit tests, or test a small piece.
-  // Let's just do a dummy pass or mock the import.
-  t.skip('Skipping external MongoDB connection test for syncAgent');
+test('getAgentDetail should return the agent when found', async (t) => {
+  const mockAgent = { _id: '123', branch_name: 'Found Branch', upd_date: new Date() };
+  const dbMock = createMockDb({
+    agents: {
+      findOne: async () => mockAgent
+    }
+  });
+
+  const result = await service.getAgentDetail(dbMock, '000000000000000000000123', '000000000000000000000456');
+
+  assert.strictEqual(result._id, '123');
+  assert.strictEqual(result.branch_name, 'Found Branch');
+});
+
+test('getAgentDetail should throw 404 when agent is not found', async (t) => {
+  const dbMock = createMockDb({
+    agents: {
+      findOne: async () => null
+    }
+  });
+
+  await assert.rejects(
+    async () => service.getAgentDetail(dbMock, '000000000000000000000000', '000000000000000000000123'),
+    (err) => {
+      assert.strictEqual(err.statusCode, 404);
+      return true;
+    }
+  );
+});
+
+test('resolveAgentBranchId should return agent branch_id when found', async (t) => {
+  const mockBranchId = new ObjectId('000000000000000000000099');
+  const mockAgent = { _id: new ObjectId('000000000000000000000123'), branch_id: mockBranchId, upd_date: new Date() };
+  const dbMock = createMockDb({
+    agents: {
+      findOne: async () => mockAgent
+    }
+  });
+
+  const result = await service.resolveAgentBranchId(dbMock, '000000000000000000000123', '000000000000000000000456');
+  assert.deepStrictEqual(result, mockBranchId);
+});
+
+test('resolveAgentBranchId should throw 404 when agent is not found', async (t) => {
+  const dbMock = createMockDb({
+    agents: {
+      findOne: async () => null
+    }
+  });
+
+  await assert.rejects(
+    async () => service.resolveAgentBranchId(dbMock, '000000000000000000000000', '000000000000000000000123'),
+    (err) => {
+      assert.strictEqual(err.statusCode, 404);
+      return true;
+    }
+  );
+});
+
+test('syncAgent — uses provided sourceDb (not internal connection) to query su_branch', async (t) => {
+  const branchId = '665a3d76b1e5f8b9e6f2b3d1';
+  const ouId = '000000000000000000000456';
+  let sourceQueried = false;
+
+  const sourceDbMock = {
+    collection: (name) => {
+      if (name === 'su_branch') {
+        return {
+          findOne: async () => {
+            sourceQueried = true;
+            return {
+              _id: new ObjectId(branchId),
+              ou_id: ouId,
+              branch_code: 'SRC01',
+              branch_name: 'Source Branch',
+              branch_type: 'AG',
+              currency: 'THB'
+            };
+          }
+        };
+      }
+      return { findOne: async () => null };
+    }
+  };
+
+  const dbMock = createMockDb({
+    agents: {
+      findOne: async () => null,
+      insertOne: async () => ({ insertedId: new ObjectId() })
+    }
+  });
+
+  await service.syncAgent(dbMock, sourceDbMock, ouId, branchId, 'user1');
+  assert.strictEqual(sourceQueried, true, 'sourceDb should have been queried, not internal connection');
+});
+
+test('getUnsyncedBranches — uses provided sourceDb to query su_branch', async (t) => {
+  let sourceQueried = false;
+
+  const sourceDbMock = {
+    collection: (name) => {
+      if (name === 'su_branch') {
+        return {
+          find: () => ({
+            project: () => ({
+              sort: () => ({
+                toArray: async () => {
+                  sourceQueried = true;
+                  return [];
+                }
+              })
+            })
+          })
+        };
+      }
+      return { find: () => ({ project: () => ({ sort: () => ({ toArray: async () => [] }) }) }) };
+    }
+  };
+
+  const dbMock = createMockDb({
+    agents: {
+      find: () => ({
+        project: () => ({
+          toArray: async () => []
+        })
+      })
+    }
+  });
+
+  await service.getUnsyncedBranches(dbMock, sourceDbMock, '000000000000000000000456');
+  assert.strictEqual(sourceQueried, true, 'sourceDb should have been queried, not internal connection');
 });

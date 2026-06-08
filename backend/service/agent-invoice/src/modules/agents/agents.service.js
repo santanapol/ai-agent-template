@@ -1,4 +1,4 @@
-import { ObjectId, MongoClient } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import * as repository from './agents.repository.js';
 
 export const getAgents = async (db, ouId, search, page = 1, limit = 20) => {
@@ -18,6 +18,16 @@ export const getAgentDetail = async (db, id, ouId) => {
     throw error;
   }
   return agent;
+};
+
+export const resolveAgentBranchId = async (db, agentId, ouId) => {
+  const agent = await repository.getAgentById(db, agentId, ouId);
+  if (!agent) {
+    const error = new Error('Agent not found or inactive.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return agent.branch_id;
 };
 
 export const createAgent = async (db, ouId, payload, userId) => {
@@ -89,35 +99,18 @@ export const softDeleteAgent = async (db, id, ouId, updDateStr, userId) => {
   return { upd_date: now.toISOString() };
 };
 
-// Use env variable or fallback to local DB for testing if external DB is not accessible
-const SOURCE_MONGO_URI = process.env.SOURCE_MONGODB_URI || process.env.MONGODB_URI;
-let sourceClient = null;
-
-const getSourceDb = async () => {
-  if (!sourceClient) {
-    sourceClient = new MongoClient(SOURCE_MONGO_URI);
-    await sourceClient.connect();
-  }
-  
-  // If we are using the local DB fallback, we can use the same DB or 'gpp_777ww'
-  const sourceDbName = process.env.SOURCE_MONGODB_URI ? 'gpp_777ww' : (process.env.DB_NAME || 'agent-invoice');
-  return sourceClient.db(sourceDbName);
-};
-
-export const syncAgent = async (db, ouId, branchId, userId) => {
-  const sourceDb = await getSourceDb();
-  const sourceCollection = sourceDb.collection('su_branch');
-
-  const sourceData = await sourceCollection.findOne({ _id: new ObjectId(branchId) });
+export const syncAgent = async (db, sourceDb, ouId, branchId, userId) => {
+  const sourceData = await sourceDb.collection('su_branch').findOne({ _id: new ObjectId(branchId) });
   if (!sourceData) {
-    const error = new Error(`Branch ID ${branchId} not found in source database.`);
+    const error = new Error('Branch not found in source database.');
     error.statusCode = 404;
     throw error;
   }
 
   const existingAgent = await repository.findByBranchId(db, sourceData.ou_id || ouId, sourceData._id);
   const now = new Date();
-  
+  const prog = '/api/v1/agent-invoice/agents/sync';
+
   if (!existingAgent) {
     const finalData = {
       ou_id: sourceData.ou_id ? new ObjectId(sourceData.ou_id) : new ObjectId(ouId),
@@ -133,12 +126,12 @@ export const syncAgent = async (db, ouId, branchId, userId) => {
       active: true,
       cr_by: userId,
       cr_date: now,
-      cr_prog: '/api/v1/agent-invoice/agents/sync',
+      cr_prog: prog,
       upd_by: userId,
       upd_date: now,
-      upd_prog: '/api/v1/agent-invoice/agents/sync'
+      upd_prog: prog
     };
-    await db.collection('agents').insertOne(finalData);
+    await repository.createAgent(db, finalData);
     return { syncedId: finalData.branch_id.toString(), branch_code: finalData.branch_code };
   } else {
     const updateData = {
@@ -151,30 +144,23 @@ export const syncAgent = async (db, ouId, branchId, userId) => {
       active: true,
       upd_by: userId,
       upd_date: now,
-      upd_prog: '/api/v1/agent-invoice/agents/sync'
+      upd_prog: prog
     };
-    await db.collection('agents').updateOne(
-      { _id: existingAgent._id },
-      { $set: updateData }
-    );
+    await repository.syncUpdateAgent(db, existingAgent._id, updateData);
     return { syncedId: existingAgent.branch_id.toString(), branch_code: updateData.branch_code };
   }
 };
 
-export const getUnsyncedBranches = async (db, ouId, includeInactive = false) => {
-  // Get existing branch_ids
-  const existingAgents = await db.collection('agents').find({ ou_id: new ObjectId(ouId) }).project({ branch_id: 1 }).toArray();
+export const getUnsyncedBranches = async (db, sourceDb, ouId, includeInactive = false) => {
+  const existingAgents = await repository.getAgentBranchIds(db, ouId);
   const existingBranchIds = existingAgents.map(a => a.branch_id).filter(Boolean);
-
-  const sourceDb = await getSourceDb();
-  const sourceCollection = sourceDb.collection('su_branch');
 
   const query = { _id: { $nin: existingBranchIds } };
   if (!includeInactive) {
     query.active = { $nin: ['0', 0, false] };
   }
 
-  const unsynced = await sourceCollection.find(query)
+  const unsynced = await sourceDb.collection('su_branch').find(query)
     .project({ _id: 1, branch_code: 1, branch_name: 1, active: 1 })
     .sort({ branch_name: 1 }).toArray();
 

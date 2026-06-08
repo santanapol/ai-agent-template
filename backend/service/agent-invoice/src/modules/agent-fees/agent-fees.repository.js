@@ -53,10 +53,11 @@ export const updateFee = async (db, feeId, ouId, targetBranchId, previousUpdDate
   );
 };
 
-export const deleteFee = async (db, feeId, ouId, targetBranchId) => {
+export const deleteFee = async (db, feeId, ouId, targetBranchId, updDateStr) => {
   return db.collection(COLLECTION_NAME).deleteOne({
     _id: new ObjectId(feeId),
     ou_id: new ObjectId(ouId),
-    branch_id: targetBranchId
+    branch_id: targetBranchId,
+    upd_date: new Date(updDateStr)
   });
 };
