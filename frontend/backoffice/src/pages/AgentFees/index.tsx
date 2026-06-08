@@ -88,7 +88,7 @@ const AgentFeesPage: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    fetchFees({ page: 1, limit: 1000 }, controller.signal);
+    fetchFees({ page: 1, limit: 100 }, controller.signal);
     return () => controller.abort();
   }, [id, fetchFees]);
 
@@ -115,7 +115,7 @@ const AgentFeesPage: React.FC = () => {
     }
     const controller = new AbortController();
     setRefFeesLoading(true);
-    listAgentFees(refAgent._id, { page: 1, limit: 1000 }, controller.signal)
+    listAgentFees(refAgent._id, { page: 1, limit: 100 }, controller.signal)
       .then(data => {
         if (!controller.signal.aborted) setRefFees(data.data || []);
       })
@@ -203,12 +203,12 @@ const AgentFeesPage: React.FC = () => {
             await Promise.allSettled(
               fees.map(f => deleteAgentFee(id, f._id, f.upd_date))
             );
-            await fetchFees({ page: 1, limit: 1000 });
+            await fetchFees({ page: 1, limit: 100 });
           }
 
           // 3. Reload own fees (setAgent above triggers the ref-fees effect automatically)
           if (!normalized) {
-            await fetchFees({ page: 1, limit: 1000 });
+            await fetchFees({ page: 1, limit: 100 });
           }
 
           message.success(normalized
@@ -295,7 +295,7 @@ const AgentFeesPage: React.FC = () => {
 
     const doSave = async () => {
       const success = await bulkSave(creates, updates, deletes);
-      if (success) fetchFees({ page: 1, limit: 1000 });
+      if (success) fetchFees({ page: 1, limit: 100 });
     };
 
     if (deletes.length > 0) {

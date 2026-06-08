@@ -1,4 +1,6 @@
 import { ObjectId } from 'mongodb';
+
+import { getBranchDatabase } from '../../config/database-read.js';
 import * as repository from './agents.repository.js';
 
 export const getAgents = async (db, ouId, search, page = 1, limit = 20) => {
@@ -99,8 +101,9 @@ export const softDeleteAgent = async (db, id, ouId, updDateStr, userId) => {
   return { upd_date: now.toISOString() };
 };
 
-export const syncAgent = async (db, sourceDb, ouId, branchId, userId) => {
-  const sourceData = await sourceDb.collection('su_branch').findOne({ _id: new ObjectId(branchId) });
+export const syncAgent = async (db, ouId, branchId, userId, readDb) => {
+  const branchDatabase = readDb ?? getBranchDatabase();
+  const sourceData = await branchDatabase.collection('su_branch').findOne({ _id: new ObjectId(branchId) });
   if (!sourceData) {
     const error = new Error('Branch not found in source database.');
     error.statusCode = 404;
@@ -151,7 +154,8 @@ export const syncAgent = async (db, sourceDb, ouId, branchId, userId) => {
   }
 };
 
-export const getUnsyncedBranches = async (db, sourceDb, ouId, includeInactive = false) => {
+export const getUnsyncedBranches = async (db, ouId, includeInactive = false, readDb) => {
+  const branchDatabase = readDb ?? getBranchDatabase();
   const existingAgents = await repository.getAgentBranchIds(db, ouId);
   const existingBranchIds = existingAgents.map(a => a.branch_id).filter(Boolean);
 
@@ -160,7 +164,7 @@ export const getUnsyncedBranches = async (db, sourceDb, ouId, includeInactive = 
     query.active = { $nin: ['0', 0, false] };
   }
 
-  const unsynced = await sourceDb.collection('su_branch').find(query)
+  const unsynced = await branchDatabase.collection('su_branch').find(query)
     .project({ _id: 1, branch_code: 1, branch_name: 1, active: 1 })
     .sort({ branch_name: 1 }).toArray();
 

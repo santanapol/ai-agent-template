@@ -28,7 +28,7 @@ describe('useAgentFees', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.fees).toEqual(mockFees);
     expect(result.current.total).toBe(1);
-    expect(api.listAgentFees).toHaveBeenCalledWith('agent123', { page: 1, limit: 1000 }, undefined);
+    expect(api.listAgentFees).toHaveBeenCalledWith('agent123', { page: 1, limit: 100 }, undefined);
   });
 
   it('should fetch master data', async () => {

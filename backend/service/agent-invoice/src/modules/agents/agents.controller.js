@@ -166,10 +166,9 @@ export const syncAgentHandler = async (request, reply) => {
   const { ouId, userId, requestId } = extractContext(request);
   const { branch_id } = request.body;
   const db = request.server.db;
-  const sourceDb = request.server.sourceDb;
 
   try {
-    const result = await service.syncAgent(db, sourceDb, ouId, branch_id, userId);
+    const result = await service.syncAgent(db, ouId, branch_id, userId);
     return reply.status(200).send({
       success: true,
       code: 'SUCCESS',
@@ -185,10 +184,9 @@ export const getUnsyncedBranchesHandler = async (request, reply) => {
   const { ouId, requestId } = extractContext(request);
   const { includeInactive } = request.query;
   const db = request.server.db;
-  const sourceDb = request.server.sourceDb;
 
   try {
-    const unsynced = await service.getUnsyncedBranches(db, sourceDb, ouId, includeInactive);
+    const unsynced = await service.getUnsyncedBranches(db, ouId, includeInactive);
     return reply.status(200).send({
       success: true,
       code: 'SUCCESS',

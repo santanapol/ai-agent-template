@@ -11,7 +11,7 @@ export function useAgentFees(agentId: string) {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  const fetchFees = useCallback(async (params: ListFeesParams = { page: 1, limit: 1000 }, signal?: AbortSignal) => {
+  const fetchFees = useCallback(async (params: ListFeesParams = { page: 1, limit: 100 }, signal?: AbortSignal) => {
     if (!agentId) return;
     setLoading(true);
     try {

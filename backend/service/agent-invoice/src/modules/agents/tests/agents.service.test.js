@@ -162,7 +162,7 @@ test('resolveAgentBranchId should throw 404 when agent is not found', async (t) 
   );
 });
 
-test('syncAgent — uses provided sourceDb (not internal connection) to query su_branch', async (t) => {
+test('syncAgent — queries su_branch from read database', async (t) => {
   const branchId = '665a3d76b1e5f8b9e6f2b3d1';
   const ouId = '000000000000000000000456';
   let sourceQueried = false;
@@ -195,11 +195,11 @@ test('syncAgent — uses provided sourceDb (not internal connection) to query su
     }
   });
 
-  await service.syncAgent(dbMock, sourceDbMock, ouId, branchId, 'user1');
-  assert.strictEqual(sourceQueried, true, 'sourceDb should have been queried, not internal connection');
+  await service.syncAgent(dbMock, ouId, branchId, 'user1', sourceDbMock);
+  assert.strictEqual(sourceQueried, true, 'read database should query su_branch');
 });
 
-test('getUnsyncedBranches — uses provided sourceDb to query su_branch', async (t) => {
+test('getUnsyncedBranches — queries su_branch from read database', async (t) => {
   let sourceQueried = false;
 
   const sourceDbMock = {
@@ -232,6 +232,6 @@ test('getUnsyncedBranches — uses provided sourceDb to query su_branch', async 
     }
   });
 
-  await service.getUnsyncedBranches(dbMock, sourceDbMock, '000000000000000000000456');
-  assert.strictEqual(sourceQueried, true, 'sourceDb should have been queried, not internal connection');
+  await service.getUnsyncedBranches(dbMock, '000000000000000000000456', false, sourceDbMock);
+  assert.strictEqual(sourceQueried, true, 'read database should query su_branch');
 });

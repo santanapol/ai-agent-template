@@ -12,11 +12,9 @@ const DB_OPTIONS = {
 
 let client = null;
 let db = null;
-let sourceClient = null;
-let sourceDb = null;
 
 export async function connectDatabase() {
-  if (db) return { db, sourceDb };
+  if (db) return { db };
 
   if (!process.env.MONGODB_URI || !process.env.DB_NAME) {
     throw new Error('[Database] Missing MONGODB_URI or DB_NAME config.');
@@ -26,18 +24,12 @@ export async function connectDatabase() {
   await client.connect();
   db = client.db(process.env.DB_NAME);
 
-  if (process.env.SOURCE_MONGODB_URI) {
-    sourceClient = new MongoClient(process.env.SOURCE_MONGODB_URI, DB_OPTIONS);
-    await sourceClient.connect();
-    sourceDb = sourceClient.db(process.env.SOURCE_DB_NAME || 'gpp_777ww');
-  }
-
-  return { db, sourceDb };
+  return { db };
 }
 
 export function getDatabase() {
   if (!db) throw new Error('[Database] Call connectDatabase() first.');
-  return { db, sourceDb };
+  return { db };
 }
 
 export async function closeDatabase() {
@@ -45,10 +37,5 @@ export async function closeDatabase() {
     await client.close();
     client = null;
     db = null;
-  }
-  if (sourceClient) {
-    await sourceClient.close();
-    sourceClient = null;
-    sourceDb = null;
   }
 }
