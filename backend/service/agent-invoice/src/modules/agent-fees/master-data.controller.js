@@ -3,13 +3,13 @@ import * as repo from './master-data.repository.js';
 export const getGameCompaniesHandler = async (request, reply) => {
   try {
     const { ou_id } = request.query;
-    const data = await repo.getGameCompanies(request.server.sourceDb, ou_id);
+    const data = await repo.getGameCompanies(ou_id);
     return {
       success: true,
       code: 'SUCCESS',
       message: 'Fetched game companies',
-      data: data,
-      requestId: request.requestId
+      data,
+      requestId: request.requestId,
     };
   } catch (err) {
     request.log.error(err);
@@ -20,13 +20,13 @@ export const getGameCompaniesHandler = async (request, reply) => {
 export const getGameCategoriesHandler = async (request, reply) => {
   try {
     const { ou_id } = request.query;
-    const data = await repo.getGameCategories(request.server.sourceDb, ou_id);
+    const data = await repo.getGameCategories(ou_id);
     return {
       success: true,
       code: 'SUCCESS',
       message: 'Fetched game categories',
-      data: data,
-      requestId: request.requestId
+      data,
+      requestId: request.requestId,
     };
   } catch (err) {
     request.log.error(err);

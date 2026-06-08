@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/agent-invoice/` — invoices module:** full invoice API under `/api/v1/invoices` (list, generate, detail, transactions, calculate-fee, status update); read/write Mongo plugins (`mongodb-read`, `mongodb-invoice`), `api-rate-limit`, shared `src/lib/` helpers; OpenAPI **1.1.0**; invoice DB env vars in `.env.example`.
+- **`GET /api/v1/invoices/agent`:** branch picker from `gpp_777ww.su_branch` scoped to caller `x-user-ou`.
+- **Gateway:** proxy route **`/api/v1/invoices`** → agent-invoice `:3000` (`routes.json`, `.env.example` `ROUTES_JSON`).
+- **Backoffice — Invoices:** real API via gateway (`invoicesApiClient`, `useInvoices` hook); pages under `pages/Invoices/` (list with filters/pagination, generate modal, detail/transactions, mark PAID, PDF/Excel export); Vitest for API client and hook; Bruno collection `backend/_bruno/agent-invoice-service/`.
 - **`backend/service/agent-invoice/`** — agents and agent-fees API (list/create/update/delete fees; agent CRUD; master-data lookups) with integration tests and gateway route prefix **`agent-invoice`**.
 - **agent-invoice seeds:** split Mongo bootstrap into `seed_agents.js`, `seed_indexes.js`, and `seed-agent_fees_seed.js`; document optional `SOURCE_MONGODB_URI` in `.env.example`.
 - **Backoffice — Agent Fees:** dedicated `/agent-fees` route with matrix table UI, `MatrixCell` component, create/edit/delete flows, and `agentFeesApiClient` / `agentsApiClient` with shared token refresh.
@@ -22,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **agent-invoice — tenant isolation:** invoice list/detail/transactions/status/generate/calculate-fee queries filter by `ou_id` from `x-user-ou`.
+- **Backoffice — Invoices:** branch filters and create form use `GET /api/v1/invoices/agent` instead of agents list; `AuthContext` wires invoices client token refresh.
 - **agent-invoice ERD/docs:** branch schema adds `branch_id`, `branch_desc`, `ref_fee_branch_id`, `active`; `branch_type` enum **`MA` | `AG`**; fee/agent controllers use shared error mapping and `If-Match` ETag helpers.
 - **Backoffice — Agents:** inline edit + manage fees on one page; types expose `ref_fee_branch_id` / `ref_fee_branch_name`; optional `default_fee_rate` on patch payload.
 - **Backoffice — Auth:** register agent-fees API refresh callback alongside staff/agents clients.
@@ -34,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
+- **Backoffice — Invoices:** mock `invoiceData.ts` and legacy `InvoiceList` / `InvoiceDetail` pages (replaced by `pages/Invoices/`).
 - **`backend/service/agent-invoice/_mission-control/`** — completed build spec/plan/todo artifacts.
 - **`frontend/backoffice/_mission-control/`** — raw invoice requirement draft files.
 - **`backend/service/service-demo/`** — replaced by `backend/service/demo-service/`.
@@ -43,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **agent-invoice — master-data:** `game-companies` / `game-categories` use `getBranchDatabase()` (`MONGODB_URI_READ` + `gpp_777ww`) instead of undefined `sourceDb` when `SOURCE_MONGODB_URI` is unset.
 - **Backoffice — Agent Fees:** ETag encoding on update/delete; matrix table race when mapping fee data to DOM; input enablement when syncing initial fee values; default fee rate update error handling.
 - **Backoffice — Staff/Auth:** `getProfileByUserId` handles single-object lookup response; JWT decode hardening; role-based route guard for `/staff`; profile/staff drawer and password-form validation edge cases.
 - **agent-invoice:** `ObjectId` conversion for master-data queries filtered by `ou_id`; field-name mapping for game company/category display.

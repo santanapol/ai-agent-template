@@ -2,8 +2,8 @@ openapi: "3.1.0"
 
 info:
   title: agent-invoice-service
-  version: "1.0.0"
-  description: Invoice & Agent Fee Management Service
+  version: "1.1.0"
+  description: Invoice & Agent Fee Management Service — agents, agent fees, and agent invoice operations
 
 servers:
   - url: http://agent-invoice-service:3000
@@ -15,6 +15,8 @@ security:
 tags:
   - name: agent-fees
     description: Agent fee override management
+  - name: invoices
+    description: Agent invoice generate, list, detail, transactions, calculate-fee, and status
   - name: system
     description: Health and readiness probes
 
@@ -63,6 +65,13 @@ components:
       schema:
         type: string
       description: "Weak ETag from previous GET or mutating response (e.g. W/\"...\")"
+
+  headers:
+    ETag:
+      description: Weak ETag derived from agent_invoice.upd_date
+      schema:
+        type: string
+        example: W/"MjAyNi0wNS0yNlQwMDowMDowMC4wMDBa"
 
   schemas:
     ErrorEnvelope:
@@ -120,6 +129,377 @@ components:
         upd_prog:
           type: string
 
+    ApiEnvelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          nullable: true
+        requestId:
+          type: string
+
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: false
+            data:
+              nullable: true
+
+    AgentInvoiceListItem:
+      type: object
+      description: List projection includes cr_date only; other audit fields are omitted from list responses.
+      required: [_id, ou_id, branch_id, iv_no, status, cr_date]
+      properties:
+        _id:
+          type: string
+        ou_id:
+          type: string
+        branch_id:
+          type: string
+        iv_no:
+          type: string
+        net_win:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        branch_name:
+          type: string
+          nullable: true
+        billing_month:
+          type: string
+          nullable: true
+        due_date:
+          type: string
+          description: Payment due date (YYYY-MM-15 of the invoice cycle month)
+          example: "2026-06-15"
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, VOID, CAL, MISSING_FEE, READY, ERROR, PAID]
+        cr_date:
+          type: string
+          format: date-time
+
+    AgentInvoiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/AgentInvoiceListItem"
+        - type: object
+          required: [ou_name, cr_by, cr_prog, upd_by, upd_prog, upd_date]
+          properties:
+            ou_name:
+              type: string
+              nullable: true
+            cr_by:
+              type: string
+            cr_prog:
+              type: string
+            upd_by:
+              type: string
+            upd_prog:
+              type: string
+            upd_date:
+              type: string
+              format: date-time
+
+    AgentInvoiceTransaction:
+      type: object
+      required:
+        - _id
+        - ref_iv_id
+        - ou_id
+        - branch_id
+        - company_id
+        - main_category_id
+        - net_win
+        - fee
+        - amount
+        - cr_by
+        - cr_prog
+        - cr_date
+        - upd_by
+        - upd_prog
+        - upd_date
+      properties:
+        _id:
+          type: string
+        ref_iv_id:
+          type: string
+        ou_id:
+          type: string
+        ou_name:
+          type: string
+          nullable: true
+        branch_id:
+          type: string
+        branch_name:
+          type: string
+          nullable: true
+        company_id:
+          type: string
+        company_name:
+          type: string
+          nullable: true
+        main_category_id:
+          type: string
+        main_category_name:
+          type: string
+          nullable: true
+        net_win:
+          type: number
+        fee:
+          oneOf:
+            - type: number
+            - type: string
+              const: N/A
+        amount:
+          type: number
+        cr_by:
+          type: string
+        cr_prog:
+          type: string
+        cr_date:
+          type: string
+          format: date-time
+        upd_by:
+          type: string
+        upd_prog:
+          type: string
+        upd_date:
+          type: string
+          format: date-time
+
+    GenerateRequest:
+      type: object
+      additionalProperties: false
+      required: [month]
+      properties:
+        month:
+          type: string
+          pattern: '^\\d{4}-(0[1-9]|1[0-2])$'
+        branch_id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+
+    UpdateStatusRequest:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PAID]
+
+    CalculateFeeRequest:
+      type: object
+      additionalProperties: false
+      required: [iv_id, action]
+      properties:
+        iv_id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+        action:
+          type: string
+          enum: [CALCULATE, MISSING_FEE]
+
+    CalculateFeeResultData:
+      type: object
+      properties:
+        invoice_status:
+          type: string
+        detail:
+          type: string
+        net_win:
+          type: number
+        amount:
+          type: number
+
+    GenerateSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              type: object
+              required: [generated_count]
+              properties:
+                generated_count:
+                  type: integer
+                  minimum: 0
+
+    InvoiceAgentBranch:
+      type: object
+      required: [branch_id, branch_name, branch_code]
+      properties:
+        branch_id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+        branch_name:
+          type: string
+          nullable: true
+        branch_code:
+          type: string
+          nullable: true
+
+    ListInvoiceAgentsSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/InvoiceAgentBranch"
+
+    ListInvoicesSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AgentInvoiceListItem"
+                pagination:
+                  type: object
+                  required: [page, limit, total, totalPages]
+                  properties:
+                    total:
+                      type: integer
+                      nullable: true
+                      description: Total matching documents; null when count is unavailable (see hasMore).
+                    page:
+                      type: integer
+                    limit:
+                      type: integer
+                    totalPages:
+                      type: integer
+                      nullable: true
+                      description: Derived from total; null when total is null.
+                    hasMore:
+                      type: boolean
+                      description: Present only when total is null; indicates another page may exist.
+
+    ListTransactionsSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentInvoiceTransaction"
+
+    PartialFailureResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            code:
+              const: PARTIAL_FAILURE
+            data:
+              type: object
+              required: [error_invoice_ids, generated_count]
+              properties:
+                error_invoice_ids:
+                  type: array
+                  items:
+                    type: string
+                generated_count:
+                  type: integer
+                  minimum: 0
+
+    CalculateFeeSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              $ref: "#/components/schemas/CalculateFeeResultData"
+
+    GetDetailSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              $ref: "#/components/schemas/AgentInvoiceDetail"
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Gateway authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Missing or invalid user context
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    VersionConflict:
+      description: ETag version conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PreconditionRequired:
+      description: If-Match header required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal error (includes DATASTORE_CREDENTIAL_REJECTED on MongoDB auth failure)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
 paths:
   /healthz:
     get:
@@ -147,6 +527,7 @@ paths:
     get:
       tags: [system]
       summary: Readiness probe
+      description: Verifies primary, invoice, and read MongoDB connections are reachable.
       security: []
       responses:
         "200":
@@ -427,3 +808,315 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/invoices/generate:
+    post:
+      operationId: postInvoicesGenerate
+      tags: [invoices]
+      summary: Generate invoices for a billing month
+      description: |
+        Invoice cycle label is `month` (YYYY-MM). Bet summary aggregation uses the previous calendar month
+        in each branch timezone (e.g. month 2026-06 → May 2026 play data). Sets due_date to {month}-15.
+        Triggers in-process fee calculation for invoices with transactions.
+        Branches and invoices are scoped to `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRequest"
+      responses:
+        "200":
+          description: Batch completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Partial batch failure — some invoices failed fee calculation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartialFailureResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/calculate-fee:
+    post:
+      operationId: postInvoicesCalculateFee
+      tags: [invoices]
+      summary: Calculate provider fees for an invoice
+      description: |
+        Calculates transaction fees using provider_fee ratios. Requires If-Match from a prior GET detail or calculate-fee response.
+        Invoice must belong to `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/ifMatch"
+        - $ref: "#/components/parameters/xRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateFeeRequest"
+      responses:
+        "200":
+          description: Calculation result
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateFeeSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List invoices with filters
+      description: |
+        Paginated invoice list filtered by optional query params (iv_no, branch_id, billing_month, status).
+        Results are scoped to `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: iv_no
+          in: query
+          schema:
+            type: string
+        - name: branch_id
+          in: query
+          schema:
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: '^[a-f0-9]{24}$'
+        - name: billing_month
+          in: query
+          schema:
+            type: string
+            pattern: '^\\d{4}-(0[1-9]|1[0-2])$'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, VOID, CAL, MISSING_FEE, READY, ERROR, PAID]
+      responses:
+        "200":
+          description: Invoice list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListInvoicesSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/agent:
+    get:
+      operationId: listInvoiceAgents
+      tags: [invoices]
+      summary: List branches for invoice operations
+      description: |
+        Returns branches from `gpp_777ww.su_branch` filtered by `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+      responses:
+        "200":
+          description: Branch list for the user's OU
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListInvoiceAgentsSuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/{id}/transactions:
+    get:
+      operationId: listInvoiceTransactions
+      tags: [invoices]
+      summary: List invoice transactions
+      description: |
+        Returns agent_invoice_transaction rows for the invoice (ref_iv_id = path id) with display-name joins.
+        Invoice must belong to `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: '^[a-f0-9]{24}$'
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTransactionsSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/{id}/status:
+    put:
+      operationId: putInvoiceStatus
+      tags: [invoices]
+      summary: Mark invoice as PAID (READY → PAID only)
+      description: |
+        Body must be status PAID only. Transition READY to PAID is allowed.
+        Invoice must belong to `ou_id` matching `x-user-ou`.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: '^[a-f0-9]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetDetailSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/{id}:
+    get:
+      operationId: getInvoiceById
+      tags: [invoices]
+      summary: Get invoice detail
+      description: |
+        Returns a single agent_invoice document by MongoDB _id scoped to `ou_id` matching `x-user-ou`.
+        ou_name is resolved from the record ou_id. Response includes ETag for subsequent updates.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: '^[a-f0-9]{24}$'
+      responses:
+        "200":
+          description: Invoice detail
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetDetailSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"

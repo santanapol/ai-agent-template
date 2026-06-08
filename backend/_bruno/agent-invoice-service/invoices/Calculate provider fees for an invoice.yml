@@ -1,0 +1,331 @@
+info:
+  name: Calculate provider fees for an invoice
+  type: http
+  seq: 2
+  tags:
+    - invoices
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+  headers:
+    - name: x-user-ou
+      value: ""
+    - name: x-user-branch
+      value: ""
+    - name: x-user-id
+      value: ""
+    - name: x-user-role
+      value: ""
+    - name: If-Match
+      value: ""
+      description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+    - name: x-request-id
+      value: ""
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "iv_id": "",
+        "action": "CALCULATE"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Calculation result
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 400 Response
+    description: Invalid request
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 401 Response
+    description: Gateway authentication failed
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 403 Response
+    description: Missing or invalid user context
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 404 Response
+    description: Resource not found
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 412 Response
+    description: ETag version conflict
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 412
+      statusText: Precondition Failed
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 428 Response
+    description: If-Match header required
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 428
+      statusText: Precondition Required
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 500 Response
+    description: Internal error (includes DATASTORE_CREDENTIAL_REJECTED on MongoDB auth failure)
+    request:
+      url: "{{baseUrl}}/api/v1/invoices/calculate-fee"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      body:
+        type: json
+        data: |-
+          {
+            "iv_id": "",
+            "action": "CALCULATE"
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+
+docs: Calculates transaction fees using provider_fee ratios. Requires If-Match from a prior GET detail or calculate-fee response.
