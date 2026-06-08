@@ -1393,7 +1393,7 @@ paths:
       tags: [invoices]
       summary: Calculate provider fees for an invoice
       description: |
-        Calculates transaction fees using provider_fee ratios. Requires If-Match from a prior GET detail or calculate-fee response.
+        Calculates transaction fees using agent_fee percentages (e.g. 8 = 8%). Requires If-Match from a prior GET detail or calculate-fee response.
         Invoice must belong to `ou_id` matching `x-user-ou`.
       parameters:
         - $ref: "#/components/parameters/xUserOu"

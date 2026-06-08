@@ -169,7 +169,7 @@ export async function calculateFee({ ivId, action, ifMatch, actor, ouId }) {
 
       if (ratio !== null) {
 
-        const amount = (txn.net_win * -1) / ratio;
+        const amount = (txn.net_win * -1) * (ratio / 100);
 
         await transactionRepo.updateFeeAndAmount({
 
