@@ -14,8 +14,10 @@
  */
 
 // Default IDs ซิงค์กับ auth `npm run seed:example` (dev only)
-const DEV_SEED_OU_ID = "6a190d6c1fee03c383137249";
-const DEV_SEED_BRANCH_ID = "6a190d6c1fee03c38313724a";
+// branch_id ต้องชี้ไปยัง branch จริงใน gpp_777ww.su_branch (ou_id เดียวกัน) มิฉะนั้น
+// `GET /api/v1/invoices/agent` จะ resolve ชื่อ branch ไม่ได้ — ใช้ "777WW" (ou_id 5f4f9d57266ed249e45ecef5)
+const DEV_SEED_OU_ID = "5f4f9d57266ed249e45ecef5";
+const DEV_SEED_BRANCH_ID = "5f4fb5bb3156af7a2db9e5a0";
 import { MongoClient, ObjectId } from "mongodb";
 
 const uri = process.env.MONGODB_URI;

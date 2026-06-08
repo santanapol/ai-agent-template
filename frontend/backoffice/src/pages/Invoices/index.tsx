@@ -18,7 +18,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useInvoices } from './hooks/useInvoices';
-import { formatMoney, statusTagColor } from './utils';
+import { formatDate, formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
 
 const { Title } = Typography;
@@ -145,7 +145,7 @@ const InvoiceList: React.FC = () => {
       title: 'Due Date',
       dataIndex: 'due_date',
       key: 'due_date',
-      render: (date: string | null) => (date ? new Date(date).toLocaleDateString('th-TH') : '-'),
+      render: (date: string | null) => formatDate(date),
     },
 
     {

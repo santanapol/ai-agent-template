@@ -26,7 +26,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import type { ColumnsType } from 'antd/es/table';
 import { useInvoices } from './hooks/useInvoices';
-import { formatFee, formatMoney, ribbonColor, statusTagColor, formatCategoryName } from './utils';
+import { formatDate, formatFee, formatMoney, ribbonColor, statusTagColor, formatCategoryName } from './utils';
 import type { InvoiceTransaction } from '../../types/invoice';
 
 const { Title, Text } = Typography;
@@ -137,15 +137,13 @@ const InvoiceDetail: React.FC = () => {
     doc.setFontSize(10);
     doc.text(`Invoice No: ${invoice.iv_no}`, 14, 32);
     doc.text(`Billing Month: ${invoice.billing_month || '-'}`, 14, 38);
-    doc.text(
-      `Due Date: ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('th-TH') : '-'}`,
-      14,
-      44,
-    );
 
-    doc.text('Bill To:', 120, 32);
-    doc.text(`Branch: ${invoice.branch_name || '-'}`, 120, 38);
-    doc.text(`Organization Unit: ${invoice.ou_name || '-'}`, 120, 44);
+    doc.text(`Bill To: ${invoice.branch_name || '-'}`, 120, 32);
+    doc.text(
+      `Due Date: ${formatDate(invoice.due_date)}`,
+      120,
+      38,
+    );
 
     const tableBody = sortedTransactions.map((t) => [
       t.company_name || '-',
@@ -161,7 +159,7 @@ const InvoiceDetail: React.FC = () => {
     tableBody.push(['Total', '', formatMoney(totalNetWin), '-', formatMoney(totalAmount)]);
 
     autoTable(doc, {
-      startY: 55,
+      startY: 48,
       head: [['Game Provider', 'Game Category', 'Net Win', 'Fee (%)', 'Amount']],
       body: tableBody,
       theme: 'grid',
@@ -186,15 +184,13 @@ const InvoiceDetail: React.FC = () => {
   const handleExportExcel = () => {
     const wsData: (string | number)[][] = [
       ['INVOICE'],
-      [''],
       ['Invoice No:', invoice.iv_no, '', 'Bill To:', invoice.branch_name || '-'],
-      ['Billing Month:', invoice.billing_month || '-', '', 'Organization Unit:', invoice.ou_name || '-'],
       [
-        'Due Date:',
-        invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('th-TH') : '-',
+        'Billing Month:',
+        invoice.billing_month || '-',
         '',
-        'Status:',
-        invoice.status,
+        'Due Date:',
+        formatDate(invoice.due_date),
       ],
       [''],
       ['Game Provider', 'Game Category', 'Net Win', 'Fee (%)', 'Amount'],
@@ -215,7 +211,7 @@ const InvoiceDetail: React.FC = () => {
     wsData.push(['Total', '', totalNetWin, '', totalAmount]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 10 }, { wch: 15 }];
+    ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 3 }, { wch: 12 }, { wch: 14 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
@@ -273,29 +269,36 @@ const InvoiceDetail: React.FC = () => {
             </Col>
           </Row>
 
-          {/* Bill To & Details */}
+          {/* Invoice Info & Bill To — paired the same way as the PDF/Excel export header */}
           <Row justify="space-between" style={{ marginBottom: 32 }}>
             <Col span={12}>
-              <Text type="secondary" strong style={{ fontSize: 12, letterSpacing: 1 }}>BILL TO</Text><br />
-              <Text strong style={{ fontSize: 16 }}>{invoice.branch_name || '-'}</Text><br />
-              <Text type="secondary">Billing Month: {invoice.billing_month || '-'}</Text>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div>
+                  <Text type="secondary" style={{ marginRight: 8 }}>Billing Month:</Text>
+                  <Text strong>{invoice.billing_month || '-'}</Text>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ marginRight: 8 }}>Created Date:</Text>
+                  <Text strong>{formatDate(invoice.cr_date)}</Text>
+                </div>
+              </div>
             </Col>
             <Col span={12} style={{ textAlign: 'right' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'right', width: '100%' }}>
                 <div>
-                  <Text type="secondary" style={{ marginRight: 8 }}>Created Date:</Text>
-                  <Text strong>{new Date(invoice.cr_date).toLocaleDateString('th-TH')}</Text>
+                  <Text type="secondary" strong style={{ fontSize: 12, letterSpacing: 1, marginRight: 8 }}>BILL TO</Text>
+                  <Text strong style={{ fontSize: 16 }}>{invoice.branch_name || '-'}</Text>
                 </div>
                 <div>
                   <Text type="secondary" style={{ marginRight: 8 }}>Due Date:</Text>
                   <Text type={isReady ? 'danger' : 'secondary'} strong={isReady}>
-                    {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('th-TH') : '-'}
+                    {formatDate(invoice.due_date)}
                   </Text>
                 </div>
                 {invoice.status === 'PAID' && invoice.upd_date && (
                   <div>
                     <Text type="secondary" style={{ marginRight: 8 }}>Paid Date:</Text>
-                    <Text type="success" strong>{new Date(invoice.upd_date).toLocaleDateString('th-TH')}</Text>
+                    <Text type="success" strong>{formatDate(invoice.upd_date)}</Text>
                   </div>
                 )}
               </div>
