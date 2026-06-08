@@ -1,0 +1,143 @@
+info:
+  name: Create a new fee override
+  type: http
+  seq: 2
+  tags:
+    - agent-fees
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/agents/:agentId/fees"
+  headers:
+    - name: x-user-ou
+      value: ""
+    - name: x-user-branch
+      value: ""
+    - name: x-user-id
+      value: ""
+    - name: x-user-role
+      value: ""
+    - name: x-request-id
+      value: ""
+      disabled: true
+  params:
+    - name: agentId
+      value: ""
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "company_id": "",
+        "main_cate_id": "",
+        "platform_name": "",
+        "game_provider": "",
+        "game_category": "",
+        "fee_rate": 0
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/api/v1/agents/:agentId/fees"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: x-request-id
+          value: ""
+          disabled: true
+      params:
+        - name: agentId
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "company_id": "",
+            "main_cate_id": "",
+            "platform_name": "",
+            "game_provider": "",
+            "game_category": "",
+            "fee_rate": 0
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "CREATED",
+            "message": "",
+            "data": {
+              "insertedId": ""
+            }
+          }
+  - name: 409 Response
+    description: Duplicate fee
+    request:
+      url: "{{baseUrl}}/api/v1/agents/:agentId/fees"
+      method: POST
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: x-request-id
+          value: ""
+          disabled: true
+      params:
+        - name: agentId
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "company_id": "",
+            "main_cate_id": "",
+            "platform_name": "",
+            "game_provider": "",
+            "game_category": "",
+            "fee_rate": 0
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "RESOURCE_NOT_FOUND",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }

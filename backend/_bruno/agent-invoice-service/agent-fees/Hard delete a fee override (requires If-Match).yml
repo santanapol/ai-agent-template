@@ -1,0 +1,169 @@
+info:
+  name: Hard delete a fee override (requires If-Match)
+  type: http
+  seq: 4
+  tags:
+    - agent-fees
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/v1/agents/:agentId/fees/:feeId"
+  headers:
+    - name: x-user-ou
+      value: ""
+    - name: x-user-branch
+      value: ""
+    - name: x-user-id
+      value: ""
+    - name: x-user-role
+      value: ""
+    - name: If-Match
+      value: ""
+      description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+    - name: x-request-id
+      value: ""
+      disabled: true
+  params:
+    - name: agentId
+      value: ""
+      type: path
+    - name: feeId
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Deleted
+    request:
+      url: "{{baseUrl}}/api/v1/agents/:agentId/fees/:feeId"
+      method: DELETE
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      params:
+        - name: agentId
+          value: ""
+          type: path
+        - name: feeId
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "SUCCESS",
+            "message": "",
+            "data": ""
+          }
+  - name: 404 Response
+    description: Not found
+    request:
+      url: "{{baseUrl}}/api/v1/agents/:agentId/fees/:feeId"
+      method: DELETE
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      params:
+        - name: agentId
+          value: ""
+          type: path
+        - name: feeId
+          value: ""
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "RESOURCE_NOT_FOUND",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
+  - name: 428 Response
+    description: Precondition required
+    request:
+      url: "{{baseUrl}}/api/v1/agents/:agentId/fees/:feeId"
+      method: DELETE
+      headers:
+        - name: x-user-ou
+          value: ""
+        - name: x-user-branch
+          value: ""
+        - name: x-user-id
+          value: ""
+        - name: x-user-role
+          value: ""
+        - name: If-Match
+          value: ""
+          description: Weak ETag from previous GET or mutating response (e.g. W/"...")
+        - name: x-request-id
+          value: ""
+          disabled: true
+      params:
+        - name: agentId
+          value: ""
+          type: path
+        - name: feeId
+          value: ""
+          type: path
+    response:
+      status: 428
+      statusText: Precondition Required
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "code": "RESOURCE_NOT_FOUND",
+            "message": "",
+            "data": "",
+            "requestId": ""
+          }
