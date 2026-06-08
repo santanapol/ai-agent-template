@@ -7,6 +7,8 @@ node_modules/
 !.env.example
 !**/.env.example
 
+!.env.defaults
+!**/.env.defaults
 # Test / tooling
 coverage/
 .nyc_output/
