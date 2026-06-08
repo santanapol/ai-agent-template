@@ -1,7 +1,13 @@
+function resolveTz(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return 'UTC'
+  return String(raw).trim()
+}
+
 export function loadEnv(env = process.env) {
+  const tz = resolveTz(env.TZ)
   const result = {
     NODE_ENV: env.NODE_ENV || 'development',
-    TZ: env.TZ || 'UTC',
+    TZ: 'UTC',
     PORT: env.PORT ? parseInt(env.PORT, 10) : 3002,
     JWT_JWKS_URL: env.JWT_JWKS_URL,
     JWT_ISSUER: env.JWT_ISSUER ?? '',
@@ -34,7 +40,7 @@ export function loadEnv(env = process.env) {
   const errors = []
   if (!['production', 'development', 'test'].includes(result.NODE_ENV))
     errors.push('NODE_ENV invalid')
-  if (result.TZ !== 'UTC') errors.push('TZ must be UTC')
+  if (tz !== 'UTC') errors.push('TZ must be UTC')
   if (!result.JWT_JWKS_URL || !result.JWT_JWKS_URL.endsWith('/.well-known/jwks.json'))
     errors.push('JWT_JWKS_URL invalid')
   if (!result.GATEWAY_SECRET || result.GATEWAY_SECRET.length < 32)
@@ -46,6 +52,10 @@ export function loadEnv(env = process.env) {
 
   if (errors.length > 0) {
     throw new Error(`Invalid environment: ${errors.join('; ')}`)
+  }
+
+  if (env === process.env) {
+    process.env.TZ = 'UTC'
   }
 
   const jwtSecret = result.JWT_SECRET

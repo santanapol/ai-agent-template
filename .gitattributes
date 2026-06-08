@@ -1,0 +1,2 @@
+# Keep env defaults LF-only so Windows checkout does not append `\r` to TZ=UTC.
+*.env.defaults text eol=lf

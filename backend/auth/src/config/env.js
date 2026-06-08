@@ -1,7 +1,13 @@
+function resolveTz(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return 'UTC'
+  return String(raw).trim()
+}
+
 export function loadEnv(env = process.env) {
+  const tz = resolveTz(env.TZ)
   const result = {
     NODE_ENV: env.NODE_ENV || 'development',
-    TZ: env.TZ || 'UTC',
+    TZ: 'UTC',
     PORT: env.PORT ? parseInt(env.PORT, 10) : 3001,
     DATABASE_URI: env.DATABASE_URI,
     JWT_PRIVATE_KEY_PEM: env.JWT_PRIVATE_KEY_PEM
@@ -37,7 +43,7 @@ export function loadEnv(env = process.env) {
   const errors = []
   if (!['production', 'development', 'test'].includes(result.NODE_ENV))
     errors.push('NODE_ENV invalid')
-  if (result.TZ !== 'UTC') errors.push('TZ must be UTC')
+  if (tz !== 'UTC') errors.push('TZ must be UTC')
   if (!result.DATABASE_URI) errors.push('DATABASE_URI is required')
   if (!result.JWT_PRIVATE_KEY_PEM) errors.push('JWT_PRIVATE_KEY_PEM is required')
   if (!result.JWKS_PUBLIC_URL || !result.JWKS_PUBLIC_URL.endsWith('/.well-known/jwks.json'))
@@ -49,6 +55,11 @@ export function loadEnv(env = process.env) {
 
   if (errors.length > 0) {
     throw new Error(`Invalid environment: ${errors.join('; ')}`)
+  }
+
+  // Windows `.env` line endings (CRLF) can leave `\r` on TZ; normalize for Node runtime.
+  if (env === process.env) {
+    process.env.TZ = 'UTC'
   }
 
   return result

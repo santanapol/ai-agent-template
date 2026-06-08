@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Auth / gateway — `TZ=UTC` on Windows:** `loadEnv` trims CRLF from `.env.defaults`; root `.gitattributes` keeps `*.env.defaults` LF-only.
 - **agent-invoice — tenant isolation:** invoice list/detail/transactions/status/generate/calculate-fee queries filter by `ou_id` from `x-user-ou`.
 - **Backoffice — Invoices:** branch filters and create form use `GET /api/v1/invoices/agent` instead of agents list; `AuthContext` wires invoices client token refresh.
 - **agent-invoice ERD/docs:** branch schema adds `branch_id`, `branch_desc`, `ref_fee_branch_id`, `active`; `branch_type` enum **`MA` | `AG`**; fee/agent controllers use shared error mapping and `If-Match` ETag helpers.

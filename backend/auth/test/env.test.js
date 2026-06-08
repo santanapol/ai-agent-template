@@ -16,3 +16,15 @@ test('loadEnv rejects TZ values other than UTC', () => {
     /Invalid environment/u
   )
 })
+
+test('loadEnv accepts TZ=UTC with CRLF suffix (Windows .env line endings)', () => {
+  const env = loadEnv({
+    TZ: 'UTC\r',
+    DATABASE_URI: 'mongodb://localhost:27017/auth',
+    JWT_PRIVATE_KEY_PEM: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
+    JWKS_PUBLIC_URL: 'https://auth.test.invalid/.well-known/jwks.json',
+    AUTH_INTERNAL_SERVICE_SECRET: 'test-internal-service-secret-32chars',
+    REDIS_URL: ''
+  })
+  assert.equal(env.TZ, 'UTC')
+})

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`loadEnv` (auth, gateway):** trim `TZ` from `.env.defaults` / `.env` before validation so Windows CRLF (`UTC\r`) no longer fails startup; normalize `process.env.TZ` to `UTC` at runtime.
+- **Repository:** `.gitattributes` — force LF line endings on `*.env.defaults`.
+
 ## [0.1.6] - 2026-05-21
 
 ### Added
