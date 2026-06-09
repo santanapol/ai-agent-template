@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * ใส่ข้อมูลโปรไฟล์พนักงานตัวอย่าง 3 คน สำหรับ staff-service (dev เท่านั้น)
- * 
+ *
  *   npm run seed:example
- * 
+ *
  * ให้ตรงกับ OU/Branch จาก auth seed
  */
 
@@ -26,8 +26,12 @@ const resetData = process.argv.includes("--reset");
 const SEED_PROG = "scripts/seed-example-data.mjs";
 const SEED_USER = "seed_script";
 
-const ouId = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId(DEV_SEED_OU_ID);
-const branchId = process.env.SEED_BRANCH_ID ? new ObjectId(process.env.SEED_BRANCH_ID) : new ObjectId(DEV_SEED_BRANCH_ID);
+const ouId = process.env.SEED_OU_ID
+  ? new ObjectId(process.env.SEED_OU_ID)
+  : new ObjectId(DEV_SEED_OU_ID);
+const branchId = process.env.SEED_BRANCH_ID
+  ? new ObjectId(process.env.SEED_BRANCH_ID)
+  : new ObjectId(DEV_SEED_BRANCH_ID);
 
 const profilesToSeed = [
   {
@@ -37,7 +41,7 @@ const profilesToSeed = [
     firstname: "Somchai",
     lastname: "Platform Admin",
     email: "platform_admin@example.com",
-    role: "platform_admin"
+    role: "platform_admin",
   },
   {
     profileId: new ObjectId("507f1f77bcf86cd799439012"),
@@ -46,7 +50,7 @@ const profilesToSeed = [
     firstname: "Somsri",
     lastname: "Branch",
     email: "branch_admin@example.com",
-    role: "branch_admin"
+    role: "branch_admin",
   },
   {
     profileId: new ObjectId("507f1f77bcf86cd799439013"),
@@ -55,8 +59,8 @@ const profilesToSeed = [
     firstname: "Sompong",
     lastname: "Staff",
     email: "staff@example.com",
-    role: "staff"
-  }
+    role: "staff",
+  },
 ];
 
 const client = new MongoClient(uri);
@@ -66,7 +70,9 @@ const col = db.collection("staff_profiles");
 
 if (resetData) {
   const removed = await col.deleteMany({ ou_id: ouId });
-  console.log(`Cleared profiles for tenant: ${removed.deletedCount} document(s)`);
+  console.log(
+    `Cleared profiles for tenant: ${removed.deletedCount} document(s)`,
+  );
 }
 
 const now = new Date();
@@ -93,11 +99,9 @@ for (const profile of profilesToSeed) {
     upd_prog: SEED_PROG,
   };
 
-  await col.replaceOne(
-    { user_id: profile.userId },
-    profileDoc,
-    { upsert: true }
-  );
+  await col.replaceOne({ user_id: profile.userId }, profileDoc, {
+    upsert: true,
+  });
 
   console.log(`Profile OK: ${profile.code} (${profile.email})`);
 }
