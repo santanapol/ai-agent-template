@@ -65,17 +65,29 @@ nano backend/gateway/.env.prod
 # ทำแบบเดียวกันกับโฟลเดอร์อื่นๆ...
 ```
 
-### 1.4 สตาร์ทระบบครั้งแรก
+### 1.4 บิลด์ระบบและสตาร์ทครั้งแรก
+ก่อนที่เราจะรันระบบ เราต้องติดตั้งไลบรารีและสร้างไฟล์ Frontend สำหรับใช้งานจริง (เนื่องจาก Frontend ของเราเป็นไฟล์เว็บแบบ Static (React/Vite) ดังนั้น Nginx จะเป็นคนอ่านไฟล์เหล่านี้โดยตรง ไม่ต้องใช้ PM2 รันค่ะ):
+
 ```bash
 cd /var/www/zero-platform
 
-# 1. รัน Redis ผ่าน Docker
+# 1. ติดตั้งไลบรารีและบิลด์ Frontend
+cd frontend/backoffice
+npm ci
+npm run build
+
+# 2. ติดตั้งไลบรารีสำหรับ Backend
+cd ../../backend
+npm ci
+cd ..
+
+# 3. รัน Redis ผ่าน Docker
 docker compose -f backend/docker-compose.prod.yml up -d
 
-# 2. รัน API Backend ด้วย PM2
+# 4. รัน API Backend ด้วย PM2
 pm2 start backend/ecosystem.config.js
 
-# 3. สั่งให้ PM2 รันออโต้เมื่อเครื่องรีสตาร์ท
+# 5. สั่งให้ PM2 รันออโต้เมื่อเครื่องรีสตาร์ท
 pm2 save
 pm2 startup
 ```
