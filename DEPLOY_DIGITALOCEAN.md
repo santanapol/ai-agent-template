@@ -112,12 +112,12 @@ pm2 startup
 sudo nano /etc/nginx/sites-available/zero-platform
 ```
 
-ใส่การตั้งค่าดังนี้ (แก้ `yourdomain.com` เป็นโดเมนจริงของคุณ):
+ใส่การตั้งค่าดังนี้:
 
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com; # โดเมนสำหรับ Frontend
+    server_name zero.168bits.com; # โดเมนสำหรับระบบ
 
     # 1. ให้ Nginx โฮสต์ไฟล์ Frontend (React/Vite)
     root /var/www/zero-platform/frontend/backoffice/dist;
@@ -164,9 +164,8 @@ sudo systemctl reload nginx
 
 2. **สั่งให้ Certbot จัดการใบรับรองและแก้ไข Nginx อัตโนมัติ**:
    ```bash
-   sudo certbot --nginx -d yourdomain.com
+   sudo certbot --nginx -d zero.168bits.com
    ```
-   *(แก้ไข `yourdomain.com` เป็นโดเมนจริงของคุณให้ตรงกับไฟล์ Nginx)*
 
 3. **ทำตามขั้นตอนบนหน้าจอ**:
    - ใส่อีเมลของคุณ (เวลาระบบจะหมดอายุเขาจะส่งอีเมลมาเตือน)
