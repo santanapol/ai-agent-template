@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Deployment:** Clarified SSH key configurations and usage for GitHub Actions in `DEPLOY_DIGITALOCEAN.md` to avoid confusion between deploy keys and client keys.
+- **agent-invoice database:** Renamed MongoDB database to `zero-agent-invoice` and collections to `agent_iv` and `agent_iv_transaction` to align with new naming conventions; updated init scripts and environment configurations.
 - **Architecture:** Restructured port schema to separate Core Platform (`3000/3001/3002`) from Business Services (`3101/3102`); updated all documentation, specs, and integration test ports.
 - **Deployment:** Moved `ecosystem.config.js` to `backend/` and added `docker-compose.prod.yml` to separate Production (Redis only) from Development (Redis + MongoDB).
 - **Frontend:** Added `RUNBOOK.md` to detail local proxy routing and Docker dependencies.

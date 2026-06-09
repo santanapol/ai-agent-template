@@ -97,11 +97,32 @@ pm2 startup
 
 ## ขั้นที่ 2: ผูกกุญแจรีโมท (GitHub Secrets)
 
+> **อย่าสลับกับ Deploy key ในขั้นที่ 1.2** — มีกุญแจ SSH สองคู่ที่ทำงานคนละทิศทาง:
+>
+> | ทิศทาง | Private key อยู่ที่ | Public key อยู่ที่ | ใช้ทำอะไร |
+> |--------|---------------------|---------------------|-----------|
+> | Droplet → GitHub (`git pull`) | บนเซิร์ฟเวอร์ `~/.ssh/id_ed25519` | GitHub **Deploy keys** (ขั้น 1.2) | เซิร์ฟเวอร์ดึงโค้ดจาก private repo |
+> | GitHub Actions → Droplet (SSH deploy) | GitHub Secret `DO_SSH_KEY` | `~/.ssh/authorized_keys` บน Droplet | Workflow ใน `.github/workflows/deploy.yml` เข้าเซิร์ฟเวอร์ |
+
 ไปที่หน้าเว็บ GitHub ของโปรเจกต์ > **Settings** > **Secrets and variables** > **Actions** แล้วกดสร้าง **New repository secret** ดังนี้:
 
-- `DO_HOST` : ใส่ IP Address ของ Digital Ocean (เช่น `128.199.100.200`)
-- `DO_USERNAME` : ใส่ชื่อ User ของเซิร์ฟเวอร์ (เช่น `root` หรือ `ubuntu`)
-- `DO_SSH_KEY` : ใส่ Private Key ของเซิร์ฟเวอร์ (เช่น เนื้อหาในไฟล์ `~/.ssh/id_rsa` หรือไฟล์ `.pem`)
+- `DO_HOST` : IP Address หรือ hostname ของ Droplet (เช่น `128.199.100.200`)
+- `DO_USERNAME` : ชื่อ user ที่ใช้ SSH เข้าเซิร์ฟเวอร์ (เช่น `root` หรือ `ubuntu` — ต้องตรงกับ user ที่ login ได้จริง)
+- `DO_SSH_KEY` : **Private key ฝั่ง client** ที่คู่กับ public key ใน `authorized_keys` บน Droplet (ไม่ใช่ `id_ed25519` จากขั้น 1.2)
+
+**`DO_SSH_KEY` มาจากไหน (เลือกอย่างใดอย่างหนึ่ง):**
+
+1. **ตอนสร้าง Droplet** — ใส่ SSH public key จากเครื่อง dev ตอนสร้าง VM → นำ **private key คู่นั้น** (เช่น `~/.ssh/id_ed25519` บนเครื่องคุณ หรือไฟล์ `.pem` ที่ DigitalOcean ให้) ใส่ใน secret
+2. **สร้างคู่ใหม่เฉพาะ CI** — บนเครื่อง dev:
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/do_deploy -N ""
+   cat ~/.ssh/do_deploy.pub   # นำไปใส่ใน authorized_keys บน Droplet
+   cat ~/.ssh/do_deploy         # นำทั้งไฟล์ (รวม BEGIN/END) ใส่ใน DO_SSH_KEY
+   ```
+
+บน Droplet ให้แน่ใจว่า public key คู่กันอยู่ใน `~/.ssh/authorized_keys` ของ user ที่ตั้งใน `DO_USERNAME` (เช่น `echo "ssh-ed25519 AAAA... github-actions-deploy" >> ~/.ssh/authorized_keys`)
+
+ทดสอบก่อน push: `ssh -i ~/.ssh/do_deploy DO_USERNAME@DO_HOST` ต้อง login ได้โดยไม่ถามรหัสผ่าน
 
 ---
 
