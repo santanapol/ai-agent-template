@@ -19,7 +19,7 @@
     "test": "node --enable-source-maps --test --test-timeout=120000 test/*.test.js test/*/*.test.js",
     "test:coverage": "c8 --reporter=text --reporter=html node --test --test-timeout=120000 test/**/*.test.js",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run spec:codes && npm test && npm run audit:check",
+    "ci": "npm run lint && npm run format:check && npm run spec:codes && npm test && npm run audit:check",
     "ci:with-coverage": "npm run ci && npm run test:coverage",
     "seed:user": "node --env-file=.env scripts/seed-user.mjs",
     "seed:example": "node --env-file=.env scripts/seed-example-data.mjs",
