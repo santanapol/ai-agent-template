@@ -46,16 +46,23 @@ sudo npm install -g pm2
    git clone git@github.com:Chiang-Rai-Technology/zero-platform.git zero-platform
    ```
 
-### 1.3 สร้างไฟล์ Environment
-เข้าไปตั้งค่า `.env` ในแต่ละเซอร์วิส โดยก๊อปปี้จาก `.env.example`:
+### 1.3 สร้างและตั้งค่าไฟล์ Environment
+เนื่องจากไฟล์ `.env.prod` จะไม่ถูกเก็บไว้ใน Git (เพื่อความปลอดภัย) คุณจึงต้องสร้างมันขึ้นมาใหม่จากไฟล์ `.env.example` บนเซิร์ฟเวอร์ก่อน:
 ```bash
 cd /var/www/zero-platform
 
-# Gateway
-cp backend/gateway/.env.example backend/gateway/.env
-# (แก้ไขค่า GATEWAY_SECRET ให้ยาวกว่า 32 ตัวอักษร)
+# 1. คัดลอกไฟล์ต้นแบบสำหรับทุก Service
+cp backend/gateway/.env.example backend/gateway/.env.prod
+cp backend/auth/.env.example backend/auth/.env.prod
+cp backend/service/staff/.env.example backend/service/staff/.env.prod
+cp backend/service/agent-invoice/.env.example backend/service/agent-invoice/.env.prod
+cp backend/service/demo-service/.env.example backend/service/demo-service/.env.prod
 
-# ทำแบบเดียวกันกับโฟลเดอร์ Auth, Staff, Agent-Invoice
+# 2. เข้าไปแก้ไขรหัสผ่าน/ความลับ ในไฟล์ .env.prod ของแต่ละ Service ให้ถูกต้อง
+nano backend/gateway/.env.prod
+# (เช่น แก้ไขค่า GATEWAY_SECRET ให้ปลอดภัย)
+
+# ทำแบบเดียวกันกับโฟลเดอร์อื่นๆ...
 ```
 
 ### 1.4 สตาร์ทระบบครั้งแรก
