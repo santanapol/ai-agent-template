@@ -36,15 +36,27 @@ async function run() {
 
   await db.collection('agents').createIndex(
     { ou_id: 1, branch_id: 1 },
-    { background: true, name: 'agents_by_ou_branch' }
+    { unique: true, background: true, name: 'agents_uniq_ou_branch' }
   );
-  console.log('  ✔ agents: agents_by_ou_branch');
+  console.log('  ✔ agents: agents_uniq_ou_branch');
+
+  await db.collection('agent_invoice').createIndex(
+    { iv_no: 1 },
+    { unique: true, background: true, name: 'invoice_uniq_iv_no' }
+  );
+  console.log('  ✔ agent_invoice: invoice_uniq_iv_no');
 
   await db.collection('agent_invoice').createIndex(
     { ou_id: 1, branch_id: 1, billing_month: 1 },
     { background: true, name: 'invoice_by_ou_branch_month' }
   );
   console.log('  ✔ agent_invoice: invoice_by_ou_branch_month');
+
+  await db.collection('agent_invoice_transaction').createIndex(
+    { ref_iv_id: 1, company_id: 1, main_category_id: 1 },
+    { unique: true, background: true, name: 'txn_uniq_invoice_company_cate' }
+  );
+  console.log('  ✔ agent_invoice_transaction: txn_uniq_invoice_company_cate');
 
   await db.collection('agent_invoice_transaction').createIndex(
     { ref_iv_id: 1, fee: 1 },
