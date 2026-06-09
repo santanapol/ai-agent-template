@@ -27,6 +27,7 @@ export interface Invoice {
   billing_month?: string | null;
   due_date?: string | null;
   net_win: number | null;
+  bet: number | null;
   amount: number | null;
   status: InvoiceStatus | string;
   cr_by?: string;
@@ -49,6 +50,7 @@ export interface InvoiceTransaction {
   main_category_id: string;
   main_category_name?: string | null;
   net_win: number;
+  bet: number;
   fee: number | 'N/A';
   amount: number;
   cr_by?: string;

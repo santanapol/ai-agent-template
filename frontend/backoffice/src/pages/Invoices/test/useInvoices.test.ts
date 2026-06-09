@@ -4,6 +4,13 @@ import * as api from '../../../lib/invoicesApiClient';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('../../../lib/invoicesApiClient');
+vi.mock('antd', () => ({
+  message: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 
 describe('useInvoices', () => {
   beforeEach(() => {
@@ -38,6 +45,7 @@ describe('useInvoices', () => {
         ou_id: 'ou1',
         branch_id: 'br1',
         iv_no: 'IV-001',
+        bet: 10000,
         net_win: 1000,
         amount: 100,
         status: 'READY',
@@ -72,6 +80,7 @@ describe('useInvoices', () => {
       ou_id: 'ou1',
       branch_id: 'br1',
       iv_no: 'IV-001',
+      bet: 10000,
       net_win: 1000,
       amount: 100,
       status: 'READY',
@@ -85,6 +94,7 @@ describe('useInvoices', () => {
         branch_id: 'br1',
         company_id: 'c1',
         main_category_id: 'm1',
+        bet: 5000,
         net_win: 500,
         fee: 10,
         amount: 50,
@@ -122,6 +132,7 @@ describe('useInvoices', () => {
       ou_id: 'ou1',
       branch_id: 'br1',
       iv_no: 'IV-001',
+      bet: 10000,
       net_win: 1000,
       amount: 100,
       status: 'PAID',

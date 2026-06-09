@@ -70,6 +70,8 @@ export async function sumByInvoiceId(refIvId) {
 
           net_win: { $sum: "$net_win" },
 
+          bet: { $sum: "$bet" },
+
           amount: { $sum: "$amount" },
         },
       },
@@ -78,8 +80,8 @@ export async function sumByInvoiceId(refIvId) {
     .toArray();
 
   if (rows.length === 0) {
-    return { net_win: 0, amount: 0 };
+    return { net_win: 0, bet: 0, amount: 0 };
   }
 
-  return { net_win: rows[0].net_win, amount: rows[0].amount };
+  return { net_win: rows[0].net_win, bet: rows[0].bet, amount: rows[0].amount };
 }

@@ -91,6 +91,13 @@ const InvoiceDetail: React.FC = () => {
       render: (val: string | null | undefined) => formatCategoryName(val),
     },
     {
+      title: 'Bet',
+      dataIndex: 'bet',
+      key: 'bet',
+      align: 'right',
+      render: (val: number) => formatMoney(val || 0),
+    },
+    {
       title: 'Net Win',
       dataIndex: 'net_win',
       key: 'net_win',
@@ -148,19 +155,21 @@ const InvoiceDetail: React.FC = () => {
     const tableBody = sortedTransactions.map((t) => [
       t.company_name || '-',
       formatCategoryName(t.main_category_name),
+      formatMoney(t.bet || 0),
       formatMoney(t.net_win),
       formatFee(t.fee),
       formatMoney(t.amount),
     ]);
 
+    const totalBet = sortedTransactions.reduce((sum, t) => sum + (t.bet || 0), 0);
     const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
     const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-    tableBody.push(['Total', '', formatMoney(totalNetWin), '-', formatMoney(totalAmount)]);
+    tableBody.push(['Total', '', formatMoney(totalBet), formatMoney(totalNetWin), '-', formatMoney(totalAmount)]);
 
     autoTable(doc, {
       startY: 48,
-      head: [['Game Provider', 'Game Category', 'Net Win', 'Fee (%)', 'Amount']],
+      head: [['Game Provider', 'Game Category', 'Bet', 'Net Win', 'Fee (%)', 'Amount']],
       body: tableBody,
       theme: 'grid',
       headStyles: { fillColor: [22, 119, 255] },
@@ -168,6 +177,7 @@ const InvoiceDetail: React.FC = () => {
         2: { halign: 'right' },
         3: { halign: 'right' },
         4: { halign: 'right' },
+        5: { halign: 'right' },
       },
       didParseCell: (data) => {
         if (data.row.index === tableBody.length - 1) {
@@ -193,25 +203,27 @@ const InvoiceDetail: React.FC = () => {
         formatDate(invoice.due_date),
       ],
       [''],
-      ['Game Provider', 'Game Category', 'Net Win', 'Fee (%)', 'Amount'],
+      ['Game Provider', 'Game Category', 'Bet', 'Net Win', 'Fee (%)', 'Amount'],
     ];
 
     sortedTransactions.forEach((t) => {
       wsData.push([
         t.company_name || '-',
         formatCategoryName(t.main_category_name),
+        t.bet || 0,
         t.net_win,
         t.fee === 'N/A' ? 'N/A' : t.fee,
         t.amount,
       ]);
     });
 
+    const totalBet = sortedTransactions.reduce((sum, t) => sum + (t.bet || 0), 0);
     const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
     const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
-    wsData.push(['Total', '', totalNetWin, '', totalAmount]);
+    wsData.push(['Total', '', totalBet, totalNetWin, '', totalAmount]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 3 }, { wch: 12 }, { wch: 14 }];
+    ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
@@ -315,6 +327,26 @@ const InvoiceDetail: React.FC = () => {
             rowKey="_id"
             loading={transactionsLoading}
             pagination={false}
+            summary={(pageData) => {
+              let totalBet = 0;
+              let totalNetWin = 0;
+              let totalAmount = 0;
+              pageData.forEach(({ bet, net_win, amount }) => {
+                totalBet += bet || 0;
+                totalNetWin += net_win || 0;
+                totalAmount += amount || 0;
+              });
+
+              return (
+                <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 'bold' }}>
+                  <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="right">{formatMoney(totalBet)}</Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right">{formatMoney(totalNetWin)}</Table.Summary.Cell>
+                  <Table.Summary.Cell index={3}></Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} align="right">{formatMoney(totalAmount)}</Table.Summary.Cell>
+                </Table.Summary.Row>
+              );
+            }}
           />
 
           {/* Totals */}

@@ -33,7 +33,7 @@
 - ✅ Fee lookup (specific rate → default rate → error)
 - ✅ Audit fields (`cr_*` / `upd_*`)
 
-**Out of scope (ชั่วคราว):** collection `invoices` — จะออกแบบในเอกสารแยกเมื่อพร้อม
+- ✅ Invoice & Transaction (`agent_iv`, `agent_iv_transaction`)
 
 ---
 
@@ -115,6 +115,60 @@
 
 ---
 
+### 3️⃣ Collection: `agent_iv`
+
+**ความหมาย:** บิลเรียกเก็บเงินของแต่ละสาขา (Invoice)
+
+```javascript
+{
+  _id: ObjectId,
+  ou_id: ObjectId,
+  branch_id: ObjectId,
+  iv_no: String,
+  billing_month: String,               // เช่น '2026-05'
+  due_date: Date,
+  net_win: Number,                     // ผลรวมแพ้ชนะ
+  bet: Number,                         // ผลรวมยอดเล่น
+  amount: Number,                      // ยอดเงินที่ต้องชำระ
+  status: String,                      // Enum: 'PENDING' | 'VOID' | 'CAL' | 'MISSING_FEE' | 'READY' | 'ERROR' | 'PAID'
+  cr_by: String,
+  cr_date: Date,
+  cr_prog: String,
+  upd_by: String,
+  upd_date: Date,
+  upd_prog: String
+}
+```
+
+---
+
+### 4️⃣ Collection: `agent_iv_transaction`
+
+**ความหมาย:** รายการธุรกรรมย่อยในแต่ละบิล (Invoice Transactions) แยกตามค่ายเกมและหมวดหมู่
+
+```javascript
+{
+  _id: ObjectId,
+  ref_iv_id: ObjectId,                 // อ้างอิง agent_iv._id
+  ou_id: ObjectId,
+  branch_id: ObjectId,
+  company_id: ObjectId,
+  main_category_id: ObjectId,
+  net_win: Number,
+  bet: Number,                         // ยอดเล่นรวม
+  fee: Mixed,                          // Number (เช่น 10.5) หรือ 'N/A' ถ้ารอการกำหนดค่า
+  amount: Number,
+  cr_by: String,
+  cr_date: Date,
+  cr_prog: String,
+  upd_by: String,
+  upd_date: Date,
+  upd_prog: String
+}
+```
+
+---
+
 ## Database Indexes
 
 ### Indexes for `agents`
@@ -187,6 +241,29 @@ db.agent_fees.createIndex(
 │                                                                 │
 │ [Index: ou_id + branch_id + game_company_id + main_cate_id]     │
 └─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                           AGENT_IV                              │
+├─────────────────────────────────────────────────────────────────┤
+│ _id (ObjectId) [PK]                                             │
+│ ou_id, branch_id [FK, Index]                                    │
+│ iv_no, billing_month, due_date, status                          │
+│ net_win, bet, amount                                            │
+│ cr_by, cr_date, cr_prog, upd_by, upd_date, upd_prog             │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               │ 1 : Many
+                               │ ref_iv_id → agent_iv._id
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AGENT_IV_TRANSACTION                         │
+├─────────────────────────────────────────────────────────────────┤
+│ _id (ObjectId) [PK]                                             │
+│ ref_iv_id (ObjectId) [FK, Index]                                │
+│ ou_id, branch_id, company_id, main_category_id                  │
+│ net_win, bet, fee, amount                                       │
+│ cr_by, cr_date, cr_prog, upd_by, upd_date, upd_prog             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Relationship Type
@@ -195,6 +272,7 @@ db.agent_fees.createIndex(
 | ---------- | ---------------------- | ------ | ------------------------------------------------ |
 | **agents**   | **agent_fees**           | 1:Many | Agent หนึ่งรายการมี fee หลาย company/category  |
 | **agents**   | **agents** (`parent_branch_id`) | 0:1 | Agent แม่ข่าย (self-reference, optional)       |
+| **agent_iv** | **agent_iv_transaction** | 1:Many | บิลหนึ่งใบประกอบด้วยธุรกรรมหลายค่าย/หมวดเกม |
 
 ---
 
@@ -269,9 +347,10 @@ Unique แบบ `(ou_id, branch_id)` — รหัสซ้ำได้คน�
 
 Optional; ถ้าไม่มี category fee และไม่มี default → business error
 
-### Collection `invoices`
+### Invoices (`agent_iv`) และ Transactions (`agent_iv_transaction`)
 
-ถอนออกจากเอกสารชั่วคราว; เมื่อออกแบบจะ denormalize `ou_id`, `branch_name` จาก Branch และ snapshot `fee_rate` จาก lookup logic ด้านบน
+เก็บข้อมูลรวบรวมยอดบิล (Invoice) และรายการที่ได้จากการ aggregate (`member_bet_dau_summary`) 
+โดยทุกรอบการสร้างบิล จะมีการคำนวณ `net_win` และยอด `bet` แยกตามเกมและค่าย 
 
 ---
 
@@ -303,6 +382,21 @@ Optional; ถ้าไม่มี category fee และไม่มี default
 | `game_company_id`, `game_main_cate_id` | Required, ObjectId | |
 | `gcomp_cost`, `agent_known_fee`, `agent_fee` | Required | Number |
 | `(ou_id, branch_id, game_company_id, game_main_cate_id)` | Indexed | |
+
+### `agent_iv`
+
+| Field | Constraint | Notes |
+| ----- | ---------- | ----- |
+| `ou_id` | Required | |
+| `branch_id` | Required, ObjectId | FK → `agents._id` |
+| `status` | Required | `PENDING`, `VOID`, `CAL`, `MISSING_FEE`, `READY`, `ERROR`, `PAID` |
+
+### `agent_iv_transaction`
+
+| Field | Constraint | Notes |
+| ----- | ---------- | ----- |
+| `ref_iv_id` | Required, ObjectId | FK → `agent_iv._id` |
+| `net_win`, `bet`, `amount` | Required | Number |
 
 ---
 

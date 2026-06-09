@@ -40,10 +40,12 @@ const argonOpts = {
 // Dev seed: shared OU + branch for all example users (ซิงค์ให้ตรงกับ demo-service)
 // branch_id ต้องชี้ไปยัง branch จริงใน gpp_777ww.su_branch (ou_id เดียวกัน) มิฉะนั้น
 // `GET /api/v1/invoices/agent` จะ resolve ชื่อ branch ไม่ได้ — ใช้ "777WW" (ou_id 5f4f9d57266ed249e45ecef5)
-const DEV_SEED_OU_ID = "5f4f9d57266ed249e45ecef5"
-const DEV_SEED_BRANCH_ID = "5f4fb5bb3156af7a2db9e5a0"
+const DEV_SEED_OU_ID = '5f4f9d57266ed249e45ecef5'
+const DEV_SEED_BRANCH_ID = '5f4fb5bb3156af7a2db9e5a0'
 
-const SEED_OU_ID = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId(DEV_SEED_OU_ID)
+const SEED_OU_ID = process.env.SEED_OU_ID
+  ? new ObjectId(process.env.SEED_OU_ID)
+  : new ObjectId(DEV_SEED_OU_ID)
 const SEED_BRANCH_ID = process.env.SEED_BRANCH_ID
   ? new ObjectId(process.env.SEED_BRANCH_ID)
   : new ObjectId(DEV_SEED_BRANCH_ID)
@@ -104,12 +106,10 @@ for (const row of examples) {
     upd_date: now,
     upd_prog: SEED_PROG
   }
-  
-  await db.collection(AUTH_COLLECTIONS.USERS).replaceOne(
-    { _id: row._id },
-    userDoc,
-    { upsert: true }
-  )
+
+  await db
+    .collection(AUTH_COLLECTIONS.USERS)
+    .replaceOne({ _id: row._id }, userDoc, { upsert: true })
   const userId = row._id
   if (userId) {
     const existingProfile = await db.collection('staff_profiles').findOne({ user_id: userId })
@@ -131,12 +131,10 @@ for (const row of examples) {
       upd_date: now,
       upd_prog: SEED_PROG
     }
-    
-    await db.collection('staff_profiles').replaceOne(
-      { user_id: userId },
-      profileDoc,
-      { upsert: true }
-    )
+
+    await db
+      .collection('staff_profiles')
+      .replaceOne({ user_id: userId }, profileDoc, { upsert: true })
   }
   console.log('User OK:', username, userId?.toHexString?.() ?? '(unknown)')
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import buildApp from "../../../app.js";
+import buildApp from "../../../../app.js";
 
 test("Master Data API - Game Companies and Categories", async (t) => {
   const app = await buildApp();

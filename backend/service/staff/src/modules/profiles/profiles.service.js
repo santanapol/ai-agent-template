@@ -718,7 +718,6 @@ export function assertAdminLifecycleAccess(profile, userContext) {
   assertProfileScope(profile, userContext);
 }
 
-
 /**
  * @param {{ profileId: string, ifMatchHeader: string | string[] | undefined, userContext: { userId: string, ouId: string, branchId: string, role: string }, routeTemplate: string, expectedStatus: 'active'|'archived', nextStatus: 'active'|'archived', eventType: string, invalidTransitionMessage: string }} params
  */

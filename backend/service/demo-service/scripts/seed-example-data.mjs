@@ -97,11 +97,11 @@ for (const row of examples) {
     upd_date: now,
     upd_prog: SEED_PROG,
   };
-  
+
   const result = await col.replaceOne(
     { ...tenantFilter, code: row.code },
     doc,
-    { upsert: true }
+    { upsert: true },
   );
   if (result.upsertedCount > 0) inserted += 1;
   else if (result.modifiedCount > 0) updated += 1;

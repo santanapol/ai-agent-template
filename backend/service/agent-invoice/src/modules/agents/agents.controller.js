@@ -128,11 +128,11 @@ export const deleteAgentHandler = async (request, reply) => {
 
 export const syncAgentHandler = async (request, reply) => {
   const { ouId, userId, requestId } = extractContext(request);
-  const { branch_id } = request.body;
+  const { branch_id: branchId } = request.body;
   const db = request.server.db;
 
   try {
-    const result = await service.syncAgent(db, ouId, branch_id, userId);
+    const result = await service.syncAgent(db, ouId, branchId, userId);
     return reply.status(200).send({
       success: true,
       code: "SUCCESS",

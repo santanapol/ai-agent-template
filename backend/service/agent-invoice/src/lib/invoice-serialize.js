@@ -2,6 +2,7 @@
  * @param {import('mongodb').ObjectId | string | null | undefined} value
  */
 export function toApiId(value) {
+  // eslint-disable-next-line eqeqeq
   if (value == null) return value;
   return typeof value === "string" ? value : String(value);
 }
@@ -22,6 +23,7 @@ export function mapInvoiceListItemForApi(doc, names = {}) {
     billing_month: doc.billing_month ?? null,
     due_date: doc.due_date ?? null,
     net_win: doc.net_win ?? null,
+    bet: doc.bet ?? null,
     amount: doc.amount ?? null,
     status: doc.status,
     cr_by: doc.cr_by,
@@ -48,6 +50,7 @@ export function mapInvoiceForApi(doc, names = {}) {
     billing_month: doc.billing_month ?? null,
     due_date: doc.due_date ?? null,
     net_win: doc.net_win ?? null,
+    bet: doc.bet ?? null,
     amount: doc.amount ?? null,
     status: doc.status,
     cr_by: doc.cr_by,
@@ -76,6 +79,7 @@ export function mapTransactionForApi(doc, names = {}) {
     main_category_id: toApiId(doc.main_category_id),
     main_category_name: names.mainCategoryName ?? null,
     net_win: doc.net_win,
+    bet: doc.bet,
     fee: doc.fee,
     amount: doc.amount,
     cr_by: doc.cr_by,

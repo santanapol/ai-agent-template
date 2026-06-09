@@ -2,19 +2,19 @@ import { ObjectId } from "mongodb";
 
 import { getBranchDatabase } from "../../config/database-read.js";
 
-function buildOuFilter(ou_id) {
+function buildOuFilter(ouId) {
   const filter = { active: "1" };
-  if (ou_id) {
-    filter.ou_id = new ObjectId(ou_id);
+  if (ouId) {
+    filter.ou_id = new ObjectId(ouId);
   }
   return filter;
 }
 
-export async function getGameCompanies(ou_id) {
+export async function getGameCompanies(ouId) {
   const db = getBranchDatabase();
   const items = await db
     .collection("game_company")
-    .find(buildOuFilter(ou_id), {
+    .find(buildOuFilter(ouId), {
       projection: { _id: 1, ou_id: 1, name: 1, provider_name: 1, active: 1 },
     })
     .toArray();
@@ -25,11 +25,11 @@ export async function getGameCompanies(ou_id) {
   }));
 }
 
-export async function getGameCategories(ou_id) {
+export async function getGameCategories(ouId) {
   const db = getBranchDatabase();
   const items = await db
     .collection("game_main_category")
-    .find(buildOuFilter(ou_id), {
+    .find(buildOuFilter(ouId), {
       projection: { _id: 1, ou_id: 1, name: 1, main_cate_name: 1, active: 1 },
     })
     .toArray();

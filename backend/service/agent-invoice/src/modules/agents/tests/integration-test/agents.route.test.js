@@ -1,6 +1,6 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
-import buildApp from "../../../app.js";
+import buildApp from "../../../../app.js";
 
 describe("Agents API Integration Tests", () => {
   let app;

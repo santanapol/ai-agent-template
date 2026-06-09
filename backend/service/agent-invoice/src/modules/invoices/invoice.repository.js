@@ -21,6 +21,8 @@ const DETAIL_PROJECTION = {
 
   net_win: 1,
 
+  bet: 1,
+
   amount: 1,
 
   status: 1,
@@ -52,6 +54,8 @@ const LIST_PROJECTION = {
   due_date: 1,
 
   net_win: 1,
+
+  bet: 1,
 
   amount: 1,
 
@@ -335,6 +339,8 @@ export async function finalizeInvoice({
 
   netWin,
 
+  bet,
+
   amount,
 
   actor,
@@ -352,7 +358,7 @@ export async function finalizeInvoice({
 
     prog,
 
-    extra: { net_win: netWin, amount },
+    extra: { net_win: netWin, bet, amount },
 
     updDate,
   });

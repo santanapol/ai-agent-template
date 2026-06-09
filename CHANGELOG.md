@@ -8,9 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Backoffice & agent-invoice:** added `bet` aggregation to invoices and transactions; displayed bet total and net win on frontend table and exports.
 - **CI/CD:** Added strict `.github/workflows/ci-check.yml` quality gate for pull requests to `main` (Lint, Test, OpenAPI validation, Frontend Build).
-- **`backend/service/agent-invoice/` — invoices module:** full invoice API under `/api/v1/invoices` (list, generate, detail, transactions, calculate-fee, status update); read/write Mongo plugins (`mongodb-read`, `mongodb-invoice`), `api-rate-limit`, shared `src/lib/` helpers; OpenAPI **1.1.0**; invoice DB env vars in `.env.example`.
-- **`GET /api/v1/invoices/agent`:** branch picker from `gpp_777ww.su_branch` scoped to caller `x-user-ou`.
+- **`backend/service/agent-invoice/` — invoices module:** full invoice API under `/api/v1/invoices` (list, generate, detail, transactions, calculate-fee, status update); added `bet` aggregation to invoices and transactions; read/write Mongo plugins (`mongodb-read`, `mongodb-invoice`), `api-rate-limit`, shared `src/lib/` helpers; OpenAPI **1.1.0**; invoice DB env vars in `.env.example`.
+- **GET /api/v1/invoices/agent:** branch picker from `gpp_777ww.su_branch` scoped to caller `x-user-ou`.
 - **Gateway:** proxy route **`/api/v1/invoices`** → agent-invoice `:3000` (`routes.json`, `.env.example` `ROUTES_JSON`).
 - **Backoffice — Invoices:** real API via gateway (`invoicesApiClient`, `useInvoices` hook); pages under `pages/Invoices/` (list with filters/pagination, generate modal, detail/transactions, mark PAID, PDF/Excel export); Vitest for API client and hook; Bruno collection `backend/_bruno/agent-invoice-service/`.
 - **`backend/service/agent-invoice/`** — agents and agent-fees API (list/create/update/delete fees; agent CRUD; master-data lookups) with integration tests and gateway route prefix **`agent-invoice`**.
