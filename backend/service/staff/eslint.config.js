@@ -7,7 +7,14 @@ import boundariesPlugin from "eslint-plugin-boundaries";
 import prettierConfig from "eslint-config-prettier";
 
 export default [
-  { ignores: ["node_modules/**", "coverage/**", "scripts/**", "rename_docs.cjs"] },
+  {
+    ignores: [
+      "node_modules/**",
+      "coverage/**",
+      "scripts/**",
+      "rename_docs.cjs",
+    ],
+  },
   js.configs.recommended,
   nPlugin.configs["flat/recommended"],
   importPlugin.flatConfigs.recommended,
