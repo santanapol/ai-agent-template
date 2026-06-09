@@ -72,17 +72,15 @@ nano backend/gateway/.env.prod
 cd /var/www/zero-platform
 
 # 1. ติดตั้งไลบรารีและบิลด์ Frontend
-cd frontend/backoffice
-npm ci
-npm run build
-cd ../..
+npm ci --prefix frontend/backoffice
+npm run build --prefix frontend/backoffice
 
 # 2. ติดตั้งไลบรารีสำหรับ Backend แต่ละ Service
-cd backend/gateway && npm ci && cd ../..
-cd backend/auth && npm ci && cd ../..
-cd backend/service/staff && npm ci && cd ../..
-cd backend/service/agent-invoice && npm ci && cd ../..
-cd backend/service/demo-service && npm ci && cd ../..
+npm ci --prefix backend/gateway
+npm ci --prefix backend/auth
+npm ci --prefix backend/service/staff
+npm ci --prefix backend/service/agent-invoice
+npm ci --prefix backend/service/demo-service
 
 # 3. รัน Redis ผ่าน Docker
 docker compose -f backend/docker-compose.prod.yml up -d
