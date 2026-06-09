@@ -1,14 +1,14 @@
-import { objectIdSchema } from '../../lib/object-id.js';
+import { objectIdSchema } from "../../lib/object-id.js";
 
 const billingMonthSchema = {
-  type: 'string',
-  pattern: '^\\d{4}-(0[1-9]|1[0-2])$',
+  type: "string",
+  pattern: "^\\d{4}-(0[1-9]|1[0-2])$",
 };
 
 export const generateBodySchema = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
-  required: ['month'],
+  required: ["month"],
   properties: {
     month: billingMonthSchema,
     branch_id: objectIdSchema,
@@ -16,28 +16,28 @@ export const generateBodySchema = {
 };
 
 export const calculateFeeBodySchema = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
-  required: ['iv_id', 'action'],
+  required: ["iv_id", "action"],
   properties: {
     iv_id: objectIdSchema,
-    action: { type: 'string', enum: ['CALCULATE', 'MISSING_FEE'] },
+    action: { type: "string", enum: ["CALCULATE", "MISSING_FEE"] },
   },
 };
 
 export const getDetailParamsSchema = {
-  type: 'object',
-  required: ['id'],
+  type: "object",
+  required: ["id"],
   properties: {
     id: objectIdSchema,
   },
 };
 
 /** Querystring values arrive as strings — format checks run in list-invoices.query.js */
-const optionalQueryString = { type: 'string' };
+const optionalQueryString = { type: "string" };
 
 export const listInvoicesQuerySchema = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
   properties: {
     page: optionalQueryString,
@@ -50,10 +50,10 @@ export const listInvoicesQuerySchema = {
 };
 
 export const updateStatusBodySchema = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
-  required: ['status'],
+  required: ["status"],
   properties: {
-    status: { type: 'string', enum: ['PAID'] },
+    status: { type: "string", enum: ["PAID"] },
   },
 };

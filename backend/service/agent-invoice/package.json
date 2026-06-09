@@ -1,6 +1,7 @@
 {
   "name": "agent-invoice-service",
   "version": "1.0.0",
+  "private": true,
   "description": "Invoice & Agent Fee Management Service",
   "main": "src/server.js",
   "type": "module",
@@ -8,6 +9,13 @@
     "start": "node src/server.js",
     "dev": "node --watch --env-file=.env src/server.js",
     "test": "node --test --env-file=.env src/**/*.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
+    "audit:check": "npm audit --audit-level=high",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm test && npm run audit:check",
     "init:db": "node --env-file=.env scripts/init-db.mjs"
   },
   "dependencies": {
@@ -18,11 +26,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@stoplight/spectral-cli": "^6.16.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-boundaries": "^6.0.2",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^18.1.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-security": "^4.0.0",
+    "globals": "^17.6.0",
     "prettier": "^3.8.1"
   }
 }

@@ -1,6 +1,6 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient } from "mongodb";
 
-import { DB_OPTIONS } from './database-options.js';
+import { DB_OPTIONS } from "./database-options.js";
 
 let client = null;
 let db = null;
@@ -10,7 +10,7 @@ function resolveConfig() {
   const name = process.env.MONGODB_DB_INVOICE ?? process.env.MONGODB_DB_ORG;
   if (!uri || !name) {
     throw new Error(
-      '[Database] Missing MONGODB_URI_INVOICE / MONGODB_DB_INVOICE (or legacy MONGODB_URI_ORG / MONGODB_DB_ORG).',
+      "[Database] Missing MONGODB_URI_INVOICE / MONGODB_DB_INVOICE (or legacy MONGODB_URI_ORG / MONGODB_DB_ORG).",
     );
   }
   return { uri, name };
@@ -31,7 +31,7 @@ export async function connectInvoiceDatabase() {
 }
 
 export function getInvoiceDatabase() {
-  if (!db) throw new Error('[Database] Call connectInvoiceDatabase() first.');
+  if (!db) throw new Error("[Database] Call connectInvoiceDatabase() first.");
   return db;
 }
 

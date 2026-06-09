@@ -1,11 +1,11 @@
 export const INVOICE_STATUSES = [
-  'PENDING',
-  'VOID',
-  'CAL',
-  'MISSING_FEE',
-  'READY',
-  'ERROR',
-  'PAID',
+  "PENDING",
+  "VOID",
+  "CAL",
+  "MISSING_FEE",
+  "READY",
+  "ERROR",
+  "PAID",
 ];
 
 /**

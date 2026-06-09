@@ -1,10 +1,13 @@
-import { Decimal128, ObjectId } from 'mongodb';
+import { Decimal128, ObjectId } from "mongodb";
 
-import { getInvoiceDatabase } from '../../config/database-invoice.js';
+import { getInvoiceDatabase } from "../../config/database-invoice.js";
 
-import { findAgentByBranchId, resolveFeeBranchId } from './agents.repository.js';
+import {
+  findAgentByBranchId,
+  resolveFeeBranchId,
+} from "./agents.repository.js";
 
-const COLLECTION = 'agent_fees';
+const COLLECTION = "agent_fees";
 
 /**
  * @param {unknown} value
@@ -12,14 +15,14 @@ const COLLECTION = 'agent_fees';
  */
 export function parseFeeRate(value) {
   if (value == null) return null;
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
   if (value instanceof Decimal128) {
     const n = Number(value.toString());
     return Number.isFinite(n) && n > 0 ? n : null;
   }
-  if (typeof value === 'object' && value !== null && 'toString' in value) {
+  if (typeof value === "object" && value !== null && "toString" in value) {
     const n = Number(String(value));
     return Number.isFinite(n) && n > 0 ? n : null;
   }
@@ -58,7 +61,9 @@ export async function buildRatioLookup({ invoiceBranchId, transactions }) {
 
   const defaultRate = parseFeeRate(agent.default_fee_rate);
   const ouId = String(transactions[0].ou_id);
-  const companyIds = [...new Set(transactions.map((txn) => String(txn.company_id)))];
+  const companyIds = [
+    ...new Set(transactions.map((txn) => String(txn.company_id))),
+  ];
 
   const db = getInvoiceDatabase();
   const ouObjectId = new ObjectId(ouId);
@@ -97,7 +102,12 @@ export async function buildRatioLookup({ invoiceBranchId, transactions }) {
 /**
  * @param {{ invoiceBranchId: string, ouId: string, companyId: string, mainCategoryId: string }} params
  */
-export async function findRatio({ invoiceBranchId, ouId, companyId, mainCategoryId }) {
+export async function findRatio({
+  invoiceBranchId,
+  ouId,
+  companyId,
+  mainCategoryId,
+}) {
   const lookup = await buildRatioLookup({
     invoiceBranchId,
     transactions: [

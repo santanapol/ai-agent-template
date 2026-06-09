@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient } from "mongodb";
 
 const DB_OPTIONS = {
   maxPoolSize: 10,
@@ -6,8 +6,8 @@ const DB_OPTIONS = {
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  writeConcern: { w: 'majority', j: true, wtimeoutMS: 5000 },
-  readPreference: 'primaryPreferred'
+  writeConcern: { w: "majority", j: true, wtimeoutMS: 5000 },
+  readPreference: "primaryPreferred",
 };
 
 let client = null;
@@ -17,7 +17,7 @@ export async function connectDatabase() {
   if (db) return { db };
 
   if (!process.env.MONGODB_URI || !process.env.DB_NAME) {
-    throw new Error('[Database] Missing MONGODB_URI or DB_NAME config.');
+    throw new Error("[Database] Missing MONGODB_URI or DB_NAME config.");
   }
 
   client = new MongoClient(process.env.MONGODB_URI, DB_OPTIONS);
@@ -28,7 +28,7 @@ export async function connectDatabase() {
 }
 
 export function getDatabase() {
-  if (!db) throw new Error('[Database] Call connectDatabase() first.');
+  if (!db) throw new Error("[Database] Call connectDatabase() first.");
   return { db };
 }
 

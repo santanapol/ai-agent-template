@@ -3,7 +3,7 @@
  */
 export function toApiId(value) {
   if (value == null) return value;
-  return typeof value === 'string' ? value : String(value);
+  return typeof value === "string" ? value : String(value);
 }
 
 /**

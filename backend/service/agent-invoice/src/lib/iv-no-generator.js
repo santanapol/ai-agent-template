@@ -1,4 +1,4 @@
-import { billingYearMonth } from './date-range.js';
+import { billingYearMonth } from "./date-range.js";
 
 const IV_NO_PATTERN = /^(.+)-(\d{6})-(\d{2})$/;
 
@@ -10,7 +10,13 @@ const IV_NO_PATTERN = /^(.+)-(\d{6})-(\d{2})$/;
  * @param {string} [params.yyyymm] - explicit YYYYMM (overrides timezone/now)
  * @param {Date} [params.now]
  */
-export function nextIvNo({ branchCode, timezone, latestIvNo, yyyymm, now = new Date() }) {
+export function nextIvNo({
+  branchCode,
+  timezone,
+  latestIvNo,
+  yyyymm,
+  now = new Date(),
+}) {
   const monthKey = yyyymm ?? billingYearMonth(timezone, now);
   let sequence = 1;
 
@@ -21,6 +27,6 @@ export function nextIvNo({ branchCode, timezone, latestIvNo, yyyymm, now = new D
     }
   }
 
-  const nn = String(sequence).padStart(2, '0');
+  const nn = String(sequence).padStart(2, "0");
   return `${branchCode}-${monthKey}-${nn}`;
 }

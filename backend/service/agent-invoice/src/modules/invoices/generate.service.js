@@ -1,28 +1,28 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 
-import { buildCreateAudit } from '../../lib/audit.js';
-import { buildEtag } from '../../lib/etag.js';
+import { buildCreateAudit } from "../../lib/audit.js";
+import { buildEtag } from "../../lib/etag.js";
 import {
   billingDataPeriodFromReferenceMonth,
   billingYearMonthFromMonth,
   dueDateFromReferenceMonth,
   isValidBillingMonth,
-} from '../../lib/date-range.js';
-import { ROUTE_PROG } from '../../lib/route-prog.js';
-import { nextIvNo } from '../../lib/iv-no-generator.js';
+} from "../../lib/date-range.js";
+import { ROUTE_PROG } from "../../lib/route-prog.js";
+import { nextIvNo } from "../../lib/iv-no-generator.js";
 
-import * as betSummaryRepo from './bet-summary.repository.js';
-import * as branchRepo from './branch.repository.js';
-import { calculateFee } from './calculate-fee.service.js';
-import * as invoiceRepo from './invoice.repository.js';
-import * as transactionRepo from './transaction.repository.js';
+import * as betSummaryRepo from "./bet-summary.repository.js";
+import * as branchRepo from "./branch.repository.js";
+import { calculateFee } from "./calculate-fee.service.js";
+import * as invoiceRepo from "./invoice.repository.js";
+import * as transactionRepo from "./transaction.repository.js";
 
 const PROG = ROUTE_PROG.INVOICES_GENERATE;
 
 async function generateIvNo(branchId, yyyymm) {
   const branch = await branchRepo.findBranchById(branchId);
   if (!branch) {
-    return { ok: false, code: 'RESOURCE_NOT_FOUND' };
+    return { ok: false, code: "RESOURCE_NOT_FOUND" };
   }
 
   const latest = await invoiceRepo.findLatestByBranchId(branchId);
@@ -42,8 +42,8 @@ function sameBranchId(a, b) {
 
 /** @param {unknown} timezone */
 function billingTimezoneForGroup(timezone) {
-  if (timezone == null || timezone === '') {
-    return 'UTC';
+  if (timezone == null || timezone === "") {
+    return "UTC";
   }
   return String(timezone);
 }
@@ -86,7 +86,7 @@ async function resolveGroups({ month, branchId, ouId }) {
  */
 export async function generateInvoices({ month, branchId, actor, ouId }) {
   if (!isValidBillingMonth(month)) {
-    return { success: false, code: 'INVALID_PARAM' };
+    return { success: false, code: "INVALID_PARAM" };
   }
 
   const errorInvoiceIds = [];
@@ -98,8 +98,8 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
     if (!branch || String(branch.ou_id) !== String(ouId)) {
       return {
         success: false,
-        code: 'RESOURCE_NOT_FOUND',
-        message: 'The requested resource was not found',
+        code: "RESOURCE_NOT_FOUND",
+        message: "The requested resource was not found",
       };
     }
   }
@@ -139,7 +139,7 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
         return {
           success: false,
           code: ivNoResult.code,
-          message: 'The requested resource was not found',
+          message: "The requested resource was not found",
         };
       }
 
@@ -156,7 +156,7 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
           iv_no: ivNoResult.ivNo,
           net_win: null,
           amount: null,
-          status: 'PENDING',
+          status: "PENDING",
           ...baseFields,
           ...audit,
         };
@@ -178,7 +178,10 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
 
         try {
           await transactionRepo.insertMany(txnDocs);
-          ivArrayId.push({ iv_id: String(insertedId), upd_date: audit.upd_date });
+          ivArrayId.push({
+            iv_id: String(insertedId),
+            upd_date: audit.upd_date,
+          });
         } catch (err) {
           await invoiceRepo.deleteOne({ id: insertedId });
           generatedCount -= 1;
@@ -191,7 +194,7 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
           iv_no: ivNoResult.ivNo,
           net_win: 0,
           amount: 0,
-          status: 'VOID',
+          status: "VOID",
           ...baseFields,
           ...audit,
         });
@@ -203,7 +206,7 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
   for (const item of ivArrayId) {
     const result = await calculateFee({
       ivId: item.iv_id,
-      action: 'CALCULATE',
+      action: "CALCULATE",
       ifMatch: buildEtag(item.upd_date),
       actor,
       ouId,
@@ -222,16 +225,19 @@ export async function generateInvoices({ month, branchId, actor, ouId }) {
   if (errorInvoiceIds.length > 0) {
     return {
       success: false,
-      code: 'PARTIAL_FAILURE',
-      message: 'One or more invoices failed fee calculation',
-      data: { error_invoice_ids: errorInvoiceIds, generated_count: generatedCount },
+      code: "PARTIAL_FAILURE",
+      message: "One or more invoices failed fee calculation",
+      data: {
+        error_invoice_ids: errorInvoiceIds,
+        generated_count: generatedCount,
+      },
     };
   }
 
   return {
     success: true,
-    code: 'SUCCESS',
-    message: 'Operation successful',
+    code: "SUCCESS",
+    message: "Operation successful",
     data: { generated_count: generatedCount },
   };
 }

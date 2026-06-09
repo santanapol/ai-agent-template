@@ -1,12 +1,15 @@
-import fp from 'fastify-plugin';
+import fp from "fastify-plugin";
 
-import { closeInvoiceDatabase, connectInvoiceDatabase } from '../config/database-invoice.js';
+import {
+  closeInvoiceDatabase,
+  connectInvoiceDatabase,
+} from "../config/database-invoice.js";
 
 async function mongodbInvoicePlugin(fastify) {
   await connectInvoiceDatabase();
-  fastify.addHook('onClose', async () => {
+  fastify.addHook("onClose", async () => {
     await closeInvoiceDatabase();
   });
 }
 
-export default fp(mongodbInvoicePlugin, { name: 'mongodb-invoice' });
+export default fp(mongodbInvoicePlugin, { name: "mongodb-invoice" });

@@ -1,7 +1,7 @@
-import fp from 'fastify-plugin';
+import fp from "fastify-plugin";
 
-import { resolveRequestId } from '../lib/request-id.js';
-import { sendError } from '../lib/response.js';
+import { resolveRequestId } from "../lib/request-id.js";
+import { sendError } from "../lib/response.js";
 
 const WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000);
 const MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX ?? 60);
@@ -13,7 +13,10 @@ const CLEANUP_INTERVAL_MS = Math.max(WINDOW_MS, 60_000);
  *
  * @param {{ maxRequests?: number, windowMs?: number }} [opts]
  */
-export function createRateLimiter({ maxRequests = MAX_REQUESTS, windowMs = WINDOW_MS } = {}) {
+export function createRateLimiter({
+  maxRequests = MAX_REQUESTS,
+  windowMs = WINDOW_MS,
+} = {}) {
   const buckets = new Map();
 
   function cleanup() {
@@ -44,15 +47,15 @@ async function apiRateLimitPlugin(fastify) {
   const cleanupTimer = setInterval(cleanup, CLEANUP_INTERVAL_MS);
   cleanupTimer.unref();
 
-  fastify.addHook('onClose', async () => {
+  fastify.addHook("onClose", async () => {
     clearInterval(cleanupTimer);
   });
 
   // preHandler runs AFTER all onRequest hooks (including those in child plugins
   // that populate request.userContext). This ensures per-user rate limiting works.
-  fastify.addHook('preHandler', async (request, reply) => {
-    const path = request.url.split('?')[0];
-    if (!path.startsWith('/api/v1/invoices')) {
+  fastify.addHook("preHandler", async (request, reply) => {
+    const path = request.url.split("?")[0];
+    if (!path.startsWith("/api/v1/invoices")) {
       return;
     }
 
@@ -60,12 +63,12 @@ async function apiRateLimitPlugin(fastify) {
     if (!consume(String(key))) {
       return sendError(reply, {
         statusCode: 429,
-        code: 'RATE_LIMIT_EXCEEDED',
-        message: 'Too many requests',
-        requestId: resolveRequestId(request.headers['x-request-id']),
+        code: "RATE_LIMIT_EXCEEDED",
+        message: "Too many requests",
+        requestId: resolveRequestId(request.headers["x-request-id"]),
       });
     }
   });
 }
 
-export default fp(apiRateLimitPlugin, { name: 'api-rate-limit' });
+export default fp(apiRateLimitPlugin, { name: "api-rate-limit" });

@@ -1,0 +1,65 @@
+name: CI Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  backend-checks:
+    name: Backend CI Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [auth, gateway, service/demo-service, service/staff, service/agent-invoice]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: backend/${{ matrix.service }}
+        run: npm ci
+
+      - name: Run CI Suite (Lint, Test, OpenAPI, Audit)
+        working-directory: backend/${{ matrix.service }}
+        run: npm run ci
+
+  frontend-checks:
+    name: Frontend CI Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/backoffice/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend/backoffice
+        run: npm ci
+
+      - name: Run Lint
+        working-directory: frontend/backoffice
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: frontend/backoffice
+        run: npm run test
+
+      - name: Dry Run Build
+        working-directory: frontend/backoffice
+        run: npm run build

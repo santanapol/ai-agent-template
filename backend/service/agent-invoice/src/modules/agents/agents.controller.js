@@ -1,6 +1,10 @@
-import * as service from './agents.service.js';
-import { extractContext, handleError, extractUpdDateISO } from '../../lib/request-handler.js';
-import { buildEtag } from '../../lib/etag.js';
+import * as service from "./agents.service.js";
+import {
+  extractContext,
+  handleError,
+  extractUpdDateISO,
+} from "../../lib/request-handler.js";
+import { buildEtag } from "../../lib/etag.js";
 
 export const getAgentsHandler = async (request, reply) => {
   const { page, limit, search } = request.query;
@@ -8,14 +12,20 @@ export const getAgentsHandler = async (request, reply) => {
   const db = request.server.db;
 
   try {
-    const { agents, total } = await service.getAgents(db, ouId, search, page, limit);
+    const { agents, total } = await service.getAgents(
+      db,
+      ouId,
+      search,
+      page,
+      limit,
+    );
 
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Success.',
+      code: "SUCCESS",
+      message: "Success.",
       data: agents,
-      pagination: { page, limit, total }
+      pagination: { page, limit, total },
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -29,13 +39,13 @@ export const getAgentDetailHandler = async (request, reply) => {
 
   try {
     const agent = await service.getAgentDetail(db, id, ouId);
-    reply.header('ETag', buildEtag(agent.upd_date.toISOString()));
+    reply.header("ETag", buildEtag(agent.upd_date.toISOString()));
 
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Success.',
-      data: agent
+      code: "SUCCESS",
+      message: "Success.",
+      data: agent,
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -48,13 +58,13 @@ export const createAgentHandler = async (request, reply) => {
 
   try {
     const result = await service.createAgent(db, ouId, request.body, userId);
-    reply.header('ETag', buildEtag(result.upd_date));
+    reply.header("ETag", buildEtag(result.upd_date));
 
     return reply.status(201).send({
       success: true,
-      code: 'CREATED',
-      message: 'Resource created successfully.',
-      data: { insertedId: result.insertedId.toString() }
+      code: "CREATED",
+      message: "Resource created successfully.",
+      data: { insertedId: result.insertedId.toString() },
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -68,14 +78,21 @@ export const updateAgentHandler = async (request, reply) => {
 
   try {
     const updDateISO = extractUpdDateISO(request);
-    const result = await service.updateAgent(db, id, ouId, request.body, updDateISO, userId);
-    reply.header('ETag', buildEtag(result.upd_date));
+    const result = await service.updateAgent(
+      db,
+      id,
+      ouId,
+      request.body,
+      updDateISO,
+      userId,
+    );
+    reply.header("ETag", buildEtag(result.upd_date));
 
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Updated successfully.',
-      data: null
+      code: "SUCCESS",
+      message: "Updated successfully.",
+      data: null,
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -89,14 +106,20 @@ export const deleteAgentHandler = async (request, reply) => {
 
   try {
     const updDateISO = extractUpdDateISO(request);
-    const result = await service.softDeleteAgent(db, id, ouId, updDateISO, userId);
-    reply.header('ETag', buildEtag(result.upd_date));
+    const result = await service.softDeleteAgent(
+      db,
+      id,
+      ouId,
+      updDateISO,
+      userId,
+    );
+    reply.header("ETag", buildEtag(result.upd_date));
 
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Deleted successfully.',
-      data: null
+      code: "SUCCESS",
+      message: "Deleted successfully.",
+      data: null,
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -112,9 +135,9 @@ export const syncAgentHandler = async (request, reply) => {
     const result = await service.syncAgent(db, ouId, branch_id, userId);
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Sync successful.',
-      data: result
+      code: "SUCCESS",
+      message: "Sync successful.",
+      data: result,
     });
   } catch (error) {
     return handleError(error, reply, requestId);
@@ -127,12 +150,16 @@ export const getUnsyncedBranchesHandler = async (request, reply) => {
   const db = request.server.db;
 
   try {
-    const unsynced = await service.getUnsyncedBranches(db, ouId, includeInactive);
+    const unsynced = await service.getUnsyncedBranches(
+      db,
+      ouId,
+      includeInactive,
+    );
     return reply.status(200).send({
       success: true,
-      code: 'SUCCESS',
-      message: 'Success.',
-      data: unsynced
+      code: "SUCCESS",
+      message: "Success.",
+      data: unsynced,
     });
   } catch (error) {
     return handleError(error, reply, requestId);

@@ -1,4 +1,4 @@
-export const INTERNAL_ERROR_MESSAGE = 'An internal error occurred';
+export const INTERNAL_ERROR_MESSAGE = "An internal error occurred";
 
 /** @type {Record<string, number>} */
 export const SERVICE_CODE_HTTP = {
@@ -22,7 +22,12 @@ export function httpStatusForCode(code) {
   return SERVICE_CODE_HTTP[code] ?? 500;
 }
 
-export function buildSuccessReply({ code = 'SUCCESS', message = 'Operation successful', data = null, pagination = undefined }) {
+export function buildSuccessReply({
+  code = "SUCCESS",
+  message = "Operation successful",
+  data = null,
+  pagination = undefined,
+}) {
   const body = { success: true, code, message, data };
   if (pagination !== undefined) {
     body.pagination = pagination;
@@ -30,12 +35,7 @@ export function buildSuccessReply({ code = 'SUCCESS', message = 'Operation succe
   return body;
 }
 
-export function buildErrorReply({
-  code,
-  message,
-  requestId,
-  data = null,
-}) {
+export function buildErrorReply({ code, message, requestId, data = null }) {
   return {
     success: false,
     code,
@@ -50,6 +50,11 @@ export function sendSuccess(reply, options = {}) {
   return reply.status(statusCode).send(buildSuccessReply(options));
 }
 
-export function sendError(reply, { statusCode, code, message, requestId, data = null }) {
-  return reply.status(statusCode).send(buildErrorReply({ code, message, requestId, data }));
+export function sendError(
+  reply,
+  { statusCode, code, message, requestId, data = null },
+) {
+  return reply
+    .status(statusCode)
+    .send(buildErrorReply({ code, message, requestId, data }));
 }

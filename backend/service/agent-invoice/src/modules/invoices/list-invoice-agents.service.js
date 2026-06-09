@@ -1,4 +1,4 @@
-import * as branchRepo from './branch.repository.js';
+import * as branchRepo from "./branch.repository.js";
 
 /**
  * @param {{ ouId: string }} params
@@ -8,7 +8,7 @@ export async function listInvoiceAgents({ ouId }) {
 
   return {
     success: true,
-    code: 'SUCCESS',
+    code: "SUCCESS",
     data: items,
   };
 }

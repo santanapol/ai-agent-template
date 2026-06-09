@@ -1,5 +1,5 @@
-import { decodeEtag } from './etag.js';
-import { INTERNAL_ERROR_MESSAGE } from './response.js';
+import { decodeEtag } from "./etag.js";
+import { INTERNAL_ERROR_MESSAGE } from "./response.js";
 
 /**
  * Extract user context from gateway-propagated headers.
@@ -7,9 +7,9 @@ import { INTERNAL_ERROR_MESSAGE } from './response.js';
  */
 export function extractContext(request) {
   return {
-    ouId: request.headers['x-user-ou'],
-    branchId: request.headers['x-user-branch'],
-    userId: request.headers['x-user-id'],
+    ouId: request.headers["x-user-ou"],
+    branchId: request.headers["x-user-branch"],
+    userId: request.headers["x-user-id"],
     requestId: request.requestId,
   };
 }
@@ -24,11 +24,11 @@ export function extractContext(request) {
  */
 export function handleError(error, reply, requestId) {
   const statusMap = {
-    400: 'INVALID_PARAM',
-    404: 'RESOURCE_NOT_FOUND',
-    409: 'DUPLICATE',
-    412: 'VERSION_CONFLICT',
-    428: 'PRECONDITION_REQUIRED',
+    400: "INVALID_PARAM",
+    404: "RESOURCE_NOT_FOUND",
+    409: "DUPLICATE",
+    412: "VERSION_CONFLICT",
+    428: "PRECONDITION_REQUIRED",
   };
 
   if (error.statusCode && statusMap[error.statusCode]) {
@@ -45,7 +45,7 @@ export function handleError(error, reply, requestId) {
   if (error.message) {
     return reply.status(500).send({
       success: false,
-      code: 'INTERNAL_ERROR',
+      code: "INTERNAL_ERROR",
       message: INTERNAL_ERROR_MESSAGE,
       data: null,
       requestId,
@@ -63,16 +63,16 @@ export function handleError(error, reply, requestId) {
  * @returns {string}
  */
 export function extractUpdDateISO(request) {
-  const ifMatch = request.headers['if-match'];
+  const ifMatch = request.headers["if-match"];
   if (!ifMatch) {
-    const error = new Error('If-Match header is required for this operation.');
+    const error = new Error("If-Match header is required for this operation.");
     error.statusCode = 428;
     throw error;
   }
 
   const updDateISO = decodeEtag(ifMatch);
   if (!updDateISO) {
-    const error = new Error('Invalid If-Match ETag format.');
+    const error = new Error("Invalid If-Match ETag format.");
     error.statusCode = 400;
     throw error;
   }

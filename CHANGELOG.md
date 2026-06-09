@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **CI/CD:** Added strict `.github/workflows/ci-check.yml` quality gate for pull requests to `main` (Lint, Test, OpenAPI validation, Frontend Build).
 - **`backend/service/agent-invoice/` — invoices module:** full invoice API under `/api/v1/invoices` (list, generate, detail, transactions, calculate-fee, status update); read/write Mongo plugins (`mongodb-read`, `mongodb-invoice`), `api-rate-limit`, shared `src/lib/` helpers; OpenAPI **1.1.0**; invoice DB env vars in `.env.example`.
 - **`GET /api/v1/invoices/agent`:** branch picker from `gpp_777ww.su_branch` scoped to caller `x-user-ou`.
 - **Gateway:** proxy route **`/api/v1/invoices`** → agent-invoice `:3000` (`routes.json`, `.env.example` `ROUTES_JSON`).
@@ -26,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Documentation:** Root [`README.md`](./README.md), [`backend/README.md`](./backend/README.md), [`backend/docker-compose.yml`](./backend/docker-compose.yml) (MongoDB 8 + Redis 8).
 
 ### Changed
+
+- **agent-invoice:** Standardized package scripts (`ci`, `lint`, `spec:lint`, etc.), added `private: true`, and applied standard configuration files (`eslint.config.js`, `.prettierrc.json`, `.spectral.yaml`). Ignored legacy seed scripts to pass initial linting.
 
 - **Deployment:** Clarified SSH key configurations and usage for GitHub Actions in `DEPLOY_DIGITALOCEAN.md` to avoid confusion between deploy keys and client keys.
 - **agent-invoice database:** Renamed MongoDB database to `zero-agent-invoice` and collections to `agent_iv` and `agent_iv_transaction` to align with new naming conventions; updated init scripts and environment configurations.

@@ -1,14 +1,14 @@
 export const DATASTORE_ACCESS_MESSAGE =
-  'Database access denied for this operation. Check MongoDB user privileges on zero-agent-invoice (MONGODB_DB_INVOICE).';
+  "Database access denied for this operation. Check MongoDB user privileges on zero-agent-invoice (MONGODB_DB_INVOICE).";
 
 /**
  * @param {unknown} err
  * @returns {boolean}
  */
 export function isMongoUnauthorized(err) {
-  if (!err || typeof err !== 'object') return false;
+  if (!err || typeof err !== "object") return false;
   const e = /** @type {{ code?: number, codeName?: string }} */ (err);
-  return e.code === 13 || e.codeName === 'Unauthorized';
+  return e.code === 13 || e.codeName === "Unauthorized";
 }
 
 /**
@@ -20,7 +20,7 @@ export function toDatastoreHttpError(err) {
   if (!isMongoUnauthorized(err)) return null;
   return {
     statusCode: 500,
-    code: 'DATASTORE_CREDENTIAL_REJECTED',
+    code: "DATASTORE_CREDENTIAL_REJECTED",
     message: DATASTORE_ACCESS_MESSAGE,
   };
 }

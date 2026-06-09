@@ -1,8 +1,8 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 
-import { getInvoiceDatabase } from '../../config/database-invoice.js';
+import { getInvoiceDatabase } from "../../config/database-invoice.js";
 
-const COLLECTION = 'agents';
+const COLLECTION = "agents";
 
 /**
  * @param {{ branch_id: unknown, ref_fee_branch_id?: unknown | null }} agentDoc

@@ -1,14 +1,8 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 
+import { getBranchDatabase } from "../../config/database-read.js";
 
-
-import { getBranchDatabase } from '../../config/database-read.js';
-
-
-
-const COLLECTION = 'su_branch';
-
-
+const COLLECTION = "su_branch";
 
 /**
 
@@ -19,12 +13,8 @@ const COLLECTION = 'su_branch';
  */
 
 export function isMissingTimezone(timezone) {
-
-  return timezone == null || timezone === '';
-
+  return timezone == null || timezone === "";
 }
-
-
 
 /**
 
@@ -35,82 +25,56 @@ export function isMissingTimezone(timezone) {
  */
 
 export function buildBatchBranchMatch({ timezone, branchIdsWithPlay, ouId }) {
-
   const playIds = branchIdsWithPlay.map((id) => new ObjectId(id));
 
   const eligibility = {
-
-    $or: [{ active: '1' }, { _id: { $in: playIds } }],
-
+    $or: [{ active: "1" }, { _id: { $in: playIds } }],
   };
 
-
-
   if (isMissingTimezone(timezone)) {
-
     /** @type {import('mongodb').Filter<import('mongodb').Document>} */
 
     const match = {
-
       $and: [
-
         {
-
-          $or: [{ timezone: null }, { timezone: { $exists: false } }, { timezone: '' }],
-
+          $or: [
+            { timezone: null },
+            { timezone: { $exists: false } },
+            { timezone: "" },
+          ],
         },
 
         eligibility,
-
       ],
-
     };
 
     if (ouId) {
-
       match.ou_id = new ObjectId(ouId);
-
     }
 
     return match;
-
   }
 
-
-
   const match = {
-
     timezone,
 
     ...eligibility,
-
   };
 
   if (ouId) {
-
     match.ou_id = new ObjectId(ouId);
-
   }
 
   return match;
-
 }
 
-
-
 export async function findBranchById(branchId) {
-
   const db = getBranchDatabase();
 
   return db.collection(COLLECTION).findOne({
-
     _id: new ObjectId(branchId),
-
   });
-
 }
-
-
 
 /**
 
@@ -121,7 +85,6 @@ export async function findBranchById(branchId) {
  */
 
 export async function findBranchesByOuId(ouId) {
-
   const db = getBranchDatabase();
 
   const rows = await db
@@ -136,24 +99,16 @@ export async function findBranchesByOuId(ouId) {
 
     .toArray();
 
-
-
   return rows.map((row) => ({
-
     branch_id: String(row._id),
 
     branch_name: row.branch_name ?? null,
 
     branch_code: row.branch_code ?? null,
-
   }));
-
 }
 
-
-
 export async function distinctTimezoneGroups(ouId) {
-
   const db = getBranchDatabase();
 
   /** @type {import('mongodb').Document[]} */
@@ -161,47 +116,31 @@ export async function distinctTimezoneGroups(ouId) {
   const pipeline = [];
 
   if (ouId) {
-
     pipeline.push({ $match: { ou_id: new ObjectId(ouId) } });
-
   }
 
   pipeline.push(
-
     {
-
       $group: {
-
-        _id: { ou_id: '$ou_id', timezone: '$timezone' },
-
+        _id: { ou_id: "$ou_id", timezone: "$timezone" },
       },
-
     },
 
-      {
+    {
+      $project: {
+        _id: 0,
 
-        $project: {
+        ou_id: "$_id.ou_id",
 
-          _id: 0,
-
-          ou_id: '$_id.ou_id',
-
-          timezone: '$_id.timezone',
-
-        },
-
+        timezone: "$_id.timezone",
       },
-
-    );
+    },
+  );
 
   return db.collection(COLLECTION).aggregate(pipeline).toArray();
-
 }
 
-
-
 export async function groupBranches({
-
   branchId,
 
   branchIdsWithPlay = [],
@@ -209,64 +148,44 @@ export async function groupBranches({
   timezone = null,
 
   ouId,
-
 }) {
-
   const db = getBranchDatabase();
 
   const match = branchId
-
     ? { _id: new ObjectId(branchId) }
-
     : buildBatchBranchMatch({ timezone, branchIdsWithPlay, ouId });
 
   if (ouId) {
-
     match.ou_id = new ObjectId(ouId);
-
   }
-
-
 
   return db
 
     .collection(COLLECTION)
 
     .aggregate([
-
       { $match: match },
 
       {
-
         $group: {
+          _id: { ou_id: "$ou_id", timezone: "$timezone" },
 
-          _id: { ou_id: '$ou_id', timezone: '$timezone' },
-
-          branch_id: { $push: '$_id' },
-
+          branch_id: { $push: "$_id" },
         },
-
       },
 
       {
-
         $project: {
-
           _id: 0,
 
-          ou_id: '$_id.ou_id',
+          ou_id: "$_id.ou_id",
 
-          timezone: '$_id.timezone',
+          timezone: "$_id.timezone",
 
           branch_id: 1,
-
         },
-
       },
-
     ])
 
     .toArray();
-
 }
-

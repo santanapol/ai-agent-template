@@ -1,6 +1,6 @@
-import { isValidObjectId } from '../../lib/object-id.js';
+import { isValidObjectId } from "../../lib/object-id.js";
 
-import { isInvoiceStatus } from './invoice-status.js';
+import { isInvoiceStatus } from "./invoice-status.js";
 
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 20;
@@ -31,10 +31,10 @@ export function parseListInvoicesQuery(query = {}) {
  * @param {number} fallback
  */
 function parsePositiveInt(value, fallback) {
-  if (value === undefined || value === null || value === '') {
+  if (value === undefined || value === null || value === "") {
     return fallback;
   }
-  const n = typeof value === 'number' ? value : Number(value);
+  const n = typeof value === "number" ? value : Number(value);
   return n;
 }
 
@@ -42,9 +42,9 @@ function parsePositiveInt(value, fallback) {
  * @param {unknown} value
  */
 function pickNonEmptyString(value) {
-  if (typeof value !== 'string') return undefined;
+  if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
-  return trimmed === '' ? undefined : trimmed;
+  return trimmed === "" ? undefined : trimmed;
 }
 
 /**
@@ -53,24 +53,29 @@ function pickNonEmptyString(value) {
 export function validateListInvoicesQuery(parsed) {
   const { page, limit, branchId, billingMonth, status } = parsed;
 
-  if (!Number.isFinite(page) || page < 1 || !Number.isFinite(limit) || limit < 1) {
-    return { ok: false, code: 'INVALID_PARAM' };
+  if (
+    !Number.isFinite(page) ||
+    page < 1 ||
+    !Number.isFinite(limit) ||
+    limit < 1
+  ) {
+    return { ok: false, code: "INVALID_PARAM" };
   }
 
   if (limit > MAX_LIMIT) {
-    return { ok: false, code: 'INVALID_PARAM' };
+    return { ok: false, code: "INVALID_PARAM" };
   }
 
   if (branchId && !isValidObjectId(branchId)) {
-    return { ok: false, code: 'INVALID_PARAM' };
+    return { ok: false, code: "INVALID_PARAM" };
   }
 
   if (status && !isInvoiceStatus(status)) {
-    return { ok: false, code: 'INVALID_PARAM' };
+    return { ok: false, code: "INVALID_PARAM" };
   }
 
   if (billingMonth && !BILLING_MONTH_PATTERN.test(billingMonth)) {
-    return { ok: false, code: 'INVALID_PARAM' };
+    return { ok: false, code: "INVALID_PARAM" };
   }
 
   return { ok: true };

@@ -1,6 +1,6 @@
-import { isValidObjectId } from '../../lib/object-id.js';
-import { resolveRequestId } from '../../lib/request-id.js';
-import { sendError } from '../../lib/response.js';
+import { isValidObjectId } from "../../lib/object-id.js";
+import { resolveRequestId } from "../../lib/request-id.js";
+import { sendError } from "../../lib/response.js";
 import {
   getAgentInvoiceDetail,
   getInvoiceAgents,
@@ -9,31 +9,31 @@ import {
   postCalculateFee,
   postGenerate,
   putInvoiceStatus,
-} from './agent-invoices.controller.js';
+} from "./agent-invoices.controller.js";
 import {
   calculateFeeBodySchema,
   generateBodySchema,
   getDetailParamsSchema,
   listInvoicesQuerySchema,
   updateStatusBodySchema,
-} from './agent-invoices.schema.js';
+} from "./agent-invoices.schema.js";
 
-const OBJECT_ID_HEADERS = ['x-user-ou', 'x-user-branch'];
+const OBJECT_ID_HEADERS = ["x-user-ou", "x-user-branch"];
 
 async function agentInvoiceRoutes(fastify) {
-  fastify.addHook('onRequest', async (request, reply) => {
-    const requestId = resolveRequestId(request.headers['x-request-id']);
+  fastify.addHook("onRequest", async (request, reply) => {
+    const requestId = resolveRequestId(request.headers["x-request-id"]);
 
-    const userId = request.headers['x-user-id'];
-    const userOu = request.headers['x-user-ou'];
-    const userBranch = request.headers['x-user-branch'];
-    const userRole = request.headers['x-user-role'];
+    const userId = request.headers["x-user-id"];
+    const userOu = request.headers["x-user-ou"];
+    const userBranch = request.headers["x-user-branch"];
+    const userRole = request.headers["x-user-role"];
 
     if (!userId || !userOu || !userBranch || !userRole) {
       return sendError(reply, {
         statusCode: 403,
-        code: 'MISSING_GATEWAY_USER_CONTEXT',
-        message: 'Required user context is missing',
+        code: "MISSING_GATEWAY_USER_CONTEXT",
+        message: "Required user context is missing",
         requestId,
       });
     }
@@ -43,8 +43,8 @@ async function agentInvoiceRoutes(fastify) {
       if (!isValidObjectId(String(value))) {
         return sendError(reply, {
           statusCode: 403,
-          code: 'INVALID_USER_CONTEXT',
-          message: 'Invalid user context',
+          code: "INVALID_USER_CONTEXT",
+          message: "Invalid user context",
           requestId,
         });
       }
@@ -59,33 +59,33 @@ async function agentInvoiceRoutes(fastify) {
   });
 
   fastify.post(
-    '/api/v1/invoices/generate',
+    "/api/v1/invoices/generate",
     { schema: { body: generateBodySchema } },
     postGenerate,
   );
 
   fastify.post(
-    '/api/v1/invoices/calculate-fee',
+    "/api/v1/invoices/calculate-fee",
     { schema: { body: calculateFeeBodySchema } },
     postCalculateFee,
   );
 
   fastify.get(
-    '/api/v1/invoices',
+    "/api/v1/invoices",
     { schema: { querystring: listInvoicesQuerySchema } },
     getInvoiceList,
   );
 
-  fastify.get('/api/v1/invoices/agent', getInvoiceAgents);
+  fastify.get("/api/v1/invoices/agent", getInvoiceAgents);
 
   fastify.get(
-    '/api/v1/invoices/:id/transactions',
+    "/api/v1/invoices/:id/transactions",
     { schema: { params: getDetailParamsSchema } },
     getInvoiceTransactions,
   );
 
   fastify.put(
-    '/api/v1/invoices/:id/status',
+    "/api/v1/invoices/:id/status",
     {
       schema: {
         params: getDetailParamsSchema,
@@ -96,7 +96,7 @@ async function agentInvoiceRoutes(fastify) {
   );
 
   fastify.get(
-    '/api/v1/invoices/:id',
+    "/api/v1/invoices/:id",
     { schema: { params: getDetailParamsSchema } },
     getAgentInvoiceDetail,
   );

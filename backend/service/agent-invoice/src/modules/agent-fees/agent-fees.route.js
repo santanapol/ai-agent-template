@@ -1,32 +1,37 @@
-import { getFeesSchema, createFeeSchema, updateFeeSchema, deleteFeeSchema } from './agent-fees.schema.js';
-import * as controller from './agent-fees.controller.js';
+import {
+  getFeesSchema,
+  createFeeSchema,
+  updateFeeSchema,
+  deleteFeeSchema,
+} from "./agent-fees.schema.js";
+import * as controller from "./agent-fees.controller.js";
 
 export default async function agentFeesRoute(fastify, options) {
   // GET /api/v1/agent-invoice/agents/:agentId/fees
   fastify.get(
-    '/:agentId/fees',
+    "/:agentId/fees",
     { schema: getFeesSchema },
-    controller.getFeesHandler
+    controller.getFeesHandler,
   );
 
   // POST /api/v1/agent-invoice/agents/:agentId/fees
   fastify.post(
-    '/:agentId/fees',
+    "/:agentId/fees",
     { schema: createFeeSchema },
-    controller.createFeeHandler
+    controller.createFeeHandler,
   );
 
   // PATCH /api/v1/agent-invoice/agents/:agentId/fees/:feeId
   fastify.patch(
-    '/:agentId/fees/:feeId',
+    "/:agentId/fees/:feeId",
     { schema: updateFeeSchema },
-    controller.updateFeeHandler
+    controller.updateFeeHandler,
   );
 
   // DELETE /api/v1/agent-invoice/agents/:agentId/fees/:feeId
   fastify.delete(
-    '/:agentId/fees/:feeId',
+    "/:agentId/fees/:feeId",
     { schema: deleteFeeSchema },
-    controller.deleteFeeHandler
+    controller.deleteFeeHandler,
   );
 }

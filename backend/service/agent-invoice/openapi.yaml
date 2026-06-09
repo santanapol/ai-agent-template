@@ -68,7 +68,7 @@ components:
       required: true
       schema:
         type: string
-      description: "Weak ETag from previous GET or mutating response (e.g. W/\"...\")"
+      description: 'Weak ETag from previous GET or mutating response (e.g. W/"...")'
     agentIdPath:
       name: agentId
       in: path
@@ -376,7 +376,7 @@ components:
           type: string
           minLength: 24
           maxLength: 24
-          pattern: '^[a-f0-9]{24}$'
+          pattern: "^[a-f0-9]{24}$"
 
     UpdateStatusRequest:
       type: object
@@ -396,7 +396,7 @@ components:
           type: string
           minLength: 24
           maxLength: 24
-          pattern: '^[a-f0-9]{24}$'
+          pattern: "^[a-f0-9]{24}$"
         action:
           type: string
           enum: [CALCULATE, MISSING_FEE]
@@ -436,7 +436,7 @@ components:
           type: string
           minLength: 24
           maxLength: 24
-          pattern: '^[a-f0-9]{24}$'
+          pattern: "^[a-f0-9]{24}$"
         branch_name:
           type: string
           nullable: true
@@ -585,7 +585,6 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
-
 paths:
   /healthz:
     get:
@@ -718,7 +717,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [branch_id, branch_code, branch_name, branch_type, currency]
+              required:
+                [branch_id, branch_code, branch_name, branch_type, currency]
               properties:
                 branch_id:
                   type: string
@@ -1088,7 +1088,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [game_company_id, game_main_cate_id, agent_known_fee, agent_fee]
+              required:
+                [game_company_id, game_main_cate_id, agent_known_fee, agent_fee]
               properties:
                 game_company_id:
                   type: string
@@ -1470,7 +1471,7 @@ paths:
             type: string
             minLength: 24
             maxLength: 24
-            pattern: '^[a-f0-9]{24}$'
+            pattern: "^[a-f0-9]{24}$"
         - name: billing_month
           in: query
           schema:
@@ -1545,7 +1546,7 @@ paths:
             type: string
             minLength: 24
             maxLength: 24
-            pattern: '^[a-f0-9]{24}$'
+            pattern: "^[a-f0-9]{24}$"
       responses:
         "200":
           description: Transaction list
@@ -1585,7 +1586,7 @@ paths:
             type: string
             minLength: 24
             maxLength: 24
-            pattern: '^[a-f0-9]{24}$'
+            pattern: "^[a-f0-9]{24}$"
       requestBody:
         required: true
         content:
@@ -1631,7 +1632,7 @@ paths:
             type: string
             minLength: 24
             maxLength: 24
-            pattern: '^[a-f0-9]{24}$'
+            pattern: "^[a-f0-9]{24}$"
       responses:
         "200":
           description: Invoice detail

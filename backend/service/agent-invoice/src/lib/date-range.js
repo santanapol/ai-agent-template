@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -12,7 +12,7 @@ const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
  * @returns {boolean}
  */
 export function isValidBillingMonth(month) {
-  return typeof month === 'string' && MONTH_PATTERN.test(month);
+  return typeof month === "string" && MONTH_PATTERN.test(month);
 }
 
 /**
@@ -21,7 +21,7 @@ export function isValidBillingMonth(month) {
  */
 export function assertValidBillingMonth(month) {
   if (!isValidBillingMonth(month)) {
-    throw new Error('INVALID_MONTH');
+    throw new Error("INVALID_MONTH");
   }
 }
 
@@ -32,9 +32,9 @@ export function assertValidBillingMonth(month) {
  */
 export function setDate(tz, now = new Date()) {
   const zonedNow = dayjs(now).tz(tz);
-  const prevMonth = zonedNow.subtract(1, 'month');
-  const startDate = prevMonth.startOf('month').utc().toDate();
-  const endDate = prevMonth.endOf('month').utc().toDate();
+  const prevMonth = zonedNow.subtract(1, "month");
+  const startDate = prevMonth.startOf("month").utc().toDate();
+  const endDate = prevMonth.endOf("month").utc().toDate();
   return { startDate, endDate };
 }
 
@@ -43,7 +43,7 @@ export function setDate(tz, now = new Date()) {
  */
 export function billingYearMonth(tz, now = new Date()) {
   const zonedNow = dayjs(now).tz(tz);
-  return zonedNow.subtract(1, 'month').format('YYYYMM');
+  return zonedNow.subtract(1, "month").format("YYYYMM");
 }
 
 /**
@@ -53,9 +53,17 @@ export function billingYearMonth(tz, now = new Date()) {
  */
 export function billingPeriodFromMonth(month, tz) {
   assertValidBillingMonth(month);
-  const [year, mm] = month.split('-');
-  const startDate = dayjs.tz(`${year}-${mm}-01`, tz).startOf('month').utc().toDate();
-  const endDate = dayjs.tz(`${year}-${mm}-01`, tz).endOf('month').utc().toDate();
+  const [year, mm] = month.split("-");
+  const startDate = dayjs
+    .tz(`${year}-${mm}-01`, tz)
+    .startOf("month")
+    .utc()
+    .toDate();
+  const endDate = dayjs
+    .tz(`${year}-${mm}-01`, tz)
+    .endOf("month")
+    .utc()
+    .toDate();
   return { startDate, endDate };
 }
 
@@ -65,7 +73,7 @@ export function billingPeriodFromMonth(month, tz) {
  */
 export function billingYearMonthFromMonth(month) {
   assertValidBillingMonth(month);
-  return month.replace('-', '');
+  return month.replace("-", "");
 }
 
 /**
@@ -74,7 +82,7 @@ export function billingYearMonthFromMonth(month) {
  */
 export function dataMonthFromReferenceMonth(referenceMonth) {
   assertValidBillingMonth(referenceMonth);
-  return dayjs(`${referenceMonth}-01`).subtract(1, 'month').format('YYYY-MM');
+  return dayjs(`${referenceMonth}-01`).subtract(1, "month").format("YYYY-MM");
 }
 
 /**
@@ -83,7 +91,10 @@ export function dataMonthFromReferenceMonth(referenceMonth) {
  * @param {string} tz
  */
 export function billingDataPeriodFromReferenceMonth(referenceMonth, tz) {
-  return billingPeriodFromMonth(dataMonthFromReferenceMonth(referenceMonth), tz);
+  return billingPeriodFromMonth(
+    dataMonthFromReferenceMonth(referenceMonth),
+    tz,
+  );
 }
 
 /**

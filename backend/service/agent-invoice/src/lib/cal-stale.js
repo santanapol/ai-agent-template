@@ -12,7 +12,8 @@ export function calStaleMs() {
  */
 export function isCalLockStale(updDate, staleMs = calStaleMs()) {
   if (!updDate) return false;
-  const lockedAt = updDate instanceof Date ? updDate.getTime() : new Date(updDate).getTime();
+  const lockedAt =
+    updDate instanceof Date ? updDate.getTime() : new Date(updDate).getTime();
   if (Number.isNaN(lockedAt)) return false;
   return Date.now() - lockedAt >= staleMs;
 }

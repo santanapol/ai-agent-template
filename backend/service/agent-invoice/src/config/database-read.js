@@ -1,6 +1,6 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient } from "mongodb";
 
-import { READ_DB_OPTIONS } from './database-options.js';
+import { READ_DB_OPTIONS } from "./database-options.js";
 
 let client = null;
 /** @type {import('mongodb').Db | null} */
@@ -11,11 +11,12 @@ let orgDataDb = null;
 function resolveConfig() {
   const uri = process.env.MONGODB_URI_READ ?? process.env.MONGODB_URI_BRANCH;
   const branchName = process.env.MONGODB_DB_BRANCH;
-  const orgDataName = process.env.MONGODB_DB_ORG_DATA ?? process.env.MONGODB_DB_ORG;
+  const orgDataName =
+    process.env.MONGODB_DB_ORG_DATA ?? process.env.MONGODB_DB_ORG;
 
   if (!uri || !branchName || !orgDataName) {
     throw new Error(
-      '[Database] Missing MONGODB_URI_READ, MONGODB_DB_BRANCH, MONGODB_DB_ORG_DATA (or legacy MONGODB_URI_BRANCH / MONGODB_DB_ORG).',
+      "[Database] Missing MONGODB_URI_READ, MONGODB_DB_BRANCH, MONGODB_DB_ORG_DATA (or legacy MONGODB_URI_BRANCH / MONGODB_DB_ORG).",
     );
   }
 
@@ -41,12 +42,14 @@ export async function connectReadDatabase() {
 }
 
 export function getBranchDatabase() {
-  if (!branchDb) throw new Error('[Database] Call connectReadDatabase() first.');
+  if (!branchDb)
+    throw new Error("[Database] Call connectReadDatabase() first.");
   return branchDb;
 }
 
 export function getOrgDataDatabase() {
-  if (!orgDataDb) throw new Error('[Database] Call connectReadDatabase() first.');
+  if (!orgDataDb)
+    throw new Error("[Database] Call connectReadDatabase() first.");
   return orgDataDb;
 }
 
