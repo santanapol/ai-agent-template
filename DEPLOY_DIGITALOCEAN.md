@@ -8,10 +8,20 @@
 
 ล็อกอิน SSH เข้าไปที่เซิร์ฟเวอร์ Ubuntu แล้วทำตามขั้นตอนนี้:
 
-### 1.1 ติดตั้งโปรแกรมพื้นฐาน
+### 1.1 ติดตั้งโปรแกรมพื้นฐาน (สำหรับ Ubuntu 24.04 LTS)
+เนื่องจากโปรเจกต์ต้องการ Node.js เวอร์ชันใหม่ (>=24) เราจึงต้องติดตั้งผ่าน NodeSource:
+
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y nodejs npm nginx docker.io docker-compose-v2
+
+# ติดตั้ง Nginx และ Docker
+sudo apt install -y nginx docker.io docker-compose-v2
+
+# ติดตั้ง Node.js (เวอร์ชัน 24.x)
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# ติดตั้ง PM2
 sudo npm install -g pm2
 ```
 
