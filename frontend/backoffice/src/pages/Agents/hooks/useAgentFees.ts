@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppFeedback } from '../../../hooks/useAppFeedback';
 import * as api from '../../../lib/agentFeesApiClient';
-import type { AgentFee, GameCompany, GameCategory, ListFeesParams } from '../../../types/agentFees';
+import type { AgentFee, GameCompany, GameCategory, ListFeesParams, CreateFeePayload } from '../../../types/agentFees';
 
 export function useAgentFees(agentId: string) {
   const { message } = useAppFeedback();
@@ -42,7 +42,7 @@ export function useAgentFees(agentId: string) {
     }
   }, [message]);
 
-  const createFee = useCallback(async (payload: Omit<AgentFee, '_id' | 'upd_date'>) => {
+  const createFee = useCallback(async (payload: CreateFeePayload) => {
     if (!agentId) return false;
     setLoading(true);
     try {
@@ -103,7 +103,7 @@ export function useAgentFees(agentId: string) {
   }, [agentId, message]);
 
   const bulkSave = useCallback(async (
-    creates: Omit<AgentFee, '_id' | 'upd_date'>[],
+    creates: CreateFeePayload[],
     updates: { id: string; payload: Partial<AgentFee>; etag: string }[],
     deletes: { id: string; etag: string }[]
   ) => {

@@ -12,7 +12,7 @@ import { useAppFeedback } from '../../hooks/useAppFeedback';
 import { getAgentById, listAgents, updateAgent } from '../../lib/agentsApiClient';
 import { listAgentFees, deleteAgentFee } from '../../lib/agentFeesApiClient';
 import type { Agent } from '../../types/agents';
-import type { AgentFee, GameCompany } from '../../types/agentFees';
+import type { AgentFee, GameCompany, CreateFeePayload } from '../../types/agentFees';
 import { MatrixCell, type MatrixCellRef } from '../../components/AgentFees/MatrixCell';
 
 const { Title, Text } = Typography;
@@ -228,7 +228,7 @@ const AgentFeesPage: React.FC = () => {
 
   // ── Collect and validate pending changes ──────────────────────────────────
   const collectChanges = useCallback(() => {
-    const creates: Omit<AgentFee, '_id' | 'upd_date'>[] = [];
+    const creates: CreateFeePayload[] = [];
     const updates: { id: string; payload: Partial<AgentFee>; etag: string }[] = [];
     const deletes: { id: string; etag: string }[] = [];
     const errors: string[] = [];
@@ -371,10 +371,9 @@ const AgentFeesPage: React.FC = () => {
           <div style={{ background: isRefMode ? token.colorFillAlter : 'transparent', margin: `-${token.marginXS}px -${token.marginXS}px`, padding: token.paddingXS }}>
             <MatrixCell
               key={key}
-              rowKey={key}
               defaultRate={agent?.default_fee_rate ?? 0}
               readOnly={isRefMode}
-              ref={el => setMatrixCellRef(key, el)}
+              ref={(el: MatrixCellRef | null) => setMatrixCellRef(key, el)}
             />
           </div>
         );

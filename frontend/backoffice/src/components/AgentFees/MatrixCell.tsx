@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { Space, Checkbox } from 'antd';
 
 const FAST_INPUT_STYLES = `
@@ -40,7 +40,7 @@ export const MatrixCell = React.memo(forwardRef<MatrixCellRef, MatrixCellProps>(
       setEnabled(false);
       setFeeValue(newDefaultRate);
     },
-    setValues: (gc, ak, af) => {
+    setValues: (_gc: number, _ak: number, af: number) => {
       setEnabled(true);
       // Since we combined inputs, we display 'af' as the representative fee
       setFeeValue(af);
