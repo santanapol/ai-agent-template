@@ -28,11 +28,14 @@ cd gateway && cp .env.example .env
 
 ## 2. 🗄️ Database & Redis
 
-ระบบใช้ **Docker Compose** จัดการทั้ง MongoDB และ Redis ให้รันที่ Root ของโปรเจกต์ก่อน:
+ระบบใช้ **Docker Compose** จัดการทั้ง MongoDB และ Redis ให้เข้าไปที่โฟลเดอร์ `backend/` แล้วรัน:
 
 ```bash
+cd backend
 docker compose up -d
 ```
+
+*(หมายเหตุ: สำหรับ Production ที่ต้องการรันแค่ Redis อย่างเดียว (ใช้ Cloud Database สำหรับ MongoDB) ให้รันด้วยคำสั่ง: `docker compose -f docker-compose.prod.yml up -d`)*
 
 ### Initial Data (สำหรับ `auth` / MongoDB)
 
@@ -51,8 +54,8 @@ _(ค่าเริ่มต้น: admin / ChangeMe!Admin-1)_
 ## 3. 🚀 รัน Services (แยก Terminal)
 
 1. **`auth`** (Port `3001`): `cd auth && npm run dev`
-2. **`gateway`** (Port `3002`): `cd gateway && npm run dev`
-3. **`demo-service`** (Port `3003`): `cd demo-service && npm run dev`
+2. **`gateway`** (Port `3000`): `cd gateway && npm run dev`
+3. **`demo-service`** (Port `3002`): `cd demo-service && npm run dev`
 
 ---
 
@@ -67,7 +70,7 @@ curl -X POST http://127.0.0.1:3001/auth/login -H "Content-Type: application/json
 **2. เทสต์ผ่าน Gateway**
 
 ```bash
-curl -X GET http://127.0.0.1:3002/api/v1/me -H "Authorization: Bearer <access_token>"
+curl -X GET http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>"
 ```
 
 ---

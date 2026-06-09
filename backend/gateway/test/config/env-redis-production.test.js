@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { loadEnv } from '../../src/config/env.js'
 
 const baseEnv = () => ({
-  PORT: 3002,
+  PORT: 3000,
   JWT_JWKS_URL: 'http://127.0.0.1:3001/.well-known/jwks.json',
   GATEWAY_SECRET: 'x'.repeat(32),
   UPSTREAM_TIMEOUT_MS: 5000,

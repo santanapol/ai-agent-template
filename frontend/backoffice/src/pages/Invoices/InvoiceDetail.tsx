@@ -26,7 +26,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import type { ColumnsType } from 'antd/es/table';
 import { useInvoices } from './hooks/useInvoices';
-import { formatDate, formatFee, formatMoney, ribbonColor, statusTagColor, formatCategoryName } from './utils';
+import { formatDate, formatFee, formatMoney, statusTagColor, formatCategoryName } from './utils';
 import type { InvoiceTransaction } from '../../types/invoice';
 
 const { Title, Text } = Typography;

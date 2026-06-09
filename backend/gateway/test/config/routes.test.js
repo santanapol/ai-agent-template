@@ -4,9 +4,7 @@ import { loadRoutes } from '../../src/config/routes.js'
 
 test('loadRoutes parses valid routes from ROUTES_JSON', () => {
   const env = {
-    ROUTES_JSON: JSON.stringify([
-      { prefix: '/api', upstream: 'http://localhost:3000' }
-    ])
+    ROUTES_JSON: JSON.stringify([{ prefix: '/api', upstream: 'http://localhost:3000' }])
   }
   const routes = loadRoutes(env)
   assert.equal(routes.length, 1)

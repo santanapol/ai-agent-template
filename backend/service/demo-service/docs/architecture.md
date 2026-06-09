@@ -7,7 +7,7 @@
 | **Filename** | `docs/architecture.md` |
 | **Document index** | [README.md](../README.md) |
 | **Status** | Active — demo / teaching upstream |
-| **OpenAPI** | [`openapi.yaml`](../openapi.yaml) (direct mesh `:3003`) · [`openapi-via-gateway.yaml`](../openapi-via-gateway.yaml) (client Bearer `:3002`) |
+| **OpenAPI** | [`openapi.yaml`](../openapi.yaml) (direct mesh `:3002`) · [`openapi-via-gateway.yaml`](../openapi-via-gateway.yaml) (client Bearer `:3000`) |
 | **Scope** | Internal API หลัง **gateway** — ไม่ verify JWT; ไม่มี **`docs/domain.md`** (optional) |
 | **Package version** | `0.1.1` |
 | **Document version** | `1.0.4` |
@@ -37,7 +37,7 @@
 | :--- | :--- |
 | **Package path** | `services/.demo/demo-service/` |
 | **Stack** | Express + CommonJS + MongoDB |
-| **Listen** | `PORT` default **3003** |
+| **Listen** | `PORT` default **3002** |
 | **Database** | `DB_NAME` default **`demo-service`** — [`.env.example`](../.env.example) |
 | **API** | `GET /api/v1/me` + CRUD **`/api/v1/items`** |
 
@@ -69,7 +69,7 @@ Wiring: [`../src/app.js`](../src/app.js) · สัญญาเต็ม: [`opena
 - Internal listen **should** allow only **gateway** (network policy)
 - **`x-gateway-secret`** proves the hop is from gateway, not a forged client header set
 
-### 2.4 Local / direct (`:3003`)
+### 2.4 Local / direct (`:3002`)
 
 เรียก process โดยตรง = **dev convenience** — ต้องส่ง mesh headers เองสำหรับ `/api/v1/*`
 
@@ -85,7 +85,7 @@ Wiring: [`../src/app.js`](../src/app.js) · สัญญาเต็ม: [`opena
 
 **Items verbs:** `GET` list/detail · `POST` create · **`PUT` full replace** (teaching — [ADR 001](./adrs/001-put-full-replace.md)) · `PATCH` partial · `DELETE` with **`If-Match`** / **ETag** ([`tenant-audit`](../../../../../../_coding-standards/backend/tenant-audit.md))
 
-**Gateway routes (local):** `/api/v1/items`, `/api/v1/me` → `:3003` — [`gateway/routes.json`](../../../../gateway/routes.json)
+**Gateway routes (local):** `/api/v1/items`, `/api/v1/me` → `:3002` — [`gateway/routes.json`](../../../../gateway/routes.json)
 
 ### 3.1 Middleware (`/api/v1` router)
 

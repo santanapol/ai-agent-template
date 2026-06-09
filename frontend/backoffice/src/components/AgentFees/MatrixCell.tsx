@@ -25,13 +25,12 @@ export interface MatrixCellRef {
 }
 
 export interface MatrixCellProps {
-  rowKey: string;
   defaultRate: number;
   readOnly: boolean;
 }
 
-export const MatrixCell = React.memo(React.forwardRef<MatrixCellRef, MatrixCellProps>(({
-  rowKey, defaultRate, readOnly
+export const MatrixCell = React.memo(forwardRef<MatrixCellRef, MatrixCellProps>(({
+  defaultRate, readOnly
 }, ref) => {
   const [enabled, setEnabled] = useState(false);
   const [feeValue, setFeeValue] = useState<number | string>(defaultRate);

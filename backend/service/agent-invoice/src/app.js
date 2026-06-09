@@ -4,6 +4,7 @@ import dbPlugin from './plugins/db.plugin.js';
 import mongodbRead from './plugins/mongodb-read.js';
 import mongodbInvoice from './plugins/mongodb-invoice.js';
 import apiRateLimit from './plugins/api-rate-limit.js';
+import { secretsMatch } from './lib/secret-compare.js';
 import agentFeesRoute from './modules/agent-fees/agent-fees.route.js';
 import masterDataRoute from './modules/agent-fees/master-data.route.js';
 import agentsRoute from './modules/agents/agents.route.js';
@@ -60,7 +61,7 @@ export default async function buildApp(opts = {}) {
 
     // Validate gateway secret
     const secret = request.headers['x-gateway-secret'];
-    if (!secret || secret !== process.env.GATEWAY_SECRET) {
+    if (!secret || !secretsMatch(String(secret), process.env.GATEWAY_SECRET)) {
       return reply.status(401).send({
         success: false,
         code: 'GATEWAY_SECRET_REJECTED',

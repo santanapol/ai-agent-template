@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **agent-invoice seeds:** split Mongo bootstrap into `seed_agents.js`, `seed_indexes.js`, and `seed-agent_fees_seed.js`; document optional `SOURCE_MONGODB_URI` in `.env.example`.
 - **agent-invoice tests:** `src/app.test.js` (health/readiness probes) and `agents.route.test.js` (agents API integration suite).
 - **Backoffice — Agent Fees:** dedicated `/agent-fees` route with matrix table UI, `MatrixCell` component, create/edit/delete flows, and `agentFeesApiClient` / `agentsApiClient` with shared token refresh.
-- **`backend/service/staff/`** — staff profiles API (Fastify :3004, OpenAPI, MongoDB, init/seed scripts, tests) behind gateway `/api/v1/staff`.
+- **`backend/service/staff/`** — staff profiles API (Fastify :3101, OpenAPI, MongoDB, init/seed scripts, tests) behind gateway `/api/v1/staff`.
 - **`backend/service/demo-service/`** — CRUD sample (`/api/v1/me`, `/api/v1/items`); `init:db`, `seed:example`, and `mongo-create-demo-user.md` for local Mongo.
 - **`backend/_bruno/`** — shared Bruno collections for gateway and internal mesh smoke tests.
 - **Auth:** `internal-create-user` integration test; seed/init script updates for staff and demo alignment.
@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Documentation:** Root [`README.md`](./README.md), [`backend/README.md`](./backend/README.md), [`backend/docker-compose.yml`](./backend/docker-compose.yml) (MongoDB 8 + Redis 8).
 
 ### Changed
+
+- **Architecture:** Restructured port schema to separate Core Platform (`3000/3001/3002`) from Business Services (`3101/3102`); updated all documentation, specs, and integration test ports.
+- **Deployment:** Moved `ecosystem.config.js` to `backend/` and added `docker-compose.prod.yml` to separate Production (Redis only) from Development (Redis + MongoDB).
+- **Frontend:** Added `RUNBOOK.md` to detail local proxy routing and Docker dependencies.
 
 - **Backoffice — Invoice detail:** redesigned summary as a single-card invoice layout (`Row`/`Col` header, bill-to/details, status tag) replacing `Descriptions` + `Badge.Ribbon`; transactions sorted by game-provider name; game-category names rendered via new `formatCategoryName` helper (snake_case → Title Case); PDF/Excel export use the sorted list and switch to `message.useMessage()` (`contextHolder`) for export toasts; `formatMoney` always shows 2 decimals; `statusTagColor`/`ribbonColor` color mapping adjusted (`PENDING` → warning/orange, `READY` → processing/blue).
 - **Backoffice — Invoice exports & detail header:** PDF/Excel exports drop the redundant "Organization Unit" line and pair "Bill To" (branch name) with "Due Date" side-by-side instead of a separate "Status" row; tightened spacing (PDF table `startY` 55 → 48, Excel column widths and removed blank separator row); on-screen invoice header `Card` restructured to mirror the same Bill To / Due Date pairing (with Paid Date for `PAID` invoices); all invoice dates (list, detail header, PDF, Excel) now render via a shared `formatDate` helper as Gregorian `YYYY-MM-DD` instead of `toLocaleDateString('th-TH')` (Buddhist calendar).
@@ -43,7 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Rename:** `backend/service/service-demo/` → **`backend/service/demo-service/`** (package `demo-service`; Bruno collections `demo-service`; default `DB_NAME` **`demo-service`**).
 - **Staff docs:** list vs lookup contract (`GET /profiles` vs `GET /profiles?user_id=...`); custom JSON error envelope language; ERD and architecture aligned with implementation.
 - **demo-service:** `/healthz` and `/readyz` — plain JSON probes; readiness `503` uses `application/problem+json` with `SERVICE_NOT_READY`.
-- **Auth / gateway:** OpenAPI and proxy alignment; `routes.json` documents staff upstream on **3004** and demo on **3003**.
+- **Auth / gateway:** OpenAPI and proxy alignment; `routes.json` documents staff upstream on **3101** and demo on **3002**.
 - **Backoffice:** `StaffManagement` / `MyProfile` UX; staff seed script force-updates profile data on re-run.
 - **Monorepo paths:** Platform packages under `backend/`; back-office UI under `frontend/backoffice/`.
 
@@ -104,7 +108,7 @@ Repository snapshot: **auth 0.1.6**, **gateway 0.2.4**, **crud-service 0.1.1**. 
 - Rename monorepo **access-platform** → **zero-platform**; GitHub **Chiang-Rai-Technology/zero-platform**.
 - Move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; `.gitignore` ignores `services/*` except **`services/.demo/**`**.
 - **ARCHITECTURE.md** v1.1.0 — `token_gen` + Redis session revocation (O-16/D3).
-- Gateway routes: `/api/v1/members` → `/api/v1/staff` (port **3004** planned).
+- Gateway routes: `/api/v1/members` → `/api/v1/staff` (port **3101** planned).
 
 ### Fixed
 

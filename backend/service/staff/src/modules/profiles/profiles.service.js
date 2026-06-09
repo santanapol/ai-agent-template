@@ -173,36 +173,32 @@ export function assertProfileScope(profile, userContext) {
     return;
   }
 
-  if (userContext.role === "platform_admin") {
-    if (profile.ou_id !== userContext.ouId) {
-      throw new HttpError(
-        403,
-        CODES.INVALID_USER_CONTEXT,
-        "Profile is outside caller organizational unit",
-      );
-    }
-    return;
+  if (!isAdminRole(userContext.role)) {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Insufficient role to access this profile",
+    );
   }
 
-  if (userContext.role === "branch_admin") {
-    if (
-      profile.ou_id !== userContext.ouId ||
-      profile.branch_id !== userContext.branchId
-    ) {
-      throw new HttpError(
-        403,
-        CODES.INVALID_USER_CONTEXT,
-        "Profile is outside caller branch scope",
-      );
-    }
-    return;
+  if (profile.ou_id !== userContext.ouId) {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Profile is outside caller organizational unit",
+    );
   }
 
-  throw new HttpError(
-    403,
-    CODES.INVALID_USER_CONTEXT,
-    "Insufficient role to access this profile",
-  );
+  if (
+    userContext.role === "branch_admin" &&
+    profile.branch_id !== userContext.branchId
+  ) {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Profile is outside caller branch scope",
+    );
+  }
 }
 
 /**
@@ -363,10 +359,10 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     branchId: userContext.branchId,
   };
 
-  // Optimistic duplicate-code check before provisioning. A concurrent
-  // request could still insert the same code between here and insertProfile;
-  // in that case MongoDB's unique index on (ou_id, branch_id, code) will
-  // raise a duplicate-key error (11000), which error-handler maps to 409.
+  // Optimistic duplicate-code check. A concurrent request could still
+  // insert the same code between here and insertProfile; in that case
+  // MongoDB's unique index on (ou_id, branch_id, code) will raise a
+  // duplicate-key error (11000), which error-handler maps to 409.
   if (
     await repository.existsProfileByCode(
       tenantContext.ouId,
@@ -381,33 +377,75 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     );
   }
 
+  // Insert profile FIRST (local DB, reliable) before calling auth service.
+  // This eliminates orphan auth users: if provisionUser fails, we only
+  // need to delete a local document — no HTTP round-trip to compensate.
+  const created = await repository.insertProfile(
+    fields,
+    tenantContext,
+    routeTemplate,
+  );
+  const profileId = created._raw._id.toString();
+  const scope = { ouId: tenantContext.ouId, branchId: tenantContext.branchId };
+
   const env = getRuntimeEnv();
   const authClient = getAuthInternalClient(env);
-  const { userId } = await authClient.provisionUser({
-    username,
-    password,
-    ouId: tenantContext.ouId,
-    branchId: tenantContext.branchId,
-  });
 
-  let created;
+  let userId;
   try {
-    created = await repository.insertProfile(
-      { ...fields, user_id: userId },
-      tenantContext,
-      routeTemplate,
+    const result = await authClient.provisionUser({
+      username,
+      password,
+      ouId: tenantContext.ouId,
+      branchId: tenantContext.branchId,
+    });
+    userId = result.userId;
+  } catch (error) {
+    // Provision failed — clean up the local profile. This is a local
+    // MongoDB operation with writeConcern { w: "majority", j: true },
+    // making it far more reliable than the HTTP-based compensation
+    // in the previous design.
+    logger.error(
+      { err: error, profileId },
+      "provisionUser failed, cleaning up profile",
     );
-  } catch (insertError) {
-    // Best-effort cleanup: deactivate the orphan auth user so a retry
-    // won't hit a 409 from auth service. If deactivation fails, the
-    // orphan is logged for manual reconciliation.
+    await repository.deleteProfileById(profileId, scope).catch((delErr) => {
+      logger.error(
+        { err: delErr, profileId },
+        "failed to delete profile after provisionUser failure",
+      );
+    });
+    throw error;
+  }
+
+  // Link the newly provisioned auth user to the profile.
+  const linked = await repository.linkProfileToUser(
+    profileId,
+    scope,
+    userId,
+    { userId: tenantContext.userId },
+    routeTemplate,
+  );
+  if (!linked) {
+    // Profile was modified concurrently or deleted — this should not
+    // happen under normal operation since the profile was just created
+    // with user_id: null and unique index prevents duplicates.
+    logger.error(
+      { profileId, userId },
+      "linkProfileToUser failed — profile state unexpected, cleaning up profile",
+    );
+    await repository.deleteProfileById(profileId, scope).catch(() => {});
     await authClient.deactivateUser(userId).catch((deactivateErr) => {
       logger.error(
         { err: deactivateErr, orphanUserId: userId },
-        "failed to deactivate orphan auth user after insertProfile failure",
+        "failed to deactivate orphan auth user after linkProfileToUser failure",
       );
     });
-    throw insertError;
+    throw new HttpError(
+      409,
+      CODES.DUPLICATE,
+      "Profile state changed unexpectedly during provisioning. Retry.",
+    );
   }
 
   try {
@@ -415,7 +453,7 @@ async function createProfileProvision(body, userContext, routeTemplate) {
       eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_CREATE,
       userContext: tenantContext,
       routeTemplate,
-      profileId: created.profile.id,
+      profileId: linked.profile.id,
       targetUserId: userId,
       payload: { code: fields.code },
     });
@@ -426,7 +464,7 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     );
   }
 
-  return created;
+  return linked;
 }
 
 /**
@@ -680,17 +718,11 @@ export function assertAdminLifecycleAccess(profile, userContext) {
   assertProfileScope(profile, userContext);
 }
 
+
 /**
- * @param {string} profileId
- * @param {string | string[] | undefined} ifMatchHeader
- * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
- * @param {string} routeTemplate
- * @param {'active'|'archived'} expectedStatus
- * @param {'active'|'archived'} nextStatus
- * @param {string} eventType
- * @param {string} invalidTransitionMessage
+ * @param {{ profileId: string, ifMatchHeader: string | string[] | undefined, userContext: { userId: string, ouId: string, branchId: string, role: string }, routeTemplate: string, expectedStatus: 'active'|'archived', nextStatus: 'active'|'archived', eventType: string, invalidTransitionMessage: string }} params
  */
-async function transitionProfileStatus(
+async function transitionProfileStatus({
   profileId,
   ifMatchHeader,
   userContext,
@@ -699,7 +731,7 @@ async function transitionProfileStatus(
   nextStatus,
   eventType,
   invalidTransitionMessage,
-) {
+}) {
   assertAdminRole(userContext);
 
   const ifMatchDate = parseIfMatchHeader(ifMatchHeader);
@@ -787,16 +819,16 @@ export async function archiveProfile(
   routeTemplate,
   requestId,
 ) {
-  const result = await transitionProfileStatus(
+  const result = await transitionProfileStatus({
     profileId,
     ifMatchHeader,
     userContext,
     routeTemplate,
-    "active",
-    "archived",
-    STAFF_AUDIT_EVENT_TYPES.PROFILE_ARCHIVE,
-    "Profile is already archived",
-  );
+    expectedStatus: "active",
+    nextStatus: "archived",
+    eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_ARCHIVE,
+    invalidTransitionMessage: "Profile is already archived",
+  });
 
   const env = getRuntimeEnv();
   const authClient = getAuthInternalClient(env);
@@ -837,16 +869,16 @@ export async function restoreProfile(
   userContext,
   routeTemplate,
 ) {
-  return transitionProfileStatus(
+  return transitionProfileStatus({
     profileId,
     ifMatchHeader,
     userContext,
     routeTemplate,
-    "archived",
-    "active",
-    STAFF_AUDIT_EVENT_TYPES.PROFILE_RESTORE,
-    "Profile is not archived",
-  );
+    expectedStatus: "archived",
+    nextStatus: "active",
+    eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_RESTORE,
+    invalidTransitionMessage: "Profile is not archived",
+  });
 }
 
 /**

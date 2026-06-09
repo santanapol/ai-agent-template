@@ -1,0 +1,20 @@
+# Production dependencies for zero-platform.
+# This file omits MongoDB as it is typically hosted on a managed service (e.g. MongoDB Atlas) in production.
+# Usage: from this directory — `docker compose -f docker-compose.prod.yml up -d`
+#
+# Point auth + gateway `.env` at the same URL:
+#   REDIS_URL=redis://127.0.0.1:6379/0
+
+services:
+  redis:
+    image: redis:8-alpine
+    container_name: zero-platform-redis-prod
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped

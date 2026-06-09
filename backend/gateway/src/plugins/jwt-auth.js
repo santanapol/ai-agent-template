@@ -30,14 +30,8 @@ export default fp(
       try {
         /** @type {import('jose').JWTVerifyOptions} */
         const verifyOpts = { clockTolerance: env.JWT_LEEWAY_SECONDS }
-        const iss =
-          env.JWT_ISSUER !== undefined && env.JWT_ISSUER !== null
-            ? String(env.JWT_ISSUER).trim()
-            : ''
-        const aud =
-          env.JWT_AUDIENCE !== undefined && env.JWT_AUDIENCE !== null
-            ? String(env.JWT_AUDIENCE).trim()
-            : ''
+        const iss = env.JWT_ISSUER ? String(env.JWT_ISSUER).trim() : ''
+        const aud = env.JWT_AUDIENCE ? String(env.JWT_AUDIENCE).trim() : ''
         if (iss !== '') verifyOpts.issuer = iss
         if (aud !== '') verifyOpts.audience = aud
         const { payload } = await jose.jwtVerify(token, JWKS, verifyOpts)
@@ -50,8 +44,7 @@ export default fp(
         }
 
         if (redisClient) {
-          const sub =
-            payload.sub !== undefined && payload.sub !== null ? String(payload.sub).trim() : ''
+          const sub = payload.sub ? String(payload.sub).trim() : ''
           if (sub === '') {
             return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED')
           }

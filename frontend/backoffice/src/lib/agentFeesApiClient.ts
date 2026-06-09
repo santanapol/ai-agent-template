@@ -1,52 +1,6 @@
-import axios from 'axios';
 import type { ApiEnvelope } from '../types/agents';
 import type { AgentFee, GameCompany, GameCategory, ListFeesParams, CreateFeePayload, UpdateFeePayload } from '../types/agentFees';
-
-let _accessToken: string | null = null;
-let _refreshCallback: (() => Promise<string | null>) | null = null;
-
-const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
-  headers: { 'Content-Type': 'application/json' },
-});
-
-client.interceptors.request.use((config) => {
-  if (_accessToken) config.headers.Authorization = `Bearer ${_accessToken}`;
-  return config;
-});
-
-client.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config as typeof err.config & { _retry?: boolean };
-    if (err.response?.status === 401 && !original._retry && _refreshCallback) {
-      original._retry = true;
-      const newToken = await _refreshCallback();
-      if (newToken) {
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return client(original);
-      }
-    }
-    return Promise.reject(err);
-  },
-);
-
-export function setAgentFeesAccessToken(token: string | null): void {
-  _accessToken = token;
-  if (token) {
-    client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete client.defaults.headers.common['Authorization'];
-  }
-}
-
-export function setAgentFeesRefreshCallback(fn: (() => Promise<string | null>) | null): void {
-  _refreshCallback = fn;
-}
-
-function extractETag(response: any): string | null {
-  return response.headers['etag'] || response.headers['Etag'] || response.headers['ETag'] || null;
-}
+import { baseClient as client, extractETag } from './baseApiClient';
 
 export async function listAgentFees(agentId: string, params: ListFeesParams = {}, signal?: AbortSignal) {
   const res = await client.get<ApiEnvelope<AgentFee[]>>(`/api/v1/agent-invoice/agents/${agentId}/fees`, { params, signal });

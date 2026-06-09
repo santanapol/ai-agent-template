@@ -8,7 +8,7 @@ export function loadEnv(env = process.env) {
   const result = {
     NODE_ENV: env.NODE_ENV || 'development',
     TZ: 'UTC',
-    PORT: env.PORT ? parseInt(env.PORT, 10) : 3002,
+    PORT: env.PORT ? parseInt(env.PORT, 10) : 3000,
     JWT_JWKS_URL: env.JWT_JWKS_URL,
     JWT_ISSUER: env.JWT_ISSUER ?? '',
     JWT_AUDIENCE: env.JWT_AUDIENCE ?? '',

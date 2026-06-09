@@ -102,7 +102,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
     const env = loadEnv({
       NODE_ENV: 'test',
-      PORT: 3002,
+      PORT: 3000,
       JWT_JWKS_URL: jwksUrl,
       JWT_ISSUER: '',
       JWT_AUDIENCE: '',
@@ -225,7 +225,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
     const envDead = loadEnv({
       NODE_ENV: 'test',
-      PORT: 3003,
+      PORT: 3002,
       JWT_JWKS_URL: /** @type {string} */ (sharedJwksUrl),
       JWT_ISSUER: '',
       JWT_AUDIENCE: '',

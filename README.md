@@ -36,8 +36,8 @@ flowchart LR
   end
 
   subgraph private["Internal"]
-    S["service-demo :3003"]
-    ST["staff :3004\n(reserved)"]
+    S["service-demo :3002"]
+    ST["staff :3101\n(reserved)"]
   end
 
   UI -->|"/auth/*"| A
@@ -67,8 +67,8 @@ flowchart LR
 | :--- | :---: | :--- |
 | **auth** | 3001 | JWKS, login, refresh |
 | **gateway** | 3002 | Client / Vite proxy target สำหรับ `/api` |
-| **service-demo** | 3003 | `/api/v1/me`, `/api/v1/items` |
-| **staff** (upstream) | 3004 | อ้างใน `gateway/routes.json` — ยังไม่มี service ใน repo |
+| **service-demo** | 3002 | `/api/v1/me`, `/api/v1/items` |
+| **staff** (upstream) | 3101 | อ้างใน `gateway/routes.json` — ยังไม่มี service ใน repo |
 | **items** | 3000 | แยกจาก gateway routes ปัจจุบัน |
 | **MongoDB** | 27017 | `backend/docker compose` |
 | **Redis** | 6379 | Session revoke (`token_gen`) |

@@ -1,3 +1,6 @@
+import { isValidObjectId } from '../../lib/object-id.js';
+import { resolveRequestId } from '../../lib/request-id.js';
+import { sendError } from '../../lib/response.js';
 import {
   getAgentsSchema,
   getAgentDetailSchema,
@@ -10,6 +13,20 @@ import {
 import * as controller from './agents.controller.js';
 
 export default async function agentsRoute(fastify, options) {
+  fastify.addHook('onRequest', async (request, reply) => {
+    const requestId = resolveRequestId(request.headers['x-request-id']);
+    const userOu = request.headers['x-user-ou'];
+
+    if (!userOu || !isValidObjectId(String(userOu))) {
+      return sendError(reply, {
+        statusCode: 403,
+        code: 'INVALID_USER_CONTEXT',
+        message: 'Invalid user context',
+        requestId,
+      });
+    }
+  });
+
   // GET /api/v1/agent-invoice/agents
   fastify.get(
     '/',

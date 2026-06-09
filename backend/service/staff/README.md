@@ -1,6 +1,6 @@
 # staff-service
 
-Internal **Fastify 5** API for back-office staff profiles (`staff_profiles`). Runs behind the **gateway** mesh on port **3004**; does not verify JWT locally.
+Internal **Fastify 5** API for back-office staff profiles (`staff_profiles`). Runs behind the **gateway** mesh on port **3101**; does not verify JWT locally.
 
 ## Documentation
 
@@ -41,7 +41,7 @@ npm run dev
 
 | Script                     | Description                                                             |
 | -------------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`              | Watch mode (`PORT=3004`)                                                |
+| `npm run dev`              | Watch mode (`PORT=3101`)                                                |
 | `npm start`                | Production start                                                        |
 | `npm test`                 | `node --test` (integration needs `MONGODB_URI`)                         |
 | `npm run test:coverage`    | Coverage report                                                         |
@@ -55,7 +55,7 @@ npm run dev
 
 Copy [`.env.example`](./.env.example). Critical variables:
 
-- `PORT` — default `3004`
+- `PORT` — default `3101`
 - `MONGODB_URI`, `DB_NAME` — shared auth DB
 - `GATEWAY_SHARED_SECRET` — must match gateway `GATEWAY_SECRET`
 - `AUTH_INTERNAL_BASE_URL`, `AUTH_INTERNAL_SERVICE_SECRET` — staff → auth
@@ -67,7 +67,7 @@ Use unique high-entropy secrets per environment. Known sample/dev secrets are re
 
 ## Gateway routing
 
-Gateway prefix **`/api/v1/staff`** → upstream `127.0.0.1:3004` (see monorepo `gateway/routes.json`). Clients send **`Authorization: Bearer <JWT>`**; gateway injects `x-gateway-secret` and `x-user-*` headers.
+Gateway prefix **`/api/v1/staff`** → upstream `127.0.0.1:3101` (see monorepo `gateway/routes.json`). Clients send **`Authorization: Bearer <JWT>`**; gateway injects `x-gateway-secret` and `x-user-*` headers.
 
 ## Tests
 
@@ -84,7 +84,7 @@ Without `MONGODB_URI`, integration suites skip; unit tests still run. CI expects
 | Service   | Port     |
 | --------- | -------- |
 | auth      | 3001     |
-| gateway   | 3002     |
-| **staff** | **3004** |
+| gateway   | 3000     |
+| **staff** | **3101** |
 
 Full manual checklist: [`RUNBOOK.md`](./RUNBOOK.md).

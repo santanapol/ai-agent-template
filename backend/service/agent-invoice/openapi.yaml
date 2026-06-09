@@ -6,7 +6,7 @@ info:
   description: Invoice & Agent Fee Management Service — agents, agent fees, and agent invoice operations
 
 servers:
-  - url: http://agent-invoice-service:3000
+  - url: http://agent-invoice-service:3102
     description: Internal service URL
 
 security:

@@ -11,11 +11,13 @@ export function accessTokenGenRedisKey(subHex) {
  * @param {import('redis').RedisClientType | null | undefined} client
  * @param {string} subHex
  * @param {number} accessTokenGen
+ * @param {number} [ttlSeconds] — key expiry; should cover the longest possible refresh token lifetime
  */
-export async function setAccessTokenGenInRedis(client, subHex, accessTokenGen) {
+export async function setAccessTokenGenInRedis(client, subHex, accessTokenGen, ttlSeconds) {
   if (!client) return
   const key = accessTokenGenRedisKey(subHex)
-  await client.set(key, String(accessTokenGen))
+  const opts = ttlSeconds > 0 ? { EX: ttlSeconds } : {}
+  await client.set(key, String(accessTokenGen), opts)
 }
 
 /**

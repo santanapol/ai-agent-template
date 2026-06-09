@@ -22,7 +22,7 @@ servers:
     description: Local gateway
     variables:
       port:
-        default: "3002"
+        default: "3000"
         description: gateway `PORT`.
 
 security:

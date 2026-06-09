@@ -235,3 +235,61 @@ test('getUnsyncedBranches — queries su_branch from read database', async (t) =
   await service.getUnsyncedBranches(dbMock, '000000000000000000000456', false, sourceDbMock);
   assert.strictEqual(sourceQueried, true, 'read database should query su_branch');
 });
+
+test('syncAgent — passes ou_id to the su_branch findOne filter', async () => {
+  const branchId = '665a3d76b1e5f8b9e6f2b3d1';
+  const ouId = '000000000000000000000456';
+  let capturedFilter;
+
+  const sourceDbMock = {
+    collection: () => ({
+      findOne: async (filter) => {
+        capturedFilter = filter;
+        return null; // returns null → throws 404, which is fine for this assertion
+      }
+    })
+  };
+
+  const dbMock = createMockDb();
+
+  // Ignore the 404 — we only care about what filter was passed
+  await service.syncAgent(dbMock, ouId, branchId, 'user1', sourceDbMock).catch(() => {});
+
+  assert.ok(capturedFilter.ou_id, 'findOne filter must include ou_id to prevent cross-tenant sync');
+  assert.strictEqual(
+    String(capturedFilter.ou_id),
+    ouId,
+    'ou_id in filter must match the requester org'
+  );
+});
+
+test('getUnsyncedBranches — scopes su_branch query to requester ou_id', async () => {
+  const ouId = '000000000000000000000456';
+  let capturedQuery;
+
+  const sourceDbMock = {
+    collection: (name) => ({
+      find: (query) => {
+        capturedQuery = query;
+        return {
+          project: () => ({ sort: () => ({ toArray: async () => [] }) })
+        };
+      }
+    })
+  };
+
+  const dbMock = createMockDb({
+    agents: {
+      find: () => ({ project: () => ({ toArray: async () => [] }) })
+    }
+  });
+
+  await service.getUnsyncedBranches(dbMock, ouId, false, sourceDbMock);
+
+  assert.ok(capturedQuery.ou_id, 'su_branch query must include ou_id');
+  assert.strictEqual(
+    String(capturedQuery.ou_id),
+    ouId,
+    'ou_id in query must match the requester ou_id'
+  );
+});

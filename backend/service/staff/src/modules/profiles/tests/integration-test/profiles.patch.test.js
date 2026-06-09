@@ -20,7 +20,7 @@ const adminUserId = "507f1f77bcf86cd799439015";
 const testEnv = {
   appName: "staff-service",
   nodeEnv: "test",
-  port: 3004,
+  port: 3101,
   dbName: initialEnv.dbName || "auth_login",
   mongoUri: initialEnv.mongoUri || "",
   gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
@@ -208,7 +208,7 @@ if (!RUN) {
       assert.ok(audit);
     });
 
-    test("own profile PATCH ignores code in body", async () => {
+    test("own profile PATCH with code in body returns 400 INVALID_PARAM", async () => {
       const getRes = await app.inject({
         method: "GET",
         url: `/api/v1/staff/profiles/${staffProfileId}`,
@@ -229,9 +229,8 @@ if (!RUN) {
         },
       });
 
-      assert.strictEqual(res.statusCode, 200);
-      assert.strictEqual(res.json().data.code, codeStaff);
-      assert.strictEqual(res.json().data.lastname, "SelfPatched");
+      assert.strictEqual(res.statusCode, 400);
+      assert.strictEqual(res.json().code, CODES.INVALID_PARAM);
     });
 
     test("forbidden patch field status returns 400 INVALID_PARAM", async () => {

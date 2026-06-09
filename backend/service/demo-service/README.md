@@ -8,8 +8,8 @@ Path: **`services/.demo/demo-service/`** (demo / teaching).
 | :--- | :--- |
 | [docs/architecture.md](./docs/architecture.md) | **Technical SoT** — trust boundary, HTTP, persistence |
 | [docs/db/erd.md](./docs/db/erd.md) | **Database** — ERD, data dictionary, indexes |
-| [openapi.yaml](./openapi.yaml) | **HTTP Contract** — direct mesh (`:3003`, `x-user-*`) |
-| [openapi-via-gateway.yaml](./openapi-via-gateway.yaml) | **Public client** — Bearer JWT via gateway (`:3002`) |
+| [openapi.yaml](./openapi.yaml) | **HTTP Contract** — direct mesh (`:3002`, `x-user-*`) |
+| [openapi-via-gateway.yaml](./openapi-via-gateway.yaml) | **Public client** — Bearer JWT via gateway (`:3000`) |
 | [docs/adrs/001-put-full-replace.md](./docs/adrs/001-put-full-replace.md) | **ADR 001** — `PUT` full replace on `items` |
 | [docs/bruno/](./docs/bruno/) | **Optional** — Bruno collections (direct + via gateway) |
 | [RUNBOOK.md](./RUNBOOK.md) | Ops — setup, smoke, troubleshooting |
@@ -20,7 +20,7 @@ Path: **`services/.demo/demo-service/`** (demo / teaching).
 
 ## Scripts
 
-- `npm run dev` / `npm start` — local (`TZ=UTC`, port **3003** default)
+- `npm run dev` / `npm start` — local (`TZ=UTC`, port **3002** default)
 - `npm run init:db` — สร้าง indexes บน `items` (ครั้งแรก / หลังสร้าง DB ใหม่)
 - `npm run seed:example` — ใส่ items ตัวอย่าง 3 รายการ (dev); ใช้ `SEED_OU_ID` / `SEED_BRANCH_ID` ให้ตรง auth seed สำหรับ gateway E2E
 - `npm test` / `npm run ci` — quality gates (lint, format, Spectral, audit)
@@ -38,7 +38,7 @@ Dev logs: **pino-pretty** เมื่อ `NODE_ENV` ไม่ใช่ `product
 
 ## Gateway (local)
 
-Default [gateway `routes.json`](../../../gateway/routes.json) → this service at **`http://127.0.0.1:3003`**:
+Default [gateway `routes.json`](../../../gateway/routes.json) → this service at **`http://127.0.0.1:3002`**:
 
 | Prefix | Notes |
 | :--- | :--- |

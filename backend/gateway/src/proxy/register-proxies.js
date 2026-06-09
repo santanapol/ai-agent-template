@@ -1,20 +1,25 @@
 import httpProxy from '@fastify/http-proxy'
 
+const DANGEROUS_HEADERS = new Set([
+  'authorization',
+  'x-user-id',
+  'x-user-role',
+  'x-user-ou',
+  'x-user-branch',
+  'x-gateway-secret',
+  'if-match',
+  'x-request-id'
+])
+
 /**
  * @param {Record<string, string | string[] | undefined>} headers
  */
 function stripDangerousInboundHeaders(headers) {
   const out = { ...headers }
   for (const key of Object.keys(out)) {
-    const lower = key.toLowerCase()
-    if (lower === 'authorization') delete out[key]
-    if (lower === 'x-user-id') delete out[key]
-    if (lower === 'x-user-role') delete out[key]
-    if (lower === 'x-user-ou') delete out[key]
-    if (lower === 'x-user-branch') delete out[key]
-    if (lower === 'x-gateway-secret') delete out[key]
-    if (lower === 'if-match') delete out[key]
-    if (lower === 'x-request-id') delete out[key]
+    if (DANGEROUS_HEADERS.has(key.toLowerCase())) {
+      delete out[key]
+    }
   }
   return out
 }

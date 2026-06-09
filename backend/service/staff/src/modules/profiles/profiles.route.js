@@ -43,7 +43,10 @@ export default async function profileRoutes(fastify, _options) {
   );
   fastify.post(
     "/:profileId/restore",
-    { schema: schema.lifecycleActionSchema },
+    {
+      schema: schema.lifecycleActionSchema,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
     controller.restoreProfile,
   );
   fastify.post(

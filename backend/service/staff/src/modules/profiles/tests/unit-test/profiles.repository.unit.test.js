@@ -47,9 +47,42 @@ describe("profiles.repository (unit)", () => {
     assert.strictEqual(Object.hasOwn(api, "upd_date"), false);
   });
 
+  test("mapToApi returns null for null doc", () => {
+    assert.strictEqual(mapToApi(null), null);
+  });
+
+  test("mapToApi handles nullish user_id", () => {
+    const id = new ObjectId();
+    const ouId = new ObjectId();
+    const branchId = new ObjectId();
+
+    const api = mapToApi({
+      _id: id,
+      user_id: null,
+      ou_id: ouId,
+      branch_id: branchId,
+      status: "active",
+      code: "EMP-PROV",
+      firstname: "Prov",
+      lastname: "User",
+      email: "prov@example.invalid",
+      tel: "+66800000002",
+    });
+
+    assert.strictEqual(api.id, id.toString());
+    assert.strictEqual(api.user_id, null);
+    assert.strictEqual(api.code, "EMP-PROV");
+  });
+
   test("parseListSort supports ascending and descending fields", () => {
     assert.deepStrictEqual(parseListSort("-upd_date"), { upd_date: -1 });
     assert.deepStrictEqual(parseListSort("code"), { code: 1 });
+  });
+
+  test("parseListSort throws for invalid field", () => {
+    assert.throws(() => parseListSort("invalid_field"), {
+      message: "Invalid sort field: invalid_field",
+    });
   });
 
   test("buildScopeFilter always includes ou_id and optional branch_id", () => {

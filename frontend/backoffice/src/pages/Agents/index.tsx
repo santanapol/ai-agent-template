@@ -84,9 +84,9 @@ const AgentsList: React.FC = () => {
       title: 'Ref Fee Branch',
       dataIndex: 'ref_fee_branch_id',
       key: 'ref_fee_branch_id',
-      render: (refId: any, record: Agent) => {
+      render: (refId: unknown, record: Agent) => {
         if (!refId) return <Typography.Text type="secondary">—</Typography.Text>;
-        const normalizedRefId = typeof refId === 'object' && refId.$oid ? refId.$oid : String(refId);
+        const normalizedRefId = typeof refId === 'object' && refId !== null && (refId as { $oid?: string }).$oid ? (refId as { $oid?: string }).$oid : String(refId);
         return record.ref_fee_branch_name ? <Tag icon={<LinkOutlined />}>{record.ref_fee_branch_name}</Tag> : <Typography.Text type="secondary">{normalizedRefId}</Typography.Text>;
       },
     },

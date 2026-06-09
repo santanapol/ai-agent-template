@@ -30,7 +30,7 @@ const VALID_ACTIONS = new Set(['CALCULATE', 'MISSING_FEE']);
 
  */
 
-export async function calculateFee({ ivId, action, ifMatch, actor, ouId }) {
+export async function calculateFee({ ivId, action, ifMatch, actor, ouId, log }) {
 
   if (!ifMatch) {
 
@@ -219,6 +219,8 @@ export async function calculateFee({ ivId, action, ifMatch, actor, ouId }) {
 
         id: ivId,
 
+        ouId,
+
         status: 'MISSING_FEE',
 
         actor,
@@ -287,7 +289,9 @@ export async function calculateFee({ ivId, action, ifMatch, actor, ouId }) {
 
     };
 
-  } catch {
+  } catch (err) {
+
+    log?.error({ errCode: err?.code, errName: err?.name, ivId }, 'calculateFee: unhandled error during fee calculation');
 
     if (locked && previousStatus) {
 
@@ -296,6 +300,8 @@ export async function calculateFee({ ivId, action, ifMatch, actor, ouId }) {
         .updateStatus({
 
           id: ivId,
+
+          ouId,
 
           status: previousStatus,
 

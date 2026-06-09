@@ -103,7 +103,7 @@ export const softDeleteAgent = async (db, id, ouId, updDateStr, userId) => {
 
 export const syncAgent = async (db, ouId, branchId, userId, readDb) => {
   const branchDatabase = readDb ?? getBranchDatabase();
-  const sourceData = await branchDatabase.collection('su_branch').findOne({ _id: new ObjectId(branchId) });
+  const sourceData = await branchDatabase.collection('su_branch').findOne({ _id: new ObjectId(branchId), ou_id: new ObjectId(ouId) });
   if (!sourceData) {
     const error = new Error('Branch not found in source database.');
     error.statusCode = 404;
@@ -159,7 +159,7 @@ export const getUnsyncedBranches = async (db, ouId, includeInactive = false, rea
   const existingAgents = await repository.getAgentBranchIds(db, ouId);
   const existingBranchIds = existingAgents.map(a => a.branch_id).filter(Boolean);
 
-  const query = { _id: { $nin: existingBranchIds } };
+  const query = { ou_id: new ObjectId(ouId), _id: { $nin: existingBranchIds } };
   if (!includeInactive) {
     query.active = { $nin: ['0', 0, false] };
   }

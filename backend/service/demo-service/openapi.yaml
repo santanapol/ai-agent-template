@@ -26,11 +26,11 @@ info:
     url: https://example.invalid/license
 
 servers:
-  - url: http://127.0.0.1:{port}
+  - url: http://localhost:3002/api/v1:{port}
     description: Local
     variables:
       port:
-        default: "3003"
+        default: "3002"
         description: Direct service listen port (`PORT` env; monorepo default avoids :3000).
 
 security:

@@ -22,7 +22,7 @@ servers:
     description: Local (internal — mesh only)
     variables:
       port:
-        default: "3004"
+        default: "3101"
         description: Direct service listen port (`PORT` env).
 
 security:

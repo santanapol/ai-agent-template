@@ -10,7 +10,7 @@ describe("probe routes (T01)", () => {
     app = await createApp({
       appName: "staff-service",
       nodeEnv: "test",
-      port: 3004,
+      port: 3101,
       dbName: "auth_login",
       mongoUri: "",
       gatewaySharedSecret: "test-secret",

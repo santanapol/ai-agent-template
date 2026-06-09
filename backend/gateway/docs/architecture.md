@@ -196,7 +196,7 @@ gateway/
   },
   {
     "prefix": "/api/users",
-    "upstream": "http://users-svc:3002",
+    "upstream": "http://users-svc:3000",
     "stripPrefix": true
   }
 ]

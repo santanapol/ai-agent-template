@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Button, Typography, Space, Tag, Spin, Select,
+  Button, Typography, Space, Tag, Select,
   Breadcrumb, InputNumber, Row, Col, Alert,
-  Card, Statistic, Table, Affix, Checkbox, Tooltip, theme, Skeleton, Empty
+  Card, Statistic, Table, Affix, Checkbox, theme, Skeleton, Empty
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons';
@@ -12,7 +12,7 @@ import { useAppFeedback } from '../../hooks/useAppFeedback';
 import { getAgentById, listAgents, updateAgent } from '../../lib/agentsApiClient';
 import { listAgentFees, deleteAgentFee } from '../../lib/agentFeesApiClient';
 import type { Agent } from '../../types/agents';
-import type { AgentFee } from '../../types/agentFees';
+import type { AgentFee, GameCompany } from '../../types/agentFees';
 import { MatrixCell, type MatrixCellRef } from '../../components/AgentFees/MatrixCell';
 
 const { Title, Text } = Typography;
@@ -62,8 +62,8 @@ const AgentFeesPage: React.FC = () => {
         setAgent(data.agent);
         agentEtagRef.current = data.etag;
         setDraftRate(data.agent.default_fee_rate);
-      } catch (err: any) {
-        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+      } catch (err: unknown) {
+        if (err instanceof Error && (err.name === 'CanceledError' || err.name === 'AbortError')) return;
         message.error('Failed to load agent details');
         navigate('/agents');
       } finally {
@@ -104,23 +104,22 @@ const AgentFeesPage: React.FC = () => {
   // ref_fee_branch_id stores branch_id → resolve to agent._id for the fees endpoint
   useEffect(() => {
     if (!agent?.ref_fee_branch_id || allAgents.length === 0) {
-      if (!agent?.ref_fee_branch_id) setRefFees([]);
       return;
     }
     const refAgent = allAgents.find(a => a.branch_id === agent.ref_fee_branch_id);
     if (!refAgent) {
       message.error('Reference agent not found');
-      setRefFees([]);
       return;
     }
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRefFeesLoading(true);
     listAgentFees(refAgent._id, { page: 1, limit: 100 }, controller.signal)
       .then(data => {
         if (!controller.signal.aborted) setRefFees(data.data || []);
       })
-      .catch((err: any) => {
-        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+      .catch((err: unknown) => {
+        if (err instanceof Error && (err.name === 'CanceledError' || err.name === 'AbortError')) return;
         message.error('Failed to load reference agent fees');
       })
       .finally(() => {
@@ -168,8 +167,8 @@ const AgentFeesPage: React.FC = () => {
         }
       });
       message.success('Agent updated successfully');
-    } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to update agent');
+    } catch (err: unknown) {
+      message.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update agent');
     } finally {
       setSavingAgent(false);
     }
@@ -214,8 +213,8 @@ const AgentFeesPage: React.FC = () => {
           message.success(normalized
             ? `Now referencing ${refAgent?.branch_name ?? normalized}`
             : 'Reference removed — you can now configure fees independently');
-        } catch (err: any) {
-          message.error(err.response?.data?.message || 'Failed to update reference');
+        } catch (err: unknown) {
+          message.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update reference');
         } finally {
           setSavingRef(false);
         }
@@ -229,55 +228,57 @@ const AgentFeesPage: React.FC = () => {
 
   // ── Collect and validate pending changes ──────────────────────────────────
   const collectChanges = useCallback(() => {
-    const creates: any[] = [];
-    const updates: any[] = [];
-    const deletes: any[] = [];
+    const creates: Omit<AgentFee, '_id' | 'upd_date'>[] = [];
+    const updates: { id: string; payload: Partial<AgentFee>; etag: string }[] = [];
+    const deletes: { id: string; etag: string }[] = [];
     const errors: string[] = [];
 
     companies.forEach(company => {
       categories.forEach(category => {
         const key = `${company._id}_${category._id}`;
         const cell = matrixCellRefs.current[key];
-        const vals = cell ? cell.getValues() : { enabled: false, gc: 0, ak: 0, af: 0 };
-        const isEnabled = vals.enabled;
+        const vals = cell?.getValues() ?? { enabled: false, gc: 0, ak: 0, af: 0 };
         const original = originalFeesRef.current.get(key);
-        
-        const gcompCost = vals.gc;
-        const agentKnownFee = vals.ak;
-        const agentFee = vals.af;
 
-        if (isEnabled) {
-          const isValid = (r: number) => r >= 0 && r <= 100;
-          if (!isValid(gcompCost) || !isValid(agentKnownFee) || !isValid(agentFee)) {
-            errors.push(`${company.provider_name?.en || company.name} / ${category.manin_cate_name?.en || category.name}: must be 0–100`);
-            return;
-          }
-          if (!original) {
-            creates.push({
-              game_company_id: company._id,
-              game_main_cate_id: category._id,
-              gcomp_cost: gcompCost,
-              agent_known_fee: agentKnownFee,
-              agent_fee: agentFee
-            });
-          } else {
-            const changed: any = {};
-            if (original.gcomp_cost !== gcompCost) changed.gcomp_cost = gcompCost;
-            if (original.agent_known_fee !== agentKnownFee) changed.agent_known_fee = agentKnownFee;
-            if (original.agent_fee !== agentFee) changed.agent_fee = agentFee;
+        if (!vals.enabled && !original) return;
 
-            if (Object.keys(changed).length > 0) {
-              updates.push({ id: original._id, payload: changed, etag: original.upd_date });
-            }
-          }
-        } else if (original) {
+        if (!vals.enabled && original) {
           deletes.push({ id: original._id, etag: original.upd_date });
+          return;
+        }
+
+        const { gc: gcompCost, ak: agentKnownFee, af: agentFee } = vals;
+        const isValid = (r: number) => r >= 0 && r <= 100;
+
+        if (!isValid(gcompCost) || !isValid(agentKnownFee) || !isValid(agentFee)) {
+          errors.push(`${company.provider_name?.en || company.name} / ${category.manin_cate_name?.en || category.name}: must be 0–100`);
+          return;
+        }
+
+        if (!original) {
+          creates.push({
+            game_company_id: company._id,
+            game_main_cate_id: category._id,
+            gcomp_cost: gcompCost,
+            agent_known_fee: agentKnownFee,
+            agent_fee: agentFee
+          });
+          return;
+        }
+
+        const changed: Partial<AgentFee> = {};
+        if (original.gcomp_cost !== gcompCost) changed.gcomp_cost = gcompCost;
+        if (original.agent_known_fee !== agentKnownFee) changed.agent_known_fee = agentKnownFee;
+        if (original.agent_fee !== agentFee) changed.agent_fee = agentFee;
+
+        if (Object.keys(changed).length > 0) {
+          updates.push({ id: original._id, payload: changed, etag: original.upd_date });
         }
       });
     });
 
     return { creates, updates, deletes, errors };
-  }, [agent, companies, categories]);
+  }, [companies, categories]);
 
   // ── Save all fees ─────────────────────────────────────────────────────────
   const handleSaveFees = useCallback(async () => {
@@ -313,33 +314,23 @@ const AgentFeesPage: React.FC = () => {
 
   const displayFees = useMemo(() => (isRefMode ? refFees : fees), [isRefMode, refFees, fees]);
 
+  const feesByCompany = useMemo(() => new Set(displayFees.map(f => f.game_company_id)), [displayFees]);
+
   const filteredCompanies = useMemo(() => {
-    let result = [...companies].sort((a, b) => {
+    const sorted = [...companies].sort((a, b) => {
       const nameA = a.provider_name?.en || a.name || '';
       const nameB = b.provider_name?.en || b.name || '';
       return nameA.localeCompare(nameB);
     });
 
-    if (hideEmptyProviders) {
-      result = result.filter(company => {
-        return categories.some(cat => {
-          const fee = displayFees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
-          return fee != null;
-        });
-      });
-    }
-
-    return result;
-  }, [companies, categories, displayFees, hideEmptyProviders]);
+    return hideEmptyProviders 
+      ? sorted.filter(company => feesByCompany.has(company._id)) 
+      : sorted;
+  }, [companies, feesByCompany, hideEmptyProviders]);
 
   const usedCompaniesCount = useMemo(() => {
-    return companies.filter(company => {
-      return categories.some(cat => {
-        const fee = displayFees.find(f => f.game_company_id === company._id && f.game_main_cate_id === cat._id);
-        return fee != null;
-      });
-    }).length;
-  }, [companies, categories, displayFees]);
+    return companies.filter(company => feesByCompany.has(company._id)).length;
+  }, [companies, feesByCompany]);
 
   if (agentLoading) {
     return (
@@ -359,7 +350,7 @@ const AgentFeesPage: React.FC = () => {
     .filter(a => a._id !== id)
     .map(a => ({ value: a.branch_id, label: `${a.branch_code} · ${a.branch_name}` }));
 
-  const tableColumns: ColumnsType<any> = [
+  const tableColumns: ColumnsType<GameCompany> = [
     {
       title: 'Provider Name',
       dataIndex: 'name',
@@ -374,7 +365,7 @@ const AgentFeesPage: React.FC = () => {
       key: cat._id,
       align: 'center' as const,
       width: 150,
-      render: (_: any, company: any) => {
+      render: (_: unknown, company: GameCompany) => {
         const key = `${company._id}_${cat._id}`;
         return (
           <div style={{ background: isRefMode ? token.colorFillAlter : 'transparent', margin: `-${token.marginXS}px -${token.marginXS}px`, padding: token.paddingXS }}>

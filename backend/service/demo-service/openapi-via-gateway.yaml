@@ -22,11 +22,11 @@ info:
     url: https://example.invalid/license
 
 servers:
-  - url: http://127.0.0.1:{port}
+  - url: http://localhost:3000/api/v1:{port}
     description: Local gateway
     variables:
       port:
-        default: "3002"
+        default: "3000"
         description: gateway `PORT` (see `gateway/.env.example`).
 
 security:

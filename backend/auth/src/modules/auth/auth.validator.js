@@ -14,7 +14,7 @@ export const refreshBodySchema = {
   properties: {
     refresh_token: { type: 'string', minLength: 10, maxLength: 512 }
   },
-  additionalProperties: true
+  additionalProperties: false
 }
 
 export const logoutBodySchema = refreshBodySchema

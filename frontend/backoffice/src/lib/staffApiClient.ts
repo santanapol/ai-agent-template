@@ -1,4 +1,3 @@
-import axios, { type AxiosResponse } from 'axios';
 import type {
   ApiEnvelope,
   StaffProfile,
@@ -7,46 +6,7 @@ import type {
   ResetProfilePasswordPayload,
   ListProfilesParams,
 } from '../types/staff';
-
-let _accessToken: string | null = null;
-let _refreshCallback: (() => Promise<string | null>) | null = null;
-
-export function setAccessToken(token: string | null): void {
-  _accessToken = token;
-}
-
-export function setRefreshCallback(fn: () => Promise<string | null>): void {
-  _refreshCallback = fn;
-}
-
-const client = axios.create();
-
-client.interceptors.request.use((config) => {
-  if (_accessToken) config.headers.Authorization = `Bearer ${_accessToken}`;
-  return config;
-});
-
-// On 401, attempt one token refresh then retry the original request
-client.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config as typeof err.config & { _retry?: boolean };
-    if (err.response?.status === 401 && !original._retry && _refreshCallback) {
-      original._retry = true;
-      const newToken = await _refreshCallback();
-      if (newToken) {
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return client(original);
-      }
-    }
-    return Promise.reject(err);
-  },
-);
-
-function extractETag(res: AxiosResponse): string | null {
-  const raw = res.headers['etag'];
-  return typeof raw === 'string' ? raw : null;
-}
+import { baseClient as client, extractETag } from './baseApiClient';
 
 export async function listProfiles(params: ListProfilesParams = {}) {
   const res = await client.get<ApiEnvelope<StaffProfile[]>>('/api/v1/staff/profiles', { params });

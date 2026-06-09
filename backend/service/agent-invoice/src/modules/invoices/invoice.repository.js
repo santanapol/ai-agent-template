@@ -68,7 +68,17 @@ const LIST_PROJECTION = {
 
   status: 1,
 
+  cr_by: 1,
+
+  cr_prog: 1,
+
   cr_date: 1,
+
+  upd_by: 1,
+
+  upd_prog: 1,
+
+  upd_date: 1,
 
 };
 
@@ -290,6 +300,8 @@ export async function updateStatus({
 
   id,
 
+  ouId,
+
   status,
 
   actor,
@@ -300,13 +312,37 @@ export async function updateStatus({
 
   updDate = new Date(),
 
+  expectedUpdDate,
+
+  expectedStatus,
+
 }) {
 
   const db = getInvoiceDatabase();
 
-  await db.collection(COLLECTION).updateOne(
+  const filter = { _id: new ObjectId(id) };
 
-    { _id: new ObjectId(id) },
+  if (ouId) {
+
+    filter.ou_id = new ObjectId(ouId);
+
+  }
+
+  if (expectedStatus) {
+
+    filter.status = expectedStatus;
+
+  }
+
+  if (expectedUpdDate) {
+
+    filter.upd_date = expectedUpdDate;
+
+  }
+
+  const result = await db.collection(COLLECTION).updateOne(
+
+    filter,
 
     {
 
@@ -328,7 +364,7 @@ export async function updateStatus({
 
   );
 
-  return { updDate };
+  return { updDate, matchedCount: result.matchedCount };
 
 }
 

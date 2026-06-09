@@ -42,7 +42,7 @@ describe('GET /healthz and GET /readyz', () => {
 
     const env = loadEnv({
       NODE_ENV: 'test',
-      PORT: 3002,
+      PORT: 3000,
       JWT_JWKS_URL: jwksUrl,
       GATEWAY_SECRET: 'x'.repeat(32),
       UPSTREAM_TIMEOUT_MS: 5000,

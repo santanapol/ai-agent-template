@@ -76,7 +76,7 @@ describe('jwt-auth token_gen (D3)', () => {
 
     const env = loadEnv({
       NODE_ENV: 'test',
-      PORT: 3002,
+      PORT: 3000,
       JWT_JWKS_URL: jwksUrl,
       GATEWAY_SECRET: 'gateway-secret-32-chars-minimum-ok!!',
       UPSTREAM_TIMEOUT_MS: 5000,

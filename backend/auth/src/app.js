@@ -12,6 +12,7 @@ import { AuthRepository } from './modules/auth/auth.repository.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { createAuthController } from './modules/auth/auth.controller.js'
 import authRoutePlugin from './modules/auth/auth.route.js'
+import { InternalService } from './modules/internal/internal.service.js'
 import { createInternalController } from './modules/internal/internal.controller.js'
 import internalRoutePlugin from './modules/internal/internal.route.js'
 
@@ -196,7 +197,8 @@ export async function buildApp(env = loadEnv(), options = {}) {
 
   await fastify.register(authRoutePlugin, { controller, types, env, publicKey })
 
-  const internalController = createInternalController({ service, types })
+  const internalService = new InternalService({ authService: service })
+  const internalController = createInternalController({ service: internalService })
   await fastify.register(internalRoutePlugin, {
     controller: internalController,
     types,

@@ -11,7 +11,7 @@ export function createInternalController({ service }) {
   return {
     async createUser(request, reply) {
       const value = request.body ?? {}
-      const result = await service.createUserByService({
+      const result = await service.createUser({
         ou_id_hex: value.ou_id,
         branch_id_hex: value.branch_id,
         username: value.username,
@@ -26,7 +26,7 @@ export function createInternalController({ service }) {
     async revokeSessions(request, reply) {
       const userIdParam = request.params.user_id
       const value = request.body ?? {}
-      const result = await service.revokeSessionsByUser({
+      const result = await service.revokeSessions({
         user_id_hex: userIdParam,
         reason: value.reason,
         correlation_id: value.correlation_id,
@@ -39,7 +39,7 @@ export function createInternalController({ service }) {
     async setPassword(request, reply) {
       const userIdParam = request.params.user_id
       const value = request.body ?? {}
-      const result = await service.setPasswordByService({
+      const result = await service.setPassword({
         user_id_hex: userIdParam,
         password: value.password,
         revoke_sessions: value.revoke_sessions,

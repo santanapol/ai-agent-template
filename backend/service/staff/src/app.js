@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import logger from "./config/logger.js";
 import { setRuntimeEnv } from "./config/runtime-env.js";
 import CODES from "./lib/error-codes.js";
-import { errorEnvelope, successEnvelope } from "./lib/envelope.js";
+import { errorEnvelope } from "./lib/envelope.js";
 
 import duplicateHeaderGuard from "./plugins/duplicate-header.js";
 import gatewaySecretGuard from "./plugins/gateway-secret.js";
@@ -98,36 +98,6 @@ export default async function createApp(env) {
           data: null,
         }),
       });
-
-      /** Internal probe — removed when profiles routes land (T08+). */
-      api.get("/_mesh-probe", async (request) => {
-        const ctx = request.userContext;
-        return successEnvelope({
-          userId: ctx.userId,
-          ouId: ctx.ouId,
-          branchId: ctx.branchId,
-          role: ctx.role,
-          ouObjectId: ctx.ouObjectId.toString(),
-          branchObjectId: ctx.branchObjectId.toString(),
-        });
-      });
-
-      api.post(
-        "/_validate-probe",
-        {
-          schema: {
-            body: {
-              type: "object",
-              required: ["code"],
-              additionalProperties: false,
-              properties: {
-                code: { type: "string", minLength: 1 },
-              },
-            },
-          },
-        },
-        async () => successEnvelope({ ok: true }),
-      );
 
       await api.register(profileRoutes, { prefix: "/profiles" });
 

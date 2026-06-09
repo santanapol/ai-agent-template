@@ -1,57 +1,6 @@
 import * as service from './agent-fees.service.js';
-
-const generateETag = (dateISO) => `W/"${Buffer.from(dateISO).toString('base64')}"`;
-
-const decodeETag = (etag) => {
-  if (!etag) return null;
-  const match = etag.match(/^W\/"([^"]+)"$/);
-  if (!match) return null;
-  return Buffer.from(match[1], 'base64').toString('utf8');
-};
-
-const extractContext = (request) => ({
-  ouId: request.headers['x-user-ou'],
-  branchId: request.headers['x-user-branch'],
-  userId: request.headers['x-user-id'],
-  requestId: request.requestId
-});
-
-const handleError = (error, reply, requestId) => {
-  const statusMap = {
-    400: 'INVALID_PARAM',
-    404: 'RESOURCE_NOT_FOUND',
-    409: 'DUPLICATE',
-    412: 'VERSION_CONFLICT',
-    428: 'PRECONDITION_REQUIRED'
-  };
-
-  if (statusMap[error.statusCode]) {
-    return reply.status(error.statusCode).send({
-      success: false,
-      code: statusMap[error.statusCode],
-      message: error.message,
-      data: null,
-      requestId
-    });
-  }
-  throw error;
-};
-
-const extractUpdDateISO = (request) => {
-  const ifMatch = request.headers['if-match'];
-  if (!ifMatch) {
-    const error = new Error('If-Match header is required for this operation.');
-    error.statusCode = 428;
-    throw error;
-  }
-  const updDateISO = decodeETag(ifMatch);
-  if (!updDateISO) {
-    const error = new Error('Invalid If-Match ETag format.');
-    error.statusCode = 400;
-    throw error;
-  }
-  return updDateISO;
-};
+import { extractContext, handleError, extractUpdDateISO } from '../../lib/request-handler.js';
+import { buildEtag } from '../../lib/etag.js';
 
 export const getFeesHandler = async (request, reply) => {
   const { agentId } = request.params;
@@ -82,7 +31,7 @@ export const createFeeHandler = async (request, reply) => {
 
   try {
     const result = await service.createFeeByAgentId(db, agentId, ouId, request.body, userId);
-    reply.header('ETag', generateETag(result.upd_date));
+    reply.header('ETag', buildEtag(result.upd_date));
 
     return reply.status(201).send({
       success: true,
@@ -105,7 +54,7 @@ export const updateFeeHandler = async (request, reply) => {
     const result = await service.updateFeeByAgentId(
       db, agentId, feeId, ouId, request.body, updDateISO, userId
     );
-    reply.header('ETag', generateETag(result.upd_date));
+    reply.header('ETag', buildEtag(result.upd_date));
 
     return reply.status(200).send({
       success: true,

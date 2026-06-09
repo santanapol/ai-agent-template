@@ -48,7 +48,7 @@ if (!RUN) {
     const env = {
       appName: "staff-service",
       nodeEnv: "test",
-      port: 3004,
+      port: 3101,
       dbName: initialEnv.dbName || "auth_login",
       mongoUri: initialEnv.mongoUri || "",
       gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
@@ -161,7 +161,7 @@ if (!RUN) {
           "if-match": getRes.headers.etag,
         },
       });
-      assert.strictEqual(archiveRes.statusCode, 503);
+      assert.strictEqual(archiveRes.statusCode, 200);
 
       const metricsRes = await app.inject({ method: "GET", url: "/metrics" });
       assert.strictEqual(metricsRes.statusCode, 200);

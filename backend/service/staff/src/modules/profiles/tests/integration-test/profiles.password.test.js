@@ -38,7 +38,7 @@ if (!RUN) {
     const testEnv = {
       appName: "staff-service",
       nodeEnv: "test",
-      port: 3004,
+      port: 3101,
       dbName: initialEnv.dbName || "auth_login",
       mongoUri: initialEnv.mongoUri || "",
       gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
@@ -219,7 +219,7 @@ if (!RUN) {
     const testEnv = {
       appName: "staff-service",
       nodeEnv: "test",
-      port: 3004,
+      port: 3101,
       dbName: initialEnv.dbName || "auth_login",
       mongoUri: initialEnv.mongoUri || "",
       gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",

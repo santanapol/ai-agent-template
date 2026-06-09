@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useAgentFees } from '../hooks/useAgentFees';
 import * as api from '../../../lib/agentFeesApiClient';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import type { AgentFee, GameCompany, GameCategory } from '../../../types/agentFees';
 
 vi.mock('../../../lib/agentFeesApiClient');
 
@@ -15,7 +16,7 @@ describe('useAgentFees', () => {
       { _id: '1', gcomp_cost: 6, agent_known_fee: 10, agent_fee: 10, game_company_id: 'C1', game_main_cate_id: 'M1' }
     ];
     vi.mocked(api.listAgentFees).mockResolvedValueOnce({
-      data: mockFees as any,
+      data: mockFees as unknown as AgentFee[],
       total: 1
     });
 
@@ -35,8 +36,8 @@ describe('useAgentFees', () => {
     const mockCompanies = [{ _id: 'c1', name: { en: 'Comp 1' } }];
     const mockCategories = [{ _id: 'cat1', name: { en: 'Cat 1' } }];
     
-    vi.mocked(api.getGameCompanies).mockResolvedValueOnce(mockCompanies as any);
-    vi.mocked(api.getGameCategories).mockResolvedValueOnce(mockCategories as any);
+    vi.mocked(api.getGameCompanies).mockResolvedValueOnce(mockCompanies as unknown as GameCompany[]);
+    vi.mocked(api.getGameCategories).mockResolvedValueOnce(mockCategories as unknown as GameCategory[]);
 
     const { result } = renderHook(() => useAgentFees('agent123'));
     

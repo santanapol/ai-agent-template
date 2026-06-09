@@ -2,13 +2,18 @@ import { ObjectId } from 'mongodb';
 
 const COLLECTION_NAME = 'agents';
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const listAgents = async (db, ouId, search, skip = 0, limit = 20) => {
   const query = { ou_id: new ObjectId(ouId), active: { $ne: false } };
-  
+
   if (search) {
+    const safe = escapeRegex(search);
     query.$or = [
-      { branch_code: { $regex: search, $options: 'i' } },
-      { branch_name: { $regex: search, $options: 'i' } }
+      { branch_code: { $regex: safe, $options: 'i' } },
+      { branch_name: { $regex: safe, $options: 'i' } },
     ];
   }
 
@@ -41,9 +46,10 @@ export const countAgents = async (db, ouId, search) => {
   const query = { ou_id: new ObjectId(ouId), active: { $ne: false } };
 
   if (search) {
+    const safe = escapeRegex(search);
     query.$or = [
-      { branch_code: { $regex: search, $options: 'i' } },
-      { branch_name: { $regex: search, $options: 'i' } }
+      { branch_code: { $regex: safe, $options: 'i' } },
+      { branch_name: { $regex: safe, $options: 'i' } },
     ];
   }
 

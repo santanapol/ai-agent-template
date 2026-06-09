@@ -36,7 +36,7 @@ function assertProductionSecret(name, value) {
 export function readEnv() {
   const env = {
     nodeEnv: process.env.NODE_ENV || "development",
-    port: Number(process.env.PORT || 3004),
+    port: Number(process.env.PORT || 3101),
     dbName: process.env.DB_NAME || "auth_login",
     mongoUri: process.env.MONGODB_URI || "",
     gatewaySharedSecret: process.env.GATEWAY_SHARED_SECRET || "",

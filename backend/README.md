@@ -10,9 +10,9 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 | Directory | Role | Stack | Default port |
 | :--- | :--- | :--- | :---: |
 | [`auth/`](./auth/) | Login, refresh, JWT/JWKS, session revoke (`token_gen`) | Fastify (ESM) | **3001** |
-| [`gateway/`](./gateway/) | JWT verify, Redis `token_gen` gate, reverse proxy | Fastify (ESM) | **3002** |
-| [`service/demo-service/`](./service/demo-service/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3003** |
-| [`service/staff/`](./service/staff/) | Staff API (**spec only** — docs scaffold) | — | **3004** (reserved) |
+| [`gateway/`](./gateway/) | JWT verify, Redis `token_gen` gate, reverse proxy | Fastify (ESM) | **3000** |
+| [`service/demo-service/`](./service/demo-service/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3002** |
+| [`service/staff/`](./service/staff/) | Staff API (**spec only** — docs scaffold) | — | **3101** (reserved) |
 
 Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
 
@@ -45,8 +45,8 @@ Client ──Bearer JWT──► gateway ──x-gateway-secret + x-user-*──
 | Service / dependency | Port | Notes |
 | :--- | :---: | :--- |
 | **auth** | 3001 | JWKS: `http://127.0.0.1:3001/.well-known/jwks.json` |
-| **gateway** | 3002 | Public entry สำหรับ client |
-| **demo-service** | 3003 | Routed ใน [`gateway/routes.json`](./gateway/routes.json) |
+| **gateway** | 3000 | Public entry สำหรับ client |
+| **demo-service** | 3002 | Routed ใน [`gateway/routes.json`](./gateway/routes.json) |
 | **items** | 3000 | ค่าเริ่มต้นจาก `items/.env.example` (`PORT`) |
 | **MongoDB** | 27017 | `docker compose up -d` |
 | **Redis** | 6379 | `token_gen` — auth + gateway ใช้ `REDIS_URL` ร่วมกัน |
@@ -55,9 +55,9 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
 
 | Prefix | Upstream | Service |
 | :--- | :--- | :--- |
-| `/api/v1/items` | `:3003` | demo-service |
-| `/api/v1/me` | `:3003` | demo-service |
-| `/api/v1/staff` | `:3004` | staff (**spec only** — ยังไม่ bootstrap service) |
+| `/api/v1/items` | `:3002` | demo-service |
+| `/api/v1/me` | `:3002` | demo-service |
+| `/api/v1/staff` | `:3101` | staff (**spec only** — ยังไม่ bootstrap service) |
 | `/auth` | `:3001` | auth (proxy ผ่าน gateway) |
 
 ## Quick start

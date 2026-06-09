@@ -39,7 +39,7 @@ Monorepo-level history (gateway, auth, layout moves) stays in the repository roo
 - `RUNBOOK.md` — compact tables/TOC, fix `_coding-standards` paths, drop HTML anchors; **§ Smoke ผ่าน gateway** (terminals, pre-flight, `try:proxy`, manual `curl`); exclude from Prettier.
 - **`/service-docs resync` (docs/):** `architecture.md` v1.0.4 — org std links, `codes.yaml` in Related; `adrs/001` cross-links; §3 middleware + PUT/ADR/ETag; §6 Operations.
 - `docs/db/erd.md` v1.0.2 — package version, org `mongodb.md`, tenant hex24, list pagination, recommended unique `code` index (§6.3).
-- `RUNBOOK.md` (package root): align default port **`3003`**, clarify monorepo vs package root, recommend **`npm run ci`** / **`format:check`**, document **`Accept`**, **`GET /api/v1/me`**, **`GET /metrics`**, and expanded smoke **`curl`** examples.
+- `RUNBOOK.md` (package root): align default port **`3002`**, clarify monorepo vs package root, recommend **`npm run ci`** / **`format:check`**, document **`Accept`**, **`GET /api/v1/me`**, **`GET /metrics`**, and expanded smoke **`curl`** examples.
 - Consolidate MongoDB documentation into **`docs/db/erd.md`** only; remove **`docs/db/database.md`** and **`docs/db/items.md`** (content merged into `erd.md`).
 - Fix monorepo [`CHANGELOG.md`](../../../CHANGELOG.md) link depth.
 
@@ -51,4 +51,4 @@ Monorepo-level history (gateway, auth, layout moves) stays in the repository roo
 
 ### Changed
 
-- Document release baseline for this SemVer: sample upstream on **`PORT` default `3003`**, **`GET /api/v1/me`**, **items CRUD** under `/api/v1/items`, mesh **`x-gateway-secret`** + gateway-injected **`x-user-*`**, and Prometheus **`GET /metrics`** (see [`README.md`](./README.md) and root [`openapi.yaml`](./openapi.yaml)).
+- Document release baseline for this SemVer: sample upstream on **`PORT` default `3002`**, **`GET /api/v1/me`**, **items CRUD** under `/api/v1/items`, mesh **`x-gateway-secret`** + gateway-injected **`x-user-*`**, and Prometheus **`GET /metrics`** (see [`README.md`](./README.md) and root [`openapi.yaml`](./openapi.yaml)).

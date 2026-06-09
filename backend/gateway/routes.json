@@ -1,17 +1,17 @@
 [
   {
     "prefix": "/api/v1/items",
-    "upstream": "http://127.0.0.1:3003",
+    "upstream": "http://127.0.0.1:3002",
     "stripPrefix": false
   },
   {
     "prefix": "/api/v1/me",
-    "upstream": "http://127.0.0.1:3003",
+    "upstream": "http://127.0.0.1:3002",
     "stripPrefix": false
   },
   {
     "prefix": "/api/v1/staff",
-    "upstream": "http://127.0.0.1:3004",
+    "upstream": "http://127.0.0.1:3101",
     "stripPrefix": false
   },
   {
@@ -22,12 +22,12 @@
   },
   {
     "prefix": "/api/v1/agent-invoice",
-    "upstream": "http://127.0.0.1:3000",
+    "upstream": "http://127.0.0.1:3102",
     "stripPrefix": false
   },
   {
     "prefix": "/api/v1/invoices",
-    "upstream": "http://127.0.0.1:3000",
+    "upstream": "http://127.0.0.1:3102",
     "stripPrefix": false
   }
 ]

@@ -91,8 +91,9 @@ export class AuthService {
         ip_digest: ip ? ipDigest(ip) : null,
         detail_safe
       })
-    } catch {
-      // never block auth on audit failure
+    } catch (err) {
+      // never block auth on audit failure — but surface the failure for ops visibility
+      this.log?.warn?.({ err, event_type }, 'audit insert failed')
     }
   }
 
@@ -111,19 +112,21 @@ export class AuthService {
   }
 
   async recordFailures(keys, now) {
-    for (const key of keys) {
-      const doc = await this.repo.getThrottle(key)
-      const next = applyFailure(now, doc)
-      await this.repo.setThrottle(
-        key,
-        {
-          window_started_at: next.window_started_at,
-          fail_count: next.fail_count,
-          locked_until: next.locked_until
-        },
-        undefined
-      )
-    }
+    await Promise.all(
+      keys.map(async (key) => {
+        const doc = await this.repo.getThrottle(key)
+        const next = applyFailure(now, doc)
+        await this.repo.setThrottle(
+          key,
+          {
+            window_started_at: next.window_started_at,
+            fail_count: next.fail_count,
+            locked_until: next.locked_until
+          },
+          undefined
+        )
+      })
+    )
   }
 
   async clearThrottleKeys(keys) {
@@ -341,6 +344,14 @@ export class AuthService {
     const u = await this.repo.findUserById(row.user_id)
     if (!u) {
       await this.recordFailures([ipThrottleKey(ip)], now)
+      await this.audit({
+        event_type: 'auth.refresh',
+        outcome: 'fail',
+        request_id,
+        user_id: row.user_id,
+        ip,
+        detail_safe: { reason: 'user_not_found' }
+      })
       return unauthorizedServiceOutcome(this.types.invalidToken)
     }
 
@@ -348,19 +359,10 @@ export class AuthService {
     const newHash = hashRefreshToken(newPlain)
     const expires_at = new Date(now.getTime() + this.env.REFRESH_TOKEN_TTL_SECONDS * 1000)
 
-    const session = this.mongoClient.startSession()
     try {
-      try {
-        await session.withTransaction(async () => {
-          await this.rotateRefreshTokenTxnBody({ hash, now, newHash, expires_at, row }, session)
-        })
-      } catch (e) {
-        if (isTransactionUnsupportedOnTopology(e)) {
-          await this.rotateRefreshTokenTxnBody({ hash, now, newHash, expires_at, row }, undefined)
-        } else {
-          throw e
-        }
-      }
+      await this.runUserTransaction((session) =>
+        this.rotateRefreshTokenTxnBody({ hash, now, newHash, expires_at, row }, session)
+      )
     } catch {
       return this.failRefreshUnauthorized({
         now,
@@ -370,8 +372,6 @@ export class AuthService {
         reason: 'concurrent_or_invalid',
         type: this.types.invalidToken
       })
-    } finally {
-      await session.endSession()
     }
 
     const access_token = await this.issueAccess(u)
@@ -543,7 +543,7 @@ export class AuthService {
       }
     }
 
-    return { ok: true }
+    return { ok: true, user }
   }
 
   policyProblemForPassword(password) {
@@ -580,7 +580,12 @@ export class AuthService {
   async publishTokenGenOrNotReady(user_id_hex, access_token_gen) {
     if (!this.redisClient) return { ok: true }
     try {
-      await setAccessTokenGenInRedis(this.redisClient, user_id_hex, access_token_gen)
+      await setAccessTokenGenInRedis(
+        this.redisClient,
+        user_id_hex,
+        access_token_gen,
+        this.env.REFRESH_TOKEN_TTL_SECONDS
+      )
       return { ok: true }
     } catch (err) {
       this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen publish failed')
@@ -612,6 +617,7 @@ export class AuthService {
     const policy = this.policyProblemForPassword(password)
     if (policy) return policy
 
+    const shouldRevoke = revoke_sessions !== false
     const userId = new ObjectId(user_id_hex)
     const password_hash = await this.hashPassword(password)
     const now = new Date()
@@ -622,7 +628,7 @@ export class AuthService {
       if (!updated) {
         return { found: false, access_token_gen: 0, revoked_refresh_tokens: 0 }
       }
-      if (revoke_sessions === false) {
+      if (!shouldRevoke) {
         const user = await this.repo.findUserById(userId)
         return {
           found: true,
@@ -635,7 +641,7 @@ export class AuthService {
 
     if (!result.found) return this.userNotFoundProblem()
 
-    if (revoke_sessions !== false) {
+    if (shouldRevoke) {
       const redisResult = await this.publishTokenGenOrNotReady(user_id_hex, result.access_token_gen)
       if (!redisResult.ok) return redisResult
     }
@@ -673,8 +679,7 @@ export class AuthService {
     if (policy) return policy
 
     const userId = new ObjectId(user_id_hex)
-    const user = await this.repo.findUserById(userId)
-    if (!user) return this.userNotFoundProblem()
+    const user = genCheck.user
 
     const currentValid = await this.verifyPasswordHash(user.password_hash, current_password)
     if (!currentValid) {

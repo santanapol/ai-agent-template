@@ -26,13 +26,13 @@
 | Service | `demo-service` |
 | Node | `>=24 <25` |
 | Database | MongoDB `demo-service` — [docs/db/erd.md](./docs/db/erd.md) |
-| Port | **`3003`** default (`PORT`) — [local-ports.md](../../../local-ports.md) |
+| Port | **`3002`** default (`PORT`) — [local-ports.md](../../../local-ports.md) |
 | Dev | `npm run dev` |
 | Prod | PM2 [`ecosystem.config.cjs`](./ecosystem.config.cjs) |
 
 **SoT:** [openapi.yaml](./openapi.yaml) · [docs/architecture.md](./docs/architecture.md) · org [`_coding-standards/backend`](../../../../../_coding-standards/backend/README.md)
 
-**Gateway (local):** prefixes `/api/v1/items`, `/api/v1/me` → `:3003` — [gateway routes.json](../../../gateway/routes.json); `GATEWAY_SHARED_SECRET` = gateway `GATEWAY_SECRET`
+**Gateway (local):** prefixes `/api/v1/items`, `/api/v1/me` → `:3002` — [gateway routes.json](../../../gateway/routes.json); `GATEWAY_SHARED_SECRET` = gateway `GATEWAY_SECRET`
 
 ## Configuration
 
@@ -42,7 +42,7 @@ cp .env.example .env
 
 | Variable | Notes |
 | :--- | :--- |
-| `PORT` | Default **`3003`** — ปรับ `curl` ด้านล่างถ้าเปลี่ยน |
+| `PORT` | Default **`3002`** — ปรับ `curl` ด้านล่างถ้าเปลี่ยน |
 | `DB_NAME` | `demo-service` |
 | `MONGODB_URI` | user/password + `authSource` ถูกต้อง |
 | `GATEWAY_SHARED_SECRET` | ตรง `x-gateway-secret` จาก gateway |
@@ -92,12 +92,12 @@ pm2 logs demo-service
 
 ## Health checks
 
-ไม่ต้อง `x-gateway-secret` บน `/healthz`, `/readyz` (แทน `3003` ด้วย `PORT` จริง)
+ไม่ต้อง `x-gateway-secret` บน `/healthz`, `/readyz` (แทน `3002` ด้วย `PORT` จริง)
 
 | Check | Command | Expected |
 | :--- | :--- | :--- |
-| Liveness | `curl -s http://127.0.0.1:3003/healthz` | `200` |
-| Readiness | `curl -s http://127.0.0.1:3003/readyz` | `200` (Mongo ping OK) |
+| Liveness | `curl -s http://127.0.0.1:3002/healthz` | `200` |
+| Readiness | `curl -s http://127.0.0.1:3002/readyz` | `200` (Mongo ping OK) |
 | Readiness fail | same | `503` + `SERVICE_UNAVAILABLE` |
 
 ## API contract
@@ -115,10 +115,10 @@ pm2 logs demo-service
 
 ## Smoke tests
 
-Direct mesh (`BASE_URL` default `http://127.0.0.1:3003`):
+Direct mesh (`BASE_URL` default `http://127.0.0.1:3002`):
 
 ```bash
-BASE_URL="http://127.0.0.1:3003"
+BASE_URL="http://127.0.0.1:3002"
 GW_SECRET="replace-me"   # = GATEWAY_SHARED_SECRET
 
 COMMON_HEADERS=(
@@ -157,7 +157,7 @@ curl -i "${COMMON_HEADERS[@]}" -H 'if-match: W/"<latest-etag>"' -X DELETE \
 
 ### Smoke ผ่าน gateway (E2E)
 
-Client ยิง **gateway** (`:3002`) ด้วย **`Authorization: Bearer`** — gateway verify JWT (JWKS) แล้ว inject mesh headers ไป **demo-service** (`:3003`). ไม่ส่ง `x-gateway-secret` จาก client
+Client ยิง **gateway** (`:3000`) ด้วย **`Authorization: Bearer`** — gateway verify JWT (JWKS) แล้ว inject mesh headers ไป **demo-service** (`:3002`). ไม่ส่ง `x-gateway-secret` จาก client
 
 **ก่อนเริ่ม**
 
@@ -166,24 +166,24 @@ Client ยิง **gateway** (`:3002`) ด้วย **`Authorization: Bearer`** 
 | User ตัวอย่าง | ที่ `auth`: `npm run seed:example` (ถ้ายังไม่มี) — user `demo` / password ตาม stdout |
 | Secret คู่กัน | `GATEWAY_SHARED_SECRET` (crud) = `GATEWAY_SECRET` (gateway) — template เดียวกัน |
 | Redis (แนะนำ) | [RUNBOOK §2.5](../../../RUNBOOK.md#25--redis-local--token_gen--immediate-revoke) — `REDIS_URL` ใน auth + gateway |
-| Routes | [gateway `routes.json`](../../../gateway/routes.json) มี `/api/v1/me` และ `/api/v1/items` → `:3003` |
+| Routes | [gateway `routes.json`](../../../gateway/routes.json) มี `/api/v1/me` และ `/api/v1/items` → `:3002` |
 
 **Terminal layout**
 
 | # | Service | Cwd | Command | Port |
 | :---: | :--- | :--- | :--- | :---: |
 | 1 | auth | `zero-platform/auth` | `npm run dev` | 3001 |
-| 2 | demo-service | `services/.demo/demo-service` | `npm run dev` | 3003 |
-| 3 | gateway | `zero-platform/gateway` | `npm start` | 3002 |
+| 2 | demo-service | `services/.demo/demo-service` | `npm run dev` | 3002 |
+| 3 | gateway | `zero-platform/gateway` | `npm start` | 3000 |
 | 4 | smoke | `zero-platform/gateway` | `npm run try:proxy` | — |
 
 **Pre-flight (ทุกตัวต้อง `200`)**
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3001/healthz   # auth
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3003/healthz   # demo-service
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3002/healthz   # gateway
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3003/readyz    # Mongo ready
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3002/healthz   # demo-service
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/healthz   # gateway
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3002/readyz    # Mongo ready
 ```
 
 **อัตโนมัติ (แนะนำ)** — จาก `gateway/`:
@@ -202,7 +202,7 @@ Env (optional): `TRY_AUTH_URL`, `TRY_GATEWAY_URL`, `TRY_PROXY_PATH`, `TRY_LOGIN_
 
 ```bash
 AUTH=http://127.0.0.1:3001
-GW=http://127.0.0.1:3002
+GW=http://127.0.0.1:3000
 
 # 1) Login (native JSON) — แก้ user/password ตาม seed
 LOGIN=$(curl -s -X POST "${AUTH}/auth/login" \
@@ -232,7 +232,7 @@ curl -i "${GW}/api/v1/items" \
 | :--- | :--- |
 | `401` ที่ gateway | JWT/JWKS/`token_gen`+Redis — `JWT_JWKS_URL` ชี้ auth; ลอง login ใหม่ |
 | `502` / `504` | demo-service ไม่ขึ้น หรือ `ROUTES_JSON` ไม่มี prefix — ดู log `[gateway] Effective proxy prefixes:` |
-| `401` / `403` ที่ upstream (หลัง proxy) | แปลก — client ไม่ควรยิง `:3003` โดยตรงใน flow นี้; ตรวจ gateway inject headers |
+| `401` / `403` ที่ upstream (หลัง proxy) | แปลก — client ไม่ควรยิง `:3002` โดยตรงใน flow นี้; ตรวจ gateway inject headers |
 
 Monorepo E2E เต็ม (auth + Redis + หลาย upstream): [RUNBOOK.md](../../../RUNBOOK.md)
 

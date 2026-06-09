@@ -3,9 +3,17 @@ import CODES from "../../lib/error-codes.js";
 import * as service from "./profiles.service.js";
 
 function getRouteTemplate(request) {
-  return (
-    request.routeOptions.url || request.routerPath || request.url.split("?")[0]
+  const url = request.routeOptions.url || request.routerPath;
+  if (url) {
+    return url;
+  }
+
+  const fallback = request.url.split("?")[0];
+  request.log.info(
+    { url: request.url, fallback },
+    "getRouteTemplate: using fallback from request.url",
   );
+  return fallback;
 }
 
 function sendProfileResponse(reply, result) {

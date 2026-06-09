@@ -6,7 +6,6 @@ import {
   listInvoiceTransactions,
   generateInvoices,
   updateInvoiceStatus,
-  setInvoicesAccessToken,
 } from './invoicesApiClient';
 
 const { mockGet, mockPost, mockPut } = vi.hoisted(() => ({
@@ -15,25 +14,17 @@ const { mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }));
 
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      get: mockGet,
-      post: mockPost,
-      put: mockPut,
-      interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() },
-      },
-      defaults: { headers: { common: {} } },
-    })),
+vi.mock('./baseApiClient', () => ({
+  baseClient: {
+    get: mockGet,
+    post: mockPost,
+    put: mockPut,
   },
 }));
 
 describe('invoicesApiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setInvoicesAccessToken(null);
   });
 
   it('listInvoices calls GET /api/v1/invoices', async () => {

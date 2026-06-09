@@ -237,7 +237,7 @@ export const syncAgentSchema = {
     type: 'object',
     required: ['branch_id'],
     properties: {
-      branch_id: { type: 'string' }
+      branch_id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' }
     }
   },
   response: {

@@ -6,15 +6,15 @@ Operations guide for local dev, gateway E2E, and release checks.
 
 | Component       | Default port | Notes                     |
 | --------------- | ------------ | ------------------------- |
-| staff-service   | **3004**     | `PORT` in `.env`          |
-| gateway         | 3002         | Proxies `/api/v1/staff/*` |
+| staff-service   | **3101**     | `PORT` in `.env`          |
+| gateway         | 3000         | Proxies `/api/v1/staff/*` |
 | auth (internal) | 3001         | `AUTH_INTERNAL_BASE_URL`  |
 
 ## Environment variables
 
 | Variable                       | Required | Description                             |
 | ------------------------------ | -------- | --------------------------------------- |
-| `PORT`                         | yes      | HTTP listen (3004)                      |
+| `PORT`                         | yes      | HTTP listen (3101)                      |
 | `NODE_ENV`                     | yes      | `development` / `test` / `production`   |
 | `APP_NAME`                     | no       | Log label (`staff-service`)             |
 | `MONGODB_URI`                  | yes      | Mongo connection string                 |
@@ -42,8 +42,8 @@ Creates indexes on `staff_profiles` and optional `$jsonSchema`. Use the **same**
 ## Health checks
 
 ```bash
-curl -s http://127.0.0.1:3004/healthz | jq .
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3004/readyz   # 200 when Mongo up
+curl -s http://127.0.0.1:3101/healthz | jq .
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3101/readyz   # 200 when Mongo up
 ```
 
 ## Direct mesh calls (bypass gateway)
@@ -51,7 +51,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3004/readyz   # 200 wh
 For debugging staff without JWT. Replace IDs with valid 24-char hex from your DB.
 
 ```bash
-export STAFF=http://127.0.0.1:3004
+export STAFF=http://127.0.0.1:3101
 export SECRET='<dev-only-gateway-secret>'
 export OU=507f1f77bcf86cd799439011
 export BRANCH=507f1f77bcf86cd799439012
@@ -164,10 +164,10 @@ mesh -X POST "${STAFF}/api/v1/staff/profiles/${PROFILE_ID}/password" \
 
 1. Start auth, gateway, staff, Mongo.
 2. Obtain access token from auth login flow.
-3. Call gateway base (default `http://127.0.0.1:3002`):
+3. Call gateway base (default `http://127.0.0.1:3000`):
 
 ```bash
-export GW=http://127.0.0.1:3002
+export GW=http://127.0.0.1:3000
 export TOKEN='<access-jwt>'
 
 curl -sS "${GW}/api/v1/staff/profiles?user_id=${TARGET_USER}" \
@@ -180,7 +180,7 @@ Import [`openapi-via-gateway.yaml`](./openapi-via-gateway.yaml) into Bruno/Postm
 
 ```bash
 # .env: METRICS_ENABLED=true
-curl -s http://127.0.0.1:3004/metrics \
+curl -s http://127.0.0.1:3101/metrics \
   -H "x-gateway-secret: ${SECRET}" | grep staff_auth_revoke_pending
 ```
 

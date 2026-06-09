@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type { ApiEnvelope } from '../types/agents';
 import type {
   GenerateInvoicesData,
@@ -9,57 +8,26 @@ import type {
   ListInvoicesData,
   ListInvoicesParams,
 } from '../types/invoice';
-
-let _accessToken: string | null = null;
-let _refreshCallback: (() => Promise<string | null>) | null = null;
-
-const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
-  headers: { 'Content-Type': 'application/json' },
-});
-
-client.interceptors.request.use((config) => {
-  if (_accessToken) config.headers.Authorization = `Bearer ${_accessToken}`;
-  return config;
-});
-
-client.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config as typeof err.config & { _retry?: boolean };
-    if (err.response?.status === 401 && !original._retry && _refreshCallback) {
-      original._retry = true;
-      const newToken = await _refreshCallback();
-      if (newToken) {
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return client(original);
-      }
-    }
-    return Promise.reject(err);
-  },
-);
-
-export function setInvoicesAccessToken(token: string | null): void {
-  _accessToken = token;
-  if (token) {
-    client.defaults.headers.common.Authorization = `Bearer ${token}`;
-  } else {
-    delete client.defaults.headers.common.Authorization;
-  }
-}
-
-export function setInvoicesRefreshCallback(fn: (() => Promise<string | null>) | null): void {
-  _refreshCallback = fn;
-}
+import { baseClient as client } from './baseApiClient';
 
 export async function listInvoices(params: ListInvoicesParams = {}, signal?: AbortSignal) {
   const res = await client.get<ApiEnvelope<ListInvoicesData>>('/api/v1/invoices', { params, signal });
   return res.data;
 }
 
-export async function listInvoiceAgents(signal?: AbortSignal) {
-  const res = await client.get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', { signal });
-  return res.data;
+let _agentsPromise: Promise<ApiEnvelope<InvoiceAgentBranch[]>> | null = null;
+
+export function listInvoiceAgents(signal?: AbortSignal) {
+  if (!_agentsPromise) {
+    _agentsPromise = client
+      .get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', { signal })
+      .then((res) => res.data)
+      .catch((err) => {
+        _agentsPromise = null;
+        throw err;
+      });
+  }
+  return _agentsPromise;
 }
 
 export async function getInvoiceById(id: string, signal?: AbortSignal) {

@@ -1,44 +1,5 @@
-import axios, { type AxiosResponse } from 'axios';
 import type { Agent, ApiEnvelope, ListAgentsParams, UpdateAgentPayload } from '../types/agents';
-
-let _accessToken: string | null = null;
-let _refreshCallback: (() => Promise<string | null>) | null = null;
-
-export function setAgentAccessToken(token: string | null): void {
-  _accessToken = token;
-}
-
-export function setAgentRefreshCallback(fn: () => Promise<string | null>): void {
-  _refreshCallback = fn;
-}
-
-const client = axios.create();
-
-client.interceptors.request.use((config) => {
-  if (_accessToken) config.headers.Authorization = `Bearer ${_accessToken}`;
-  return config;
-});
-
-client.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config as typeof err.config & { _retry?: boolean };
-    if (err.response?.status === 401 && !original._retry && _refreshCallback) {
-      original._retry = true;
-      const newToken = await _refreshCallback();
-      if (newToken) {
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return client(original);
-      }
-    }
-    return Promise.reject(err);
-  },
-);
-
-function extractETag(res: AxiosResponse): string | null {
-  const raw = res.headers['etag'];
-  return typeof raw === 'string' ? raw : null;
-}
+import { baseClient as client, extractETag } from './baseApiClient';
 
 export async function listAgents(params: ListAgentsParams = {}, signal?: AbortSignal) {
   const res = await client.get<ApiEnvelope<Agent[]>>('/api/v1/agent-invoice/agents', { params, signal });

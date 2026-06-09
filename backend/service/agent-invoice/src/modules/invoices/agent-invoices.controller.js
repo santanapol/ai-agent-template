@@ -115,7 +115,7 @@ export async function postCalculateFee(request, reply) {
   const requestId = resolveRequestId(request.headers['x-request-id']);
 
   try {
-    const result = await calculateFee({ ivId, action, ifMatch, actor, ouId });
+    const result = await calculateFee({ ivId, action, ifMatch, actor, ouId, log: request.log });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(request, reply, err, 'calculate-fee request failed');
@@ -178,10 +178,11 @@ export async function putInvoiceStatus(request, reply) {
   const { id: actor, ouId } = request.userContext;
   const { id } = request.params;
   const { status } = request.body ?? {};
+  const ifMatch = request.headers['if-match'];
   const requestId = resolveRequestId(request.headers['x-request-id']);
 
   try {
-    const result = await updateInvoiceStatus({ id, status, actor, ouId });
+    const result = await updateInvoiceStatus({ id, status, actor, ouId, ifMatch });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(request, reply, err, 'update status request failed');

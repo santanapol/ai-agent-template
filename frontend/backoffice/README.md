@@ -12,6 +12,7 @@ Vite + React + Ant Design admin UI for **Zero Platform**. Proxies `/api` → gat
 | [`docs/ux-writing.md`](./docs/ux-writing.md) | Copy and tone |
 | [`docs/design-system.md`](./docs/design-system.md) | Ant Design tokens |
 | [`docs/design-password-management.md`](./docs/design-password-management.md) | Password UI spec (**pending implementation**) |
+| [`RUNBOOK.md`](./RUNBOOK.md) | Local development setup and troubleshooting |
 
 Backend contracts: [`../services/staff/docs/`](../services/staff/docs/) · [`../auth/docs/`](../auth/docs/)
 

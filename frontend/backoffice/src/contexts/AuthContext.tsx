@@ -1,10 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { DecodedUser, TokenResponse } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
-import { setAccessToken, setRefreshCallback } from '../lib/staffApiClient';
-import { setAgentAccessToken, setAgentRefreshCallback } from '../lib/agentsApiClient';
-import { setAgentFeesAccessToken, setAgentFeesRefreshCallback } from '../lib/agentFeesApiClient';
-import { setInvoicesAccessToken, setInvoicesRefreshCallback } from '../lib/invoicesApiClient';
+import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
 
 interface AuthContextValue {
   user: DecodedUser | null;
@@ -19,9 +16,14 @@ function decodeJwt(token: string): DecodedUser | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const decoded = JSON.parse(
-      atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
-    ) as DecodedUser;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const decoded = JSON.parse(jsonPayload) as DecodedUser;
     if (decoded.exp && decoded.exp * 1000 < Date.now()) return null;
     return decoded;
   } catch {
@@ -38,19 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!decoded) return;
     setUser(decoded);
     setAccessToken(data.access_token);
-    setAgentAccessToken(data.access_token);
-    setAgentFeesAccessToken(data.access_token);
-    setInvoicesAccessToken(data.access_token);
-    authApi.setAuthAccessToken(data.access_token);
   }, []);
 
   const clearSession = useCallback(() => {
     setUser(null);
     setAccessToken(null);
-    setAgentAccessToken(null);
-    setAgentFeesAccessToken(null);
-    setInvoicesAccessToken(null);
-    authApi.setAuthAccessToken(null);
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -82,9 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     setRefreshCallback(refreshFn);
-    setAgentRefreshCallback(refreshFn);
-    setAgentFeesRefreshCallback(refreshFn);
-    setInvoicesRefreshCallback(refreshFn);
   }, [refreshFn]);
 
   // On mount: attempt to restore session via HttpOnly refresh cookie.

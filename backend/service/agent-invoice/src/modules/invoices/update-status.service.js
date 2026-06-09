@@ -4,6 +4,8 @@ import { mapInvoiceForApi } from '../../lib/invoice-serialize.js';
 
 import { ROUTE_PROG } from '../../lib/route-prog.js';
 
+import { decodeEtag } from '../../lib/etag.js';
+
 import * as invoiceRepo from './invoice.repository.js';
 
 import * as masterDataRepo from './master-data.repository.js';
@@ -16,11 +18,16 @@ const PROG = ROUTE_PROG.INVOICES_STATUS;
 
 /**
 
- * @param {{ id: string, status: string, actor: string, ouId: string }} params
-
+ * @param {{ id: string, status: string, actor: string, ouId: string, ifMatch?: string, _repos?: object }} params
  */
 
-export async function updateInvoiceStatus({ id, status, actor, ouId }) {
+export async function updateInvoiceStatus({ id, status, actor, ouId, ifMatch, _repos }) {
+
+  const repoInvoice = _repos?.invoice ?? invoiceRepo;
+
+  const repoMasterData = _repos?.masterData ?? masterDataRepo;
+
+
 
   if (!isValidObjectId(id)) {
 
@@ -38,7 +45,35 @@ export async function updateInvoiceStatus({ id, status, actor, ouId }) {
 
 
 
-  const invoice = await invoiceRepo.findById(id, ouId);
+  if (!ifMatch) {
+
+    return { success: false, code: 'PRECONDITION_REQUIRED' };
+
+  }
+
+
+
+  const expectedUpdDateISO = decodeEtag(ifMatch);
+
+  if (!expectedUpdDateISO) {
+
+    return { success: false, code: 'INVALID_PARAM' };
+
+  }
+
+
+
+  const expectedUpdDate = new Date(expectedUpdDateISO);
+
+  if (isNaN(expectedUpdDate.getTime())) {
+
+    return { success: false, code: 'INVALID_PARAM' };
+
+  }
+
+
+
+  const invoice = await repoInvoice.findById(id, ouId);
 
   if (!invoice) {
 
@@ -56,9 +91,11 @@ export async function updateInvoiceStatus({ id, status, actor, ouId }) {
 
 
 
-  await invoiceRepo.updateStatus({
+  const { matchedCount } = await repoInvoice.updateStatus({
 
     id,
+
+    ouId,
 
     status: 'PAID',
 
@@ -66,19 +103,31 @@ export async function updateInvoiceStatus({ id, status, actor, ouId }) {
 
     prog: PROG,
 
+    expectedUpdDate,
+
+    expectedStatus: 'READY',
+
   });
 
 
 
-  const updated = await invoiceRepo.findDetailById(id, ouId);
+  if (matchedCount === 0) {
+
+    return { success: false, code: 'VERSION_CONFLICT' };
+
+  }
+
+
+
+  const updated = await repoInvoice.findDetailById(id, ouId);
 
   const recordOuId = String(updated.ou_id);
 
   const [branchName, ouName] = await Promise.all([
 
-    masterDataRepo.findBranchDisplayName(String(updated.branch_id)),
+    repoMasterData.findBranchDisplayName(String(updated.branch_id)),
 
-    masterDataRepo.findOuDisplayName(recordOuId),
+    repoMasterData.findOuDisplayName(recordOuId),
 
   ]);
 
@@ -95,4 +144,3 @@ export async function updateInvoiceStatus({ id, status, actor, ouId }) {
   };
 
 }
-

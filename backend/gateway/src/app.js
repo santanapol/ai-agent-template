@@ -112,11 +112,7 @@ export async function buildApp(env = loadEnv(), options = {}) {
     }
     request.log.error({ err }, 'request failed')
     const status =
-      typeof err === 'object' &&
-      err !== null &&
-      typeof err.statusCode === 'number' &&
-      err.statusCode >= 400 &&
-      err.statusCode < 600
+      typeof err?.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600
         ? err.statusCode
         : 500
     return reply.status(status).send()

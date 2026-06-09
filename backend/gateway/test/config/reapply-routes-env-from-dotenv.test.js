@@ -34,12 +34,12 @@ describe('reapplyRoutesEnvFromDotenvFile', () => {
 
   test('overrides shell ROUTES_JSON with value from .env', () => {
     process.env.ROUTES_JSON = JSON.stringify([
-      { prefix: '/api', upstream: 'http://127.0.0.1:3003', stripPrefix: false }
+      { prefix: '/api', upstream: 'http://127.0.0.1:3002', stripPrefix: false }
     ])
     const fromFile = JSON.stringify([
       { prefix: '/api/v1/reports', upstream: 'http://127.0.0.1:3000', stripPrefix: false },
-      { prefix: '/api/v1/items', upstream: 'http://127.0.0.1:3003', stripPrefix: false },
-      { prefix: '/api', upstream: 'http://127.0.0.1:3003', stripPrefix: false }
+      { prefix: '/api/v1/items', upstream: 'http://127.0.0.1:3002', stripPrefix: false },
+      { prefix: '/api', upstream: 'http://127.0.0.1:3002', stripPrefix: false }
     ])
     writeFileSync(join(tmp, '.env'), `ROUTES_JSON=${fromFile}\n`, 'utf8')
 

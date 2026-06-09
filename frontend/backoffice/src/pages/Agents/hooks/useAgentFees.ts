@@ -19,9 +19,9 @@ export function useAgentFees(agentId: string) {
       if (signal?.aborted) return;
       setFees(data.data || []);
       setTotal(data.total || 0);
-    } catch (err: any) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
-      message.error(err.response?.data?.message || 'Failed to fetch agent fees');
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'CanceledError' || err.name === 'AbortError')) return;
+      message.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch agent fees');
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
@@ -36,24 +36,25 @@ export function useAgentFees(agentId: string) {
       if (signal?.aborted) return;
       setCompanies(comps || []);
       setCategories(cats || []);
-    } catch (err: any) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
-      message.error(err.response?.data?.message || 'Failed to fetch master data');
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'CanceledError' || err.name === 'AbortError')) return;
+      message.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch master data');
     }
   }, [message]);
 
-  const createFee = useCallback(async (payload: any) => {
+  const createFee = useCallback(async (payload: Omit<AgentFee, '_id' | 'upd_date'>) => {
     if (!agentId) return false;
     setLoading(true);
     try {
       await api.createAgentFee(agentId, payload);
       message.success('Fee created successfully');
       return true;
-    } catch (err: any) {
-      if (err.response?.status === 409) {
+    } catch (err: unknown) {
+      const errorResponse = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      if (errorResponse?.status === 409) {
         message.error('Fee override for this company and category already exists.');
       } else {
-        message.error(err.response?.data?.message || 'Failed to create agent fee');
+        message.error(errorResponse?.data?.message || 'Failed to create agent fee');
       }
       return false;
     } finally {
@@ -61,18 +62,19 @@ export function useAgentFees(agentId: string) {
     }
   }, [agentId, message]);
 
-  const updateFee = useCallback(async (feeId: string, payload: any, etag: string) => {
+  const updateFee = useCallback(async (feeId: string, payload: Partial<AgentFee>, etag: string) => {
     if (!agentId) return false;
     setLoading(true);
     try {
       await api.updateAgentFee(agentId, feeId, payload, etag);
       message.success('Fee updated successfully');
       return true;
-    } catch (err: any) {
-      if (err.response?.status === 412) {
+    } catch (err: unknown) {
+      const errorResponse = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      if (errorResponse?.status === 412) {
         message.warning('This record was modified by someone else. Please refresh and try again.');
       } else {
-        message.error(err.response?.data?.message || 'Failed to update fee');
+        message.error(errorResponse?.data?.message || 'Failed to update fee');
       }
       return false;
     } finally {
@@ -87,11 +89,12 @@ export function useAgentFees(agentId: string) {
       await api.deleteAgentFee(agentId, feeId, etag);
       message.success('Fee deleted successfully');
       return true;
-    } catch (err: any) {
-      if (err.response?.status === 412) {
+    } catch (err: unknown) {
+      const errorResponse = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      if (errorResponse?.status === 412) {
         message.warning('This record was modified by someone else. Please refresh and try again.');
       } else {
-        message.error(err.response?.data?.message || 'Failed to delete fee');
+        message.error(errorResponse?.data?.message || 'Failed to delete fee');
       }
       return false;
     } finally {
@@ -100,14 +103,14 @@ export function useAgentFees(agentId: string) {
   }, [agentId, message]);
 
   const bulkSave = useCallback(async (
-    creates: any[],
-    updates: { id: string; payload: any; etag: string }[],
+    creates: Omit<AgentFee, '_id' | 'upd_date'>[],
+    updates: { id: string; payload: Partial<AgentFee>; etag: string }[],
     deletes: { id: string; etag: string }[]
   ) => {
     if (!agentId) return false;
     setLoading(true);
     try {
-      const promises: Promise<any>[] = [
+      const promises: Promise<unknown>[] = [
         ...creates.map(c => api.createAgentFee(agentId, c)),
         ...updates.map(u => api.updateAgentFee(agentId, u.id, u.payload, u.etag)),
         ...deletes.map(d => api.deleteAgentFee(agentId, d.id, d.etag)),

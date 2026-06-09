@@ -39,7 +39,7 @@ export function mapToApi(doc, userSnippet = null) {
 
   return {
     id: doc._id.toString(),
-    user_id: doc.user_id.toString(),
+    user_id: doc.user_id ? doc.user_id.toString() : null,
     ou_id: doc.ou_id.toString(),
     branch_id: doc.branch_id.toString(),
     status: doc.status,
@@ -53,6 +53,9 @@ export function mapToApi(doc, userSnippet = null) {
 }
 
 async function findUserSnippet(userId) {
+  if (!userId) {
+    return null;
+  }
   const user = await usersCollection().findOne(
     { _id: toObjectId(userId) },
     { projection: { username: 1, role: 1 } },
@@ -103,7 +106,7 @@ export async function existsProfileByCode(ouId, branchId, code) {
 
 /**
  * @param {object} fields
- * @param {string} fields.user_id
+ * @param {string} [fields.user_id]
  * @param {string} fields.code
  * @param {string} fields.firstname
  * @param {string} fields.lastname
@@ -119,7 +122,7 @@ export async function insertProfile(fields, userContext, routeTemplate) {
 
   const doc = {
     _id,
-    user_id: toObjectId(fields.user_id),
+    user_id: fields.user_id ? toObjectId(fields.user_id) : null,
     ou_id: toObjectId(userContext.ouId),
     branch_id: toObjectId(userContext.branchId),
     status: fields.status ?? "active",
@@ -137,11 +140,78 @@ export async function insertProfile(fields, userContext, routeTemplate) {
   };
 
   await profilesCollection().insertOne(doc);
+
+  let userSnippet = null;
+  if (doc.user_id) {
+    userSnippet = await findUserSnippet(doc.user_id);
+  }
+  return {
+    profile: mapToApi(doc, userSnippet),
+    etag: encodeEtagFromItemDoc(doc),
+    _raw: doc,
+  };
+}
+
+/**
+ * Link a provisional profile (created without user_id) to an auth user.
+ * Used after provisionUser succeeds in the create-provision flow.
+ * @param {string} profileId hex24
+ * @param {{ ouId: string, branchId?: string }} scope
+ * @param {string} userId hex24
+ * @param {{ userId: string }} userContext
+ * @param {string} routeTemplate
+ * @returns {Promise<{ profile: object, etag: string } | null>}
+ */
+export async function linkProfileToUser(
+  profileId,
+  scope,
+  userId,
+  userContext,
+  routeTemplate,
+) {
+  const filter = {
+    _id: toObjectId(profileId),
+    ...buildScopeFilter(scope),
+    user_id: null,
+  };
+  const now = new Date();
+
+  const doc = await profilesCollection().findOneAndUpdate(
+    filter,
+    {
+      $set: {
+        user_id: toObjectId(userId),
+        upd_by: userContext.userId,
+        upd_date: now,
+        upd_prog: routeTemplate,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!doc) {
+    return null;
+  }
+
   const userSnippet = await findUserSnippet(doc.user_id);
   return {
     profile: mapToApi(doc, userSnippet),
     etag: encodeEtagFromItemDoc(doc),
   };
+}
+
+/**
+ * Delete a profile by ID (used for cleanup when provision fails).
+ * @param {string} profileId hex24
+ * @param {{ ouId: string, branchId?: string }} scope
+ */
+export async function deleteProfileById(profileId, scope) {
+  const filter = {
+    _id: toObjectId(profileId),
+    ...buildScopeFilter(scope),
+  };
+  const result = await profilesCollection().deleteOne(filter);
+  return result.deletedCount === 1;
 }
 
 /**
@@ -304,8 +374,9 @@ export async function listProfiles(query, scope) {
       },
     ];
 
+    const aggOptions = hint ? { hint } : {};
     const [facetResult] = await profilesCollection()
-      .aggregate(pipeline)
+      .aggregate(pipeline, aggOptions)
       .toArray();
     const total = facetResult?.metadata?.[0]?.total ?? 0;
     const docs = facetResult?.data ?? [];
@@ -379,33 +450,34 @@ export async function updateProfile(
   const versionFilter = { ...baseFilter, upd_date: ifMatchDate };
   const now = new Date();
 
-  const result = await profilesCollection().updateOne(versionFilter, {
-    $set: {
-      ...fields,
-      upd_by: userContext.userId,
-      upd_date: now,
-      upd_prog: routeTemplate,
+  const doc = await profilesCollection().findOneAndUpdate(
+    versionFilter,
+    {
+      $set: {
+        ...fields,
+        upd_by: userContext.userId,
+        upd_date: now,
+        upd_prog: routeTemplate,
+      },
     },
-  });
+    { returnDocument: "after" },
+  );
 
-  if (result.matchedCount === 1) {
-    const doc = await profilesCollection().findOne(baseFilter);
-    if (!doc) {
+  if (!doc) {
+    const exists = await profilesCollection().findOne(baseFilter, {
+      projection: { _id: 1 },
+    });
+    if (!exists) {
       return null;
     }
-    const userSnippet = await findUserSnippet(doc.user_id);
-    return {
-      profile: mapToApi(doc, userSnippet),
-      etag: encodeEtagFromItemDoc(doc),
-    };
+    return { stale: true };
   }
 
-  const exists = await profilesCollection().findOne(baseFilter);
-  if (!exists) {
-    return null;
-  }
-
-  return { stale: true };
+  const userSnippet = await findUserSnippet(doc.user_id);
+  return {
+    profile: mapToApi(doc, userSnippet),
+    etag: encodeEtagFromItemDoc(doc),
+  };
 }
 
 /**
@@ -435,34 +507,35 @@ export async function updateProfileStatus(
   const versionFilter = { ...baseFilter, upd_date: ifMatchDate };
   const now = new Date();
 
-  const result = await profilesCollection().updateOne(versionFilter, {
-    $set: {
-      status: nextStatus,
-      upd_by: userContext.userId,
-      upd_date: now,
-      upd_prog: routeTemplate,
+  const doc = await profilesCollection().findOneAndUpdate(
+    versionFilter,
+    {
+      $set: {
+        status: nextStatus,
+        upd_by: userContext.userId,
+        upd_date: now,
+        upd_prog: routeTemplate,
+      },
     },
-  });
+    { returnDocument: "after" },
+  );
 
-  if (result.matchedCount === 1) {
-    const doc = await profilesCollection().findOne(idScopeFilter);
-    if (!doc) {
+  if (!doc) {
+    const existing = await profilesCollection().findOne(idScopeFilter, {
+      projection: { _id: 1, status: 1, upd_date: 1 },
+    });
+    if (!existing) {
       return null;
     }
-    const userSnippet = await findUserSnippet(doc.user_id);
-    return {
-      profile: mapToApi(doc, userSnippet),
-      etag: encodeEtagFromItemDoc(doc),
-    };
+    if (existing.status !== expectedStatus) {
+      return { invalidTransition: true };
+    }
+    return { stale: true };
   }
 
-  const doc = await profilesCollection().findOne(idScopeFilter);
-  if (!doc) {
-    return null;
-  }
-  if (doc.status !== expectedStatus) {
-    return { invalidTransition: true };
-  }
-
-  return { stale: true };
+  const userSnippet = await findUserSnippet(doc.user_id);
+  return {
+    profile: mapToApi(doc, userSnippet),
+    etag: encodeEtagFromItemDoc(doc),
+  };
 }

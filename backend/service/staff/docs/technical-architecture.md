@@ -265,10 +265,10 @@ Client (เมื่อ bootstrap): `src/clients/auth-internal.client.js`
 
 | Client prefix   | Upstream (default dev)  | `stripPrefix` | Business paths                                                                                                                 |
 | :-------------- | :---------------------- | :-----------: | :----------------------------------------------------------------------------------------------------------------------------- |
-| `/api/v1/staff` | `http://127.0.0.1:3004` |    `false`    | `/api/v1/staff/profiles` และ subpaths — [`business-domain.md` §5](./business-domain.md#5-http-operations-intent--ก่อน-openapi) |
+| `/api/v1/staff` | `http://127.0.0.1:3101` |    `false`    | `/api/v1/staff/profiles` และ subpaths — [`business-domain.md` §5](./business-domain.md#5-http-operations-intent--ก่อน-openapi) |
 
 - **Longest prefix:** ต้องอยู่ก่อน catch-all `/api` ถ้ามีในอนาคต
-- **Default `PORT`:** **3004** (หลีก `3001` auth, `3002` gateway, `3003` crud demo)
+- **Default `PORT`:** **3101** (หลีก `3001` auth, `3000` gateway, `3002` crud demo)
 - **Mesh:** `GATEWAY_SHARED_SECRET` ต้องตรง `GATEWAY_SECRET` ของ gateway
 
 ## 8. Source layout (target)
@@ -300,7 +300,7 @@ src/
 
 | รายการ                                                   | สถานะ / ค่าเริ่มต้น (dev)                                                                              |
 | :------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| `PORT`                                                   | **3004** (ดู § [Gateway routing](#7-gateway-routing))                                                  |
+| `PORT`                                                   | **3101** (ดู § [Gateway routing](#7-gateway-routing))                                                  |
 | `MONGODB_URI`, `DB_NAME`                                 | กำหนดตอน implement — มักใช้ DB เดียวกับ auth (`auth_*`)                                                |
 | `GATEWAY_SHARED_SECRET`                                  | ตรง `GATEWAY_SECRET` ใน gateway `.env`                                                                 |
 | `AUTH_INTERNAL_BASE_URL`, `AUTH_INTERNAL_SERVICE_SECRET` | outbound auth (§ [Outbound auth](#6-outbound-auth))                                                    |
