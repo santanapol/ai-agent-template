@@ -75,11 +75,14 @@ cd /var/www/zero-platform
 cd frontend/backoffice
 npm ci
 npm run build
+cd ../..
 
-# 2. ติดตั้งไลบรารีสำหรับ Backend
-cd ../../backend
-npm ci
-cd ..
+# 2. ติดตั้งไลบรารีสำหรับ Backend แต่ละ Service
+cd backend/gateway && npm ci && cd ../..
+cd backend/auth && npm ci && cd ../..
+cd backend/service/staff && npm ci && cd ../..
+cd backend/service/agent-invoice && npm ci && cd ../..
+cd backend/service/demo-service && npm ci && cd ../..
 
 # 3. รัน Redis ผ่าน Docker
 docker compose -f backend/docker-compose.prod.yml up -d
