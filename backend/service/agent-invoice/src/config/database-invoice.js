@@ -17,8 +17,8 @@ function resolveConfig() {
 }
 
 /**
- * Invoice API connection — database `agent-invoice` (prod, `MONGODB_DB_INVOICE`).
- * Collections: agent_invoice, agent_invoice_transaction, agent_fees
+ * Invoice API connection — database `zero-agent-invoice` (prod, `MONGODB_DB_INVOICE`).
+ * Collections: agent_iv, agent_iv_transaction, agent_fees
  */
 export async function connectInvoiceDatabase() {
   if (db) return db;

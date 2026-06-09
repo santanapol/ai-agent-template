@@ -6,7 +6,7 @@ import { getInvoiceDatabase } from '../../config/database-invoice.js';
 
 
 
-const COLLECTION = 'agent_invoice_transaction';
+const COLLECTION = 'agent_iv_transaction';
 
 
 

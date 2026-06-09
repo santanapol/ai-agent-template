@@ -8,7 +8,7 @@ import { isMongoUnauthorized } from '../../lib/mongo-errors.js';
 
 
 
-const COLLECTION = 'agent_invoice';
+const COLLECTION = 'agent_iv';
 
 
 

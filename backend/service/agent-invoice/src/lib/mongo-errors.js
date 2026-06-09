@@ -1,5 +1,5 @@
 export const DATASTORE_ACCESS_MESSAGE =
-  'Database access denied for this operation. Check MongoDB user privileges on agent-invoice (MONGODB_DB_INVOICE).';
+  'Database access denied for this operation. Check MongoDB user privileges on zero-agent-invoice (MONGODB_DB_INVOICE).';
 
 /**
  * @param {unknown} err
