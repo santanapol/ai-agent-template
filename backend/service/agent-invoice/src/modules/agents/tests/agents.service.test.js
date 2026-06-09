@@ -29,7 +29,7 @@ const createMockDb = (overrides = {}) => {
   };
 };
 
-test("getAgents should return agents and total from repository", async (t) => {
+test("getAgents should return agents and total from repository", async () => {
   const dbMock = createMockDb();
   const result = await service.getAgents(
     dbMock,
@@ -43,7 +43,7 @@ test("getAgents should return agents and total from repository", async (t) => {
   assert.strictEqual(result.agents[0].branch_name, "Test Branch");
 });
 
-test("createAgent should success if default_fee_rate is provided", async (t) => {
+test("createAgent should success if default_fee_rate is provided", async () => {
   let insertCalled = false;
   const dbMock = createMockDb({
     agents: {
@@ -70,7 +70,7 @@ test("createAgent should success if default_fee_rate is provided", async (t) => 
   assert.ok(result.upd_date);
 });
 
-test("updateAgent should throw 412 if matchedCount is 0", async (t) => {
+test("updateAgent should throw 412 if matchedCount is 0", async () => {
   const dbMock = createMockDb({
     agents: {
       updateOne: async () => ({ matchedCount: 0 }),
@@ -99,7 +99,7 @@ test("updateAgent should throw 412 if matchedCount is 0", async (t) => {
   );
 });
 
-test("softDeleteAgent should throw 412 if matchedCount is 0", async (t) => {
+test("softDeleteAgent should throw 412 if matchedCount is 0", async () => {
   const dbMock = createMockDb({
     agents: {
       updateOne: async () => ({ matchedCount: 0 }),
@@ -123,7 +123,7 @@ test("softDeleteAgent should throw 412 if matchedCount is 0", async (t) => {
   );
 });
 
-test("getAgentDetail should return the agent when found", async (t) => {
+test("getAgentDetail should return the agent when found", async () => {
   const mockAgent = {
     _id: "123",
     branch_name: "Found Branch",
@@ -145,7 +145,7 @@ test("getAgentDetail should return the agent when found", async (t) => {
   assert.strictEqual(result.branch_name, "Found Branch");
 });
 
-test("getAgentDetail should throw 404 when agent is not found", async (t) => {
+test("getAgentDetail should throw 404 when agent is not found", async () => {
   const dbMock = createMockDb({
     agents: {
       findOne: async () => null,
@@ -166,7 +166,7 @@ test("getAgentDetail should throw 404 when agent is not found", async (t) => {
   );
 });
 
-test("resolveAgentBranchId should return agent branch_id when found", async (t) => {
+test("resolveAgentBranchId should return agent branch_id when found", async () => {
   const mockBranchId = new ObjectId("000000000000000000000099");
   const mockAgent = {
     _id: new ObjectId("000000000000000000000123"),
@@ -187,7 +187,7 @@ test("resolveAgentBranchId should return agent branch_id when found", async (t) 
   assert.deepStrictEqual(result, mockBranchId);
 });
 
-test("resolveAgentBranchId should throw 404 when agent is not found", async (t) => {
+test("resolveAgentBranchId should throw 404 when agent is not found", async () => {
   const dbMock = createMockDb({
     agents: {
       findOne: async () => null,
@@ -208,7 +208,7 @@ test("resolveAgentBranchId should throw 404 when agent is not found", async (t) 
   );
 });
 
-test("syncAgent — queries su_branch from read database", async (t) => {
+test("syncAgent — queries su_branch from read database", async () => {
   const branchId = "665a3d76b1e5f8b9e6f2b3d1";
   const ouId = "000000000000000000000456";
   let sourceQueried = false;
@@ -249,7 +249,7 @@ test("syncAgent — queries su_branch from read database", async (t) => {
   );
 });
 
-test("getUnsyncedBranches — queries su_branch from read database", async (t) => {
+test("getUnsyncedBranches — queries su_branch from read database", async () => {
   let sourceQueried = false;
 
   const sourceDbMock = {
@@ -336,7 +336,7 @@ test("getUnsyncedBranches — scopes su_branch query to requester ou_id", async 
   let capturedQuery;
 
   const sourceDbMock = {
-    collection: (name) => ({
+    collection: (_name) => ({
       find: (query) => {
         capturedQuery = query;
         return {

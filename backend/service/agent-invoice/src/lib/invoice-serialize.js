@@ -2,6 +2,7 @@
  * @param {import('mongodb').ObjectId | string | null | undefined} value
  */
 export function toApiId(value) {
+  // eslint-disable-next-line eqeqeq
   if (value == null) return value;
   return typeof value === "string" ? value : String(value);
 }

@@ -9,7 +9,7 @@ const ouIdQuerySchema = {
   },
 };
 
-export default async function masterDataRoute(fastify, options) {
+export default async function masterDataRoute(fastify, _options) {
   fastify.get(
     "/game-companies",
     { schema: ouIdQuerySchema },

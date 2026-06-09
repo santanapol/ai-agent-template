@@ -12,7 +12,7 @@ import {
 } from "./agents.schema.js";
 import * as controller from "./agents.controller.js";
 
-export default async function agentsRoute(fastify, options) {
+export default async function agentsRoute(fastify, _options) {
   fastify.addHook("onRequest", async (request, reply) => {
     const requestId = resolveRequestId(request.headers["x-request-id"]);
     const userOu = request.headers["x-user-ou"];

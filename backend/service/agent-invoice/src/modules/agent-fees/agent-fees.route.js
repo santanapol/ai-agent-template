@@ -6,7 +6,7 @@ import {
 } from "./agent-fees.schema.js";
 import * as controller from "./agent-fees.controller.js";
 
-export default async function agentFeesRoute(fastify, options) {
+export default async function agentFeesRoute(fastify, _options) {
   // GET /api/v1/agent-invoice/agents/:agentId/fees
   fastify.get(
     "/:agentId/fees",
