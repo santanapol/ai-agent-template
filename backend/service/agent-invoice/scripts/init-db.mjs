@@ -46,6 +46,12 @@ async function run() {
   );
   console.log('  ✔ agent_invoice: invoice_by_ou_branch_month');
 
+  await db.collection('agent_invoice_transaction').createIndex(
+    { ref_iv_id: 1, fee: 1 },
+    { background: true, name: 'txn_by_invoice' }
+  );
+  console.log('  ✔ agent_invoice_transaction: txn_by_invoice');
+
   console.log('');
   console.log('=== สรุป ===');
   console.log(`  documents in agent_fees: ${countFees}`);
