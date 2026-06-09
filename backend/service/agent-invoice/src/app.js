@@ -61,7 +61,7 @@ export default async function buildApp(opts = {}) {
 
     // Validate gateway secret
     const secret = request.headers['x-gateway-secret'];
-    if (!secret || !secretsMatch(String(secret), process.env.GATEWAY_SECRET)) {
+    if (!secret || !secretsMatch(String(secret), process.env.GATEWAY_SHARED_SECRET || process.env.GATEWAY_SECRET)) {
       return reply.status(401).send({
         success: false,
         code: 'GATEWAY_SECRET_REJECTED',
