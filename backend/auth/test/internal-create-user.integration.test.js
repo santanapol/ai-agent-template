@@ -98,7 +98,9 @@ describe('internal create user', () => {
     assert.ok(body.user_id)
 
     // Verify in DB
-    const userDoc = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ _id: new ObjectId(body.user_id) })
+    const userDoc = await db
+      .collection(AUTH_COLLECTIONS.USERS)
+      .findOne({ _id: new ObjectId(body.user_id) })
     assert.ok(userDoc)
     assert.equal(userDoc.username, payload.username)
     assert.equal(userDoc.ou_id.toHexString(), payload.ou_id)
