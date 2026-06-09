@@ -24,21 +24,15 @@ async function run() {
   console.log('');
   console.log('▶ สร้าง indexes...');
 
-  const collection = db.collection('agent_category_fees');
+  const feesCol = db.collection('agent_fees');
 
-  await collection.createIndex(
-    { agent_id: 1, ou_id: 1, branch_id: 1, company_id: 1, main_cate_id: 1 },
-    { unique: true, background: true, name: 'agent_tenant_company_cate_unique' }
+  await feesCol.createIndex(
+    { ou_id: 1, branch_id: 1, game_company_id: 1, game_main_cate_id: 1 },
+    { unique: true, background: true, name: 'agent_fee_unique' }
   );
-  console.log('  ✔ agent_category_fees: agent_tenant_company_cate_unique');
+  console.log('  ✔ agent_fees: agent_fee_unique');
 
-  await collection.createIndex(
-    { ou_id: 1, branch_id: 1, agent_id: 1 },
-    { background: true, name: 'tenant_agent_lookup' }
-  );
-  console.log('  ✔ agent_category_fees: tenant_agent_lookup');
-
-  const count = await collection.countDocuments();
+  const countFees = await feesCol.countDocuments();
 
   await db.collection('agents').createIndex(
     { ou_id: 1, branch_id: 1 },
@@ -54,7 +48,7 @@ async function run() {
 
   console.log('');
   console.log('=== สรุป ===');
-  console.log(`  documents in agent_category_fees: ${count}`);
+  console.log(`  documents in agent_fees: ${countFees}`);
 }
 
 run()
