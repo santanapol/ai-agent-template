@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch --env-file=.env src/server.js",
-    "test": "node --test --env-file=.env src/**/*.test.js"
+    "test": "node --test --env-file=.env src/**/*.test.js",
+    "init:db": "node --env-file=.env scripts/init-db.mjs"
   },
   "dependencies": {
     "dayjs": "^1.11.21",
