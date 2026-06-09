@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "zero-auth",
       script: "src/server.js",
-      cwd: "./auth",
+      cwd: __dirname + "/auth",
       node_args: "--env-file=.env.prod --enable-source-maps",
       instances: 1,
       autorestart: true,
@@ -16,7 +16,7 @@ module.exports = {
     {
       name: "zero-gateway",
       script: "src/server.js",
-      cwd: "./gateway",
+      cwd: __dirname + "/gateway",
       node_args: "--env-file=.env.prod --enable-source-maps",
       instances: 1,
       autorestart: true,
@@ -29,7 +29,7 @@ module.exports = {
     {
       name: "zero-staff",
       script: "src/server.js",
-      cwd: "./service/staff",
+      cwd: __dirname + "/service/staff",
       node_args: "--env-file=.env.prod --enable-source-maps",
       instances: 1,
       autorestart: true,
@@ -42,7 +42,7 @@ module.exports = {
     {
       name: "zero-agent-invoice",
       script: "src/server.js",
-      cwd: "./service/agent-invoice",
+      cwd: __dirname + "/service/agent-invoice",
       node_args: "--env-file=.env.prod --enable-source-maps",
       instances: 1,
       autorestart: true,
