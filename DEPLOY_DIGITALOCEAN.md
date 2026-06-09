@@ -145,9 +145,10 @@ server {
 }
 ```
 
-บันทึกไฟล์และรันคำสั่ง:
+บันทึกไฟล์และรันคำสั่งเพื่อเปิดใช้งาน (และปิดหน้า Default ของ Nginx):
 ```bash
 sudo ln -s /etc/nginx/sites-available/zero-platform /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
