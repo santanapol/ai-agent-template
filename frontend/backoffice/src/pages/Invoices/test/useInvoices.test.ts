@@ -4,6 +4,13 @@ import * as api from '../../../lib/invoicesApiClient';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('../../../lib/invoicesApiClient');
+vi.mock('antd', () => ({
+  message: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 
 describe('useInvoices', () => {
   beforeEach(() => {
