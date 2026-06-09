@@ -33,7 +33,7 @@ baseClient.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config as typeof err.config & { _retry?: boolean };
-    if (err.response?.status === 401 && !original._retry && _refreshCallback) {
+    if (err.response?.status === 401 && !original._retry && _refreshCallback && !original.url?.includes('/auth/refresh')) {
       original._retry = true;
       const newToken = await _refreshCallback();
       if (newToken) {
