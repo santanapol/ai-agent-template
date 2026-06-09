@@ -1,0 +1,132 @@
+# DigitalOcean Deployment Guide (GitHub Actions CI/CD)
+
+คู่มือนี้อธิบายขั้นตอนการตั้งค่าเซิร์ฟเวอร์ DigitalOcean (Ubuntu) เพื่อใช้งานร่วมกับ **GitHub Actions CI/CD** ให้ทำการ Deploy โค้ดอัตโนมัติทุกครั้งที่มีการ Push เข้า branch `main`
+
+---
+
+## ขั้นที่ 1: เตรียมเครื่อง DigitalOcean (ทำแค่ครั้งแรกครั้งเดียว)
+
+ล็อกอิน SSH เข้าไปที่เซิร์ฟเวอร์ Ubuntu แล้วทำตามขั้นตอนนี้:
+
+### 1.1 ติดตั้งโปรแกรมพื้นฐาน
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y nodejs npm nginx docker.io docker-compose-v2
+sudo npm install -g pm2
+```
+
+### 1.2 Clone โค้ดไปไว้ในเครื่อง
+```bash
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
+cd /var/www
+git clone <URL_GITHUB_REPO> zero-platform
+```
+*(หมายเหตุ: หากเป็น Private Repo ให้สร้าง SSH Deploy Key หรือใช้ Personal Access Token ในการ Clone)*
+
+### 1.3 สร้างไฟล์ Environment
+เข้าไปตั้งค่า `.env` ในแต่ละเซอร์วิส โดยก๊อปปี้จาก `.env.example`:
+```bash
+cd /var/www/zero-platform
+
+# Gateway
+cp backend/gateway/.env.example backend/gateway/.env
+# (แก้ไขค่า GATEWAY_SECRET ให้ยาวกว่า 32 ตัวอักษร)
+
+# ทำแบบเดียวกันกับโฟลเดอร์ Auth, Staff, Agent-Invoice
+```
+
+### 1.4 สตาร์ทระบบครั้งแรก
+```bash
+cd /var/www/zero-platform
+
+# 1. รัน Redis ผ่าน Docker
+docker compose -f backend/docker-compose.prod.yml up -d
+
+# 2. รัน API Backend ด้วย PM2
+pm2 start backend/ecosystem.config.js
+
+# 3. สั่งให้ PM2 รันออโต้เมื่อเครื่องรีสตาร์ท
+pm2 save
+pm2 startup
+```
+
+---
+
+## ขั้นที่ 2: ผูกกุญแจรีโมท (GitHub Secrets)
+
+ไปที่หน้าเว็บ GitHub ของโปรเจกต์ > **Settings** > **Secrets and variables** > **Actions** แล้วกดสร้าง **New repository secret** ดังนี้:
+
+- `DO_HOST` : ใส่ IP Address ของ Digital Ocean (เช่น `128.199.100.200`)
+- `DO_USERNAME` : ใส่ชื่อ User ของเซิร์ฟเวอร์ (เช่น `root` หรือ `ubuntu`)
+- `DO_SSH_KEY` : ใส่ Private Key ของเซิร์ฟเวอร์ (เช่น เนื้อหาในไฟล์ `~/.ssh/id_rsa` หรือไฟล์ `.pem`)
+
+---
+
+## ขั้นที่ 3: ตั้งค่า Nginx ปล่อยของ (Reverse Proxy)
+
+สร้างไฟล์คอนฟิก Nginx ใหม่ หรือแก้ไฟล์เดิม:
+```bash
+sudo nano /etc/nginx/sites-available/zero-platform
+```
+
+ใส่การตั้งค่าดังนี้ (แก้ `yourdomain.com` เป็นโดเมนจริงของคุณ):
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com; # โดเมนสำหรับ Frontend
+
+    # 1. ให้ Nginx โฮสต์ไฟล์ Frontend (React/Vite)
+    root /var/www/zero-platform/frontend/backoffice/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. Reverse Proxy ให้ /api และ /auth ไปหา Gateway
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /auth/ {
+        proxy_pass http://127.0.0.1:3000; # Gateway จะเป็นคนปัดไป 3001 เอง หรือชี้ไป 3001 โดยตรงก็ได้
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+}
+```
+
+บันทึกไฟล์และรันคำสั่ง:
+```bash
+sudo ln -s /etc/nginx/sites-available/zero-platform /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+*(แนะนำให้ทำ HTTPS ด้วย Certbot/Let's Encrypt ในภายหลัง)*
+
+---
+
+## ขั้นที่ 4: ลุยเลย! 🚀
+
+ระบบพร้อมแล้ว! ครั้งต่อไปที่คุณพิมพ์:
+```bash
+git commit -m "Deploying new feature"
+git push origin main
+```
+
+**สิ่งที่เกิดขึ้นเบื้องหลัง:**
+1. GitHub จะใช้ไฟล์ `.github/workflows/deploy.yml` เพื่อเปิด Runner
+2. GitHub Runner จะต่อ SSH เข้ามายังเซิร์ฟเวอร์ DigitalOcean โดยอัตโนมัติ
+3. สั่ง `git pull` ดึงโค้ดเวอร์ชันล่าสุด
+4. สั่ง `npm ci` เพื่อดาวน์โหลดไลบรารีใหม่ใน Backend
+5. สั่ง `npm run build` เพื่อสร้างไฟล์เว็บ Frontend ใหม่
+6. สั่ง `pm2 reload` ให้ Backend รับโค้ดใหม่แบบไร้รอยต่อ (Zero-downtime)
+
+คุณสามารถดูสถานะการ Deploy สดๆ ได้จากแท็บ **Actions** บน GitHub ของคุณครับ!

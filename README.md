@@ -62,6 +62,7 @@ flowchart LR
 | :--- | :--- | :--- |
 | **Backend** | [backend/README.md](./backend/README.md) | Services, ports, gateway routes, quick start |
 | **Backend ops** | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Docker, seed DB, smoke test, deploy checklist |
+| **Deployment** | [DEPLOY_DIGITALOCEAN.md](./DEPLOY_DIGITALOCEAN.md) | Guide for GitHub Actions CI/CD to DigitalOcean |
 | **Frontend** | [frontend/backoffice/README.md](./frontend/backoffice/README.md) | UX docs, API mapping, scripts |
 | **Frontend ops** | [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md) | Proxy routing, dev setup, troubleshooting |
 | **Frontend API** | [frontend/backoffice/docs/api-mapping.md](./frontend/backoffice/docs/api-mapping.md) | UI actions → HTTP endpoints |
