@@ -13,9 +13,12 @@ zero-platform/
 │   ├── auth/                # IdP — login, JWT/JWKS, token_gen
 │   ├── gateway/             # JWT edge + reverse proxy
 │   ├── service/             # Internal APIs
-│   │   ├── service-demo/    # ตัวอย่าง upstream (/api/v1/me, /api/v1/items)
+│   │   ├── agent-invoice/   # Agent invoice & fee management
+│   │   ├── demo-service/    # ตัวอย่าง upstream (/api/v1/me, /api/v1/items)
 │   │   └── staff/           # Staff domain docs (implementation TBD)
 │   ├── docker-compose.yml   # MongoDB + Redis (local)
+│   ├── docker-compose.prod.yml
+│   ├── ecosystem.config.js  # PM2 config
 │   ├── ARCHITECTURE.md
 │   └── RUNBOOK.md
 └── frontend/
@@ -31,19 +34,21 @@ flowchart LR
   end
 
   subgraph edge["Public / dev proxy"]
-    G["gateway :3002"]
+    G["gateway :3000"]
     A["auth :3001"]
   end
 
   subgraph private["Internal"]
-    S["service-demo :3002"]
-    ST["staff :3101\n(reserved)"]
+    S["demo-service :3002"]
+    ST["staff :3101"]
+    AI["agent-invoice :3102"]
   end
 
   UI -->|"/auth/*"| A
   UI -->|"/api/*"| G
   G -->|JWT verify + headers| S
   G -->|"/api/v1/staff"| ST
+  G -->|"/api/v1/invoices"| AI
   G -->|"/auth"| A
   A --> Redis[(Redis\ntoken_gen)]
   G --> Redis
@@ -58,6 +63,7 @@ flowchart LR
 | **Backend** | [backend/README.md](./backend/README.md) | Services, ports, gateway routes, quick start |
 | **Backend ops** | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Docker, seed DB, smoke test, deploy checklist |
 | **Frontend** | [frontend/backoffice/README.md](./frontend/backoffice/README.md) | UX docs, API mapping, scripts |
+| **Frontend ops** | [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md) | Proxy routing, dev setup, troubleshooting |
 | **Frontend API** | [frontend/backoffice/docs/api-mapping.md](./frontend/backoffice/docs/api-mapping.md) | UI actions → HTTP endpoints |
 | **Standards** | Org `coding-standard/` (parent workspace) | auth, gateway, backend, frontend/backoffice |
 
@@ -65,14 +71,14 @@ flowchart LR
 
 | Component | Port | Notes |
 | :--- | :---: | :--- |
+| **gateway** | 3000 | Client / Vite proxy target สำหรับ `/api` |
 | **auth** | 3001 | JWKS, login, refresh |
-| **gateway** | 3002 | Client / Vite proxy target สำหรับ `/api` |
-| **service-demo** | 3002 | `/api/v1/me`, `/api/v1/items` |
-| **staff** (upstream) | 3101 | อ้างใน `gateway/routes.json` — ยังไม่มี service ใน repo |
-| **items** | 3000 | แยกจาก gateway routes ปัจจุบัน |
+| **demo-service** | 3002 | `/api/v1/me`, `/api/v1/items` |
+| **staff** | 3101 | Profile management API |
+| **agent-invoice** | 3102 | Invoices and fees management API |
 | **MongoDB** | 27017 | `backend/docker compose` |
 | **Redis** | 6379 | Session revoke (`token_gen`) |
-| **backoffice (Vite)** | 5173 | Default Vite; proxy ไป auth/gateway |
+| **backoffice (Vite)** | 5174 | Vite; proxy ไป auth/gateway |
 
 ## Full-stack quick start
 
@@ -89,7 +95,7 @@ cd auth && npm ci && npm run create-env && npm run init:db && npm run dev
 cd gateway && cp .env.example .env && npm ci && npm run dev
 
 # Terminal 3 — sample upstream (optional)
-cd service-demo && cp .env.example .env && npm ci && npm run dev
+cd demo-service && cp .env.example .env && npm ci && npm run dev
 ```
 
 ค่า env สำคัญ: `JWT_JWKS_URL`, `GATEWAY_SECRET` (≥32 ตัว), `REDIS_URL=redis://127.0.0.1:6379/0` — ดู [backend/RUNBOOK.md](./backend/RUNBOOK.md)
@@ -108,9 +114,9 @@ Vite proxy ([`vite.config.ts`](./frontend/backoffice/vite.config.ts)):
 | Path | Target |
 | :--- | :--- |
 | `/auth` | `http://127.0.0.1:3001` |
-| `/api` | `http://127.0.0.1:3002` |
+| `/api` | `http://127.0.0.1:3000` |
 
-เปิด UI ที่ URL ที่ `npm run dev` แสดง (ปกติ `http://localhost:5173`) แล้ว login ด้วย user จาก `auth` seed (ดู RUNBOOK)
+เปิด UI ที่ URL ที่ `npm run dev` แสดง (ปกติ `http://localhost:5174`) แล้ว login ด้วย user จาก `auth` seed (ดู RUNBOOK)
 
 ### 3. Smoke test
 
@@ -121,15 +127,14 @@ curl -s -X POST http://127.0.0.1:3001/auth/login \
   -d '{"username":"admin","password":"ChangeMe!Admin-1","client_kind":"native"}'
 
 # ผ่าน gateway
-curl -s http://127.0.0.1:3002/api/v1/me -H "Authorization: Bearer <access_token>"
+curl -s http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>"
 ```
 
 ## Prerequisites
 
 | Layer | Requirement |
 | :--- | :--- |
-| Backend (auth, gateway, service-demo) | Node.js `>=24 <25`, Docker |
-| Backend (items) | Node.js + MongoDB (ดู `items/.env.example`) |
+| Backend (auth, gateway, demo-service) | Node.js `>=24 <25`, Docker |
 | Frontend | Node.js (ดู `frontend/backoffice/package.json`) |
 
 ## Quality gates
