@@ -25,14 +25,26 @@ sudo apt install -y nodejs
 sudo npm install -g pm2
 ```
 
-### 1.2 Clone โค้ดไปไว้ในเครื่อง
-```bash
-sudo mkdir -p /var/www
-sudo chown -R $USER:$USER /var/www
-cd /var/www
-git clone <URL_GITHUB_REPO> zero-platform
-```
-*(หมายเหตุ: หากเป็น Private Repo ให้สร้าง SSH Deploy Key หรือใช้ Personal Access Token ในการ Clone)*
+### 1.2 ตั้งค่า SSH Deploy Key และ Clone โค้ด (Private Repo)
+เนื่องจากโปรเจกต์นี้เป็น Private Repository เซิร์ฟเวอร์ต้องมีสิทธิ์ดึงโค้ดจาก GitHub ผ่านกุญแจ SSH:
+
+1. **สร้างกุญแจ SSH บนเซิร์ฟเวอร์** (กด Enter ข้ามได้เลยไม่ต้องตั้งรหัสผ่าน):
+   ```bash
+   ssh-keygen -t ed25519 -C "digitalocean-server"
+   cat ~/.ssh/id_ed25519.pub
+   ```
+2. **นำกุญแจไปใส่ใน GitHub**:
+   - ก๊อปปี้ข้อความที่แสดงออกมา (ขึ้นต้นด้วย `ssh-ed25519 ...`)
+   - ไปที่หน้า GitHub ของโปรเจกต์ > **Settings** > **Deploy keys** > **Add deploy key**
+   - นำข้อความไปวาง ตั้งชื่อ (เช่น `DO Server`) แล้วกด Add key
+3. **Clone โค้ดลงเซิร์ฟเวอร์**:
+   ```bash
+   sudo mkdir -p /var/www
+   sudo chown -R $USER:$USER /var/www
+   cd /var/www
+   # ใช้ลิงก์แบบ SSH (git@github.com:...) 
+   git clone git@github.com:Chiang-Rai-Technology/zero-platform.git zero-platform
+   ```
 
 ### 1.3 สร้างไฟล์ Environment
 เข้าไปตั้งค่า `.env` ในแต่ละเซอร์วิส โดยก๊อปปี้จาก `.env.example`:
