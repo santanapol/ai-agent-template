@@ -11,7 +11,9 @@ export function accessTokenGenRedisKey(subHex) {
  * @param {import('redis').RedisClientType | null | undefined} client
  * @param {string} subHex
  * @param {number} accessTokenGen
- * @param {number} [ttlSeconds] — key expiry; should cover the longest possible refresh token lifetime
+ * @param {number} [ttlSeconds] — key expiry in seconds; must be REFRESH_TOKEN_TTL + ACCESS_TOKEN_TTL
+ *   so that revocation is enforced until the last possible access JWT (issued on the final valid
+ *   refresh token) naturally expires
  */
 export async function setAccessTokenGenInRedis(client, subHex, accessTokenGen, ttlSeconds) {
   if (!client) return

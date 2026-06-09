@@ -3,7 +3,7 @@ import globals from 'globals'
 import security from 'eslint-plugin-security'
 
 export default [
-  { ignores: ['node_modules/**', 'coverage/**'] },
+  { ignores: ['node_modules/**', 'coverage/**', 'scripts/**'] },
   {
     ...js.configs.recommended,
     languageOptions: {
@@ -22,6 +22,13 @@ export default [
       'security/detect-non-literal-fs-filename': 'error',
       'security/detect-object-injection': 'off',
       'security/detect-possible-timing-attacks': 'warn'
+    }
+  },
+  {
+    // Test files: allow fs operations with variable paths (test fixtures are trusted inputs)
+    files: ['test/**/*.js', 'test/**/*.mjs'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off'
     }
   }
 ]

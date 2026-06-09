@@ -18,6 +18,12 @@ export function constantTimeSecretEqual(provided, expected) {
   if (typeof provided !== 'string' || typeof expected !== 'string') return false
   const a = Buffer.from(provided, 'utf8')
   const b = Buffer.from(expected, 'utf8')
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+  // Pad to equal length so timingSafeEqual always runs — prevents secret-length leak via
+  // early-return timing side-channel. Length equality is checked separately afterwards.
+  const len = Math.max(a.length, b.length)
+  const pa = Buffer.alloc(len)
+  const pb = Buffer.alloc(len)
+  a.copy(pa)
+  b.copy(pb)
+  return timingSafeEqual(pa, pb) && a.length === b.length
 }

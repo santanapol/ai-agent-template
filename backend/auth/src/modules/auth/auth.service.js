@@ -580,12 +580,11 @@ export class AuthService {
   async publishTokenGenOrNotReady(user_id_hex, access_token_gen) {
     if (!this.redisClient) return { ok: true }
     try {
-      await setAccessTokenGenInRedis(
-        this.redisClient,
-        user_id_hex,
-        access_token_gen,
-        this.env.REFRESH_TOKEN_TTL_SECONDS
-      )
+      // TTL must span REFRESH + ACCESS so that any access JWT issued on the last valid
+      // refresh token remains blockable until it naturally expires (BLOCKER-1 fix).
+      const ttl =
+        (this.env.REFRESH_TOKEN_TTL_SECONDS ?? 0) + (this.env.ACCESS_TOKEN_TTL_SECONDS ?? 0)
+      await setAccessTokenGenInRedis(this.redisClient, user_id_hex, access_token_gen, ttl)
       return { ok: true }
     } catch (err) {
       this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen publish failed')
@@ -619,6 +618,13 @@ export class AuthService {
 
     const shouldRevoke = revoke_sessions !== false
     const userId = new ObjectId(user_id_hex)
+
+    // Read user before the transaction so we can use the pre-write token_gen without a
+    // session-scoped read inside the transaction (BLOCKER-3 fix: avoids read-your-writes hazard
+    // on replica sets when findUserById is called without a session).
+    const preUser = await this.repo.findUserById(userId)
+    if (!preUser) return this.userNotFoundProblem()
+
     const password_hash = await this.hashPassword(password)
     const now = new Date()
     const actor = { user_id: 'internal', route: 'POST /internal/users/:user_id/password' }
@@ -629,10 +635,9 @@ export class AuthService {
         return { found: false, access_token_gen: 0, revoked_refresh_tokens: 0 }
       }
       if (!shouldRevoke) {
-        const user = await this.repo.findUserById(userId)
         return {
           found: true,
-          access_token_gen: user ? coerceTokenGen(user) : 0,
+          access_token_gen: coerceTokenGen(preUser),
           revoked_refresh_tokens: 0
         }
       }

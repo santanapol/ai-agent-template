@@ -40,17 +40,22 @@ function createMockRedis() {
   /** @type {Map<string, string>} */
   const store = new Map()
   let failSet = false
+  let lastSetOpts = undefined
   return {
     store,
+    get lastSetOpts() {
+      return lastSetOpts
+    },
     setFailOnSet(value) {
       failSet = value
     },
     async get(key) {
       return store.has(key) ? store.get(key) : null
     },
-    async set(key, value) {
+    async set(key, value, opts) {
       if (failSet) throw new Error('redis SET failed (test)')
       store.set(key, value)
+      lastSetOpts = opts
     },
     async ping() {
       return 'PONG'
@@ -126,6 +131,8 @@ test('internal revoke redis integration', { timeout: 180_000 }, async (t) => {
     const body = await r.json()
     assert.equal(body.access_token_gen, 1)
     assert.equal(mockRedis.store.get(accessTokenGenRedisKey(userHex)), '1')
+    // TTL must be REFRESH_TOKEN_TTL_SECONDS (86400) + ACCESS_TOKEN_TTL_SECONDS (900) = 87300
+    assert.deepEqual(mockRedis.lastSetOpts, { EX: 87300 })
   })
 
   await t.test('POST internal revoke returns 503 when redis SET fails', async () => {

@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Security
+
+- **`constantTimeSecretEqual`** (`src/lib/internal-bearer.js`): กำจัด early-return บน `a.length !== b.length` ก่อนเรียก `timingSafeEqual` — ช่องโหว่ timing side-channel รั่วความยาว `AUTH_INTERNAL_SERVICE_SECRET` ออกไปได้; แก้โดย pad ทั้ง 2 buffers ให้ยาวเท่ากันก่อน compare เสมอ
+- **Redis `token_gen` TTL** (`publishTokenGenOrNotReady`): แก้ TTL จาก `REFRESH_TOKEN_TTL_SECONDS` เป็น `REFRESH_TOKEN_TTL_SECONDS + ACCESS_TOKEN_TTL_SECONDS` — ป้องกัน revocation bypass window ที่เกิดขึ้นเมื่อ Redis key หมดอายุก่อน access JWT ตัวสุดท้ายที่ออกไปแล้ว
+- **`refreshBodySchema`** (`src/modules/auth/auth.validator.js`): `additionalProperties: false` (เดิมเป็น `true`) — ปิดช่องส่ง property แปลกผ่าน refresh body
+
+### Changed
+
+- **`setPasswordByService`** (`auth.service.js`): ย้าย `findUserById` ออกมาก่อน transaction (pre-read `preUser`) — กำจัด read-your-writes hazard บน replica set ที่เกิดจากการเรียก `findUserById` ภายใน `runUserTransaction` โดยไม่มี session
+- **`assertAccessTokenGenMatches`**: คืน `{ ok: true, user }` แทน `{ ok: true }` — `changeOwnPassword` ใช้ `genCheck.user` ตัดรอบ DB อีก 1 ครั้ง
+- **`recordFailures`**: parallelise ด้วย `Promise.all` — IP key กับ user key อัปเดตพร้อมกัน
+- **`refresh()`**: เพิ่ม audit + IP throttle เมื่อ user ถูกลบไปแล้ว (`reason: user_not_found`); ใช้ `runUserTransaction` โดยตรงแทน inline transaction
+- **`audit()` catch**: log `{ err, event_type }` แทน `err` เพียงอย่างเดียว — ops เห็นว่า event_type ไหนล้มเหลว
+- **ESLint** (`eslint.config.js`): เพิ่ม `eslint-plugin-security` (detect-eval, non-literal-regexp, non-literal-fs-filename เป็น error; detect-possible-timing-attacks เป็น warn); exclude `scripts/**`; override test files ปิด `detect-non-literal-fs-filename`
+
+### Added
+
+- **`InternalService`** (`src/modules/internal/internal.service.js`): thin delegation wrapper ระหว่าง `InternalController` กับ `AuthService` — รักษา module boundary
+- **Tests**: unit tests TTL `EX` option ใน `redis-access-token-gen.test.js` (EX > 0 และ EX = 0); integration mock `createMockRedis` capture `opts` + assert `{ EX: 87300 }` ใน `internal-revoke-redis.integration.test.js`
+
 ### Changed
 
 - **`loadEnv` (auth, gateway):** trim `TZ` from `.env.defaults` / `.env` before validation so Windows CRLF (`UTC\r`) no longer fails startup; normalize `process.env.TZ` to `UTC` at runtime.
