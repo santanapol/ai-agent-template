@@ -185,6 +185,8 @@ export async function calculateFee({
 
       netWin: sums.net_win,
 
+      bet: sums.bet,
+
       amount: sums.amount,
 
       actor,
@@ -203,6 +205,8 @@ export async function calculateFee({
         invoice_status: "READY",
 
         net_win: sums.net_win,
+
+        bet: sums.bet,
 
         amount: sums.amount,
       },

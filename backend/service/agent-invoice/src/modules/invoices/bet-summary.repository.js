@@ -65,6 +65,8 @@ export async function aggregateNetWin({ branchIds, startDate, endDate }) {
           },
 
           net_win: { $sum: "$net_win" },
+
+          bet: { $sum: "$bet" },
         },
       },
 
@@ -81,6 +83,8 @@ export async function aggregateNetWin({ branchIds, startDate, endDate }) {
           main_category_id: "$_id.main_category_id",
 
           net_win: 1,
+
+          bet: 1,
 
           fee: { $literal: null },
 

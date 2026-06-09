@@ -255,6 +255,9 @@ components:
         net_win:
           type: number
           nullable: true
+        bet:
+          type: number
+          nullable: true
         amount:
           type: number
           nullable: true
@@ -307,6 +310,7 @@ components:
         - company_id
         - main_category_id
         - net_win
+        - bet
         - fee
         - amount
         - cr_by
@@ -341,6 +345,8 @@ components:
           type: string
           nullable: true
         net_win:
+          type: number
+        bet:
           type: number
         fee:
           oneOf:
@@ -409,6 +415,8 @@ components:
         detail:
           type: string
         net_win:
+          type: number
+        bet:
           type: number
         amount:
           type: number
