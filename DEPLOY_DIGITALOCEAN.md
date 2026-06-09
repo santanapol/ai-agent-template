@@ -138,11 +138,32 @@ sudo ln -s /etc/nginx/sites-available/zero-platform /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
-*(แนะนำให้ทำ HTTPS ด้วย Certbot/Let's Encrypt ในภายหลัง)*
+---
+
+## ขั้นที่ 4: ตั้งค่า SSL/HTTPS ด้วย Certbot (ฟรีและแนะนำอย่างยิ่ง)
+
+เพื่อให้ระบบปลอดภัยและสามารถส่งผ่านข้อมูลได้อย่างสมบูรณ์แบบ เราต้องเปิดใช้งาน HTTPS ค่ะ:
+
+1. **ติดตั้ง Certbot**:
+   ```bash
+   sudo apt install -y certbot python3-certbot-nginx
+   ```
+
+2. **สั่งให้ Certbot จัดการใบรับรองและแก้ไข Nginx อัตโนมัติ**:
+   ```bash
+   sudo certbot --nginx -d yourdomain.com
+   ```
+   *(แก้ไข `yourdomain.com` เป็นโดเมนจริงของคุณให้ตรงกับไฟล์ Nginx)*
+
+3. **ทำตามขั้นตอนบนหน้าจอ**:
+   - ใส่อีเมลของคุณ (เวลาระบบจะหมดอายุเขาจะส่งอีเมลมาเตือน)
+   - พิมพ์ `Y` เพื่อยอมรับเงื่อนไข
+
+เมื่อเสร็จแล้ว Certbot จะสร้างระบบต่ออายุอัตโนมัติ (Auto-renew) ให้เลย เราไม่ต้องทำอะไรเพิ่มแล้วค่ะ!
 
 ---
 
-## ขั้นที่ 4: ลุยเลย! 🚀
+## ขั้นที่ 5: ลุยเลย! 🚀
 
 ระบบพร้อมแล้ว! ครั้งต่อไปที่คุณพิมพ์:
 ```bash
