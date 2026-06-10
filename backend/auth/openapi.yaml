@@ -852,8 +852,9 @@ components:
           maxLength: 256
         new_password:
           type: string
-          minLength: 16
+          minLength: 8
           maxLength: 256
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
     InternalCreateUserRequest:
       type: object
       additionalProperties: false
@@ -871,8 +872,9 @@ components:
           maxLength: 256
         password:
           type: string
-          minLength: 16
+          minLength: 8
           maxLength: 256
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
         role:
           type: string
           default: staff
@@ -890,8 +892,9 @@ components:
       properties:
         password:
           type: string
-          minLength: 16
+          minLength: 8
           maxLength: 256
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
         revoke_sessions:
           type: boolean
           default: true

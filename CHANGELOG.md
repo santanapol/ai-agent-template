@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Backoffice:** Add `telephone.ts` utility and `telephone.test.ts` to validate and format telephone numbers to E.164.
 - **Backoffice & agent-invoice:** added `bet` aggregation to invoices and transactions; displayed bet total and net win on frontend table and exports.
 - **CI/CD:** Added strict `.github/workflows/ci-check.yml` quality gate for pull requests to `main` (Lint, Test, OpenAPI validation, Frontend Build).
 - **`backend/service/agent-invoice/` — invoices module:** full invoice API under `/api/v1/invoices` (list, generate, detail, transactions, calculate-fee, status update); added `bet` aggregation to invoices and transactions; read/write Mongo plugins (`mongodb-read`, `mongodb-invoice`), `api-rate-limit`, shared `src/lib/` helpers; OpenAPI **1.1.0**; invoice DB env vars in `.env.example`.
@@ -29,6 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Backoffice:** Update telephone input fields to support entering local Thai numbers (with auto E.164 conversion before submitting). Reduce minimum password length requirement to 8 characters and enforce password complexity.
+- **Auth Service:** Update password policy requirement to minimum 8 characters and enforce complexity (uppercase, lowercase, numbers, special characters) in internal user validations, auth validators, and schemas.
+- **Staff Service:** Update password validation pattern and minimum length to 8 characters in profiles schemas and OpenAPI specifications.
 - **agent-invoice:** Standardized package scripts (`ci`, `lint`, `spec:lint`, etc.), added `private: true`, and applied standard configuration files (`eslint.config.js`, `.prettierrc.json`, `.spectral.yaml`). Ignored legacy seed scripts to pass initial linting.
 
 - **Deployment:** Clarified SSH key configurations and usage for GitHub Actions in `DEPLOY_DIGITALOCEAN.md` to avoid confusion between deploy keys and client keys.
@@ -69,6 +73,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Auth Service:** Fix regex pattern backslash escaping typo in password policy validation (`auth.service.js`).
+- **Backoffice:** Fix vitest unit test in `passwordPolicy.test.ts` to use a password matching the updated complexity requirements.
 - **agent-invoice — master-data:** `game-companies` / `game-categories` use `getBranchDatabase()` (`MONGODB_URI_READ` + `gpp_777ww`) instead of undefined `sourceDb` when `SOURCE_MONGODB_URI` is unset.
 - **Backoffice — Agent Fees:** ETag encoding on update/delete; matrix table race when mapping fee data to DOM; input enablement when syncing initial fee values; default fee rate update error handling.
 - **Backoffice — Staff/Auth:** `getProfileByUserId` handles single-object lookup response; JWT decode hardening; role-based route guard for `/staff`; profile/staff drawer and password-form validation edge cases.
