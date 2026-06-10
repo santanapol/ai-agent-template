@@ -46,3 +46,41 @@ export async function insertReport(db, report) {
 export async function findReports(db) {
   return db.collection(REPORTS_COLLECTION).find({}).toArray();
 }
+
+/**
+ * @param {import('mongodb').Db} db
+ * @param {import('mongodb').ObjectId} id
+ * @returns {Promise<Report|null>}
+ */
+export async function findReportById(db, id) {
+  return db.collection(REPORTS_COLLECTION).findOne({ _id: id });
+}
+
+/**
+ * Optimistic-lock update: only applies when `upd_date` still matches `expectedUpdDate`.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {import('mongodb').ObjectId} id
+ * @param {Partial<Report>} updates
+ * @param {Date} expectedUpdDate
+ * @returns {Promise<import('mongodb').UpdateResult>}
+ */
+export async function updateReport(db, id, updates, expectedUpdDate) {
+  return db
+    .collection(REPORTS_COLLECTION)
+    .updateOne({ _id: id, upd_date: expectedUpdDate }, { $set: updates });
+}
+
+/**
+ * Optimistic-lock delete: only applies when `upd_date` still matches `expectedUpdDate`.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {import('mongodb').ObjectId} id
+ * @param {Date} expectedUpdDate
+ * @returns {Promise<import('mongodb').DeleteResult>}
+ */
+export async function deleteReport(db, id, expectedUpdDate) {
+  return db
+    .collection(REPORTS_COLLECTION)
+    .deleteOne({ _id: id, upd_date: expectedUpdDate });
+}

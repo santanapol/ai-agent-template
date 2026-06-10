@@ -28,11 +28,11 @@
 
 ### Phase 3: Scheduler & API Endpoints (ฟีเจอร์ตั้งเวลาและติดต่อภายนอก)
 - [x] **Task 5:** Scheduler Implementation (`scheduler.js` - node-cron)
-- [ ] **Task 6:** CRUD and Execution Routes (`reports.js`)
+- [x] **Task 6:** CRUD and Execution Routes (`reports.js`)
 
 ### Checkpoint: Scheduler & API
 - [x] Scheduler สามารถสแกนและรันรายงานตามช่วงเวลาโดยใช้การแทนที่ตัวแปรได้ถูกต้อง
-- [ ] API Endpoints ทำงานได้ถูกต้องตามหลัก REST API
+- [x] API Endpoints ทำงานได้ถูกต้องตามหลัก REST API
 
 ### Phase 4: Integration (เชื่อมต่อ Gateway และ Frontend)
 - [ ] **Task 7:** Gateway Routing Integration

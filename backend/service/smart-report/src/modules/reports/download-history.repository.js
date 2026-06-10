@@ -56,3 +56,12 @@ export async function findDownloadHistory(db) {
     .sort({ startedAt: -1 })
     .toArray();
 }
+
+/**
+ * @param {import('mongodb').Db} db
+ * @param {import('mongodb').ObjectId} id
+ * @returns {Promise<DownloadHistory|null>}
+ */
+export async function findDownloadHistoryById(db, id) {
+  return db.collection(DOWNLOAD_HISTORY_COLLECTION).findOne({ _id: id });
+}

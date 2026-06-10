@@ -124,18 +124,36 @@
 **Description:** สร้าง API Route สำหรับจัดการรายงาน (CRUD) การสั่งรันรายงานด้วยตนเองทันที (Manual run) และ API สำหรับดาวน์โหลดไฟล์รายงานที่จัดเก็บบนเครื่องเซิร์ฟเวอร์
 
 **Acceptance criteria:**
-- [ ] API Endpoints CRUD สคริปต์รายงานทำงานได้ถูกต้อง
-- [ ] API POST `/run` สั่งให้ระบบ Query และเซฟไฟล์ทันทีได้เรียบร้อย
-- [ ] API GET `/download/:id` ส่งคืนไฟล์รายงานกลับไปให้ผู้ใช้ดาวน์โหลดได้จริง
+- [x] API Endpoints CRUD สคริปต์รายงานทำงานได้ถูกต้อง
+- [x] API POST `/run` สั่งให้ระบบ Query และเซฟไฟล์ทันทีได้เรียบร้อย
+- [x] API GET `/download/:id` ส่งคืนไฟล์รายงานกลับไปให้ผู้ใช้ดาวน์โหลดได้จริง
 
 **Verification:**
-- [ ] รัน Integration tests ของ API endpoints ทั้งหมด
+- [x] รัน Integration tests ของ API endpoints ทั้งหมด: `npm test` (66/66 ผ่าน)
 
 **Dependencies:** Task 5
 
-**Files likely touched:**
-- `backend/service/smart-report/src/routes/reports.js`
-- `backend/service/smart-report/src/app.js`
+**Files touched:**
+- `backend/service/smart-report/src/lib/error-codes.js`
+- `backend/service/smart-report/src/lib/envelope.js`
+- `backend/service/smart-report/src/lib/http-error.js`
+- `backend/service/smart-report/src/lib/secret-compare.js`
+- `backend/service/smart-report/src/lib/etag.js`
+- `backend/service/smart-report/src/lib/error-handler.js`
+- `backend/service/smart-report/src/lib/test-helpers/mesh-headers.js`
+- `backend/service/smart-report/src/plugins/duplicate-header.js`
+- `backend/service/smart-report/src/plugins/gateway-secret.js`
+- `backend/service/smart-report/src/plugins/user-context.js`
+- `backend/service/smart-report/src/plugins/tests/unit-test/duplicate-header.test.js`
+- `backend/service/smart-report/src/plugins/tests/integration-test/guards.test.js`
+- `backend/service/smart-report/src/modules/reports/reports.schema.js`
+- `backend/service/smart-report/src/modules/reports/reports.service.js`
+- `backend/service/smart-report/src/modules/reports/reports.controller.js`
+- `backend/service/smart-report/src/modules/reports/reports.route.js`
+- `backend/service/smart-report/src/modules/reports/reports.repository.js` (เพิ่ม `findReportById`, `updateReport`, `deleteReport`)
+- `backend/service/smart-report/src/modules/reports/download-history.repository.js` (เพิ่ม `findDownloadHistoryById`)
+- `backend/service/smart-report/src/modules/reports/tests/integration-test/reports.route.test.js`
+- `backend/service/smart-report/src/app.js` (เพิ่ม guards, content-type parser fix, nested `/api/v1/smart-reports` context)
 
 **Estimated scope:** Medium
 
