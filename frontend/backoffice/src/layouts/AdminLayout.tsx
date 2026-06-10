@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Space, Tag, Typography, theme } from 'antd';
-import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as staffApi from '../lib/staffApiClient';
@@ -75,10 +75,12 @@ const AdminLayout: React.FC = () => {
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/agents', icon: <ShopOutlined />, label: 'Agent Fees' },
     { key: '/invoices', icon: <FileTextOutlined />, label: 'Invoices' },
+    { key: '/smart-reports', icon: <CodeOutlined />, label: 'Smart Report' },
     ...(isStaffAdmin
       ? [{ key: '/staff', icon: <TeamOutlined />, label: 'Staff Management' }]
       : []),
   ];
+
 
   const userMenu = {
     items: [

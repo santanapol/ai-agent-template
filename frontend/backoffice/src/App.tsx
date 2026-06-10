@@ -11,7 +11,9 @@ import InvoiceDetail from './pages/Invoices/InvoiceDetail';
 import AgentsList from './pages/Agents';
 import AgentFeesPage from './pages/AgentFees';
 import Login from './pages/Login';
+import SmartReport from './pages/SmartReport';
 import Error403 from './pages/Error403';
+
 import Error404 from './pages/Error404';
 import Error500 from './pages/Error500';
 import RouteErrorPage from './components/RouteErrorPage';
@@ -72,7 +74,9 @@ const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
+      { path: 'smart-reports', element: <SmartReport /> },
       { path: '403', element: <Error403 /> },
+
       { path: '500', element: <Error500 /> },
     ],
   },

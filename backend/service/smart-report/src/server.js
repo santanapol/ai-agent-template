@@ -3,6 +3,7 @@ import { connectDatabase } from "./config/database.js";
 import { connectReadDatabase } from "./config/database-read.js";
 import { ensureReportIndexes } from "./modules/reports/reports.repository.js";
 import { ensureDownloadHistoryIndexes } from "./modules/reports/download-history.repository.js";
+import { initializeScheduler } from "./modules/reports/scheduler.service.js";
 
 const start = async () => {
   const app = await buildApp();
@@ -12,7 +13,11 @@ const start = async () => {
     await ensureReportIndexes(db);
     await ensureDownloadHistoryIndexes(db);
 
+    await initializeScheduler(db);
+    app.log.info("report scheduler initialized");
+
     await connectReadDatabase();
+
     app.log.info("read-only mongodb connected");
 
     const port = process.env.PORT || 3103;

@@ -78,6 +78,26 @@ if (!RUN) {
       assert.equal(result.bufferType, "undefined");
     });
 
+    test("blocks sandbox escape via prototype constructor traversal of context functions", async () => {
+      const script = `
+        const escapeFn = ObjectId.constructor;
+        escapeFn ? escapeFn('return process')() : undefined;
+      `;
+      const result = await runReportScript({ script });
+      assert.strictEqual(result, undefined);
+    });
+
+    test("blocks sandbox escape via prototype constructor traversal of db wrapper methods", async () => {
+      const script = `
+        const sibling = db.getSiblingDB("any");
+        const escapeFn = sibling.anyCollection.find.constructor;
+        escapeFn ? escapeFn('return process')() : undefined;
+      `;
+      const result = await runReportScript({ script });
+      assert.strictEqual(result, undefined);
+    });
+
+
     test("supports ObjectId in the sandbox context", async () => {
       const result = await runReportScript({
         script: '({ id: ObjectId("507f1f77bcf86cd799439011").toHexString() })',

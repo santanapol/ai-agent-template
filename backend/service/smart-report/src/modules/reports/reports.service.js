@@ -15,7 +15,7 @@ import {
   findDownloadHistory,
   findDownloadHistoryById,
 } from "./download-history.repository.js";
-import { runReport } from "./scheduler.service.js";
+import { runReport, reloadScheduler } from "./scheduler.service.js";
 
 const ROUTE_PROG = "/api/v1/smart-reports";
 const ROUTE_PROG_ITEM = "/api/v1/smart-reports/:id";
@@ -104,6 +104,7 @@ export async function createReport(payload, userId) {
   };
 
   const inserted = await insertReport(db, report);
+  await reloadScheduler(db);
   return serializeReport(inserted);
 }
 
@@ -134,6 +135,8 @@ export async function updateReportById(id, payload, ifMatch, userId) {
     );
   }
 
+  await reloadScheduler(db);
+
   return serializeReport({ ...existing, ...updates, _id: objectId });
 }
 
@@ -155,6 +158,8 @@ export async function deleteReportById(id, ifMatch) {
       "Resource was modified by another request. Refresh and retry.",
     );
   }
+
+  await reloadScheduler(db);
 }
 
 export async function runReportById(id) {

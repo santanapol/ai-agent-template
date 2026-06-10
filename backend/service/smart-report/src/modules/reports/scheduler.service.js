@@ -202,3 +202,24 @@ export function stopScheduler(tasks) {
     task.stop();
   }
 }
+
+let activeSchedulerTasks = [];
+
+/**
+ * สตาร์ทและลงทะเบียนรายงานทั้งหมด
+ * @param {import('mongodb').Db} db
+ */
+export async function initializeScheduler(db) {
+  stopScheduler(activeSchedulerTasks);
+  activeSchedulerTasks = await startScheduler(db);
+  return activeSchedulerTasks;
+}
+
+/**
+ * โหลดตัวตั้งเวลารันใหม่ทั้งหมดเมื่อมีการแก้ไขข้อมูลรายงาน
+ * @param {import('mongodb').Db} db
+ */
+export async function reloadScheduler(db) {
+  await initializeScheduler(db);
+}
+

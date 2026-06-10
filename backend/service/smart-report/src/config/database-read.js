@@ -16,14 +16,20 @@ function redactMongoUri(uri) {
 export async function connectReadDatabase() {
   if (client) return client;
 
-  if (!process.env.MONGODB_URI_READ) {
+  let uri = process.env.MONGODB_URI_READ;
+  if (process.env.NODE_ENV === "test") {
+    uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
+  }
+
+  if (!uri) {
     throw new Error("[Database] Missing MONGODB_URI_READ config.");
   }
 
   const candidate = new MongoClient(
-    process.env.MONGODB_URI_READ,
+    uri,
     READ_DB_OPTIONS,
   );
+
 
   try {
     await candidate.connect();

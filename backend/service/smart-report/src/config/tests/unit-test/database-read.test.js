@@ -14,11 +14,14 @@ describe("config/database-read", () => {
 
   test("connectReadDatabase throws when MONGODB_URI_READ is missing", async () => {
     const original = process.env.MONGODB_URI_READ;
+    const originalNodeEnv = process.env.NODE_ENV;
     delete process.env.MONGODB_URI_READ;
+    process.env.NODE_ENV = "production";
     try {
       await assert.rejects(connectReadDatabase(), /Missing MONGODB_URI_READ/);
     } finally {
       if (original !== undefined) process.env.MONGODB_URI_READ = original;
+      process.env.NODE_ENV = originalNodeEnv;
     }
   });
 

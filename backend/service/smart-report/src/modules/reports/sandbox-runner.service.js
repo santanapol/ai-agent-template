@@ -4,24 +4,34 @@ import { getReadClient } from "../../config/database-read.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
-function isoDate(value) {
-  return new Date(value);
+function makeSafeFunction(fn) {
+  Object.setPrototypeOf(fn, null);
+  if (fn.prototype) fn.prototype = null;
+  return fn;
 }
 
+const isoDate = makeSafeFunction(function isoDate(value) {
+  return new Date(value);
+});
+
 /** เลียนแบบ `ObjectId(...)` ของ mongo shell ที่เรียกได้ทั้งแบบมีและไม่มี `new` */
-function createObjectId(value) {
+const createObjectId = makeSafeFunction(function createObjectId(value) {
   return new ObjectId(value);
-}
+});
 
 /** ครอบ collection ให้ aggregate/find/findOne คืนค่าเป็น Array หรือ Object ทันที (auto capture) */
 function wrapCollection(collection) {
-  return {
-    find: (query = {}, options = {}) =>
-      collection.find(query, options).toArray(),
-    aggregate: (pipeline = [], options = {}) =>
-      collection.aggregate(pipeline, options).toArray(),
-    findOne: (query = {}, options = {}) => collection.findOne(query, options),
-  };
+  const wrapped = Object.create(null);
+  wrapped.find = makeSafeFunction((query = {}, options = {}) =>
+    collection.find(query, options).toArray(),
+  );
+  wrapped.aggregate = makeSafeFunction((pipeline = [], options = {}) =>
+    collection.aggregate(pipeline, options).toArray(),
+  );
+  wrapped.findOne = makeSafeFunction((query = {}, options = {}) =>
+    collection.findOne(query, options),
+  );
+  return wrapped;
 }
 
 /** เลียนแบบ `db.getSiblingDB(name).<collection>` ของ mongo shell ด้วย Proxy แบบ dynamic property */
@@ -36,10 +46,11 @@ function createSiblingDb(client, dbName) {
 }
 
 function createSandboxDb(client) {
-  return {
-    getSiblingDB: (dbName) => createSiblingDb(client, dbName),
-  };
+  const sandboxDb = Object.create(null);
+  sandboxDb.getSiblingDB = makeSafeFunction((dbName) => createSiblingDb(client, dbName));
+  return sandboxDb;
 }
+
 
 /**
  * รันสคริปต์ MongoDB shell-style (aggregate/find/findOne) ภายใต้ Node `vm` sandbox

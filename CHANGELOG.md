@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/smart-report/`:** Added a new report query and scheduling service, supporting raw MongoDB script execution under a secured VM sandbox with prototype traversal protection, exports to CSV/Excel formats stored permanently, and automatic boot scheduler.
+- **Backoffice:** Added the Smart Report management UI page under `/smart-reports` to display, create, edit, delete, run immediately, and download report history.
+- **Gateway:** Added routing rules to proxy `/api/v1/smart-reports` requests to port 3103.
+
 - **Backoffice:** Add `telephone.ts` utility and `telephone.test.ts` to validate and format telephone numbers to E.164.
 - **Backoffice & agent-invoice:** added `bet` aggregation to invoices and transactions; displayed bet total and net win on frontend table and exports.
 - **CI/CD:** Added strict `.github/workflows/ci-check.yml` quality gate for pull requests to `main` (Lint, Test, OpenAPI validation, Frontend Build).
@@ -72,6 +76,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`local-ports.md`:** Port index consolidated into root and `backend/README.md`.
 
 ### Fixed
+
+- **`backend/service/staff/`:** Fixed `.env` database name config to point to `zero-platform` instead of `auth_login` to correct profiles lookup errors.
+- **`backend/auth/`:** Fixed `seed-user` script when updating profile collections.
+- **`backend/service/smart-report/`:** Patched VM sandbox escapes and stripped object prototypes using `Object.create(null)` for sandbox-injected objects. Corrected unit and integration test suites.
 
 - **Auth Service:** Fix regex pattern backslash escaping typo in password policy validation (`auth.service.js`).
 - **Backoffice:** Fix vitest unit test in `passwordPolicy.test.ts` to use a password matching the updated complexity requirements.
