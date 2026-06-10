@@ -199,6 +199,7 @@ const InvoiceList: React.FC = () => {
             allowClear
           />
           <Select
+            showSearch
             placeholder="Filter by Branch"
             style={{ width: 220 }}
             allowClear
@@ -208,13 +209,14 @@ const InvoiceList: React.FC = () => {
               setSelectedBranchId(val);
               setPage(1);
             }}
-          >
-            {branches.map((branch) => (
-              <Select.Option key={branch.branch_id} value={branch.branch_id}>
-                {branch.branch_name || branch.branch_code || branch.branch_id}
-              </Select.Option>
-            ))}
-          </Select>
+            options={branches.map((b) => ({
+              value: b.branch_id,
+              label: b.branch_code ? `${b.branch_code} - ${b.branch_name || b.branch_id}` : (b.branch_name || b.branch_id),
+            }))}
+            filterOption={(input, option) =>
+              ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+          />
           <Select
             placeholder="Filter by Status"
             style={{ width: 180 }}
@@ -277,13 +279,19 @@ const InvoiceList: React.FC = () => {
             label="Select Branch (Optional)"
             tooltip="If not selected, invoices will be generated for all branches."
           >
-            <Select placeholder="All Branches" allowClear loading={loadingBranches}>
-              {branches.map((branch) => (
-                <Select.Option key={branch.branch_id} value={branch.branch_id}>
-                  {branch.branch_name || branch.branch_code || branch.branch_id}
-                </Select.Option>
-              ))}
-            </Select>
+            <Select
+              showSearch
+              placeholder="All Branches"
+              allowClear
+              loading={loadingBranches}
+              options={branches.map((b) => ({
+                value: b.branch_id,
+                label: b.branch_code ? `${b.branch_code} - ${b.branch_name || b.branch_id}` : (b.branch_name || b.branch_id),
+              }))}
+              filterOption={(input, option) =>
+                ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+            />
           </Form.Item>
         </Form>
       </Modal>
