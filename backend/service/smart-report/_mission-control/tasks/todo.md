@@ -101,16 +101,19 @@
 **Description:** ติดตั้ง `node-cron` เพื่อทำระบบสแกนรายงานที่มีการตั้งรอบเวลา (Daily, Weekly, Monthly) แล้วนำมารันสคริปต์โดยแทนที่ตัวแปร Dynamic Parameters (`{{startDate}}`, `{{endDate}}`) ด้วยช่วงเวลาของวันเวลาจริง และสั่งสร้างไฟล์ดาวน์โหลดอัตโนมัติ
 
 **Acceptance criteria:**
-- [ ] ระบบตั้งเวลารันทำงานได้อย่างถูกต้องตามเวลาที่กำหนดในสคริปต์รายงาน
-- [ ] สามารถสแกนและสลับแทนที่ placeholder เช่น `{{startDate}}` ด้วย ISO String ของวันเวลาที่ต้องคำนวณจริง
+- [x] ระบบตั้งเวลารันทำงานได้อย่างถูกต้องตามเวลาที่กำหนดในสคริปต์รายงาน
+- [x] สามารถสแกนและสลับแทนที่ placeholder เช่น `{{startDate}}` ด้วย ISO String ของวันเวลาที่ต้องคำนวณจริง
 
 **Verification:**
-- [ ] ทดสอบสร้างสคริปต์จำลองรันทุกๆ 1 นาที แล้วเช็กว่ามีประวัติไฟล์ดาวน์โหลดถูกบันทึกจริง
+- [x] ทดสอบสร้างสคริปต์จำลองรันทุกๆ 1 นาที แล้วเช็กว่ามีประวัติไฟล์ดาวน์โหลดถูกบันทึกจริง
 
 **Dependencies:** Task 4
 
-**Files likely touched:**
-- `backend/service/smart-report/src/services/scheduler.js`
+**Files touched:**
+- `backend/service/smart-report/src/modules/reports/scheduler.service.js`
+- `backend/service/smart-report/src/modules/reports/tests/unit-test/scheduler.service.test.js`
+- `backend/service/smart-report/src/modules/reports/tests/integration-test/scheduler.service.test.js`
+- `backend/service/smart-report/package.json` (เพิ่ม `node-cron`)
 
 **Estimated scope:** Medium
 
