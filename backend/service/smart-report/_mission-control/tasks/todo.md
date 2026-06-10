@@ -78,18 +78,19 @@
 **Description:** พัฒนาระบบส่งออกข้อมูลผลลัพธ์ (JSON Array) ออกมาเป็นไฟล์รูปแบบ CSV และ Excel และบันทึกลงโฟลเดอร์ Local Storage บนเซิร์ฟเวอร์
 
 **Acceptance criteria:**
-- [ ] สามารถแปลงข้อมูลเป็นไฟล์ CSV โดยใช้ `json2csv` ได้ถูกต้อง
-- [ ] สามารถแปลงข้อมูลเป็นไฟล์ Excel (.xlsx) โดยใช้ `exceljs` ได้ถูกต้อง
-- [ ] บันทึกไฟล์ลง Local Path ของเซิร์ฟเวอร์แบบถาวรและส่งคืนข้อมูล File path กลับมาได้ถูกต้อง
+- [x] สามารถแปลงข้อมูลเป็นไฟล์ CSV โดยใช้ `json2csv` ได้ถูกต้อง
+- [x] สามารถแปลงข้อมูลเป็นไฟล์ Excel (.xlsx) โดยใช้ `exceljs` ได้ถูกต้อง
+- [x] บันทึกไฟล์ลง Local Path ของเซิร์ฟเวอร์แบบถาวรและส่งคืนข้อมูล File path กลับมาได้ถูกต้อง
 
 **Verification:**
-- [ ] รัน Unit test: `node --test tests/fileExporter.test.js`
+- [x] รัน Unit test: `node --test src/modules/reports/tests/unit-test/file-exporter.service.test.js`
 
 **Dependencies:** Task 3
 
-**Files likely touched:**
-- `backend/service/smart-report/src/services/fileExporter.js`
-- `backend/service/smart-report/tests/fileExporter.test.js`
+**Files touched:**
+- `backend/service/smart-report/src/modules/reports/file-exporter.service.js`
+- `backend/service/smart-report/src/modules/reports/tests/unit-test/file-exporter.service.test.js`
+- `backend/service/smart-report/package.json` (เพิ่ม `json2csv`, `exceljs`)
 
 **Estimated scope:** Small
 

@@ -20,11 +20,11 @@
 
 ### Phase 2: Sandbox & Utility Services (ฟีเจอร์หลัก)
 - [x] **Task 3:** VM Sandbox Runner Implementation (`sandboxRunner.js`)
-- [ ] **Task 4:** File Exporter Implementation (`fileExporter.js` - CSV/Excel)
+- [x] **Task 4:** File Exporter Implementation (`fileExporter.js` - CSV/Excel)
 
 ### Checkpoint: Sandbox & Utility
-- [ ] Unit tests สำหรับ Sandbox Runner และ File Exporter ทำงานผ่าน 100%
-- [ ] สามารถประเมินผลคำสั่ง aggregate/find และจัดเก็บเป็นไฟล์ลงดิสก์ได้สมบูรณ์
+- [x] Unit tests สำหรับ Sandbox Runner และ File Exporter ทำงานผ่าน 100%
+- [x] สามารถประเมินผลคำสั่ง aggregate/find และจัดเก็บเป็นไฟล์ลงดิสก์ได้สมบูรณ์
 
 ### Phase 3: Scheduler & API Endpoints (ฟีเจอร์ตั้งเวลาและติดต่อภายนอก)
 - [ ] **Task 5:** Scheduler Implementation (`scheduler.js` - node-cron)
