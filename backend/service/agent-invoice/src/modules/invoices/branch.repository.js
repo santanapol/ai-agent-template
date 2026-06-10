@@ -13,7 +13,7 @@ const COLLECTION = "su_branch";
  */
 
 export function isMissingTimezone(timezone) {
-  return timezone == null || timezone === "";
+  return timezone === null || timezone === undefined || timezone === "";
 }
 
 /**

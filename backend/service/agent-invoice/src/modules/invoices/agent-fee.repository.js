@@ -14,7 +14,7 @@ const COLLECTION = "agent_fees";
  * @returns {number | null}
  */
 export function parseFeeRate(value) {
-  if (value == null) return null;
+  if (value === null || value === undefined) return null;
   if (typeof value === "number") {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
@@ -84,7 +84,7 @@ export async function buildRatioLookup({ invoiceBranchId, transactions }) {
     const key = agentFeeLookupKey(doc);
     if (feeMap.has(key)) continue;
     const rate = parseFeeRate(doc.agent_fee);
-    if (rate == null) continue;
+    if (rate === null) continue;
     feeMap.set(key, rate);
   }
 
