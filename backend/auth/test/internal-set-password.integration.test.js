@@ -12,8 +12,8 @@ import { ensureAuthIndexes } from './helpers/ensure-indexes.mjs'
 import { generateRsaPkcs8Pem } from './helpers/rsa-pem.mjs'
 import { startMongoForTests, resetDatabase } from './helpers/mongo-test-server.mjs'
 
-const TEST_PASS = 'correct-horse-battery-staple'
-const NEW_PASS = 'new-secure-passphrase!'
+const TEST_PASS = 'Correct-Horse-Battery-Staple1!'
+const NEW_PASS = 'New-Secure-Passphrase1!'
 const TEST_OU_ID = new ObjectId()
 const TEST_BRANCH_ID = new ObjectId()
 const INTERNAL_SECRET = 'test-internal-service-secret-32chars'

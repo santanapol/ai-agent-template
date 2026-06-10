@@ -13,8 +13,8 @@ import { generateRsaPkcs8Pem } from './helpers/rsa-pem.mjs'
 import { startMongoForTests, resetDatabase } from './helpers/mongo-test-server.mjs'
 
 const TEST_USER = 'me_password_user'
-const TEST_PASS = 'correct-horse-battery-staple'
-const NEW_PASS = 'brand-new-secure-pass!'
+const TEST_PASS = 'Correct-Horse-Battery-Staple1!'
+const NEW_PASS = 'Brand-New-Secure-Pass1!'
 const TEST_OU_ID = new ObjectId()
 const TEST_BRANCH_ID = new ObjectId()
 
@@ -184,7 +184,7 @@ test('POST /auth/me/password', { timeout: 180_000 }, async (t) => {
       },
       body: JSON.stringify({
         current_password: NEW_PASS,
-        new_password: 'another-new-secure-pass!'
+        new_password: 'Another-New-Secure-Pass1!'
       })
     })
     assert.equal(r.status, 401)

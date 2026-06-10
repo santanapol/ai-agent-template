@@ -69,7 +69,7 @@ describe('internal create user', () => {
         ou_id: new ObjectId().toHexString(),
         branch_id: new ObjectId().toHexString(),
         username: 'no-bearer',
-        password: 'Password123456789'
+        password: 'Password123456789!'
       }
     })
     assert.equal(res.statusCode, 401)
