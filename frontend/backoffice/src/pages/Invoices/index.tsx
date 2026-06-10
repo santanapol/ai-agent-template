@@ -266,7 +266,7 @@ const InvoiceList: React.FC = () => {
         confirmLoading={generating}
         okText="Generate"
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" initialValues={{ month: dayjs() }}>
           <Form.Item
             name="month"
             label="Select Month"
