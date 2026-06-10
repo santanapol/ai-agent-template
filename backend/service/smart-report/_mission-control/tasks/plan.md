@@ -35,7 +35,7 @@
 - [x] API Endpoints ทำงานได้ถูกต้องตามหลัก REST API
 
 ### Phase 4: Integration (เชื่อมต่อ Gateway และ Frontend)
-- [ ] **Task 7:** Gateway Routing Integration
+- [x] **Task 7:** Gateway Routing Integration
 - [ ] **Task 8:** Frontend API Integration
 
 ### Checkpoint: Complete

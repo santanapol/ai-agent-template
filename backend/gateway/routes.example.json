@@ -29,5 +29,10 @@
     "prefix": "/api/v1/invoices",
     "upstream": "http://127.0.0.1:3102",
     "stripPrefix": false
+  },
+  {
+    "prefix": "/api/v1/smart-reports",
+    "upstream": "http://127.0.0.1:3103",
+    "stripPrefix": false
   }
 ]

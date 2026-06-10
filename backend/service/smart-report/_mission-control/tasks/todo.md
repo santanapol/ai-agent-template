@@ -164,15 +164,18 @@
 **Description:** อัปเดตและกำหนดเส้นทาง API Gateway ให้ส่งผ่าน Request ที่ขึ้นต้นด้วย `/api/v1/smart-reports` ไปยังพอร์ต `3103` ของบริการ `smart-report`
 
 **Acceptance criteria:**
-- [ ] เรียกใช้งาน API ผ่าน Gateway (พอร์ตหลัก) แล้วสามารถเชื่อมต่อไปยัง `smart-report` service ได้อย่างถูกต้อง
+- [x] เรียกใช้งาน API ผ่าน Gateway (พอร์ตหลัก) แล้วสามารถเชื่อมต่อไปยัง `smart-report` service ได้อย่างถูกต้อง
 
 **Verification:**
-- [ ] ส่ง Request เข้าพอร์ต Gateway และได้รับคำตอบจากบริการ `smart-report`
+- [x] ส่ง Request เข้าพอร์ต Gateway และได้รับคำตอบจากบริการ `smart-report` — `npm test` ใน `backend/gateway` (53/53 ผ่าน รวม `routes-files-alignment`) + smoke test: build gateway app ด้วย JWT จริง (JWKS local) ชี้ `/api/v1/smart-reports` → `http://127.0.0.1:3103`, ยิง `GET /api/v1/smart-reports` ผ่าน Gateway แล้วได้ `200 {"success":true,"code":"SUCCESS","data":[]}` จาก smart-report จริง
 
 **Dependencies:** Task 6
 
-**Files likely touched:**
+**Files touched:**
 - `backend/gateway/routes.json`
+- `backend/gateway/routes.example.json`
+- `backend/gateway/.env.example`
+- `backend/gateway/README.md`
 
 **Estimated scope:** Small
 
