@@ -12,7 +12,8 @@ export function resolveFeeBranchId(agentDoc) {
   if (!agentDoc) return null;
   const ref = agentDoc.ref_fee_branch_id;
   if (ref !== null && ref !== undefined) return String(ref);
-  if (agentDoc.branch_id === null || agentDoc.branch_id === undefined) return null;
+  if (agentDoc.branch_id === null || agentDoc.branch_id === undefined)
+    return null;
   return String(agentDoc.branch_id);
 }
 
