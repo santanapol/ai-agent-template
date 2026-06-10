@@ -56,18 +56,18 @@
 **Description:** สร้างระบบรันสคริปต์ JavaScript ใน Sandbox ด้วย `vm` module โดยทำการแปลง Query Command สไตล์ Mongo Shell เช่น `aggregate` และ `find` ให้ส่งคืนข้อมูลในลักษณะ Array ภายใต้ข้อจำกัดความปลอดภัย
 
 **Acceptance criteria:**
-- [ ] สามารถ execute สคริปต์ aggregate/find ที่ถูกส่งเข้ามาและได้ผลลัพธ์เป็น Array
-- [ ] Sandbox context รองรับ `ObjectId`, `ISODate`, และคำสั่ง `db.getSiblingDB()`
-- [ ] มีระบบดักจับ Timeout (ไม่เกิน 30 วินาที) และห้ามใช้งานโมดูลเครื่องภายในอื่นๆ เช่น `fs`
+- [x] สามารถ execute สคริปต์ aggregate/find ที่ถูกส่งเข้ามาและได้ผลลัพธ์เป็น Array
+- [x] Sandbox context รองรับ `ObjectId`, `ISODate`, และคำสั่ง `db.getSiblingDB()`
+- [x] มีระบบดักจับ Timeout (ไม่เกิน 30 วินาที) และห้ามใช้งานโมดูลเครื่องภายในอื่นๆ เช่น `fs`
 
 **Verification:**
-- [ ] รัน Unit test: `node --test tests/sandboxRunner.test.js`
+- [x] รัน Unit test: `node --test src/modules/reports/tests/integration-test/sandbox-runner.service.test.js`
 
 **Dependencies:** Task 2
 
-**Files likely touched:**
-- `backend/service/smart-report/src/services/sandboxRunner.js`
-- `backend/service/smart-report/tests/sandboxRunner.test.js`
+**Files touched:**
+- `backend/service/smart-report/src/modules/reports/sandbox-runner.service.js`
+- `backend/service/smart-report/src/modules/reports/tests/integration-test/sandbox-runner.service.test.js`
 
 **Estimated scope:** Medium
 

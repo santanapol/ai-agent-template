@@ -19,7 +19,7 @@
 - [x] เชื่อมต่อฐานข้อมูลสำเร็จทั้ง 2 รูปแบบ (Read/Write และ Read-only)
 
 ### Phase 2: Sandbox & Utility Services (ฟีเจอร์หลัก)
-- [ ] **Task 3:** VM Sandbox Runner Implementation (`sandboxRunner.js`)
+- [x] **Task 3:** VM Sandbox Runner Implementation (`sandboxRunner.js`)
 - [ ] **Task 4:** File Exporter Implementation (`fileExporter.js` - CSV/Excel)
 
 ### Checkpoint: Sandbox & Utility
