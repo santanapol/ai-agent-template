@@ -757,8 +757,9 @@ components:
           description: Required when provisioning (no `user_id`); lowercase unique in auth.
         password:
           type: string
-          minLength: 16
+          minLength: 8
           maxLength: 256
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
           writeOnly: true
           format: password
           description: Required when provisioning (no `user_id`).
@@ -798,8 +799,9 @@ components:
       properties:
         password:
           type: string
-          minLength: 16
+          minLength: 8
           maxLength: 256
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
           writeOnly: true
           format: password
         revoke_sessions:

@@ -23,7 +23,7 @@ export const changeOwnPasswordBodySchema = {
   type: 'object',
   properties: {
     current_password: { type: 'string', minLength: 1, maxLength: 4096 },
-    new_password: { type: 'string', minLength: 16, maxLength: 256 }
+    new_password: { type: 'string', minLength: 8, maxLength: 256, pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$' }
   },
   required: ['current_password', 'new_password'],
   additionalProperties: false

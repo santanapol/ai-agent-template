@@ -29,7 +29,7 @@ describe('passwordPolicy', () => {
 
     it('accepts password within policy', async () => {
       await expect(
-        validator(null, 'valid-secure-passphrase'),
+        validator(null, 'Valid-Secure1#'),
       ).resolves.toBeUndefined();
     });
   });

@@ -20,6 +20,7 @@ import {
   optionalNewPasswordRules,
   passwordFieldRules,
 } from '../../lib/passwordPolicy';
+import { telephoneRules } from '../../lib/telephone';
 
 export type DrawerMode = 'create' | 'edit' | 'view';
 
@@ -130,9 +131,9 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
           <Form.Item
             label="Telephone"
             name="tel"
-            rules={[{ required: true, message: 'Please enter telephone number' }]}
+            rules={telephoneRules}
           >
-            <Input placeholder="+66812345678" maxLength={16} />
+            <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
           </Form.Item>
 
           {mode === 'create' ? (

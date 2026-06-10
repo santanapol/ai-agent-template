@@ -73,7 +73,7 @@ export async function buildApp(env = loadEnv(), options = {}) {
       const isPasswordPolicy = error.validation.some(
         (v) =>
           (v.instancePath === '/new_password' || v.instancePath === '/password') &&
-          (v.keyword === 'minLength' || v.keyword === 'maxLength')
+          (v.keyword === 'minLength' || v.keyword === 'maxLength' || v.keyword === 'pattern')
       )
 
       if (isPasswordPolicy) {

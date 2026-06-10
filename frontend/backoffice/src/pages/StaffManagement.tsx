@@ -22,6 +22,7 @@ import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import StaffTable from '../components/staff/StaffTable';
 import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../components/staff/StaffDrawer';
+import { formatTelephoneToE164 } from '../lib/telephone';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -224,7 +225,7 @@ const StaffManagement: React.FC = () => {
           firstname,
           lastname,
           email,
-          tel,
+          tel: formatTelephoneToE164(tel),
           username,
           password,
         });
@@ -238,7 +239,7 @@ const StaffManagement: React.FC = () => {
 
       if (editingId && currentEtag.current) {
         const { firstname, lastname, email, tel } = values;
-        const payload: PatchProfilePayload = { firstname, lastname, email, tel };
+        const payload: PatchProfilePayload = { firstname, lastname, email, tel: formatTelephoneToE164(tel) };
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
         message.success('Profile updated');
         setIsDrawerOpen(false);

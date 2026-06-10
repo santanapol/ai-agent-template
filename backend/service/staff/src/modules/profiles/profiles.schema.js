@@ -61,7 +61,7 @@ export const createProfileBodySchema = {
     ...profileContactFields,
     user_id: { type: "string", pattern: objectIdPattern },
     username: { type: "string", minLength: 1, maxLength: 128 },
-    password: { type: "string", minLength: 16, maxLength: 256 },
+    password: { type: "string", minLength: 8, maxLength: 256, pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$" },
   },
 };
 
@@ -86,7 +86,7 @@ export const adminPasswordSchema = {
     required: ["password"],
     additionalProperties: false,
     properties: {
-      password: { type: "string", minLength: 16, maxLength: 256 },
+      password: { type: "string", minLength: 8, maxLength: 256, pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$" },
       revoke_sessions: { type: "boolean", default: true },
     },
   },

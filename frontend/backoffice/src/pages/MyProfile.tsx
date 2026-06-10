@@ -21,9 +21,11 @@ import {
   confirmPasswordRule,
   passwordFieldRules,
 } from '../lib/passwordPolicy';
+import { telephoneRules } from '../lib/telephone';
 import axios from 'axios';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
+import { formatTelephoneToE164 } from '../lib/telephone';
 
 const { Title, Text } = Typography;
 
@@ -96,7 +98,7 @@ const MyProfile: React.FC = () => {
       firstname: values.firstname,
       lastname: values.lastname,
       email: values.email,
-      tel: values.tel,
+      tel: formatTelephoneToE164(values.tel),
     };
 
     setSaving(true);
@@ -229,9 +231,9 @@ const MyProfile: React.FC = () => {
               <Form.Item
                 label="Telephone"
                 name="tel"
-                rules={[{ required: true, message: 'Please enter telephone number' }]}
+                rules={telephoneRules}
               >
-                <Input placeholder="+66812345678" maxLength={16} />
+                <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
               </Form.Item>
 
               <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>

@@ -547,7 +547,12 @@ export class AuthService {
   }
 
   policyProblemForPassword(password) {
-    if (typeof password !== 'string' || password.length < 16 || password.length > 256) {
+    if (
+      typeof password !== 'string' || 
+      password.length < 8 || 
+      password.length > 256 ||
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/.test(password)
+    ) {
       return {
         ok: false,
         status: 400,

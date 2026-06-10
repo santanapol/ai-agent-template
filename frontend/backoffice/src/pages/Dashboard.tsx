@@ -4,20 +4,29 @@ import { TeamOutlined, UsergroupAddOutlined, AppstoreAddOutlined } from '@ant-de
 import * as staffApi from '../lib/staffApiClient';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
 const Dashboard: React.FC = () => {
   const { token } = theme.useToken();
   const { message } = useAppFeedback();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
   const [archivedCount, setArchivedCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    const isAdmin = user?.role === 'platform_admin' || user?.role === 'branch_admin';
+
     const load = async () => {
       setLoading(true);
+      if (!isAdmin) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const [activeRes, archivedRes] = await Promise.all([
           staffApi.listProfiles({ status: 'active', page: 1, limit: 1 }),
@@ -36,7 +45,7 @@ const Dashboard: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [message]);
+  }, [message, user?.role]);
 
   return (
     <div>
@@ -45,38 +54,40 @@ const Dashboard: React.FC = () => {
         <Text type="secondary">Welcome to Zero Platform Admin. Here is an overview of your system.</Text>
       </div>
 
-      <Row gutter={[24, 24]}>
-        <Col xs={24} sm={12} md={8}>
-          <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
-            <Statistic
-              title="Total Active Staff"
-              value={activeCount}
-              prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
-            <Statistic
-              title="New Profiles (This Week)"
-              value="—"
-              prefix={<UsergroupAddOutlined style={{ color: token.colorSuccess }} />}
-            />
-            <Text type="secondary" style={{ display: 'block', marginTop: token.marginXS }}>
-              Coming soon
-            </Text>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
-            <Statistic
-              title="Archived Profiles"
-              value={archivedCount}
-              prefix={<AppstoreAddOutlined style={{ color: token.colorError }} />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {(user?.role === 'platform_admin' || user?.role === 'branch_admin') && (
+        <Row gutter={[24, 24]}>
+          <Col xs={24} sm={12} md={8}>
+            <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
+              <Statistic
+                title="Total Active Staff"
+                value={activeCount}
+                prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
+              <Statistic
+                title="New Profiles (This Week)"
+                value="—"
+                prefix={<UsergroupAddOutlined style={{ color: token.colorSuccess }} />}
+              />
+              <Text type="secondary" style={{ display: 'block', marginTop: token.marginXS }}>
+                Coming soon
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
+              <Statistic
+                title="Archived Profiles"
+                value={archivedCount}
+                prefix={<AppstoreAddOutlined style={{ color: token.colorError }} />}
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       <div
         style={{
