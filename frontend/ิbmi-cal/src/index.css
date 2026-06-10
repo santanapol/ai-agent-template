@@ -1,0 +1,9 @@
+@import 'antd/dist/reset.css';
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
