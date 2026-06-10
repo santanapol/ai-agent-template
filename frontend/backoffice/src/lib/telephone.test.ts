@@ -29,7 +29,7 @@ describe('telephone utility', () => {
   });
 
   describe('telephoneRules validation', () => {
-    const validator = telephoneRules[1].validator;
+    const validator = telephoneRules[1].validator!;
 
     it('allows empty value (defers to required rule)', async () => {
       await expect(validator(null, '')).resolves.toBeUndefined();
