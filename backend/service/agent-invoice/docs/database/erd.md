@@ -199,6 +199,7 @@ db.agent_fees.createIndex(
     },
     {
         name: "ou_id_1_branch_id_1_game_company_id_1_game_main_cate_id_1",
+        unique: true,
         background: true
     }
 );
@@ -239,7 +240,7 @@ db.agent_fees.createIndex(
 │ gcomp_cost, agent_known_fee, agent_fee                          │
 │ cr_by, cr_date, cr_prog, upd_by, upd_date, upd_prog             │
 │                                                                 │
-│ [Index: ou_id + branch_id + game_company_id + main_cate_id]     │
+│ [Unique: ou_id + branch_id + game_company_id + main_cate_id]    │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
