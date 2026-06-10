@@ -15,6 +15,7 @@ db.agent_fees.createIndex(
     },
     {
         name: "ou_id_1_branch_id_1_game_company_id_1_game_main_cate_id_1",
+        unique: true,
         background: true
     }
 );

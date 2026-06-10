@@ -42,7 +42,7 @@ function sameBranchId(a, b) {
 
 /** @param {unknown} timezone */
 function billingTimezoneForGroup(timezone) {
-  if (timezone == null || timezone === "") {
+  if (timezone === null || timezone === undefined || timezone === "") {
     return "UTC";
   }
   return String(timezone);

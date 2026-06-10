@@ -28,9 +28,15 @@ async function run() {
 
   await feesCol.createIndex(
     { ou_id: 1, branch_id: 1, game_company_id: 1, game_main_cate_id: 1 },
-    { unique: true, background: true, name: "agent_fee_unique" },
+    {
+      unique: true,
+      background: true,
+      name: "ou_id_1_branch_id_1_game_company_id_1_game_main_cate_id_1",
+    },
   );
-  console.log("  ✔ agent_fees: agent_fee_unique");
+  console.log(
+    "  ✔ agent_fees: ou_id_1_branch_id_1_game_company_id_1_game_main_cate_id_1",
+  );
 
   const countFees = await feesCol.countDocuments();
 
