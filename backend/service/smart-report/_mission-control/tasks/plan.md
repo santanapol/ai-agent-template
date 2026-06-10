@@ -12,11 +12,11 @@
 
 ### Phase 1: Foundation (การสร้างรากฐาน)
 - [x] **Task 1:** Initialize Backend `smart-report` Service
-- [ ] **Task 2:** Database Model & Connection Setup (Primary & Secondary Read-only)
+- [x] **Task 2:** Database Model & Connection Setup (Primary & Secondary Read-only)
 
 ### Checkpoint: Foundation
-- [ ] โครงสร้างโปรเจกต์ `smart-report` พร้อมใช้งาน ลิงก์ Linter/Prettier ผ่าน
-- [ ] เชื่อมต่อฐานข้อมูลสำเร็จทั้ง 2 รูปแบบ (Read/Write และ Read-only)
+- [x] โครงสร้างโปรเจกต์ `smart-report` พร้อมใช้งาน ลิงก์ Linter/Prettier ผ่าน
+- [x] เชื่อมต่อฐานข้อมูลสำเร็จทั้ง 2 รูปแบบ (Read/Write และ Read-only)
 
 ### Phase 2: Sandbox & Utility Services (ฟีเจอร์หลัก)
 - [ ] **Task 3:** VM Sandbox Runner Implementation (`sandboxRunner.js`)

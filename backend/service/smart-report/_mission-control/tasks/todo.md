@@ -30,18 +30,22 @@
 **Description:** จัดทำส่วนเชื่อมต่อฐานข้อมูล MongoDB โดยแยกโครงสร้างการทำงาน 2 แบบ: Primary Connection (Read/Write) สำหรับจัดการ metadata ของรายงาน และ Secondary Connection (Read-only / Secondary Node) สำหรับประมวลผล Query
 
 **Acceptance criteria:**
-- [ ] เมื่อเซิร์ฟเวอร์สตาร์ท สามารถสร้าง Connection ไปยัง MongoDB ได้ทั้ง 2 Connection
-- [ ] จัดเก็บสคีมาของรายงาน (Report Schema) และประวัติไฟล์ดาวน์โหลด (Download History Schema) ลงใน MongoDB ได้ถูกต้อง
+- [x] เมื่อเซิร์ฟเวอร์สตาร์ท สามารถสร้าง Connection ไปยัง MongoDB ได้ทั้ง 2 Connection
+- [x] จัดเก็บสคีมาของรายงาน (Report Schema) และประวัติไฟล์ดาวน์โหลด (Download History Schema) ลงใน MongoDB ได้ถูกต้อง
 
 **Verification:**
-- [ ] รันเซิร์ฟเวอร์แล้วเช็ก Connection logs ของ Database ทั้งสองตัว
+- [x] รันเซิร์ฟเวอร์แล้วเช็ก Connection logs ของ Database ทั้งสองตัว
 
 **Dependencies:** Task 1
 
-**Files likely touched:**
-- `backend/service/smart-report/src/config/db.js`
-- `backend/service/smart-report/src/models/Report.js`
-- `backend/service/smart-report/src/models/DownloadHistory.js`
+**Files touched:**
+- `backend/service/smart-report/src/config/database-options.js`
+- `backend/service/smart-report/src/config/database.js`
+- `backend/service/smart-report/src/config/database-read.js`
+- `backend/service/smart-report/src/modules/reports/reports.repository.js`
+- `backend/service/smart-report/src/modules/reports/download-history.repository.js`
+- `backend/service/smart-report/src/app.js` (เพิ่ม `/readyz`)
+- `backend/service/smart-report/src/server.js`
 
 **Estimated scope:** Small
 
