@@ -36,11 +36,11 @@
 
 ### Phase 4: Integration (เชื่อมต่อ Gateway และ Frontend)
 - [x] **Task 7:** Gateway Routing Integration
-- [ ] **Task 8:** Frontend API Integration
+- [x] **Task 8:** Frontend API Integration
 
 ### Checkpoint: Complete
-- [ ] บรรลุ Acceptance criteria ทั้งหมด
-- [ ] การเชื่อมต่อแบบ Full-stack (UI → Gateway → Smart Report Service → DB) ทำงานร่วมกันได้สมบูรณ์แบบ
+- [x] บรรลุ Acceptance criteria ทั้งหมด
+- [x] การเชื่อมต่อแบบ Full-stack (UI → Gateway → Smart Report Service → DB) ทำงานร่วมกันได้สมบูรณ์แบบ
 
 ## Risks and Mitigations
 | ความเสี่ยง | ผลกระทบ | วิธีรับมือ |

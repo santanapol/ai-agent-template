@@ -9,7 +9,7 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {
     const code = err.response?.data?.code as string | undefined;
     if (code === 'VERSION_CONFLICT') {
-      return 'Profile was modified by another session. Please refresh and try again.';
+      return 'This record was modified by another session. Please refresh and try again.';
     }
     if (code === 'STAFF_AUTH_REVOKE_PENDING') {
       return 'Profile archived, but session revocation is still pending.';

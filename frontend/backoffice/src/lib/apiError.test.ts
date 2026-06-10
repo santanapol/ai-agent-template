@@ -27,7 +27,7 @@ describe('apiErrorMessage', () => {
     it('returns VERSION_CONFLICT message', () => {
       const err = makeAxiosError({ code: 'VERSION_CONFLICT' });
       expect(apiErrorMessage(err, 'fallback')).toBe(
-        'Profile was modified by another session. Please refresh and try again.',
+        'This record was modified by another session. Please refresh and try again.',
       );
     });
 

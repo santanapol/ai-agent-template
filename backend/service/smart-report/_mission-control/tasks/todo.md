@@ -186,17 +186,30 @@
 **Description:** เชื่อมต่อหน้าจอ UI Mockup (`SmartReport.tsx`) เข้ากับ API ของระบบหลังบ้านจริงผ่าน Gateway
 
 **Acceptance criteria:**
-- [ ] ตารางรายงานดึงข้อมูลจริงจากระบบหลังบ้าน
-- [ ] สามารถคลิกปุ่ม "สร้างสคริปต์รายงานใหม่" และทำการส่งข้อมูลบันทึกลง Database ได้จริง
-- [ ] คลิกปุ่ม "สั่งรันทันที" แล้วระบบทำการดึงไฟล์ และดาวน์โหลดไฟล์ผลลัพธ์ CSV/Excel จริงจากเครื่องเซิร์ฟเวอร์ได้สมบูรณ์
+- [x] ตารางรายงานดึงข้อมูลจริงจากระบบหลังบ้าน
+- [x] สามารถคลิกปุ่ม "สร้างสคริปต์รายงานใหม่" และทำการส่งข้อมูลบันทึกลง Database ได้จริง
+- [x] คลิกปุ่ม "สั่งรันทันที" แล้วระบบทำการดึงไฟล์ และดาวน์โหลดไฟล์ผลลัพธ์ CSV/Excel จริงจากเครื่องเซิร์ฟเวอร์ได้สมบูรณ์
 
 **Verification:**
-- [ ] ทดลองใช้หน้าจอเว็บจริงเพื่อทำโฟลวรันรายงานทั้งหมด
+- [x] ทดลองใช้หน้าจอเว็บจริงเพื่อทำโฟลวรันรายงานทั้งหมด
+
+  ทดสอบผ่าน Chrome DevTools MCP โดย login เป็น `platform_admin` ผ่าน Gateway (`/auth` + `/api`):
+  - `GET /api/v1/smart-reports` และ `/history` คืนข้อมูลจริงจาก MongoDB (เริ่มต้นว่างเปล่า ตารางแสดง "ไม่มีข้อมูล")
+  - กดปุ่ม "สร้างสคริปต์รายงานใหม่" กรอกฟอร์ม (ชื่อ, คำอธิบาย, Schedule=Manual, Output Format=CSV, query script) แล้วกด "สร้างรายงาน" → `POST /api/v1/smart-reports` คืน `201`, แถวใหม่ปรากฏในตารางทันที
+  - กดปุ่ม "สั่งรันทันที" (play-circle) → `POST /api/v1/smart-reports/:id/run` คืน `200` พร้อม `download_history` record (`status: "success"`, `fileName: "smart-report-e2e-....csv"`), สถานะแถวเปลี่ยนเป็น "Completed" พร้อมเวลารันล่าสุด
+  - แท็บ "ประวัติไฟล์ดาวน์โหลดทั้งหมด" แสดง record จริงพร้อมสถานะ "Success" และปุ่ม Download ใช้งานได้
+  - กดปุ่ม Download → `GET /api/v1/smart-reports/download/:fileId` คืน `200` พร้อม `Content-Disposition: attachment; filename="...csv"` และ `Content-Type: text/csv` (ไฟล์ถูกดาวน์โหลดผ่าน blob)
+  - กดปุ่ม "edit" แก้ไขคำอธิบายแล้วกด "บันทึกการแก้ไข" → `PUT /api/v1/smart-reports/:id` (พร้อม `If-Match`) คืน `200`, ตารางแสดงคำอธิบายใหม่
+  - กดปุ่ม "delete" → modal ยืนยัน → `DELETE /api/v1/smart-reports/:id` (พร้อม `If-Match`) คืน `200`, แสดงข้อความ "ลบรายงานเรียบร้อยแล้วค่ะ" และตารางกลับเป็น "ไม่มีข้อมูล"
 
 **Dependencies:** Task 7
 
-**Files likely touched:**
+**Files touched:**
 - `frontend/backoffice/src/pages/SmartReport.tsx`
 - `frontend/backoffice/src/lib/smartReportApiClient.ts`
+- `frontend/backoffice/src/lib/smartReportApiClient.test.ts`
+- `frontend/backoffice/src/types/smartReport.ts`
+- `frontend/backoffice/src/lib/apiError.ts`
+- `frontend/backoffice/src/lib/apiError.test.ts`
 
 **Estimated scope:** Medium
