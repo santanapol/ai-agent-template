@@ -25,11 +25,7 @@ export async function connectReadDatabase() {
     throw new Error("[Database] Missing MONGODB_URI_READ config.");
   }
 
-  const candidate = new MongoClient(
-    uri,
-    READ_DB_OPTIONS,
-  );
-
+  const candidate = new MongoClient(uri, READ_DB_OPTIONS);
 
   try {
     await candidate.connect();
@@ -37,7 +33,7 @@ export async function connectReadDatabase() {
     return client;
   } catch (error) {
     throw new Error(
-      `[Database] Failed to connect to ${redactMongoUri(process.env.MONGODB_URI_READ)}: ${error.message}`,
+      `[Database] Failed to connect to ${redactMongoUri(uri)}: ${error.message}`,
     );
   }
 }

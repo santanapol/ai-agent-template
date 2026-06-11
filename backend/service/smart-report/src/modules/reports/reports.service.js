@@ -6,13 +6,13 @@ import { HttpError } from "../../lib/http-error.js";
 import CODES from "../../lib/error-codes.js";
 import {
   insertReport,
-  findReports,
+  findReportsPage,
   findReportById,
   updateReport,
   deleteReport,
 } from "./reports.repository.js";
 import {
-  findDownloadHistory,
+  findDownloadHistoryPage,
   findDownloadHistoryById,
 } from "./download-history.repository.js";
 import { runReport, reloadScheduler } from "./scheduler.service.js";
@@ -77,10 +77,24 @@ function requireIfMatchDate(ifMatch) {
   return new Date(decoded);
 }
 
-export async function listReports() {
+/** สร้าง pagination metadata จากค่า page/limit ที่ขอ และ total จำนวนเอกสารทั้งหมด */
+export function buildPagination({ page, limit }, total) {
+  return {
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}
+
+export async function listReports({ page = 1, limit = 20 } = {}) {
   const db = getDatabase();
-  const reports = await findReports(db);
-  return reports.map(serializeReport);
+  const { items, total } = await findReportsPage(db, { page, limit });
+
+  return {
+    data: items.map(serializeReport),
+    pagination: buildPagination({ page, limit }, total),
+  };
 }
 
 export async function createReport(payload, userId) {
@@ -175,10 +189,14 @@ export async function runReportById(id) {
   return serializeHistory(record);
 }
 
-export async function listHistory() {
+export async function listHistory({ page = 1, limit = 20 } = {}) {
   const db = getDatabase();
-  const history = await findDownloadHistory(db);
-  return history.map(serializeHistory);
+  const { items, total } = await findDownloadHistoryPage(db, { page, limit });
+
+  return {
+    data: items.map(serializeHistory),
+    pagination: buildPagination({ page, limit }, total),
+  };
 }
 
 export async function getDownloadFile(fileId) {

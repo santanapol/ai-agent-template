@@ -106,8 +106,17 @@ backend/service/smart-report/
 
 ---
 
+## Known Limitations / Accepted Risks
+- **No tenant isolation on report metadata:** `reports` และ `download_history` collections ไม่มีฟิลด์ `ou_id`/`branch_id` และ query ฝั่ง API (`findReports`, `findDownloadHistory`, `getDownloadFile`) ไม่ scope ตาม tenant — รายชื่อรายงาน, ประวัติการรัน และไฟล์ export มองเห็น/ดาวน์โหลดได้โดยทุก branch/org ที่ผ่าน gateway
+- **No role-based authorization differentiation:** `x-user-role` (`staff` / `branch_admin` / `platform_admin`) ถูก validate ว่ามีค่าและอยู่ใน enum เท่านั้น (`src/plugins/user-context.js`) แต่ไม่ถูกใช้แยกสิทธิ์ต่อ endpoint — ทุก role สร้าง/แก้/ลบ/รัน report script และดาวน์โหลดไฟล์ได้เท่ากันหมด
+- **Sandbox script DB access ไม่ถูกจำกัด scope:** `db.getSiblingDB(<dbName>)` ใน `sandbox-runner.service.js` รับ `dbName` ใดก็ได้ที่ connection แบบ read-only เข้าถึงได้ ไม่มี allowlist และไม่มีการบังคับ filter `ou_id`/`branch_id` ในตัว query — ผู้เขียน script ต้องใส่ filter เหล่านี้เอง
+
+**เหตุผล:** เป็นการจงใจ replicate workflow เดิมที่ staff ใช้ MongoDB client (Mongobooster) รัน Query เองอยู่แล้ว (ดู `docs/raw-requirment.md`) — ยอมรับความเสี่ยงนี้ไว้ ณ ตอนนี้ ให้ทบทวนใหม่หาก threat model หรือกลุ่มผู้ใช้ของระบบเปลี่ยนไป (เช่น เปิดให้ branch staff ทั่วไปใช้งานในวงกว้างขึ้น)
+
+---
+
 ## Success Criteria
-- ระบบสามารถใช้ Template Replace แทนที่ตัวแปรวันที่และไอดีในการรันได้อย่างถูกต้อง
+- ระบบสามารถ inject ค่าตัวแปรวันที่และไอดีผ่าน `params.*` เข้าไปใน sandbox context ของสคริปต์ได้อย่างถูกต้อง
 - ผลลัพธ์หลังการรันสคริปต์ สามารถแปลงเป็นไฟล์ CSV และ Excel ได้อย่างสมบูรณ์แบบ
 - มี Scheduler คอยทริกเกอร์ตามเวลาที่ผู้ใช้ตั้งจาก UI Dropdown โดยอัตโนมัติ
 - ไฟล์ CSV และ Excel ถูกเก็บบน Local Server และสามารถดาวน์โหลดผ่านหน้าระบบได้ตลอดเวลา

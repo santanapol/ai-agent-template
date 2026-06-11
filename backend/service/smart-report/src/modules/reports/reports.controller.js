@@ -12,9 +12,12 @@ const CONTENT_TYPES = {
   excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 
-export async function listReportsHandler(_request, reply) {
-  const reports = await service.listReports();
-  return reply.status(200).send(successEnvelope(reports));
+export async function listReportsHandler(request, reply) {
+  const { page, limit } = request.query;
+  const { data, pagination } = await service.listReports({ page, limit });
+  return reply
+    .status(200)
+    .send(successEnvelope(data, null, CODES.SUCCESS, pagination));
 }
 
 export async function createReportHandler(request, reply) {
@@ -57,9 +60,12 @@ export async function runReportHandler(request, reply) {
   return reply.status(200).send(successEnvelope(record));
 }
 
-export async function listHistoryHandler(_request, reply) {
-  const history = await service.listHistory();
-  return reply.status(200).send(successEnvelope(history));
+export async function listHistoryHandler(request, reply) {
+  const { page, limit } = request.query;
+  const { data, pagination } = await service.listHistory({ page, limit });
+  return reply
+    .status(200)
+    .send(successEnvelope(data, null, CODES.SUCCESS, pagination));
 }
 
 export async function downloadFileHandler(request, reply) {

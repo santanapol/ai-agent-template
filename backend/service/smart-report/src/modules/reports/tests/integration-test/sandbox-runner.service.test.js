@@ -97,7 +97,6 @@ if (!RUN) {
       assert.strictEqual(result, undefined);
     });
 
-
     test("supports ObjectId in the sandbox context", async () => {
       const result = await runReportScript({
         script: '({ id: ObjectId("507f1f77bcf86cd799439011").toHexString() })',

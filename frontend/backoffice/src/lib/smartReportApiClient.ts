@@ -4,14 +4,20 @@ import type {
   CreateReportPayload,
   UpdateReportPayload,
   DownloadHistoryRecord,
+  ListPageParams,
+  PaginationMeta,
 } from '../types/smartReport';
 import { baseClient as client } from './baseApiClient';
 
 const BASE_PATH = '/api/v1/smart-reports';
 
-export async function listReports(): Promise<Report[]> {
-  const res = await client.get<ApiEnvelope<Report[]>>(BASE_PATH);
-  return res.data.data;
+export async function listReports(
+  params: ListPageParams = {},
+): Promise<{ data: Report[]; pagination: PaginationMeta }> {
+  const res = await client.get<ApiEnvelope<Report[]> & { pagination: PaginationMeta }>(BASE_PATH, {
+    params,
+  });
+  return { data: res.data.data, pagination: res.data.pagination };
 }
 
 export async function createReport(payload: CreateReportPayload): Promise<{ id: string }> {
@@ -36,9 +42,14 @@ export async function runReport(id: string): Promise<DownloadHistoryRecord> {
   return res.data.data;
 }
 
-export async function listHistory(): Promise<DownloadHistoryRecord[]> {
-  const res = await client.get<ApiEnvelope<DownloadHistoryRecord[]>>(`${BASE_PATH}/history`);
-  return res.data.data;
+export async function listHistory(
+  params: ListPageParams = {},
+): Promise<{ data: DownloadHistoryRecord[]; pagination: PaginationMeta }> {
+  const res = await client.get<ApiEnvelope<DownloadHistoryRecord[]> & { pagination: PaginationMeta }>(
+    `${BASE_PATH}/history`,
+    { params },
+  );
+  return { data: res.data.data, pagination: res.data.pagination };
 }
 
 /** Builds the weak ETag the backend expects in `If-Match`, matching `buildEtag` in `smart-report/src/lib/etag.js`. */

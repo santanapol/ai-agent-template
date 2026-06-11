@@ -33,6 +33,9 @@ export default fp(async function userContextGuard(fastify) {
       );
     }
 
+    // role/ouId/branchId are validated but intentionally not used to scope
+    // report access — see "Known Limitations / Accepted Risks" in
+    // _mission-control/SPEC.md.
     request.userContext = {
       userId,
       ouId: userOu,

@@ -58,6 +58,35 @@ export async function findDownloadHistory(db) {
 }
 
 /**
+ * Paginated list of download history records, most recent first.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {object} [options]
+ * @param {number} [options.page] - 1-based page number
+ * @param {number} [options.limit] - page size
+ * @returns {Promise<{ items: DownloadHistory[], total: number }>}
+ */
+export async function findDownloadHistoryPage(
+  db,
+  { page = 1, limit = 20 } = {},
+) {
+  const collection = db.collection(DOWNLOAD_HISTORY_COLLECTION);
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    collection
+      .find({})
+      .sort({ startedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    collection.countDocuments({}),
+  ]);
+
+  return { items, total };
+}
+
+/**
  * @param {import('mongodb').Db} db
  * @param {import('mongodb').ObjectId} id
  * @returns {Promise<DownloadHistory|null>}

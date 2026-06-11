@@ -47,10 +47,11 @@ function createSiblingDb(client, dbName) {
 
 function createSandboxDb(client) {
   const sandboxDb = Object.create(null);
-  sandboxDb.getSiblingDB = makeSafeFunction((dbName) => createSiblingDb(client, dbName));
+  sandboxDb.getSiblingDB = makeSafeFunction((dbName) =>
+    createSiblingDb(client, dbName),
+  );
   return sandboxDb;
 }
-
 
 /**
  * รันสคริปต์ MongoDB shell-style (aggregate/find/findOne) ภายใต้ Node `vm` sandbox
@@ -58,7 +59,7 @@ function createSandboxDb(client) {
  *
  * @param {object} options
  * @param {string} options.script - สคริปต์ JavaScript สไตล์ mongo shell
- * @param {Record<string, unknown>} [options.params] - dynamic parameters ที่ replace แล้ว
+ * @param {Record<string, unknown>} [options.params] - dynamic parameters ที่ inject เข้า sandbox context โดยตรง (เข้าถึงได้ผ่าน `params.*` ในสคริปต์)
  * @param {number} [options.timeoutMs] - timeout สูงสุดของการรันสคริปต์ (ค่าเริ่มต้น 30 วินาที)
  * @returns {Promise<unknown>} ผลลัพธ์จาก expression สุดท้ายของสคริปต์ (Array/Object/primitive)
  */

@@ -5,11 +5,10 @@ import { findReports } from "./reports.repository.js";
 import { insertDownloadHistory } from "./download-history.repository.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const PLACEHOLDER_PATTERN = /\{\{\s*(\w+)\s*\}\}/g;
 
 /**
  * คำนวณช่วงเวลา "เมื่อวาน" แบบเต็มวัน (00:00:00.000 - 23:59:59.999) ตาม timezone offset
- * แล้วคืนค่าเป็น `Date` ใน UTC — ใช้แทนค่า `{{startDate}}`/`{{endDate}}`
+ * แล้วคืนค่าเป็น `Date` ใน UTC — ใช้เป็นค่า `params.startDate`/`params.endDate` ที่ inject เข้า sandbox
  *
  * @param {Date} [now]
  * @param {number} [timezoneOffsetMinutes] - offset จาก UTC เป็นนาที เช่น +07:00 = 420
@@ -31,20 +30,6 @@ export function computePreviousDayRange(
     startDate: new Date(localStartOfToday - MS_PER_DAY - offsetMs),
     endDate: new Date(localStartOfToday - 1 - offsetMs),
   };
-}
-
-/**
- * แทนที่ placeholder รูปแบบ `{{key}}` ในสคริปต์ด้วยค่าจาก `params`
- * placeholder ที่ไม่มีค่าใน `params` จะถูกปล่อยไว้เหมือนเดิม
- *
- * @param {string} script
- * @param {Record<string, unknown>} params
- * @returns {string}
- */
-export function replacePlaceholders(script, params) {
-  return script.replace(PLACEHOLDER_PATTERN, (match, key) =>
-    params[key] === undefined ? match : String(params[key]),
-  );
 }
 
 /**
@@ -70,12 +55,32 @@ export function scheduleToCron({
     case "weekly":
       return `${minute} ${hour} * * ${dayOfWeek}`;
     case "monthly":
+      if (dayOfMonth === "last") {
+        return `${minute} ${hour} 28,29,30,31 * *`;
+      }
       return `${minute} ${hour} ${dayOfMonth} * *`;
     default:
       throw new Error(
         `[Scheduler] Unsupported schedule frequency: ${frequency}`,
       );
   }
+}
+
+/**
+ * คืนค่า true หาก `now` คือวันสุดท้ายของเดือน เมื่อพิจารณาตาม timezone ที่กำหนด
+ * (เปรียบเทียบเดือนของ `now` กับเดือนของ `now + 1 วัน` ใน timezone เดียวกัน)
+ *
+ * @param {Date} now
+ * @param {string} [timezone] - IANA timezone เช่น "Asia/Bangkok", ค่าเริ่มต้นคือ UTC
+ * @returns {boolean}
+ */
+export function isLastDayOfMonth(now, timezone = "UTC") {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    month: "2-digit",
+  });
+  const tomorrow = new Date(now.getTime() + MS_PER_DAY);
+  return formatter.format(now) !== formatter.format(tomorrow);
 }
 
 /** แปลงผลลัพธ์ของสคริปต์ (Array/Object/null) ให้เป็น Array ของแถวสำหรับ export */
@@ -122,7 +127,7 @@ export async function runReport(
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
   };
-  const script = replacePlaceholders(report.script, params);
+  const script = report.script;
 
   const baseRecord = {
     reportId: report._id,
@@ -186,7 +191,17 @@ export async function startScheduler(db) {
         : undefined;
       const task = cron.schedule(
         expression,
-        () => runReport(db, report, { triggeredBy: "scheduler" }),
+        () => {
+          if (
+            report.schedule.frequency === "monthly" &&
+            report.schedule.dayOfMonth === "last" &&
+            !isLastDayOfMonth(new Date(), report.schedule.timezone)
+          ) {
+            // ยังไม่ใช่วันสุดท้ายของเดือนใน timezone ของ report นี้ ข้ามการรัน
+            return;
+          }
+          return runReport(db, report, { triggeredBy: "scheduler" });
+        },
         options,
       );
       return { reportId: report._id, task };
@@ -222,4 +237,3 @@ export async function initializeScheduler(db) {
 export async function reloadScheduler(db) {
   await initializeScheduler(db);
 }
-

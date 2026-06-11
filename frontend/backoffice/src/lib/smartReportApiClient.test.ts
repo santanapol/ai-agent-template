@@ -31,11 +31,22 @@ describe('smartReportApiClient', () => {
     vi.clearAllMocks();
   });
 
-  it('listReports calls GET /api/v1/smart-reports', async () => {
-    mockGet.mockResolvedValueOnce({ data: { success: true, data: [] } });
+  it('listReports calls GET /api/v1/smart-reports and returns data + pagination', async () => {
+    const pagination = { page: 1, limit: 20, total: 0, totalPages: 1 };
+    mockGet.mockResolvedValueOnce({ data: { success: true, data: [], pagination } });
     const result = await listReports();
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports');
-    expect(result).toEqual([]);
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports', { params: {} });
+    expect(result).toEqual({ data: [], pagination });
+  });
+
+  it('listReports forwards page/limit query params', async () => {
+    const pagination = { page: 2, limit: 100, total: 150, totalPages: 2 };
+    mockGet.mockResolvedValueOnce({ data: { success: true, data: [], pagination } });
+    const result = await listReports({ page: 2, limit: 100 });
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports', {
+      params: { page: 2, limit: 100 },
+    });
+    expect(result).toEqual({ data: [], pagination });
   });
 
   it('createReport calls POST /api/v1/smart-reports', async () => {
@@ -71,11 +82,22 @@ describe('smartReportApiClient', () => {
     expect(result).toEqual(record);
   });
 
-  it('listHistory calls GET /history', async () => {
-    mockGet.mockResolvedValueOnce({ data: { success: true, data: [] } });
+  it('listHistory calls GET /history and returns data + pagination', async () => {
+    const pagination = { page: 1, limit: 20, total: 0, totalPages: 1 };
+    mockGet.mockResolvedValueOnce({ data: { success: true, data: [], pagination } });
     const result = await listHistory();
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports/history');
-    expect(result).toEqual([]);
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports/history', { params: {} });
+    expect(result).toEqual({ data: [], pagination });
+  });
+
+  it('listHistory forwards page/limit query params', async () => {
+    const pagination = { page: 1, limit: 100, total: 30, totalPages: 1 };
+    mockGet.mockResolvedValueOnce({ data: { success: true, data: [], pagination } });
+    const result = await listHistory({ page: 1, limit: 100 });
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/smart-reports/history', {
+      params: { page: 1, limit: 100 },
+    });
+    expect(result).toEqual({ data: [], pagination });
   });
 
   it('buildEtagFromUpdDate matches the backend weak ETag format', () => {

@@ -116,6 +116,105 @@ if (!RUN) {
       const body = response.json();
       assert.equal(body.success, true);
       assert.ok(body.data.some((report) => report.id === reportId));
+      assert.equal(body.pagination.page, 1);
+      assert.equal(body.pagination.limit, 20);
+      assert.ok(body.pagination.total >= 1);
+      assert.ok(body.pagination.totalPages >= 1);
+    });
+
+    test("GET /?limit=1 paginates the report list", async () => {
+      const extraNames = [`Extra A ${Date.now()}`, `Extra B ${Date.now()}`];
+      for (const name of extraNames) {
+        const created = await app.inject({
+          method: "POST",
+          url: "/api/v1/smart-reports",
+          headers: buildMeshHeaders(),
+          payload: {
+            name,
+            script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+            outputFormat: "csv",
+          },
+        });
+        assert.equal(created.statusCode, 201);
+      }
+
+      const firstPage = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?page=1&limit=1",
+        headers: buildMeshHeaders(),
+      });
+      assert.equal(firstPage.statusCode, 200);
+      const firstBody = firstPage.json();
+      assert.equal(firstBody.data.length, 1);
+      assert.equal(firstBody.pagination.page, 1);
+      assert.equal(firstBody.pagination.limit, 1);
+      assert.ok(firstBody.pagination.total >= 3);
+      assert.ok(firstBody.pagination.totalPages >= 3);
+
+      const secondPage = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?page=2&limit=1",
+        headers: buildMeshHeaders(),
+      });
+      assert.equal(secondPage.statusCode, 200);
+      const secondBody = secondPage.json();
+      assert.equal(secondBody.data.length, 1);
+      assert.notEqual(secondBody.data[0].id, firstBody.data[0].id);
+    });
+
+    test("GET /?page=0 returns 400 INVALID_PARAM", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?page=0",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
+    });
+
+    test("GET /?page=-1 returns 400 INVALID_PARAM", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?page=-1",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
+    });
+
+    test("GET /?limit=0 returns 400 INVALID_PARAM", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?limit=0",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
+    });
+
+    test("GET /?limit=101 returns 400 INVALID_PARAM (exceeds max)", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?limit=101",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
+    });
+
+    test("GET /?page=abc returns 400 INVALID_PARAM (non-numeric)", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?page=abc",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
     });
 
     test("PUT /:id without If-Match returns 428 PRECONDITION_REQUIRED", async () => {
@@ -189,6 +288,10 @@ if (!RUN) {
       assert.equal(response.statusCode, 200);
       const body = response.json();
       assert.ok(body.data.some((entry) => entry.fileName === historyFileName));
+      assert.equal(body.pagination.page, 1);
+      assert.equal(body.pagination.limit, 20);
+      assert.ok(body.pagination.total >= 1);
+      assert.ok(body.pagination.totalPages >= 1);
     });
 
     test("GET /download/:fileId streams the exported CSV file (200)", async () => {

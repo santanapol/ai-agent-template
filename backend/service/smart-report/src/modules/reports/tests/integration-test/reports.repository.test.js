@@ -12,8 +12,13 @@ if (!RUN) {
 } else {
   const { connectDatabase, closeDatabase } =
     await import("../../../../config/database.js");
-  const { REPORTS_COLLECTION, ensureReportIndexes, insertReport, findReports } =
-    await import("../../reports.repository.js");
+  const {
+    REPORTS_COLLECTION,
+    ensureReportIndexes,
+    insertReport,
+    findReports,
+    findReportsPage,
+  } = await import("../../reports.repository.js");
 
   describe("reports.repository (integration)", () => {
     test("ensureReportIndexes creates the expected indexes", async () => {
@@ -61,6 +66,50 @@ if (!RUN) {
         assert.equal(reports[0].name, report.name);
         assert.equal(reports[0].outputFormat, "csv");
         assert.equal(reports[0].enabled, true);
+
+        await db.collection(REPORTS_COLLECTION).deleteMany({});
+      } finally {
+        await closeDatabase();
+      }
+    });
+
+    test("findReportsPage paginates results sorted by name", async () => {
+      const db = await connectDatabase();
+      try {
+        await ensureReportIndexes(db);
+        await db.collection(REPORTS_COLLECTION).deleteMany({});
+
+        const now = new Date();
+        const baseReport = {
+          script: "db.getSiblingDB('gpp_777ww').su_staff_login_log.find({});",
+          params: {},
+          outputFormat: "csv",
+          schedule: null,
+          enabled: true,
+          cr_by: "system",
+          cr_date: now,
+          cr_prog: "/api/v1/smart-reports",
+          upd_by: "system",
+          upd_date: now,
+          upd_prog: "/api/v1/smart-reports",
+        };
+
+        for (const name of ["Report A", "Report B", "Report C"]) {
+          await insertReport(db, { ...baseReport, name });
+        }
+
+        const firstPage = await findReportsPage(db, { page: 1, limit: 2 });
+        assert.equal(firstPage.total, 3);
+        assert.equal(firstPage.items.length, 2);
+        assert.deepEqual(
+          firstPage.items.map((report) => report.name),
+          ["Report A", "Report B"],
+        );
+
+        const secondPage = await findReportsPage(db, { page: 2, limit: 2 });
+        assert.equal(secondPage.total, 3);
+        assert.equal(secondPage.items.length, 1);
+        assert.equal(secondPage.items[0].name, "Report C");
 
         await db.collection(REPORTS_COLLECTION).deleteMany({});
       } finally {

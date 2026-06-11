@@ -4,8 +4,8 @@ import cron from "node-cron";
 
 import {
   computePreviousDayRange,
-  replacePlaceholders,
   scheduleToCron,
+  isLastDayOfMonth,
 } from "../../scheduler.service.js";
 
 describe("scheduler.service (pure helpers)", () => {
@@ -24,26 +24,6 @@ describe("scheduler.service (pure helpers)", () => {
 
       assert.equal(startDate.toISOString(), "2026-03-01T00:00:00.000Z");
       assert.equal(endDate.toISOString(), "2026-03-01T23:59:59.999Z");
-    });
-  });
-
-  describe("replacePlaceholders", () => {
-    test("substitutes {{key}} tokens with the provided params", () => {
-      const script =
-        'const startDate = ISODate("{{startDate}}");\nconst endDate = ISODate("{{endDate}}");';
-      const result = replacePlaceholders(script, {
-        startDate: "2026-02-28T17:00:00.000Z",
-        endDate: "2026-03-01T16:59:59.999Z",
-      });
-
-      assert.equal(
-        result,
-        'const startDate = ISODate("2026-02-28T17:00:00.000Z");\nconst endDate = ISODate("2026-03-01T16:59:59.999Z");',
-      );
-    });
-
-    test("leaves unknown placeholders untouched", () => {
-      assert.equal(replacePlaceholders("{{unknown}}", {}), "{{unknown}}");
     });
   });
 
@@ -71,6 +51,15 @@ describe("scheduler.service (pure helpers)", () => {
         }),
         "15 2 1 * *",
       );
+      assert.equal(
+        scheduleToCron({
+          frequency: "monthly",
+          hour: 2,
+          minute: 15,
+          dayOfMonth: "last",
+        }),
+        "15 2 28,29,30,31 * *",
+      );
     });
 
     test("produces a cron expression accepted by node-cron", () => {
@@ -87,6 +76,65 @@ describe("scheduler.service (pure helpers)", () => {
         () => scheduleToCron({ frequency: "yearly" }),
         /Unsupported schedule frequency/,
       );
+    });
+  });
+
+  describe("isLastDayOfMonth", () => {
+    test("Feb 28 is the last day in a non-leap year (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2026-02-28T12:00:00.000Z"), "UTC"),
+        true,
+      );
+    });
+
+    test("Feb 28 is NOT the last day in a leap year (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2028-02-28T12:00:00.000Z"), "UTC"),
+        false,
+      );
+    });
+
+    test("Feb 29 is the last day in a leap year (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2028-02-29T12:00:00.000Z"), "UTC"),
+        true,
+      );
+    });
+
+    test("Apr 30 is the last day of a 30-day month (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2026-04-30T12:00:00.000Z"), "UTC"),
+        true,
+      );
+    });
+
+    test("Apr 29 is NOT the last day of a 30-day month (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2026-04-29T12:00:00.000Z"), "UTC"),
+        false,
+      );
+    });
+
+    test("Jan 31 is the last day of a 31-day month (UTC)", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2026-01-31T12:00:00.000Z"), "UTC"),
+        true,
+      );
+    });
+
+    test("defaults to UTC when no timezone is given", () => {
+      assert.equal(
+        isLastDayOfMonth(new Date("2026-01-31T12:00:00.000Z")),
+        true,
+      );
+    });
+
+    test("is timezone-aware: last day in Asia/Bangkok but not yet in UTC", () => {
+      // 2026-04-29T17:05:00.000Z === 2026-04-30T00:05:00+07:00 (Bangkok)
+      const now = new Date("2026-04-29T17:05:00.000Z");
+
+      assert.equal(isLastDayOfMonth(now, "Asia/Bangkok"), true);
+      assert.equal(isLastDayOfMonth(now, "UTC"), false);
     });
   });
 });

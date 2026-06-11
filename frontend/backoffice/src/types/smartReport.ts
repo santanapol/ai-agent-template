@@ -1,3 +1,15 @@
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface ListPageParams {
+  page?: number;
+  limit?: number;
+}
+
 export type ReportOutputFormat = 'csv' | 'excel';
 
 export type ScheduleFrequency = 'daily' | 'weekly' | 'monthly';
@@ -7,7 +19,7 @@ export interface ReportSchedule {
   hour?: number;
   minute?: number;
   dayOfWeek?: number;
-  dayOfMonth?: number;
+  dayOfMonth?: number | 'last';
   timezone?: string;
 }
 

@@ -55,7 +55,7 @@ if (!RUN) {
         script: `
           const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
           mainDB.${FIXTURE_COLLECTION}.find({
-            date: { $gte: ISODate("{{startDate}}"), $lte: ISODate("{{endDate}}") },
+            date: { $gte: ISODate(params.startDate), $lte: ISODate(params.endDate) },
           });
         `,
         params: {},

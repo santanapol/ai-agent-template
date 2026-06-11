@@ -1,19 +1,24 @@
+const baseTrustedHeaderProperties = {
+  "x-user-ou": { type: "string" },
+  "x-user-branch": { type: "string" },
+  "x-user-id": { type: "string" },
+  "x-user-role": { type: "string" },
+};
+
 const trustedHeaders = {
   type: "object",
   properties: {
-    "x-user-ou": { type: "string" },
-    "x-user-branch": { type: "string" },
-    "x-user-id": { type: "string" },
-    "x-user-role": { type: "string" },
+    ...baseTrustedHeaderProperties,
     "x-request-id": { type: "string" },
   },
 };
 
 const trustedHeadersWithIfMatch = {
-  ...trustedHeaders,
+  type: "object",
   properties: {
-    ...trustedHeaders.properties,
+    ...baseTrustedHeaderProperties,
     "if-match": { type: "string" },
+    "x-request-id": { type: "string" },
   },
 };
 
@@ -36,7 +41,12 @@ const scheduleSchema = {
     hour: { type: "integer", minimum: 0, maximum: 23 },
     minute: { type: "integer", minimum: 0, maximum: 59 },
     dayOfWeek: { type: "integer", minimum: 0, maximum: 6 },
-    dayOfMonth: { type: "integer", minimum: 1, maximum: 31 },
+    dayOfMonth: {
+      anyOf: [
+        { type: "integer", minimum: 1, maximum: 31 },
+        { type: "string", enum: ["last"] },
+      ],
+    },
     timezone: { type: "string" },
   },
 };
@@ -74,7 +84,7 @@ const historyProperties = {
 
 const reportBodyProperties = {
   name: { type: "string", minLength: 1 },
-  description: { type: "string" },
+  description: { type: ["string", "null"] },
   script: { type: "string", minLength: 1 },
   params: { type: "object" },
   outputFormat: { type: "string", enum: ["csv", "excel"] },
@@ -90,10 +100,26 @@ const idParam = {
   },
 };
 
+const paginationQuery = {
+  type: "object",
+  properties: {
+    page: { type: "integer", minimum: 1, default: 1 },
+    limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+  },
+};
+
+const paginationProperties = {
+  page: { type: "integer" },
+  limit: { type: "integer" },
+  total: { type: "integer" },
+  totalPages: { type: "integer" },
+};
+
 export const listReportsSchema = {
   description: "List all smart report definitions",
   tags: ["smart-reports"],
   headers: trustedHeaders,
+  querystring: paginationQuery,
   response: {
     200: {
       type: "object",
@@ -105,6 +131,7 @@ export const listReportsSchema = {
           type: "array",
           items: { type: "object", properties: reportProperties },
         },
+        pagination: { type: "object", properties: paginationProperties },
       },
     },
     "4xx": errorResponse,
@@ -210,6 +237,7 @@ export const historySchema = {
   description: "List download history for all smart reports",
   tags: ["smart-reports"],
   headers: trustedHeaders,
+  querystring: paginationQuery,
   response: {
     200: {
       type: "object",
@@ -221,6 +249,7 @@ export const historySchema = {
           type: "array",
           items: { type: "object", properties: historyProperties },
         },
+        pagination: { type: "object", properties: paginationProperties },
       },
     },
     "4xx": errorResponse,

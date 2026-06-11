@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/smart-report/`:** Added custom `"last"` day of month option for monthly report scheduler frequency.
+- **Backoffice:** Redesigned Create/Edit report flow to use a split-screen inline page instead of a Modal.
+- **Backoffice:** Updated report execution history dates in the UI to display in the local browser timezone using `dayjs`.
+- **Backoffice:** Changed the saved scheduled timezone to dynamically use the browser's local timezone (e.g. `'Asia/Bangkok'`) instead of hardcoded `'UTC'`.
+- **Backoffice:** Removed automatic saving of `timezoneOffsetMinutes` in the database's `params` to allow custom timezone logic within scripts.
 - **`backend/service/smart-report/`:** Added a new report query and scheduling service, supporting raw MongoDB script execution under a secured VM sandbox with prototype traversal protection, exports to CSV/Excel formats stored permanently, and automatic boot scheduler.
 - **Backoffice:** Added the Smart Report management UI page under `/smart-reports` to display, create, edit, delete, run immediately, and download report history.
 - **Gateway:** Added routing rules to proxy `/api/v1/smart-reports` requests to port 3103.

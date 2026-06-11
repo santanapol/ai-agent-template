@@ -20,7 +20,7 @@ export default [
   importPlugin.flatConfigs.recommended,
   securityPlugin.configs.recommended,
   {
-    files: ["**/*.js"],
+    files: ["**/*.js", "**/*.mjs"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -82,6 +82,13 @@ export default [
       "no-console": "off",
       "security/detect-object-injection": "off",
       "n/no-unsupported-features/node-builtins": "off",
+    },
+  },
+  {
+    files: ["scripts/**/*.js", "scripts/**/*.mjs"],
+    rules: {
+      "no-console": "off",
+      "n/hashbang": "off",
     },
   },
   prettierConfig,

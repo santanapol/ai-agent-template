@@ -17,7 +17,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run format:check && npm test && npm run audit:check"
+    "ci": "npm run lint && npm run format:check && npm test && npm run audit:check",
+    "init:db": "node --env-file-if-exists=.env scripts/init-db.mjs",
+    "seed:example": "node --env-file-if-exists=.env scripts/seed-example-data.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

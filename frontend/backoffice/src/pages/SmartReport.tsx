@@ -7,7 +7,6 @@ import {
   Tag,
   Space,
   Tabs,
-  Modal,
   Form,
   Input,
   Select,
@@ -16,7 +15,13 @@ import {
   theme,
   Drawer,
   Empty,
+  Segmented,
+  Divider,
+  TimePicker,
+  Row,
+  Col,
 } from 'antd';
+import dayjs from 'dayjs';
 import {
   FileTextOutlined,
   PlusOutlined,
@@ -28,6 +33,7 @@ import {
   CodeOutlined,
   ClockCircleOutlined,
   SyncOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import { apiErrorMessage } from '../lib/apiError';
@@ -60,50 +66,53 @@ interface ReportRow extends Report {
   lastRun: string;
 }
 
-const DEFAULT_QUERY_EXAMPLE = `// --- 0. กำหนดค่าการค้นหา (Constants & Placeholders) ---
-const ou_id = ObjectId("5f4f9d57266ed249e45ecef5");
-const branch_id = ObjectId("5f4fb5bb3156af7a2db9e5a0");
-const timezone = "+07:00";
+const DEFAULT_QUERY_EXAMPLE = `// --- 0. กำหนดช่วงเวลา (Dynamic Parameters) ---
+const startDate = ISODate(params.startDate);
+const endDate = ISODate(params.endDate);
 
-const startDate = ISODate("{{startDate}}");
-const endDate = ISODate("{{endDate}}");
+// --- 1. เชื่อมต่อ Database ที่ต้องการดึงข้อมูล ---
+const targetDB = db.getSiblingDB("your_database_name");
 
-// --- 1. เตรียม Database Connection ---
-const mainDB = db.getSiblingDB("gpp_777ww");
-
-// --- 2. ดึงข้อมูลและประมวลผล (Execution) ---
-mainDB.su_staff_login_log.aggregate([
-    { $match: { ou_id, branch_id, date: { $gte: startDate, $lte: endDate } } },
-    { $sort: { date: -1 } },
+// --- 2. เขียนคำสั่ง Aggregate เพื่อดึงข้อมูลออกรายงาน ---
+targetDB.your_collection_name.aggregate([
+    {
+        $match: {
+            // คัดกรองข้อมูลตามช่วงวันที่
+            created_at: { $gte: startDate, $lte: endDate }
+        }
+    },
     {
         $project: {
-            date: { $dateToString: { format: "%Y-%m-%d %H:%M:%S", date: "$date", timezone } },
-            username: "$username",
-            ip_address: "$ip_address",
-            status: "$status"
+            _id: 0, // 0 = ซ่อนคอลัมน์นี้, 1 = แสดงคอลัมน์นี้
+            column_name_1: "$field_name_1",
+            column_name_2: "$field_name_2",
+            created_at: 1
         }
     }
 ]);`;
 
-const SCHEDULE_LABELS: Record<ScheduleOption, string> = {
-  manual: 'Manual (ไม่ตั้งเวลา)',
-  daily: 'Daily (ทุกวัน)',
-  weekly: 'Weekly (ทุกวันจันทร์)',
-  monthly: 'Monthly (ทุกสิ้นเดือน)',
-};
 
-// แปลงตัวเลือก schedule บนหน้าจอเป็นโครงสร้างที่ backend ต้องการ (ค่าเริ่มต้นต่อรอบเวลา)
-function scheduleFromUiValue(value: ScheduleOption): ReportSchedule | null {
-  switch (value) {
-    case 'daily':
-      return { frequency: 'daily', hour: 0, minute: 0, timezone: 'UTC' };
-    case 'weekly':
-      return { frequency: 'weekly', dayOfWeek: 1, hour: 0, minute: 0, timezone: 'UTC' };
-    case 'monthly':
-      return { frequency: 'monthly', dayOfMonth: 28, hour: 23, minute: 59, timezone: 'UTC' };
-    default:
-      return null;
+function formatScheduleLabel(schedule: ReportSchedule | null): string {
+  if (!schedule) return 'Manual (ไม่ตั้งเวลา)';
+  const hourStr = String(schedule.hour ?? 0).padStart(2, '0');
+  const minStr = String(schedule.minute ?? 0).padStart(2, '0');
+  const timeStr = `${hourStr}:${minStr}`;
+
+  if (schedule.frequency === 'daily') {
+    return `Daily (ทุกวัน เวลา ${timeStr})`;
   }
+  if (schedule.frequency === 'weekly') {
+    const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+    const dayName = days[schedule.dayOfWeek ?? 1];
+    return `Weekly (ทุก${dayName} เวลา ${timeStr})`;
+  }
+  if (schedule.frequency === 'monthly') {
+    if (schedule.dayOfMonth === 'last') {
+      return `Monthly (ทุกวันสุดท้ายของเดือน เวลา ${timeStr})`;
+    }
+    return `Monthly (ทุกวันที่ ${schedule.dayOfMonth ?? 1} เวลา ${timeStr})`;
+  }
+  return 'Manual (ไม่ตั้งเวลา)';
 }
 
 function scheduleToUiValue(schedule: ReportSchedule | null): ScheduleOption {
@@ -116,7 +125,9 @@ function scheduleToUiValue(schedule: ReportSchedule | null): ScheduleOption {
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toISOString().replace('T', ' ').substring(0, 19);
+  const d = dayjs(iso);
+  if (!d.isValid()) return '—';
+  return d.format('YYYY-MM-DD HH:mm:ss');
 }
 
 const SmartReport: React.FC = () => {
@@ -133,11 +144,12 @@ const SmartReport: React.FC = () => {
   const [runningId, setRunningId] = useState<string | null>(null);
 
   // UI Control States
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'edit'>('list');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [form] = Form.useForm();
+  const scheduleValue = Form.useWatch('schedule', form);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
@@ -147,10 +159,13 @@ const SmartReport: React.FC = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [reportsData, historyData] = await Promise.all([listReports(), listHistory()]);
+        const [reportsRes, historyRes] = await Promise.all([
+          listReports({ limit: 100 }),
+          listHistory({ limit: 100 }),
+        ]);
         if (cancelled) return;
-        setReports(reportsData);
-        setHistory(historyData);
+        setReports(reportsRes.data);
+        setHistory(historyRes.data);
       } catch (err) {
         if (!cancelled) message.error(apiErrorMessage(err, 'ไม่สามารถโหลดข้อมูลรายงานได้'));
       } finally {
@@ -217,58 +232,94 @@ const SmartReport: React.FC = () => {
     }
   };
 
-  // Open modal for creating new report
+  // Open editor for creating new report
   const handleCreateNew = () => {
     setEditingReport(null);
     form.resetFields();
     form.setFieldsValue({
       schedule: 'manual',
+      scheduleTime: dayjs().hour(0).minute(0),
+      scheduleDayOfWeek: 1,
+      scheduleDayOfMonth: 1,
       outputFormat: 'csv',
       query: DEFAULT_QUERY_EXAMPLE,
     });
-    setIsModalOpen(true);
+    setViewMode('edit');
   };
 
-  // Open modal for editing report
+  // Open editor for editing report
   const handleEditReport = (report: Report) => {
     setEditingReport(report);
+    const hour = report.schedule?.hour ?? 0;
+    const minute = report.schedule?.minute ?? 0;
     form.setFieldsValue({
       name: report.name,
       description: report.description ?? '',
       schedule: scheduleToUiValue(report.schedule),
+      scheduleTime: dayjs().hour(hour).minute(minute),
+      scheduleDayOfWeek: report.schedule?.dayOfWeek ?? 1,
+      scheduleDayOfMonth: report.schedule?.dayOfMonth ?? 1,
       outputFormat: report.outputFormat,
       query: report.script,
     });
-    setIsModalOpen(true);
+    setViewMode('edit');
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setViewMode('list');
   };
 
   // Save report (create or edit)
   const handleSaveReport = async () => {
-    let values: { name: string; description: string; schedule: ScheduleOption; outputFormat: 'csv' | 'excel'; query: string };
+    let values: {
+      name: string;
+      description?: string;
+      schedule: ScheduleOption;
+      scheduleTime?: dayjs.Dayjs;
+      scheduleDayOfWeek?: number;
+      scheduleDayOfMonth?: number | 'last';
+      outputFormat: 'csv' | 'excel';
+      query: string;
+    };
     try {
       values = await form.validateFields();
     } catch {
       return;
     }
 
+    const hour = values.scheduleTime ? values.scheduleTime.hour() : 0;
+    const minute = values.scheduleTime ? values.scheduleTime.minute() : 0;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Bangkok';
+
     const payload: ReportPayload = {
       name: values.name,
       description: values.description,
       script: values.query,
       outputFormat: values.outputFormat,
-      schedule: scheduleFromUiValue(values.schedule),
+      schedule:
+        values.schedule === 'manual'
+          ? null
+          : {
+              frequency: values.schedule,
+              hour,
+              minute,
+              dayOfWeek: values.schedule === 'weekly' ? values.scheduleDayOfWeek : undefined,
+              dayOfMonth: values.schedule === 'monthly' ? values.scheduleDayOfMonth : undefined,
+              timezone,
+            },
     };
 
     setIsSaving(true);
     try {
       if (editingReport) {
         await updateReport(editingReport.id, payload, buildEtagFromUpdDate(editingReport.upd_date));
-        message.success('แก้ไขรายงานเรียบร้อยแล้วค่ะ');
+        message.success('แก้ไขข้อมูลรายงานสำเร็จ');
       } else {
         await createReport(payload as CreateReportPayload);
-        message.success('สร้างรายงานใหม่เรียบร้อยแล้วค่ะ');
+        message.success('สร้างรายงานใหม่สำเร็จ');
       }
-      setIsModalOpen(false);
+      setViewMode('list');
       refresh();
     } catch (err) {
       message.error(
@@ -290,7 +341,7 @@ const SmartReport: React.FC = () => {
       onOk: async () => {
         try {
           await deleteReport(report.id, buildEtagFromUpdDate(report.upd_date));
-          message.success('ลบรายงานเรียบร้อยแล้วค่ะ');
+          message.success('ลบรายงานเรียบร้อยแล้ว');
           refresh();
         } catch (err) {
           message.error(apiErrorMessage(err, 'ไม่สามารถลบรายงานได้'));
@@ -333,11 +384,11 @@ const SmartReport: React.FC = () => {
     {
       title: 'รอบเวลารัน (Schedule)',
       key: 'schedule',
-      width: 180,
+      width: 240,
       render: (_: unknown, record: ReportRow) => (
         <Space>
           <ClockCircleOutlined style={{ color: token.colorTextDescription }} />
-          <span>{SCHEDULE_LABELS[scheduleToUiValue(record.schedule)]}</span>
+          <span>{formatScheduleLabel(record.schedule)}</span>
         </Space>
       ),
     },
@@ -505,6 +556,251 @@ const SmartReport: React.FC = () => {
   const selectedReportDownloads = history.filter((d) => d.reportId === selectedReportId);
   const selectedReportName = reports.find((r) => r.id === selectedReportId)?.name || '';
 
+  if (viewMode === 'edit') {
+    return (
+      <div>
+        {/* Editor Page Header */}
+        <div style={{ marginBottom: token.marginLG, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space size="middle">
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={handleCancelEdit}
+              size="large"
+            />
+            <div>
+              <Title level={2} style={{ margin: 0 }}>
+                {editingReport ? 'แก้ไขสคริปต์รายงาน' : 'สร้างสคริปต์รายงานใหม่'}
+              </Title>
+              <Text type="secondary">
+                {editingReport ? `กำลังแก้ไข: ${editingReport.name}` : 'ระบุรายละเอียดสคริปต์ดึงข้อมูลและรอบเวลาประมวลผล'}
+              </Text>
+            </div>
+          </Space>
+          <Space>
+            <Button size="large" onClick={handleCancelEdit}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              loading={isSaving}
+              onClick={() => void handleSaveReport()}
+            >
+              บันทึกสคริปต์รายงาน
+            </Button>
+          </Space>
+        </div>
+
+        <Form form={form} layout="vertical">
+          <Row gutter={[24, 24]}>
+            {/* Left Column: Settings */}
+            <Col xs={24} lg={10}>
+              <Card
+                title={
+                  <Space>
+                    <FileTextOutlined style={{ color: token.colorPrimary }} />
+                    <Text strong>ข้อมูลทั่วไป & ตั้งเวลา</Text>
+                  </Space>
+                }
+                variant="borderless"
+                style={{ borderRadius: token.borderRadius }}
+              >
+                {/* Name & Description */}
+                <Form.Item
+                  name="name"
+                  label={<Text strong>ชื่อรายงาน</Text>}
+                  rules={[{ required: true, message: 'กรุณากรอกชื่อรายงาน' }]}
+                >
+                  <Input placeholder="เช่น รายงานวิเคราะห์รายชื่อ Staff login" size="large" />
+                </Form.Item>
+
+                <Form.Item
+                  name="description"
+                  label={<Text strong>คำอธิบายรายงาน</Text>}
+                >
+                  <Input placeholder="ระบุการทำงานและข้อมูลที่ดึงได้จากรายงานนี้" size="large" />
+                </Form.Item>
+
+                <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
+                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>รูปแบบไฟล์รายงาน (Output Format)</Text>
+                </Divider>
+
+                <Form.Item
+                  name="outputFormat"
+                  label={<Text strong>รูปแบบไฟล์ผลลัพธ์</Text>}
+                  rules={[{ required: true }]}
+                >
+                  <Segmented
+                    size="large"
+                    block
+                    options={[
+                      { label: 'CSV (.csv)', value: 'csv' },
+                      { label: 'Excel (.xlsx)', value: 'excel' },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
+                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>การตั้งเวลารันอัตโนมัติ (Scheduler)</Text>
+                </Divider>
+
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Form.Item
+                      name="schedule"
+                      label={<Text strong>รอบเวลาประมวลผล (Scheduler)</Text>}
+                      rules={[{ required: true }]}
+                    >
+                      <Select size="large">
+                        <Select.Option value="manual">Manual (ดำเนินการด้วยตนเอง)</Select.Option>
+                        <Select.Option value="daily">Daily (รายวัน)</Select.Option>
+                        <Select.Option value="weekly">Weekly (รายสัปดาห์)</Select.Option>
+                        <Select.Option value="monthly">Monthly (รายเดือน)</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+
+                  {scheduleValue && scheduleValue !== 'manual' && (
+                    <>
+                      {scheduleValue === 'weekly' && (
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            name="scheduleDayOfWeek"
+                            label={<Text strong>วันที่ต้องการรัน</Text>}
+                            rules={[{ required: true }]}
+                          >
+                            <Select size="large" style={{ width: '100%' }}>
+                              <Select.Option value={1}>วันจันทร์</Select.Option>
+                              <Select.Option value={2}>วันอังคาร</Select.Option>
+                              <Select.Option value={3}>วันพุธ</Select.Option>
+                              <Select.Option value={4}>วันพฤหัสบดี</Select.Option>
+                              <Select.Option value={5}>วันศุกร์</Select.Option>
+                              <Select.Option value={6}>วันเสาร์</Select.Option>
+                              <Select.Option value={0}>วันอาทิตย์</Select.Option>
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      )}
+
+                      {scheduleValue === 'monthly' && (
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            name="scheduleDayOfMonth"
+                            label={<Text strong>วันที่ต้องการรัน</Text>}
+                            rules={[{ required: true }]}
+                          >
+                            <Select size="large" style={{ width: '100%' }}>
+                              <Select.Option value="last">วันสุดท้ายของเดือน</Select.Option>
+                              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                <Select.Option key={day} value={day}>
+                                  วันที่ {day}
+                                </Select.Option>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      )}
+
+                      <Col xs={24} sm={scheduleValue === 'daily' ? 24 : 12}>
+                        <Form.Item
+                          name="scheduleTime"
+                          label={<Text strong>เวลาที่ต้องการรัน</Text>}
+                          rules={[{ required: true, message: 'ระบุเวลา' }]}
+                        >
+                          <TimePicker format="HH:mm" size="large" style={{ width: '100%' }} needConfirm={false} />
+                        </Form.Item>
+                      </Col>
+                    </>
+                  )}
+                </Row>
+              </Card>
+            </Col>
+
+            {/* Right Column: Query Editor */}
+            <Col xs={24} lg={14}>
+              <Card
+                title={
+                  <Space>
+                    <CodeOutlined style={{ color: token.colorPrimary }} />
+                    <Text strong>สคริปต์คำสั่งดึงข้อมูล (Query Script)</Text>
+                  </Space>
+                }
+                variant="borderless"
+                style={{ borderRadius: token.borderRadius }}
+              >
+                {/* IDE Header Bar */}
+                <div
+                  style={{
+                    background: token.colorBgLayout,
+                    padding: '8px 16px',
+                    borderTopLeftRadius: token.borderRadius,
+                    borderTopRightRadius: token.borderRadius,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    border: `1px solid ${token.colorBorder}`,
+                    borderBottom: 'none',
+                  }}
+                >
+                  <Space>
+                    <Badge status="processing" color={token.colorSuccess} />
+                    <Text style={{ color: token.colorTextDescription, fontFamily: 'monospace', fontSize: token.fontSizeSM }}>
+                      query.js (MongoDB Read-Only Connection)
+                    </Text>
+                  </Space>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => {
+                      const currentQuery = form.getFieldValue('query');
+                      if (!currentQuery || currentQuery === DEFAULT_QUERY_EXAMPLE) {
+                        form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
+                        message.info('โหลดตัวอย่างสคริปต์เริ่มต้นเรียบร้อยแล้ว');
+                      }
+                    }}
+                  >
+                    Reset to Example
+                  </Button>
+                </div>
+
+                <Form.Item
+                  name="query"
+                  rules={[{ required: true, message: 'กรุณาใส่ Query Script' }]}
+                  style={{ marginBottom: 16 }}
+                >
+                  <TextArea
+                    rows={22}
+                    style={{
+                      fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+                      fontSize: token.fontSizeSM,
+                      background: token.colorBgContainer,
+                      color: token.colorText,
+                      border: `1px solid ${token.colorBorder}`,
+                      borderTopLeftRadius: 0,
+                      borderTopRightRadius: 0,
+                      borderBottomLeftRadius: token.borderRadius,
+                      borderBottomRightRadius: token.borderRadius,
+                      padding: '16px',
+                      lineHeight: '1.6',
+                    }}
+                    placeholder="// ตัวอย่างคำสั่งดึงข้อมูล..."
+                  />
+                </Form.Item>
+
+                <div style={{ padding: '8px', background: token.colorInfoBg, borderRadius: token.borderRadius, border: `1px solid ${token.colorInfoBorder}` }}>
+                  <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                    💡 สามารถเรียกใช้วันที่เริ่มต้นและสิ้นสุดในรูปแบบ ISO String ผ่านตัวแปร <code>params.startDate</code> และ <code>params.endDate</code> ในสคริปต์คำสั่ง JavaScript ได้โดยตรง
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        </Form>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -591,87 +887,6 @@ const SmartReport: React.FC = () => {
           },
         ]}
       />
-
-      {/* Create / Edit Modal Dialog */}
-      <Modal
-        title={editingReport ? 'แก้ไขสคริปต์รายงาน' : 'เพิ่มสคริปต์รายงานใหม่'}
-        open={isModalOpen}
-        onOk={() => void handleSaveReport()}
-        onCancel={() => setIsModalOpen(false)}
-        confirmLoading={isSaving}
-        width={850}
-        okText={editingReport ? 'บันทึกการแก้ไข' : 'สร้างรายงาน'}
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical" style={{ marginTop: token.marginLG }}>
-          <Form.Item
-            name="name"
-            label="ชื่อรายงาน"
-            rules={[{ required: true, message: 'กรุณากรอกชื่อรายงาน' }]}
-          >
-            <Input placeholder="เช่น รายงานวิเคราะห์รายชื่อ Staff login" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="คำอธิบายรายงาน"
-            rules={[{ required: true, message: 'กรุณากรอกคำอธิบาย' }]}
-          >
-            <Input placeholder="ระบุการทำงานและข้อมูลที่ดึงได้จากรายงานนี้" />
-          </Form.Item>
-
-          <Space size="large" style={{ width: '100%' }}>
-            <Form.Item
-              name="schedule"
-              label="รอบเวลาประมวลผล (Scheduler)"
-              rules={[{ required: true }]}
-              style={{ minWidth: 320 }}
-            >
-              <Select>
-                <Select.Option value="manual">Manual (ไม่ตั้งเวลา - รันด้วยมือเท่านั้น)</Select.Option>
-                <Select.Option value="daily">Daily (รันอัตโนมัติทุกวัน เวลา 00:00 น.)</Select.Option>
-                <Select.Option value="weekly">Weekly (รันอัตโนมัติทุกวันจันทร์ เวลา 00:00 น.)</Select.Option>
-                <Select.Option value="monthly">Monthly (รันอัตโนมัติทุกวันสิ้นเดือน เวลา 23:59 น.)</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="outputFormat"
-              label="รูปแบบไฟล์ผลลัพธ์ (Output Format)"
-              rules={[{ required: true, message: 'กรุณาเลือกรูปแบบไฟล์ผลลัพธ์' }]}
-              style={{ minWidth: 200 }}
-            >
-              <Select>
-                <Select.Option value="csv">CSV (.csv)</Select.Option>
-                <Select.Option value="excel">Excel (.xlsx)</Select.Option>
-              </Select>
-            </Form.Item>
-          </Space>
-
-          <Form.Item
-            name="query"
-            label={
-              <Space>
-                <span>MongoDB Shell Query Script</span>
-                <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                  (ใช้ระบบ Template replace แทนค่าตัวแปรด้วย <code>{"{{startDate}}"}</code> และ <code>{"{{endDate}}"}</code>)
-                </Text>
-              </Space>
-            }
-            rules={[{ required: true, message: 'กรุณาใส่ Query Script' }]}
-          >
-            <TextArea
-              rows={12}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: token.fontSizeSM,
-                background: '#fafafa',
-              }}
-              placeholder="// ตัวอย่างคำสั่งดึงข้อมูล..."
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
 
       {/* Drawer: Download history of specific report */}
       <Drawer

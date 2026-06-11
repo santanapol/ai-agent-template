@@ -18,6 +18,7 @@ if (!RUN) {
     ensureDownloadHistoryIndexes,
     insertDownloadHistory,
     findDownloadHistory,
+    findDownloadHistoryPage,
   } = await import("../../download-history.repository.js");
 
   describe("download-history.repository (integration)", () => {
@@ -77,6 +78,61 @@ if (!RUN) {
         assert.equal(history[0].fileName, "staff-login-log-2.csv");
         assert.equal(history[1].fileName, "staff-login-log-1.csv");
         assert.ok(history[0].reportId.equals(reportId));
+
+        await db.collection(DOWNLOAD_HISTORY_COLLECTION).deleteMany({});
+      } finally {
+        await closeDatabase();
+      }
+    });
+
+    test("findDownloadHistoryPage paginates results sorted by recency", async () => {
+      const db = await connectDatabase();
+      try {
+        await ensureDownloadHistoryIndexes(db);
+        await db.collection(DOWNLOAD_HISTORY_COLLECTION).deleteMany({});
+
+        const reportId = new ObjectId();
+        const baseRecord = {
+          reportId,
+          reportName: "Staff Login Log",
+          format: "csv",
+          status: "success",
+          recordCount: 10,
+          error: null,
+          triggeredBy: "manual",
+          cr_by: "system",
+          cr_prog: "/api/v1/smart-reports/:id/run",
+        };
+
+        for (const day of [1, 2, 3]) {
+          const date = new Date(`2026-01-0${day}T00:00:00.000Z`);
+          await insertDownloadHistory(db, {
+            ...baseRecord,
+            fileName: `staff-login-log-${day}.csv`,
+            filePath: `/storage/reports/staff-login-log-${day}.csv`,
+            startedAt: date,
+            finishedAt: date,
+            cr_date: date,
+          });
+        }
+
+        const firstPage = await findDownloadHistoryPage(db, {
+          page: 1,
+          limit: 2,
+        });
+        assert.equal(firstPage.total, 3);
+        assert.deepEqual(
+          firstPage.items.map((record) => record.fileName),
+          ["staff-login-log-3.csv", "staff-login-log-2.csv"],
+        );
+
+        const secondPage = await findDownloadHistoryPage(db, {
+          page: 2,
+          limit: 2,
+        });
+        assert.equal(secondPage.total, 3);
+        assert.equal(secondPage.items.length, 1);
+        assert.equal(secondPage.items[0].fileName, "staff-login-log-1.csv");
 
         await db.collection(DOWNLOAD_HISTORY_COLLECTION).deleteMany({});
       } finally {

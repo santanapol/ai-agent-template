@@ -48,6 +48,27 @@ export async function findReports(db) {
 }
 
 /**
+ * Paginated list of report definitions, ordered by name.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {object} [options]
+ * @param {number} [options.page] - 1-based page number
+ * @param {number} [options.limit] - page size
+ * @returns {Promise<{ items: Report[], total: number }>}
+ */
+export async function findReportsPage(db, { page = 1, limit = 20 } = {}) {
+  const collection = db.collection(REPORTS_COLLECTION);
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    collection.find({}).sort({ name: 1 }).skip(skip).limit(limit).toArray(),
+    collection.countDocuments({}),
+  ]);
+
+  return { items, total };
+}
+
+/**
  * @param {import('mongodb').Db} db
  * @param {import('mongodb').ObjectId} id
  * @returns {Promise<Report|null>}
