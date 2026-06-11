@@ -19,7 +19,7 @@ if (!uri) {
   process.exit(1);
 }
 
-const dbName = process.env.DB_NAME || "smart-report";
+const dbName = process.env.DB_NAME || "zero-smart-report";
 const resetReports = process.argv.includes("--reset");
 const SEED_PROG = "scripts/seed-example-data.mjs";
 const SEED_USER = process.env.SEED_USER_ID ?? "seed_script";

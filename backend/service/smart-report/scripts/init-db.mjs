@@ -24,7 +24,7 @@ if (!uri) {
   process.exit(1);
 }
 
-const dbName = process.env.DB_NAME || "smart-report";
+const dbName = process.env.DB_NAME || "zero-smart-report";
 
 const client = new MongoClient(uri);
 await client.connect();
