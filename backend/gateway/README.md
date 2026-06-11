@@ -38,6 +38,7 @@ SoT: [`routes.json`](./routes.json), [`.env.example`](./.env.example) (`ROUTES_J
 | `/api/v1/items` | `:3002` | [demo-service](../services/.demo/demo-service/) |
 | `/api/v1/me` | `:3002` | Same **demo-service** |
 | `/api/v1/staff` | `:3101` | [staff](../service/staff/) |
+| `/api/v1/smart-reports` | `:3103` | [smart-report](../service/smart-report/) |
 
 Host เต็มใน `routes.json` (`http://127.0.0.1:…`). Prefix ที่เฉพาะกว่า **ก่อน** prefix สั้นกว่า.
 

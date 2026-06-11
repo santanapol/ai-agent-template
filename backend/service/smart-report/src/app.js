@@ -1,0 +1,116 @@
+import Fastify from "fastify";
+import { randomUUID } from "node:crypto";
+
+import { pingDatabase } from "./config/database.js";
+import { pingReadDatabase } from "./config/database-read.js";
+import { registerErrorHandler } from "./lib/error-handler.js";
+import { errorEnvelope } from "./lib/envelope.js";
+import CODES from "./lib/error-codes.js";
+import duplicateHeaderGuard from "./plugins/duplicate-header.js";
+import gatewaySecretGuard from "./plugins/gateway-secret.js";
+import userContextGuard from "./plugins/user-context.js";
+import reportsRoute from "./modules/reports/reports.route.js";
+
+const REDACT_PATHS = [
+  'req.headers["x-gateway-secret"]',
+  "req.headers.authorization",
+  "req.headers.cookie",
+];
+
+export default async function buildApp(opts = {}) {
+  const isDev = process.env.NODE_ENV !== "production";
+
+  const app = Fastify({
+    logger: {
+      level: isDev ? "info" : "warn",
+      redact: REDACT_PATHS,
+    },
+    ...opts,
+  });
+
+  // x-request-id propagation — generate if missing
+  app.addHook("onRequest", async (request, reply) => {
+    const requestId = request.headers["x-request-id"] || randomUUID();
+    request.requestId = requestId;
+    reply.header("x-request-id", requestId);
+  });
+
+  // Allow an empty body on `Content-Type: application/json` requests
+  // (clients commonly send this on bodyless DELETE/POST actions).
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      if (body === "") {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body));
+      } catch (error) {
+        error.statusCode = 400;
+        done(error, undefined);
+      }
+    },
+  );
+
+  await app.register(duplicateHeaderGuard);
+  registerErrorHandler(app);
+
+  app.get("/healthz", async () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+  }));
+
+  app.get("/readyz", async (_request, reply) => {
+    const dependencies = await Promise.all([
+      pingDatabase()
+        .then(() => ({ name: "database", status: "ok" }))
+        .catch(() => ({ name: "database", status: "error" })),
+      pingReadDatabase()
+        .then(() => ({ name: "database-read", status: "ok" }))
+        .catch(() => ({ name: "database-read", status: "error" })),
+    ]);
+
+    const allOk = dependencies.every((dep) => dep.status === "ok");
+    if (!allOk) reply.code(503);
+
+    return {
+      status: allOk ? "ok" : "error",
+      timestamp: new Date().toISOString(),
+      dependencies,
+    };
+  });
+
+  await app.register(
+    async function (apiSmartReports) {
+      await apiSmartReports.register(gatewaySecretGuard);
+      await apiSmartReports.register(userContextGuard);
+      await apiSmartReports.register(reportsRoute);
+
+      apiSmartReports.setNotFoundHandler((request, reply) => {
+        reply.status(404).send(
+          errorEnvelope({
+            code: CODES.NO_MATCHING_API_PATH,
+            message: "No matching resource for this path",
+            requestId: request.requestId,
+          }),
+        );
+      });
+    },
+    { prefix: "/api/v1/smart-reports" },
+  );
+
+  app.setNotFoundHandler((request, reply) => {
+    reply.status(404).send(
+      errorEnvelope({
+        code: CODES.NO_MATCHING_API_PATH,
+        message: "No matching resource for this path",
+        requestId: request.requestId,
+      }),
+    );
+  });
+
+  return app;
+}

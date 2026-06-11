@@ -65,10 +65,10 @@ const res = await db.collection(AUTH_COLLECTIONS.USERS).findOneAndUpdate(
   },
   { upsert: true, returnDocument: 'after' }
 )
-const userId = res.value?._id
+const userId = res?._id || res?.value?._id
 if (userId) {
   await db.collection('staff_profiles').findOneAndUpdate(
-    { user_id: res.value._id },
+    { user_id: userId },
     {
       $set: {
         upd_by: 'seed_script',
@@ -96,7 +96,7 @@ await client.close()
 
 console.log(
   'Seed user OK:',
-  res.value?._id?.toHexString?.() ?? '(unknown)',
+  userId?.toHexString?.() ?? '(unknown)',
   '| ou_id:',
   ouId.toHexString(),
   '| branch_id:',
