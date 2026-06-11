@@ -30,7 +30,14 @@ export async function getGameCategories(ouId) {
   const items = await db
     .collection("game_main_category")
     .find(buildOuFilter(ouId), {
-      projection: { _id: 1, ou_id: 1, name: 1, main_cate_name: 1, manin_cate_name: 1, active: 1 },
+      projection: {
+        _id: 1,
+        ou_id: 1,
+        name: 1,
+        main_cate_name: 1,
+        manin_cate_name: 1,
+        active: 1,
+      },
     })
     .toArray();
   return items.map((item) => ({
