@@ -304,10 +304,15 @@ const StaffManagement: React.FC = () => {
 
   return (
     <div>
-      <Flex justify="space-between" align="center" style={{ marginBottom: token.marginLG }}>
-        <Title level={2} style={{ margin: 0 }}>
-          Staff Management
-        </Title>
+      <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
+        <div>
+          <Title level={2} style={{ margin: 0 }}>
+            Staff Management
+          </Title>
+          <Typography.Text type="secondary">
+            Manage staff profiles, system roles, and authentication credentials.
+          </Typography.Text>
+        </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDrawer('create')}>
           Add New Staff
         </Button>

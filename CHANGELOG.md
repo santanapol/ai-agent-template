@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Backoffice:** Added English description subtitles to the header section of [StaffManagement.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/StaffManagement.tsx), [Agents/index.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/Agents/index.tsx), and [InvoiceDetail.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/Invoices/InvoiceDetail.tsx) to ensure header visual consistency across all routes.
 - **`backend/service/smart-report/`:** Added custom `"last"` day of month option for monthly report scheduler frequency.
 - **Backoffice:** Redesigned Create/Edit report flow to use a split-screen inline page instead of a Modal.
 - **Backoffice:** Updated report execution history dates in the UI to display in the local browser timezone using `dayjs`.
@@ -39,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **`backend/service/smart-report/`:** Translated all Thai database seed report descriptions (such as "รายชื่อสมาชิกใหม่ของเมื่อวาน") to professional English descriptions inside [seed-example-data.mjs](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/backend/service/smart-report/scripts/seed-example-data.mjs) and re-seeded the database successfully.
 - **Backoffice:** Update telephone input fields to support entering local Thai numbers (with auto E.164 conversion before submitting). Reduce minimum password length requirement to 8 characters and enforce password complexity.
 - **Auth Service:** Update password policy requirement to minimum 8 characters and enforce complexity (uppercase, lowercase, numbers, special characters) in internal user validations, auth validators, and schemas.
 - **Staff Service:** Update password validation pattern and minimum length to 8 characters in profiles schemas and OpenAPI specifications.
@@ -69,6 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Auth / gateway:** OpenAPI and proxy alignment; `routes.json` documents staff upstream on **3101** and demo on **3002**.
 - **Backoffice:** `StaffManagement` / `MyProfile` UX; staff seed script force-updates profile data on re-run.
 - **Monorepo paths:** Platform packages under `backend/`; back-office UI under `frontend/backoffice/`.
+- **Documentation:** Port index consolidated into root and `backend/README.md`.
 
 ### Removed
 
@@ -82,6 +85,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Backoffice:** Replaced static `message` import with the dynamic `useAppFeedback` context hook in [Invoices/index.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/Invoices/index.tsx) to resolve console theme context warnings.
+- **Backoffice:** Patched deprecated `width` prop with unified `size` prop on the Drawer component in [SmartReport.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/SmartReport.tsx) to resolve console deprecation warnings.
+- **Backoffice:** Replaced deprecated Space `direction="vertical"` with `orientation="vertical"` on all Space components inside [SmartReport.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/SmartReport.tsx) to resolve console warnings.
+- **Backoffice:** Fixed category name localization mapping on [AgentFees/index.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/AgentFees/index.tsx) by checking both `main_cate_name` and typo key `manin_cate_name` projected from the repository.
 - **`backend/service/staff/`:** Fixed `.env` database name config to point to `zero-platform` instead of `auth_login` to correct profiles lookup errors.
 - **`backend/auth/`:** Fixed `seed-user` script when updating profile collections.
 - **`backend/service/smart-report/`:** Patched VM sandbox escapes and stripped object prototypes using `Object.create(null)` for sandbox-injected objects. Corrected unit and integration test suites.
