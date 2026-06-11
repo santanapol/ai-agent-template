@@ -31,6 +31,7 @@ jobs:
             npm ci --prefix backend/service/demo-service
             npm ci --prefix backend/service/staff
             npm ci --prefix backend/service/agent-invoice
+            npm ci --prefix backend/service/smart-report
             
             # สั่งรีสตาร์ท Backend ทั้งหมดด้วย PM2
             pm2 reload backend/ecosystem.config.js --update-env
