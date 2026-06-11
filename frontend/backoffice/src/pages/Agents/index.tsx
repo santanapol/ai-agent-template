@@ -142,8 +142,13 @@ const AgentsList: React.FC = () => {
 
   return (
     <Space orientation="vertical" size="large" style={{ display: 'flex' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={3} style={{ margin: 0 }}>Agent Fee Management</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <Title level={3} style={{ margin: 0 }}>Agent Fee Management</Title>
+          <Typography.Text type="secondary">
+            View and configure specific game fee overrides or reference fees across agent branches.
+          </Typography.Text>
+        </div>
         <Button
           type="primary"
           icon={<SyncOutlined />}

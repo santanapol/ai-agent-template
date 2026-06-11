@@ -27,7 +27,7 @@ const SEED_USER = process.env.SEED_USER_ID ?? "seed_script";
 const reportsToSeed = [
   {
     name: "Daily New Members",
-    description: "รายชื่อสมาชิกใหม่ของเมื่อวาน",
+    description: "List of new members from yesterday",
     script:
       "db.getSiblingDB('crm').members.find({ cr_date: { $gte: ISODate(params.startDate), $lte: ISODate(params.endDate) } })",
     params: { timezoneOffsetMinutes: 420 },
@@ -42,7 +42,7 @@ const reportsToSeed = [
   },
   {
     name: "Weekly Agent Performance",
-    description: "สรุปสถานะเอเจนต์ที่ active รายสัปดาห์",
+    description: "Weekly status summary of active agents",
     script:
       "db.getSiblingDB('gpp_777ww').agents.aggregate([{ $match: { active: true } }, { $project: { branch_code: 1, branch_name: 1, currency: 1 } }])",
     params: {},
@@ -58,7 +58,7 @@ const reportsToSeed = [
   },
   {
     name: "Monthly Revenue Summary",
-    description: "สรุปยอดรายได้รายเดือน รันวันสุดท้ายของเดือน",
+    description: "Monthly revenue summary, runs on the last day of the month",
     script:
       "db.getSiblingDB('crm').orders.aggregate([{ $match: { cr_date: { $gte: ISODate(params.startDate), $lte: ISODate(params.endDate) } } }, { $group: { _id: '$status', total: { $sum: '$amount' }, count: { $sum: 1 } } }])",
     params: { timezoneOffsetMinutes: 420 },
@@ -74,7 +74,7 @@ const reportsToSeed = [
   },
   {
     name: "Ad-hoc Member Export",
-    description: "Export ข้อมูลสมาชิกทั้งหมดแบบ manual (ไม่มี schedule)",
+    description: "Export all member data manually (no schedule)",
     script: "db.getSiblingDB('crm').members.find({})",
     params: {},
     outputFormat: "csv",

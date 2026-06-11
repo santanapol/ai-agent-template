@@ -11,7 +11,6 @@ import {
   Typography,
   Modal,
   Form,
-  message,
 } from 'antd';
 import { SearchOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -20,10 +19,12 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { useInvoices } from './hooks/useInvoices';
 import { formatDate, formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
+import { useAppFeedback } from '../../hooks/useAppFeedback';
 
 const { Title } = Typography;
 
 const InvoiceList: React.FC = () => {
+  const { message } = useAppFeedback();
   const navigate = useNavigate();
   const {
     invoices,
@@ -180,7 +181,7 @@ const InvoiceList: React.FC = () => {
             Invoice Management
           </Title>
           <Typography.Text type="secondary">
-            จัดการใบแจ้งหนี้ ค้นหา และดูรายละเอียดบิลย้อนหลัง
+            Manage invoices, search, and view historical billing details.
           </Typography.Text>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>

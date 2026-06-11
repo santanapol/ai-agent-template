@@ -237,12 +237,17 @@ const InvoiceDetail: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {contextHolder}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space align="center" size="middle">
-          <Button className="no-print" icon={<ArrowLeftOutlined />} onClick={() => navigate('/invoices')} />
-          <Title level={2} style={{ margin: 0 }}>
-            Invoice Details
-          </Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Space align="start" size="middle">
+          <Button className="no-print" icon={<ArrowLeftOutlined />} onClick={() => navigate('/invoices')} style={{ marginTop: 4 }} />
+          <div>
+            <Title level={2} style={{ margin: 0 }}>
+              Invoice Details
+            </Title>
+            <Text type="secondary" className="no-print">
+              Detailed breakdown, transaction records, and billing actions for this invoice.
+            </Text>
+          </div>
         </Space>
         <Space className="no-print">
           <Button icon={<FilePdfOutlined />} onClick={handleExportPDF}>

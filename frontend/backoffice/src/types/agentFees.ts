@@ -25,6 +25,7 @@ export interface GameCategory {
   _id: string;
   ou_id: string;
   name: string;
+  main_cate_name?: { en?: string; th?: string };
   manin_cate_name?: { en?: string; th?: string };
   active?: string;
 }

@@ -251,7 +251,7 @@ const AgentFeesPage: React.FC = () => {
         const isValid = (r: number) => r >= 0 && r <= 100;
 
         if (!isValid(gcompCost) || !isValid(agentKnownFee) || !isValid(agentFee)) {
-          errors.push(`${company.provider_name?.en || company.name} / ${category.manin_cate_name?.en || category.name}: must be 0–100`);
+          errors.push(`${company.provider_name?.en || company.name} / ${category.main_cate_name?.en || category.manin_cate_name?.en || category.name}: must be 0–100`);
           return;
         }
 
@@ -360,7 +360,7 @@ const AgentFeesPage: React.FC = () => {
       render: (_, record) => <Text strong>{record.provider_name?.en || record.name}</Text>,
     },
     ...categories.map(cat => ({
-      title: cat.manin_cate_name?.en || cat.name,
+      title: cat.main_cate_name?.en || cat.manin_cate_name?.en || cat.name,
       dataIndex: cat._id,
       key: cat._id,
       align: 'center' as const,

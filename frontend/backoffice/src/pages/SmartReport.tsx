@@ -66,24 +66,24 @@ interface ReportRow extends Report {
   lastRun: string;
 }
 
-const DEFAULT_QUERY_EXAMPLE = `// --- 0. กำหนดช่วงเวลา (Dynamic Parameters) ---
+const DEFAULT_QUERY_EXAMPLE = `// --- 0. Define Time Range (Dynamic Parameters) ---
 const startDate = ISODate(params.startDate);
 const endDate = ISODate(params.endDate);
 
-// --- 1. เชื่อมต่อ Database ที่ต้องการดึงข้อมูล ---
+// --- 1. Connect to Target Database ---
 const targetDB = db.getSiblingDB("your_database_name");
 
-// --- 2. เขียนคำสั่ง Aggregate เพื่อดึงข้อมูลออกรายงาน ---
+// --- 2. Write Aggregate Query to Fetch Report Data ---
 targetDB.your_collection_name.aggregate([
     {
         $match: {
-            // คัดกรองข้อมูลตามช่วงวันที่
+            // Filter data by date range
             created_at: { $gte: startDate, $lte: endDate }
         }
     },
     {
         $project: {
-            _id: 0, // 0 = ซ่อนคอลัมน์นี้, 1 = แสดงคอลัมน์นี้
+            _id: 0, // 0 = hide this column, 1 = show this column
             column_name_1: "$field_name_1",
             column_name_2: "$field_name_2",
             created_at: 1
@@ -93,26 +93,26 @@ targetDB.your_collection_name.aggregate([
 
 
 function formatScheduleLabel(schedule: ReportSchedule | null): string {
-  if (!schedule) return 'Manual (ไม่ตั้งเวลา)';
+  if (!schedule) return 'Manual (No schedule)';
   const hourStr = String(schedule.hour ?? 0).padStart(2, '0');
   const minStr = String(schedule.minute ?? 0).padStart(2, '0');
   const timeStr = `${hourStr}:${minStr}`;
 
   if (schedule.frequency === 'daily') {
-    return `Daily (ทุกวัน เวลา ${timeStr})`;
+    return `Daily (Every day at ${timeStr})`;
   }
   if (schedule.frequency === 'weekly') {
-    const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = days[schedule.dayOfWeek ?? 1];
-    return `Weekly (ทุก${dayName} เวลา ${timeStr})`;
+    return `Weekly (Every ${dayName} at ${timeStr})`;
   }
   if (schedule.frequency === 'monthly') {
     if (schedule.dayOfMonth === 'last') {
-      return `Monthly (ทุกวันสุดท้ายของเดือน เวลา ${timeStr})`;
+      return `Monthly (Last day of the month at ${timeStr})`;
     }
-    return `Monthly (ทุกวันที่ ${schedule.dayOfMonth ?? 1} เวลา ${timeStr})`;
+    return `Monthly (Day ${schedule.dayOfMonth ?? 1} of the month at ${timeStr})`;
   }
-  return 'Manual (ไม่ตั้งเวลา)';
+  return 'Manual (No schedule)';
 }
 
 function scheduleToUiValue(schedule: ReportSchedule | null): ScheduleOption {
@@ -167,7 +167,7 @@ const SmartReport: React.FC = () => {
         setReports(reportsRes.data);
         setHistory(historyRes.data);
       } catch (err) {
-        if (!cancelled) message.error(apiErrorMessage(err, 'ไม่สามารถโหลดข้อมูลรายงานได้'));
+        if (!cancelled) message.error(apiErrorMessage(err, 'Failed to load report data'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -197,7 +197,7 @@ const SmartReport: React.FC = () => {
     setRunningId(report.id);
     message.open({
       type: 'loading',
-      content: `กำลังสั่งรันรายงาน "${report.name}"...`,
+      content: `Running report "${report.name}"...`,
       key: 'run-report',
       duration: 0,
     });
@@ -208,14 +208,14 @@ const SmartReport: React.FC = () => {
       if (record.status === 'success') {
         message.open({
           type: 'success',
-          content: `สร้างรายงาน "${report.name}" สำเร็จและบันทึกไฟล์เรียบร้อยแล้ว`,
+          content: `Report "${report.name}" generated and saved successfully`,
           key: 'run-report',
           duration: 3,
         });
       } else {
         message.open({
           type: 'error',
-          content: `รันรายงาน "${report.name}" ไม่สำเร็จ: ${record.error ?? 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'}`,
+          content: `Failed to run report "${report.name}": ${record.error ?? 'Unknown error'}`,
           key: 'run-report',
           duration: 4,
         });
@@ -223,7 +223,7 @@ const SmartReport: React.FC = () => {
     } catch (err) {
       message.open({
         type: 'error',
-        content: apiErrorMessage(err, 'ไม่สามารถสั่งรันรายงานได้'),
+        content: apiErrorMessage(err, 'Failed to run report'),
         key: 'run-report',
         duration: 4,
       });
@@ -314,16 +314,16 @@ const SmartReport: React.FC = () => {
     try {
       if (editingReport) {
         await updateReport(editingReport.id, payload, buildEtagFromUpdDate(editingReport.upd_date));
-        message.success('แก้ไขข้อมูลรายงานสำเร็จ');
+        message.success('Report updated successfully');
       } else {
         await createReport(payload as CreateReportPayload);
-        message.success('สร้างรายงานใหม่สำเร็จ');
+        message.success('Report created successfully');
       }
       setViewMode('list');
       refresh();
     } catch (err) {
       message.error(
-        apiErrorMessage(err, editingReport ? 'ไม่สามารถแก้ไขรายงานได้' : 'ไม่สามารถสร้างรายงานได้'),
+        apiErrorMessage(err, editingReport ? 'Failed to update report' : 'Failed to create report'),
       );
     } finally {
       setIsSaving(false);
@@ -333,18 +333,18 @@ const SmartReport: React.FC = () => {
   // Delete report
   const handleDeleteReport = (report: Report) => {
     modal.confirm({
-      title: 'ยืนยันการลบรายงาน',
-      content: `คุณแน่ใจหรือไม่ที่จะลบรายงาน "${report.name}"? สคริปต์นี้จะถูกลบออกจากระบบอย่างถาวร แต่ไฟล์รายงานเก่าที่รันเสร็จแล้วจะยังคงอยู่บนเซิร์ฟเวอร์`,
-      okText: 'ลบรายงาน',
+      title: 'Confirm Delete Report',
+      content: `Are you sure you want to delete report "${report.name}"? This script will be permanently deleted, but previously generated report files will remain on the server.`,
+      okText: 'Delete Report',
       okType: 'danger',
-      cancelText: 'ยกเลิก',
+      cancelText: 'Cancel',
       onOk: async () => {
         try {
           await deleteReport(report.id, buildEtagFromUpdDate(report.upd_date));
-          message.success('ลบรายงานเรียบร้อยแล้ว');
+          message.success('Report deleted successfully');
           refresh();
         } catch (err) {
-          message.error(apiErrorMessage(err, 'ไม่สามารถลบรายงานได้'));
+          message.error(apiErrorMessage(err, 'Failed to delete report'));
         }
       },
     });
@@ -361,14 +361,14 @@ const SmartReport: React.FC = () => {
     try {
       await downloadReportFile(record.id, record.fileName);
     } catch (err) {
-      message.error(apiErrorMessage(err, 'ไม่สามารถดาวน์โหลดไฟล์ได้'));
+      message.error(apiErrorMessage(err, 'Failed to download file'));
     }
   };
 
   // Report table columns
   const reportColumns = [
     {
-      title: 'ชื่อรายงาน / คำอธิบาย',
+      title: 'Report Name / Description',
       key: 'name',
       render: (_: unknown, record: ReportRow) => (
         <div>
@@ -382,7 +382,7 @@ const SmartReport: React.FC = () => {
       ),
     },
     {
-      title: 'รอบเวลารัน (Schedule)',
+      title: 'Schedule',
       key: 'schedule',
       width: 240,
       render: (_: unknown, record: ReportRow) => (
@@ -393,14 +393,14 @@ const SmartReport: React.FC = () => {
       ),
     },
     {
-      title: 'รูปแบบไฟล์',
+      title: 'Output Format',
       dataIndex: 'outputFormat',
       key: 'outputFormat',
       width: 120,
       render: (fmt: 'csv' | 'excel') => <Tag color={fmt === 'csv' ? 'gold' : 'green'}>{fmt.toUpperCase()}</Tag>,
     },
     {
-      title: 'การเชื่อมต่อ Database',
+      title: 'Database Connection',
       key: 'db',
       width: 180,
       render: () => (
@@ -411,57 +411,57 @@ const SmartReport: React.FC = () => {
       ),
     },
     {
-      title: 'สถานะ / การรันล่าสุด',
+      title: 'Status / Last Run',
       key: 'status',
       width: 200,
       render: (_: unknown, record: ReportRow) => {
         if (record.derivedStatus === 'running') {
           return (
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Badge status="processing" text="Running..." />
               <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                <SyncOutlined spin /> กำลังประมวลผล
+                <SyncOutlined spin /> Processing
               </Text>
             </Space>
           );
         }
         if (record.derivedStatus === 'completed') {
           return (
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Badge status="success" text="Completed" />
               <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                รันเมื่อ: {record.lastRun}
+                Last Run: {record.lastRun}
               </Text>
             </Space>
           );
         }
         if (record.derivedStatus === 'failed') {
           return (
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Badge status="error" text="Failed" />
               <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                รันเมื่อ: {record.lastRun}
+                Last Run: {record.lastRun}
               </Text>
             </Space>
           );
         }
         return (
-          <Space direction="vertical" size={2}>
+          <Space orientation="vertical" size={2}>
             <Badge status="default" text="Idle" />
             <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-              ยังไม่เคยรัน
+              Never run
             </Text>
           </Space>
         );
       },
     },
     {
-      title: 'เครื่องมือจัดการ',
+      title: 'Actions',
       key: 'actions',
       width: 250,
       render: (_: unknown, record: ReportRow) => (
         <Space size="middle">
-          <Tooltip title="สั่งรัน Query เพื่อส่งออกไฟล์ทันที">
+          <Tooltip title="Run query and export file immediately">
             <Button
               type="primary"
               variant="dashed"
@@ -471,19 +471,19 @@ const SmartReport: React.FC = () => {
               disabled={record.derivedStatus === 'running' || runningId === record.id}
             />
           </Tooltip>
-          <Tooltip title="แก้ไข Query / รอบเวลา">
+          <Tooltip title="Edit query / schedule">
             <Button
               icon={<EditOutlined />}
               onClick={() => handleEditReport(record)}
               disabled={record.derivedStatus === 'running'}
             />
           </Tooltip>
-          <Tooltip title="ดูประวัติไฟล์ดาวน์โหลด">
+          <Tooltip title="View download history">
             <Button icon={<HistoryOutlined />} onClick={() => handleViewFiles(record.id)}>
-              ไฟล์ดาวน์โหลด
+              Downloads
             </Button>
           </Tooltip>
-          <Tooltip title="ลบรายการนี้">
+          <Tooltip title="Delete this report">
             <Button
               type="primary"
               danger
@@ -501,7 +501,7 @@ const SmartReport: React.FC = () => {
   // Download history table columns
   const downloadColumns = [
     {
-      title: 'ชื่อรายงาน',
+      title: 'Report Name',
       dataIndex: 'reportName',
       key: 'reportName',
       render: (name: string) => (
@@ -512,20 +512,20 @@ const SmartReport: React.FC = () => {
       ),
     },
     {
-      title: 'วันเวลาที่บันทึก',
+      title: 'Generated At',
       key: 'startedAt',
       width: 200,
       render: (_: unknown, record: DownloadHistoryRecord) => formatDateTime(record.finishedAt ?? record.startedAt),
     },
     {
-      title: 'ประเภทไฟล์',
+      title: 'File Type',
       dataIndex: 'format',
       key: 'format',
       width: 130,
       render: (fmt: string) => <Tag color={fmt === 'csv' ? 'gold' : 'green'}>{fmt.toUpperCase()}</Tag>,
     },
     {
-      title: 'สถานะ',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
       width: 120,
@@ -536,7 +536,7 @@ const SmartReport: React.FC = () => {
       },
     },
     {
-      title: 'ดาวน์โหลด',
+      title: 'Download',
       key: 'download',
       width: 150,
       render: (_: unknown, record: DownloadHistoryRecord) => (
@@ -569,16 +569,16 @@ const SmartReport: React.FC = () => {
             />
             <div>
               <Title level={2} style={{ margin: 0 }}>
-                {editingReport ? 'แก้ไขสคริปต์รายงาน' : 'สร้างสคริปต์รายงานใหม่'}
+                {editingReport ? 'Edit Report Script' : 'Create New Report Script'}
               </Title>
               <Text type="secondary">
-                {editingReport ? `กำลังแก้ไข: ${editingReport.name}` : 'ระบุรายละเอียดสคริปต์ดึงข้อมูลและรอบเวลาประมวลผล'}
+                {editingReport ? `Editing: ${editingReport.name}` : 'Specify data query script and processing schedule'}
               </Text>
             </div>
           </Space>
           <Space>
             <Button size="large" onClick={handleCancelEdit}>
-              ยกเลิก
+              Cancel
             </Button>
             <Button
               type="primary"
@@ -586,7 +586,7 @@ const SmartReport: React.FC = () => {
               loading={isSaving}
               onClick={() => void handleSaveReport()}
             >
-              บันทึกสคริปต์รายงาน
+              Save Report Script
             </Button>
           </Space>
         </div>
@@ -599,7 +599,7 @@ const SmartReport: React.FC = () => {
                 title={
                   <Space>
                     <FileTextOutlined style={{ color: token.colorPrimary }} />
-                    <Text strong>ข้อมูลทั่วไป & ตั้งเวลา</Text>
+                    <Text strong>General Info & Scheduler</Text>
                   </Space>
                 }
                 variant="borderless"
@@ -608,26 +608,26 @@ const SmartReport: React.FC = () => {
                 {/* Name & Description */}
                 <Form.Item
                   name="name"
-                  label={<Text strong>ชื่อรายงาน</Text>}
-                  rules={[{ required: true, message: 'กรุณากรอกชื่อรายงาน' }]}
+                  label={<Text strong>Report Name</Text>}
+                  rules={[{ required: true, message: 'Please enter report name' }]}
                 >
-                  <Input placeholder="เช่น รายงานวิเคราะห์รายชื่อ Staff login" size="large" />
+                  <Input placeholder="e.g. Active Staff Login Analytics Report" size="large" />
                 </Form.Item>
 
                 <Form.Item
                   name="description"
-                  label={<Text strong>คำอธิบายรายงาน</Text>}
+                  label={<Text strong>Description</Text>}
                 >
-                  <Input placeholder="ระบุการทำงานและข้อมูลที่ดึงได้จากรายงานนี้" size="large" />
+                  <Input placeholder="Specify report purpose and data schema" size="large" />
                 </Form.Item>
 
                 <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
-                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>รูปแบบไฟล์รายงาน (Output Format)</Text>
+                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>Output Format</Text>
                 </Divider>
 
                 <Form.Item
                   name="outputFormat"
-                  label={<Text strong>รูปแบบไฟล์ผลลัพธ์</Text>}
+                  label={<Text strong>Output Format</Text>}
                   rules={[{ required: true }]}
                 >
                   <Segmented
@@ -641,21 +641,21 @@ const SmartReport: React.FC = () => {
                 </Form.Item>
 
                 <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
-                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>การตั้งเวลารันอัตโนมัติ (Scheduler)</Text>
+                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>Auto Scheduler</Text>
                 </Divider>
 
                 <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Form.Item
                       name="schedule"
-                      label={<Text strong>รอบเวลาประมวลผล (Scheduler)</Text>}
+                      label={<Text strong>Schedule Frequency</Text>}
                       rules={[{ required: true }]}
                     >
                       <Select size="large">
-                        <Select.Option value="manual">Manual (ดำเนินการด้วยตนเอง)</Select.Option>
-                        <Select.Option value="daily">Daily (รายวัน)</Select.Option>
-                        <Select.Option value="weekly">Weekly (รายสัปดาห์)</Select.Option>
-                        <Select.Option value="monthly">Monthly (รายเดือน)</Select.Option>
+                        <Select.Option value="manual">Manual</Select.Option>
+                        <Select.Option value="daily">Daily</Select.Option>
+                        <Select.Option value="weekly">Weekly</Select.Option>
+                        <Select.Option value="monthly">Monthly</Select.Option>
                       </Select>
                     </Form.Item>
                   </Col>
@@ -666,17 +666,17 @@ const SmartReport: React.FC = () => {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             name="scheduleDayOfWeek"
-                            label={<Text strong>วันที่ต้องการรัน</Text>}
+                            label={<Text strong>Run Day</Text>}
                             rules={[{ required: true }]}
                           >
                             <Select size="large" style={{ width: '100%' }}>
-                              <Select.Option value={1}>วันจันทร์</Select.Option>
-                              <Select.Option value={2}>วันอังคาร</Select.Option>
-                              <Select.Option value={3}>วันพุธ</Select.Option>
-                              <Select.Option value={4}>วันพฤหัสบดี</Select.Option>
-                              <Select.Option value={5}>วันศุกร์</Select.Option>
-                              <Select.Option value={6}>วันเสาร์</Select.Option>
-                              <Select.Option value={0}>วันอาทิตย์</Select.Option>
+                              <Select.Option value={1}>Monday</Select.Option>
+                              <Select.Option value={2}>Tuesday</Select.Option>
+                              <Select.Option value={3}>Wednesday</Select.Option>
+                              <Select.Option value={4}>Thursday</Select.Option>
+                              <Select.Option value={5}>Friday</Select.Option>
+                              <Select.Option value={6}>Saturday</Select.Option>
+                              <Select.Option value={0}>Sunday</Select.Option>
                             </Select>
                           </Form.Item>
                         </Col>
@@ -686,14 +686,14 @@ const SmartReport: React.FC = () => {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             name="scheduleDayOfMonth"
-                            label={<Text strong>วันที่ต้องการรัน</Text>}
+                            label={<Text strong>Run Day</Text>}
                             rules={[{ required: true }]}
                           >
                             <Select size="large" style={{ width: '100%' }}>
-                              <Select.Option value="last">วันสุดท้ายของเดือน</Select.Option>
+                              <Select.Option value="last">Last day of month</Select.Option>
                               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                                 <Select.Option key={day} value={day}>
-                                  วันที่ {day}
+                                  Day {day}
                                 </Select.Option>
                               ))}
                             </Select>
@@ -704,8 +704,8 @@ const SmartReport: React.FC = () => {
                       <Col xs={24} sm={scheduleValue === 'daily' ? 24 : 12}>
                         <Form.Item
                           name="scheduleTime"
-                          label={<Text strong>เวลาที่ต้องการรัน</Text>}
-                          rules={[{ required: true, message: 'ระบุเวลา' }]}
+                          label={<Text strong>Run Time</Text>}
+                          rules={[{ required: true, message: 'Please select run time' }]}
                         >
                           <TimePicker format="HH:mm" size="large" style={{ width: '100%' }} needConfirm={false} />
                         </Form.Item>
@@ -722,7 +722,7 @@ const SmartReport: React.FC = () => {
                 title={
                   <Space>
                     <CodeOutlined style={{ color: token.colorPrimary }} />
-                    <Text strong>สคริปต์คำสั่งดึงข้อมูล (Query Script)</Text>
+                    <Text strong>Query Script</Text>
                   </Space>
                 }
                 variant="borderless"
@@ -756,7 +756,7 @@ const SmartReport: React.FC = () => {
                       const currentQuery = form.getFieldValue('query');
                       if (!currentQuery || currentQuery === DEFAULT_QUERY_EXAMPLE) {
                         form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
-                        message.info('โหลดตัวอย่างสคริปต์เริ่มต้นเรียบร้อยแล้ว');
+                        message.info('Default template loaded successfully');
                       }
                     }}
                   >
@@ -766,7 +766,7 @@ const SmartReport: React.FC = () => {
 
                 <Form.Item
                   name="query"
-                  rules={[{ required: true, message: 'กรุณาใส่ Query Script' }]}
+                  rules={[{ required: true, message: 'Please enter query script' }]}
                   style={{ marginBottom: 16 }}
                 >
                   <TextArea
@@ -784,13 +784,13 @@ const SmartReport: React.FC = () => {
                       padding: '16px',
                       lineHeight: '1.6',
                     }}
-                    placeholder="// ตัวอย่างคำสั่งดึงข้อมูล..."
+                    placeholder="// Query example..."
                   />
                 </Form.Item>
 
                 <div style={{ padding: '8px', background: token.colorInfoBg, borderRadius: token.borderRadius, border: `1px solid ${token.colorInfoBorder}` }}>
                   <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                    💡 สามารถเรียกใช้วันที่เริ่มต้นและสิ้นสุดในรูปแบบ ISO String ผ่านตัวแปร <code>params.startDate</code> และ <code>params.endDate</code> ในสคริปต์คำสั่ง JavaScript ได้โดยตรง
+                    💡 You can access the dynamic start and end dates as ISO strings using variables params.startDate and params.endDate directly in your JavaScript query script.
                   </Text>
                 </div>
               </Card>
@@ -808,7 +808,7 @@ const SmartReport: React.FC = () => {
         <div>
           <Title level={2} style={{ margin: 0 }}>Smart Report</Title>
           <Text type="secondary">
-            ระบบจัดทำและตั้งเวลารันรายงานอัตโนมัติ สำหรับดึงข้อมูลรายงานโดยตรงผ่าน Database แบบ Read-only เสมอ
+            Automated reporting and scheduling system. Fetches data directly via a read-only database replica.
           </Text>
         </div>
         <Button
@@ -817,7 +817,7 @@ const SmartReport: React.FC = () => {
           size="large"
           onClick={handleCreateNew}
         >
-          สร้างสคริปต์รายงานใหม่
+          Create New Report
         </Button>
       </div>
 
@@ -833,10 +833,9 @@ const SmartReport: React.FC = () => {
         <Space align="start">
           <CodeOutlined style={{ color: token.colorInfo, fontSize: 24, marginTop: 4 }} />
           <div>
-            <Text strong style={{ color: token.colorInfoText }}>ระบบดึงข้อมูลแบบแยกส่วนปลอดภัย</Text>
+            <Text strong style={{ color: token.colorInfoText }}>Secure Read-Only Access</Text>
             <Paragraph style={{ margin: 0, color: token.colorInfoText, fontSize: token.fontSizeSM }}>
-              การประมวลผลรายงานทั้งหมดใช้ Connection สำหรับอ่านข้อมูลฝั่ง Secondary Node และ Read-only เท่านั้น
-              สามารถใส่ Query สำหรับการวิเคราะห์ขนาดใหญ่หรือ Aggregate pipeline ได้โดยไม่กระทบต่อประสิทธิภาพการทำงานของเซิร์ฟเวอร์หลัก
+              All reports run on secondary database replicas in read-only mode. Heavy queries or aggregation pipelines can be executed safely without affecting the main transactional server performance.
             </Paragraph>
           </div>
         </Space>
@@ -851,7 +850,7 @@ const SmartReport: React.FC = () => {
             key: 'reports',
             label: (
               <span>
-                <CodeOutlined /> รายชื่อสคริปต์รายงาน
+                <CodeOutlined /> Report Scripts
               </span>
             ),
             children: (
@@ -870,7 +869,7 @@ const SmartReport: React.FC = () => {
             key: 'history',
             label: (
               <span>
-                <HistoryOutlined /> ประวัติไฟล์ดาวน์โหลดทั้งหมด
+                <HistoryOutlined /> Download History
               </span>
             ),
             children: (
@@ -890,9 +889,9 @@ const SmartReport: React.FC = () => {
 
       {/* Drawer: Download history of specific report */}
       <Drawer
-        title={`ไฟล์ดาวน์โหลดทั้งหมด: ${selectedReportName}`}
+        title={`Download History: ${selectedReportName}`}
         placement="right"
-        width={650}
+        size={650}
         onClose={() => setIsDrawerOpen(false)}
         open={isDrawerOpen}
       >
@@ -901,18 +900,18 @@ const SmartReport: React.FC = () => {
             dataSource={selectedReportDownloads}
             columns={[
               {
-                title: 'วันที่รันรายงาน',
+                title: 'Run Date',
                 key: 'startedAt',
                 render: (_, rec) => formatDateTime(rec.finishedAt ?? rec.startedAt),
               },
               {
-                title: 'ชนิดไฟล์',
+                title: 'File Type',
                 dataIndex: 'format',
                 key: 'format',
                 render: (fmt) => <Tag color={fmt === 'csv' ? 'gold' : 'green'}>{fmt.toUpperCase()}</Tag>,
               },
               {
-                title: 'สถานะ',
+                title: 'Status',
                 dataIndex: 'status',
                 key: 'status',
                 render: (status) => {
@@ -922,7 +921,7 @@ const SmartReport: React.FC = () => {
                 },
               },
               {
-                title: 'ดาวน์โหลด',
+                title: 'Download',
                 key: 'dl',
                 render: (_, rec) => (
                   <Button
@@ -932,7 +931,7 @@ const SmartReport: React.FC = () => {
                     onClick={() => void handleDownload(rec)}
                     disabled={rec.status !== 'success' || !rec.fileName}
                   >
-                    โหลด
+                    Download
                   </Button>
                 ),
               },
@@ -941,7 +940,7 @@ const SmartReport: React.FC = () => {
             pagination={{ pageSize: 8 }}
           />
         ) : (
-          <Empty description="ยังไม่มีการรันและบันทึกไฟล์สคริปต์นี้ในอดีต" />
+          <Empty description="No execution history or saved files for this script." />
         )}
       </Drawer>
     </div>

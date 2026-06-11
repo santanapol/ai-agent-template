@@ -1,6 +1,6 @@
 import React from 'react';
 import { App as AntApp, ConfigProvider, Spin } from 'antd';
-import thTH from 'antd/locale/th_TH';
+import enUS from 'antd/locale/en_US';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
@@ -86,7 +86,7 @@ const router = createBrowserRouter([
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={thTH} theme={appTheme}>
+    <ConfigProvider locale={enUS} theme={appTheme}>
       <AntApp>
         <AuthProvider>
           <RouterProvider router={router} />
