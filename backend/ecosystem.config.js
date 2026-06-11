@@ -53,6 +53,19 @@ module.exports = {
       env: {
         NODE_ENV: "production"
       }
+    },
+    {
+      name: "zero-smart-report",
+      script: "src/server.js",
+      cwd: __dirname + "/service/smart-report",
+      node_args: "--env-file=" + path.join(__dirname, "service/smart-report", ".env.prod") + " --enable-source-maps",
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "1G",
+      env: {
+        NODE_ENV: "production"
+      }
     }
   ]
 };
