@@ -415,13 +415,14 @@ components:
         code: GATEWAY_JWT_REJECTED
 
     GatewayProblemClaimRejected:
-      summary: Required tenant claims missing or empty
+      summary: Required tenant or permission claims missing or invalid
       value:
         type: https://example.invalid/gateway/problems/gateway-claim
         title: Invalid authentication token
         status: 401
-        detail: Required JWT claims for trusted headers are missing or invalid.
+        detail: Required JWT claims for trusted headers (tenant or permissions) are missing or invalid.
         code: GATEWAY_CLAIM_REJECTED
+
 
     GatewayProblemUpstreamUnavailable:
       summary: Upstream connection refused or reset
