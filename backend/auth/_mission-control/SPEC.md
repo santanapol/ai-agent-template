@@ -58,7 +58,7 @@ backend/auth/
     config/
       mongo-collections.js      ← [MODIFY] เพิ่มชื่อคอลเลกชันใหม่ (auth_menus, auth_role_permissions)
     lib/
-      jwt-access.js             ← [MODIFY] เพิ่มพารามิเตอร์ permissions + size guard ใน signAccessJwt
+      jwt-access.js             ← [MODIFY] เพิ่มพารามิเตอร์ permissions ใน signAccessJwt (lib เป็น pure function — size guard อยู่ที่ service)
       permission-match.js       ← [NEW] ฟังก์ชัน match สิทธิ์ (exact + wildcard) ใช้ร่วมกันใน auth
     modules/
       auth/
@@ -66,7 +66,7 @@ backend/auth/
         auth.service.js         ← [MODIFY] แก้ไขส่วนสร้าง JWT, Response Payload, เพิ่ม getMyMenus
         auth.controller.js      ← [MODIFY] เพิ่ม handler ของ GET /auth/me/menus
         auth.route.js           ← [MODIFY] ลงทะเบียน GET /auth/me/menus (ใช้ requireAccessBearer เดิม)
-        auth.validator.js       ← [MODIFY] เพิ่ม response schema ที่มีฟิลด์ permissions / menus
+        auth.validator.js       ← [ไม่แก้] โค้ดเดิมไม่มี response schema (Fastify response schema = serializer ที่ strip field — เพิ่มเฉพาะจุดเสี่ยงพังเงียบ) contract อยู่ที่ openapi.yaml
 ```
 
 ---
@@ -187,7 +187,7 @@ backend/auth/
 }
 ```
 
-**JWT Size Guard**: หลัง sign token ใน `signAccessJwt` ให้วัดความยาว token — หากเกิน soft limit (env `ACCESS_JWT_SOFT_LIMIT_BYTES`, default `4096`) ให้ log warning พร้อมจำนวน permissions entries เพื่อให้ ops เห็นแนวโน้มก่อนชนเพดาน header ของ proxy (~8KB) การแก้ที่ถูกคือยุบสิทธิ์เป็น wildcard ฝั่งข้อมูล ไม่ใช่ขยาย limit
+**JWT Size Guard**: ใน `issueAccess` (service) หลังเรียก `signAccessJwt` ให้วัดความยาว token — หากเกิน soft limit (env `ACCESS_JWT_SOFT_LIMIT_BYTES`, default `4096`) ให้ log warning พร้อมจำนวน permissions entries เพื่อให้ ops เห็นแนวโน้มก่อนชนเพดาน header ของ proxy (~8KB) การแก้ที่ถูกคือยุบสิทธิ์เป็น wildcard ฝั่งข้อมูล ไม่ใช่ขยาย limit
 
 ### Permission Staleness (Design Decision)
 
@@ -309,7 +309,7 @@ backend/auth/
 
 1. รันสคริปต์ `node scripts/seed-permissions.js` แล้วพบข้อมูลในคอลเลกชัน `auth_menus` (พร้อมโครง `parent_key`/`sort_order`/`type`) และ `auth_role_permissions` บน MongoDB ครบถ้วน พร้อม unique index ที่ `auth_menus.key` และ `auth_role_permissions(ou_id, role)` — รันซ้ำได้โดยไม่เกิดข้อมูลซ้ำ และ `--prune` ลบส่วนเกินได้ถูกต้อง
 2. Seed script ปฏิเสธข้อมูลผิดทุกแบบ: key ซ้ำ, โครงลึกเกิน 3 ระดับ, parent ชี้ action, cycle, `menu_keys` ที่ไม่ match action ใด
-3. เมื่อเรียก API Login หรือ API Refresh สำเร็จ จะมีออปเจกต์ `permissions` (อาเรย์ของสตริง — ค่าดิบรวม wildcard) ส่งกลับมาใน JSON Body (อัปเดต response schema ใน `auth.validator.js` และเอกสาร OpenAPI ให้ตรงกัน)
+3. เมื่อเรียก API Login หรือ API Refresh สำเร็จ จะมีออปเจกต์ `permissions` (อาเรย์ของสตริง — ค่าดิบรวม wildcard) ส่งกลับมาใน JSON Body (อัปเดตเอกสาร OpenAPI ให้ตรงกัน — ไม่เพิ่ม response schema ใน validator ดูหมายเหตุใน Project Structure)
 4. Access Token ที่สร้างขึ้นมาเป็น JWT ที่มีฟิลด์ `permissions` ถูกต้อง ถอดรหัสออกมาตรวจดูได้ และมี warning log เมื่อขนาดเกิน `ACCESS_JWT_SOFT_LIMIT_BYTES`
 5. เรียก `GET /auth/me/menus` ด้วย access token ที่ valid แล้วได้โครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์ (action ที่ match + บรรพบุรุษครบถึง root, เรียงตาม `sort_order`) — และได้ `401` เมื่อ token หาย/ผิด
 6. การทดสอบ (Unit & Integration Tests) ใน `auth` service รันผ่าน 100%
@@ -320,6 +320,6 @@ backend/auth/
 
 1. **Default Global Tenant Mapping** — ตัดสินใจใช้ `ou_id: null` เป็น Global Default ตามข้อเสนอของมีนา โดย Fallback ตัดสินที่ระดับคู่ `(ou_id, role)`: ค้นด้วย `(ou_id ของ user, role)` ก่อน ไม่พบจึง Fallback ไป `(null, role)` — รายละเอียดและเหตุผลอยู่ในหัวข้อ "Permission Resolution Logic"
 2. **เมนูหลายระดับ** — ใช้ adjacency list (`parent_key` + `sort_order` + `type`) ใน `auth_menus` จำกัด 3 ระดับ; โครงสร้างอยู่ในข้อมูล (`parent_key`) ไม่อยู่ใน identifier (`key`) เพื่อให้ย้ายเมนูได้โดยไม่ break สิทธิ์ — แทนที่ฟิลด์ `group` เดิม (โหนด root `type: "menu"` ทำหน้าที่จัดกลุ่มแทน)
-3. **ขนาด JWT เมื่อเมนูโต** — ใช้ wildcard `domain:*` ใน `menu_keys` เก็บและส่งต่อแบบไม่ expand ตาม Permission Matching Contract + soft-limit warning ที่ `signAccessJwt`; การ expand เกิดที่เดียวคือ `/auth/me/menus`
+3. **ขนาด JWT เมื่อเมนูโต** — ใช้ wildcard `domain:*` ใน `menu_keys` เก็บและส่งต่อแบบไม่ expand ตาม Permission Matching Contract + soft-limit warning ที่ `issueAccess` หลังเรียก `signAccessJwt`; การ expand เกิดที่เดียวคือ `/auth/me/menus`
 4. **ใครเป็นเจ้าของโครงเมนู** — `auth_menus` เป็นเจ้าของ "โครง + label + สิทธิ์" ส่วน frontend เป็นเจ้าของ "icon + route + การ render" โดยประกอบ tree จาก flat list ของ `/auth/me/menus`
 5. **Wildcard ที่ match ศูนย์ action** — ตัดสินใจให้ seed script **fail ทันที** (ไม่ใช่ warn) เพราะเคสที่พบจริงส่วนใหญ่คือ typo (เช่น `invoce:*`) ซึ่งถ้าปล่อยผ่านจะกลายเป็น silent permission loss ที่ debug แพง — error ที่โผล่เร็วและเสียงดังถูกกว่า error ที่เงียบและโผล่ช้าเสมอ ส่วน workflow "เตรียมสิทธิ์ล่วงหน้าก่อนมี action จริง" ยังไม่มี use case ตอนนี้ หากต้องการในอนาคตให้เพิ่ม flag `--allow-empty-wildcard` (เปลี่ยน fail เป็น warn เฉพาะการรันที่ประกาศเจตนาชัด) แทนการลดความเข้มของ default

@@ -226,7 +226,6 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 - `src/modules/auth/auth.service.js`
 - `src/modules/auth/auth.controller.js`
 - `src/modules/auth/auth.route.js`
-- `src/modules/auth/auth.validator.js`
 - `openapi.yaml`
 - `test/me-menus.integration.test.js`
 
