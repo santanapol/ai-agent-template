@@ -62,3 +62,53 @@ export function normalizeTenantClaim(value) {
   }
   return String(value).trim()
 }
+
+/**
+ * Normalizes permissions claim (array of permission strings) to comma-separated header.
+ * Returns empty string if missing/null/empty array.
+ * Validates each entry: no commas, ASCII printable, max 256 chars total.
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizePermissionsClaim(value) {
+  if (value === undefined || value === null) {
+    return ''
+  }
+  if (!Array.isArray(value)) {
+    throw new Error('permissions_not_array')
+  }
+  if (value.length === 0) {
+    return ''
+  }
+  const parts = []
+  for (const v of value) {
+    const str = String(v).trim()
+    if (!str) continue
+    if (str.includes(',')) {
+      throw new Error('permissions_entry_contains_comma')
+    }
+    if (!ASCII_PRINTABLE.test(str)) {
+      throw new Error('permissions_entry_not_ascii_printable')
+    }
+    if (str.length > 256) {
+      throw new Error('permissions_entry_too_long')
+    }
+    parts.push(str)
+  }
+  const header = parts.join(',')
+  if (header.length > 4096) {
+    throw new Error('permissions_header_too_long')
+  }
+  return header
+}
+
+/**
+ * Validates that a normalized permissions header doesn't exceed limits.
+ * (Detailed validation already done in normalizePermissionsClaim.)
+ * @param {string} permissionsHeader Comma-separated permissions string
+ */
+export function assertValidPermissionsHeader(permissionsHeader) {
+  if (permissionsHeader.length > 4096) {
+    throw new Error('permissions_header_too_long')
+  }
+}

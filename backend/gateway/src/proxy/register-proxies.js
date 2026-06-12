@@ -6,6 +6,7 @@ const DANGEROUS_HEADERS = new Set([
   'x-user-role',
   'x-user-ou',
   'x-user-branch',
+  'x-user-permissions',
   'x-gateway-secret',
   'if-match',
   'x-request-id'
@@ -45,6 +46,7 @@ export async function registerProxies(fastify, opts) {
         'x-user-branch': ctx['x-user-branch'],
         'x-user-id': ctx['x-user-id'],
         'x-user-role': ctx['x-user-role'],
+        'x-user-permissions': ctx['x-user-permissions'],
         ...(ctx['if-match'] ? { 'if-match': ctx['if-match'] } : {}),
         'x-request-id': ctx['x-request-id']
       }
