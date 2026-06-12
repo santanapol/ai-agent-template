@@ -809,7 +809,13 @@ export class AuthService {
    * Internal role update (staff/platform_admin caller).
    * @param {{ user_id_hex: string, role: string, revoke_sessions?: boolean, correlation_id?: string, request_id: string }} p
    */
-  async setRoleByService({ user_id_hex, role, revoke_sessions = true, correlation_id, request_id }) {
+  async setRoleByService({
+    user_id_hex,
+    role,
+    revoke_sessions = true,
+    correlation_id,
+    request_id
+  }) {
     const userId = new ObjectId(user_id_hex)
     const user = await this.repo.findUserById(userId)
     if (!user) return this.userNotFoundProblem()
@@ -836,7 +842,10 @@ export class AuthService {
     }
 
     if (revoke_sessions && transactionResult.access_token_gen !== undefined) {
-      const redisResult = await this.publishTokenGenOrNotReady(user_id_hex, transactionResult.access_token_gen)
+      const redisResult = await this.publishTokenGenOrNotReady(
+        user_id_hex,
+        transactionResult.access_token_gen
+      )
       if (!redisResult.ok) return redisResult
     }
 

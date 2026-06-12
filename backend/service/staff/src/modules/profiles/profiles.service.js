@@ -14,7 +14,11 @@ import {
 } from "../../lib/utils/normalize.js";
 import * as repository from "./profiles.repository.js";
 
-export const ADMIN_ROLES = Object.freeze(["platform_admin", "branch_admin", "support"]);
+export const ADMIN_ROLES = Object.freeze([
+  "platform_admin",
+  "branch_admin",
+  "support",
+]);
 
 const LIST_QUERY_KEYS = Object.freeze([
   "q",
