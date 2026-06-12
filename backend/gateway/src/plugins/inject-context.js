@@ -52,12 +52,6 @@ export default fp(
       }
 
       const requestId = String(request.id)
-      const incomingIfMatch = request.headers['if-match']
-      const ifMatch =
-        typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== ''
-          ? incomingIfMatch.trim()
-          : ''
-
       request.gatewayUpstreamHeaders = {
         'x-gateway-secret': env.GATEWAY_SECRET,
         'x-user-ou': ouId,
@@ -67,7 +61,11 @@ export default fp(
         'x-user-permissions': permissions,
         'x-request-id': requestId
       }
-      if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
+
+      const incomingIfMatch = request.headers['if-match']
+      if (typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== '') {
+        request.gatewayUpstreamHeaders['if-match'] = incomingIfMatch.trim()
+      }
     })
   },
   { name: 'gateway-inject-context' }

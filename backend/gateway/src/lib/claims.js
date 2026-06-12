@@ -79,9 +79,6 @@ export function normalizePermissionsClaim(value) {
   if (!Array.isArray(value)) {
     throw new Error('invalid_permissions_claim_type')
   }
-  if (value.length === 0) {
-    return ''
-  }
   for (const item of value) {
     if (typeof item !== 'string') {
       throw new Error('invalid_permission_item_type')
