@@ -1,7 +1,7 @@
 import { describe, test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 import * as jose from 'jose'
 import { buildApp } from '../src/app.js'
 import { loadEnv } from '../src/config/env.js'
@@ -51,6 +51,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
       const branch = req.headers['x-user-branch']
       const uid = req.headers['x-user-id']
       const role = req.headers['x-user-role']
+      const permissions = req.headers['x-user-permissions']
       const ifMatch = req.headers['if-match']
       const rid = req.headers['x-request-id']
       const auth = req.headers.authorization
@@ -66,6 +67,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
           branch,
           uid,
           role,
+          permissions,
           ifMatch,
           rid,
           rawHeaderNames
@@ -141,6 +143,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.branch, 'branch-1')
     assert.strictEqual(body.uid, '507f1f77bcf86cd799439011')
     assert.strictEqual(body.role, 'admin')
+    assert.strictEqual(body.permissions, '')
     assert.strictEqual(body.ifMatch, 'W/"etag-123"')
     assert.strictEqual(body.secret, 'gateway-secret-32-chars-minimum-ok!!')
     assert.strictEqual(typeof body.rid, 'string')
@@ -152,6 +155,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
     const iBranch = names.indexOf('x-user-branch')
     const iUserId = names.indexOf('x-user-id')
     const iRole = names.indexOf('x-user-role')
+    const iPermissions = names.indexOf('x-user-permissions')
     const iIfMatch = names.indexOf('if-match')
     const iRequestId = names.indexOf('x-request-id')
     assert.ok(iSecret >= 0)
@@ -159,9 +163,11 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.ok(iBranch > iOu)
     assert.ok(iUserId > iBranch)
     assert.ok(iRole > iUserId)
-    assert.ok(iIfMatch > iRole)
+    assert.ok(iPermissions > iRole)
+    assert.ok(iIfMatch > iPermissions)
     assert.ok(iRequestId > iIfMatch)
   })
+
 
   test('401 without bearer token (problem+json)', async () => {
     const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`)
@@ -257,4 +263,119 @@ describe('gateway proxy (JWKS + upstream)', () => {
       await deadApp.close()
     }
   })
+
+  test('proxies with permissions claim formatted to comma-separated x-user-permissions', async () => {
+    const permissionsToken = await new jose.SignJWT({
+      sub: '507f1f77bcf86cd799439011',
+      role: 'admin',
+      ou_id: 'ou-1',
+      branch_id: 'branch-1',
+      permissions: ['profiles:*', 'invoice:read'],
+      token_gen: 0
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
+      .setIssuedAt()
+      .setExpirationTime('2h')
+      .sign(jwtPrivateKey)
+
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: {
+        Authorization: `Bearer ${permissionsToken}`
+      }
+    })
+    assert.strictEqual(res.status, 200)
+    const body = await res.json()
+    assert.strictEqual(body.permissions, 'profiles:*,invoice:read')
+  })
+
+  test('strips client-supplied x-user-permissions header', async () => {
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-user-permissions': 'malicious:all'
+      }
+    })
+    assert.strictEqual(res.status, 200)
+    const body = await res.json()
+    assert.strictEqual(body.permissions, '')
+  })
+
+  test('401 GATEWAY_CLAIM_REJECTED on duplicate x-user-permissions', async () => {
+    const res = await new Promise((resolve, reject) => {
+      const parsedUrl = new URL(`${gatewayBaseUrl}/api/echo/ping`)
+      const req = httpRequest({
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'x-user-permissions': ['a', 'b']
+        }
+      }, (res) => {
+        let data = ''
+        res.on('data', (chunk) => { data += chunk })
+        res.on('end', () => {
+          resolve({
+            status: res.statusCode,
+            body: data
+          })
+        })
+      })
+      req.on('error', reject)
+      req.end()
+    })
+
+    assert.strictEqual(res.status, 401)
+    const body = JSON.parse(res.body)
+    assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
+    assert.match(body.detail, /Duplicate header not allowed/u)
+  })
+
+
+
+  test('401 GATEWAY_CLAIM_REJECTED on invalid permissions claim format (not array)', async () => {
+    const badToken = await new jose.SignJWT({
+      sub: '507f1f77bcf86cd799439011',
+      role: 'admin',
+      ou_id: 'ou-1',
+      branch_id: 'branch-1',
+      permissions: 'profiles:*',
+      token_gen: 0
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
+      .setIssuedAt()
+      .setExpirationTime('2h')
+      .sign(jwtPrivateKey)
+
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: { Authorization: `Bearer ${badToken}` }
+    })
+    assert.strictEqual(res.status, 401)
+    const body = await res.json()
+    assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
+  })
+
+  test('401 GATEWAY_CLAIM_REJECTED on invalid permissions claim format (contains comma)', async () => {
+    const badToken = await new jose.SignJWT({
+      sub: '507f1f77bcf86cd799439011',
+      role: 'admin',
+      ou_id: 'ou-1',
+      branch_id: 'branch-1',
+      permissions: ['profiles:*,invoice:read'],
+      token_gen: 0
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
+      .setIssuedAt()
+      .setExpirationTime('2h')
+      .sign(jwtPrivateKey)
+
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: { Authorization: `Bearer ${badToken}` }
+    })
+    assert.strictEqual(res.status, 401)
+    const body = await res.json()
+    assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
+  })
 })
+
