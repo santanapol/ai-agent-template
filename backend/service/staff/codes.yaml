@@ -52,6 +52,11 @@ codes:
     message: No matching resource for this path
     owner: backend
 
+  PERMISSION_DENIED:
+    httpStatus: 403
+    message: Requires specific permission
+    owner: backend
+
   RESOURCE_NOT_FOUND:
     httpStatus: 404
     message: The requested resource was not found

@@ -53,6 +53,7 @@ export function readEnv() {
     authRevokeMaxRetries: Number(process.env.AUTH_REVOKE_MAX_RETRIES || 3),
     authRevokeBackoffMs: Number(process.env.AUTH_REVOKE_BACKOFF_MS || 200),
     metricsEnabled: readBooleanEnv("METRICS_ENABLED", false),
+    permissionMode: process.env.PERMISSION_MODE || "dual",
   };
 
   if (env.nodeEnv === "production") {
