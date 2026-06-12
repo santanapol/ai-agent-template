@@ -42,6 +42,7 @@ export interface CreateProfilePayload {
   /** Required when provisioning a new auth user (no `user_id`). */
   username?: string;
   password?: string;
+  role?: string;
 }
 
 export interface ResetProfilePasswordPayload {

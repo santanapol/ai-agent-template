@@ -72,3 +72,10 @@ export async function resetProfilePassword(
 ): Promise<void> {
   await client.post(`/api/v1/staff/profiles/${id}/password`, payload);
 }
+
+export async function changeProfileRole(
+  id: string,
+  role: string,
+): Promise<void> {
+  await client.patch(`/api/v1/staff/profiles/${id}/role`, { role });
+}

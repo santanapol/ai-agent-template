@@ -6,6 +6,7 @@ import {
   Flex,
   Form,
   Input,
+  Select,
   Space,
   Spin,
   Typography,
@@ -39,6 +40,7 @@ interface StaffDrawerProps {
   isSaving: boolean;
   updatingPassword: boolean;
   showAdminResetPassword: boolean;
+  isPlatformAdmin?: boolean;
   form: FormInstance;
   onClose: () => void;
   onSave: () => void;
@@ -53,6 +55,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   isSaving,
   updatingPassword,
   showAdminResetPassword,
+  isPlatformAdmin = false,
   form,
   onClose,
   onSave,
@@ -135,6 +138,25 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
           >
             <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
           </Form.Item>
+
+          {isPlatformAdmin && (
+            <Form.Item
+              label="System Role"
+              name="role"
+              initialValue="staff"
+              rules={[{ required: true, message: 'Please select system role' }]}
+            >
+              <Select
+                disabled={mode === 'view'}
+                options={[
+                  { value: 'platform_admin', label: 'Platform Admin' },
+                  { value: 'branch_admin', label: 'Branch Admin' },
+                  { value: 'support', label: 'Support' },
+                  { value: 'staff', label: 'Staff' },
+                ]}
+              />
+            </Form.Item>
+          )}
 
           {mode === 'create' ? (
             <>
