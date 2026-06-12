@@ -185,13 +185,21 @@ export class AuthService {
       )
     }
 
-    // cap ที่ 3 ตามกฎความลึกใน SPEC — กัน infinite loop หากข้อมูลใน DB มี cycle จากการแก้มือ
+    // cap ที่ 3 ตามกฎความลึกใน SPEC — detect cycle และขึ้นลึก
     const depthOf = (menu) => {
+      const seen = new Set()
       let depth = 0
       let current = menu
-      while (current && current.parent_key !== null && depth < 3) {
+      while (current && current.parent_key !== null) {
+        if (seen.has(current.key)) {
+          throw new Error(`Menu hierarchy cycle detected: ${[...seen, current.key].join(' → ')}`)
+        }
+        seen.add(current.key)
         current = byKey.get(current.parent_key)
         depth += 1
+        if (depth > 3) {
+          throw new Error(`Menu hierarchy exceeds depth limit at key: ${current.key}`)
+        }
       }
       return depth
     }
@@ -241,7 +249,7 @@ export class AuthService {
     const limit = this.env.ACCESS_JWT_SOFT_LIMIT_BYTES ?? 4096
     const bytes = Buffer.byteLength(token, 'utf8')
     if (bytes > limit) {
-      this.log?.warn?.(
+      this.log.warn(
         { bytes, limit, permission_entries: permissions.length },
         'access JWT exceeds soft size limit'
       )

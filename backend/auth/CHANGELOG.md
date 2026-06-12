@@ -21,11 +21,12 @@
 
 - **Dynamic Permission in DB (Approach B)** — สิทธิ์เมนู/Action ดึงจาก MongoDB แทนตาราง static (ดู `_mission-control/SPEC.md`):
   - **`auth_menus` / `auth_role_permissions`** (`src/config/mongo-collections.js`): ผังเมนูกลาง (hierarchy ผ่าน `parent_key`/`sort_order`/`type` ลึกสุด 3 ระดับ) + role mappings ต่อคู่ `(ou_id, role)` พร้อม unique indexes
-  - **`src/lib/permission-match.js`**: Permission Matching Contract — exact key หรือ wildcard `domain:*` (จุด match กลางจุดเดียว; gateway/upstream ต้อง implement ตรงกัน)
-  - **เคลม `permissions` ใน Access JWT + response body ของ login/refresh** (`auth.service.js`, `lib/jwt-access.js`): resolve สดจาก DB ทุกครั้งที่ออก token — fallback `(ou_id, role)` → `(null, role)` → `[]` (deny by default); ค่าดิบไม่ expand wildcard; DB error = login ล้ม (ไม่กลืนเป็น `[]`)
-  - **`GET /auth/me/menus`** (`auth.route.js`): โครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์ — expand wildcard + เติมโหนดบรรพบุรุษถึง root, flat list เรียง (depth, `sort_order`), Bearer + `token_gen` check, rate limit 60/min
-  - **`scripts/seed-permissions.js`** + `scripts/seed-data/permissions.js`: seed/sync แบบ idempotent — validate 7 กฎก่อนเขียนเสมอ (fail ทั้งสคริปต์เมื่อผิด), upsert พร้อม audit fields, `--prune` ลบส่วนเกินพร้อมรายงาน
-  - **env `ACCESS_JWT_SOFT_LIMIT_BYTES`** (default 4096): warning log เมื่อ access JWT บวมเกิน soft limit
+  - **Tenant scoping intentionally OU-only** (no `branch_id`): permissions are OU-level data by design; branch-level overrides deferred to future use case (ดู `_mission-control/ROADMAP.md`)
+  - **`src/lib/permission-match.js`**: Permission Matching Contract — exact key หรือ wildcard `domain:*` (จุด match กลางจุดเดียว; gateway/upstream ต้อง implement ตรงกัน); no mid-string or bare wildcards
+  - **เคลม `permissions` ใน Access JWT + response body ของ login/refresh** (`auth.service.js`, `lib/jwt-access.js`): resolve สดจาก DB ทุกครั้งที่ออก token — fallback `(ou_id, role)` → `(null, role)` → `[]` (deny by default); ค่าดิบไม่ expand wildcard เพื่อคุมขนาด token; DB error = login ล้ม (ไม่กลืนเป็น `[]`)
+  - **`GET /auth/me/menus`** (`auth.route.js`): โครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์ — expand wildcard + เติมโหนดบรรพบุรุษถึง root, flat list เรียง (depth, `sort_order`), Bearer + `token_gen` check, rate limit 60/min; cycle detection raises error (gateway/service will return 500)
+  - **`scripts/seed-permissions.js`** + `scripts/seed-data/permissions.js`: seed/sync แบบ idempotent — validate 7 กฎก่อนเขียนเสมอ (fail ทั้งสคริปต์เมื่อผิด), upsert พร้อม audit fields, `--prune` ลบส่วนเกินพร้อมรายงาน; ข้อ 7 วาลิเดต wildcard match ≥1 action (fail on zero-match wildcard)
+  - **env `ACCESS_JWT_SOFT_LIMIT_BYTES`** (default 4096): warning log เมื่อ access JWT บวมเกิน soft limit — remedy is data-layer: use wildcard ไม่ expand; if truly unavoidable, extract claim from DB instead of JWT (future option, designed-in)
   - **Tests**: `permission-match.test.js`, `permission-resolution.test.js`, `permission-repository.integration.test.js`, `jwt-permissions.test.js`, `seed-permissions.test.js`, `me-menus.integration.test.js` (+38 tests)
 - **`PATCH /internal/users/{user_id}/role`** (`src/modules/internal/internal.route.js`): เพิ่ม internal endpoint สำหรับให้ trusted service อัปเดตบทบาทของผู้ใช้แบบ Atomic operation ใน MongoDB transaction พร้อมทำ session revocation
 - **Tests**: integration test `internal-set-role.integration.test.js` สำหรับตรวจสิทธิ์การเข้าใช้งาน การอัปเดตบทบาท และการยกเลิก session
