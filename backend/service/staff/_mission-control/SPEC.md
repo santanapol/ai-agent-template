@@ -18,14 +18,17 @@
 
 แทนที่การเช็คบทบาทแบบ static (`isAdminRole` / `assertAdminRole` / `ADMIN_ROLES` ใน `profiles.service.js`) ด้วยการเช็ค permission ราย action จาก header `x-user-permissions` ตาม **Permission Matching Contract** (exact หรือ `domain:*`) โดยมีโหมดเปลี่ยนผ่านแบบ dual-check เพื่อไม่ break token เก่าและถอยกลับได้โดยไม่ต้อง deploy ใหม่
 
-| Endpoint (profiles)        | Action key ที่ต้องมี | หมายเหตุ                                           |
-| -------------------------- | -------------------- | -------------------------------------------------- |
-| `GET /profiles` (list)     | `profiles:list`      |                                                    |
-| `GET /profiles/lookup`     | `profiles:lookup`    | lookup ตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
-| `GET /profiles/:id`        | `profiles:read`      | อ่านของตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
-| `POST /profiles`           | `profiles:create`    |                                                    |
-| `PATCH /profiles/:id`      | `profiles:edit`      |                                                    |
-| `PATCH /profiles/:id/role` | `roles:assign`       | domain แยกจาก `profiles` — กัน wildcard escalation |
+| Endpoint (profiles)          | Action key ที่ต้องมี | หมายเหตุ                                           |
+| ---------------------------- | -------------------- | -------------------------------------------------- |
+| `GET /profiles` (list)       | `profiles:list`      |                                                    |
+| `GET /profiles/lookup`       | `profiles:lookup`    | lookup ตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
+| `GET /profiles/:id`          | `profiles:read`      | อ่านของตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
+| `POST /profiles`             | `profiles:create`    |                                                    |
+| `PATCH /profiles/:id`        | `profiles:edit`      |                                                    |
+| `PATCH /profiles/:id/role`   | `roles:assign`       | domain แยกจาก `profiles` — กัน wildcard escalation |
+| `POST /profiles/:id/archive` | `profiles:edit`      | Lifecycle: archive (ยึดตาม profiles:edit)          |
+| `POST /profiles/:id/restore` | `profiles:edit`      | Lifecycle: restore (ยึดตาม profiles:edit)          |
+| `POST /profiles/:id/password`| `profiles:edit`      | Reset password คนอื่น (ยึดตาม profiles:edit)       |
 
 ---
 
@@ -52,7 +55,7 @@ backend/service/staff/
       user-context.js               ← [MODIFY] parse x-user-permissions → userContext.permissions (string[])
       duplicate-header.js           ← [MODIFY] เพิ่ม 'x-user-permissions' ใน CRITICAL_HEADERS
     modules/profiles/
-      profiles.service.js           ← [MODIFY] แทน assertAdminRole/isAdminRole ด้วย assertPermission(userContext, actionKey)
+      profiles.service.js           ← [MODIFY] แทน assertAdminRole ด้วย assertPermission และปรับปรุง assertProfileScope(profile, userContext, actionKey)
     config/ (env)                   ← [MODIFY] เพิ่ม PERMISSION_MODE
 ```
 
@@ -91,6 +94,53 @@ export function assertPermission(
 assertPermission(userContext, "profiles:create", {
   legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
 });
+```
+
+### assertProfileScope กับ context ของ actionKey
+
+เพื่อรองรับการตรวจเช็คสิทธิ์แบบมีส่วนรวม (Scope) ของพนักงานอื่นที่ไม่ใช่เจ้าของโปรไฟล์ ฟังก์ชัน `assertProfileScope` จะต้องขยายพารามิเตอร์เพื่อรับ `actionKey` เข้าไปตรวจเช็คสิทธิ์:
+
+```javascript
+export function assertProfileScope(profile, userContext, actionKey) {
+  if (profile.user_id === userContext.userId) {
+    // เจ้าของโปรไฟล์เช็ค tenant match ... ผ่านเสมอ
+    if (
+      profile.ou_id !== userContext.ouId ||
+      profile.branch_id !== userContext.branchId
+    ) {
+      throw new HttpError(
+        403,
+        CODES.INVALID_USER_CONTEXT,
+        "Profile tenant does not match caller context",
+      );
+    }
+    return;
+  }
+
+  // พนักงานคนอื่น: ตรวจสอบสิทธิ์โดยใช้ assertPermission
+  assertPermission(userContext, actionKey, {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
+
+  if (profile.ou_id !== userContext.ouId) {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Profile is outside caller organizational unit",
+    );
+  }
+
+  if (
+    userContext.role === "branch_admin" &&
+    profile.branch_id !== userContext.branchId
+  ) {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Profile is outside caller branch scope",
+    );
+  }
+}
 ```
 
 - `lib/permission-match.js` ต้อง**เหมือน contract ฝั่ง auth ทุกประการ** (exact equality; `domain:*` ครอบ `domain:<action>`; ไม่รองรับ `*` รูปแบบอื่น) — copy test cases จาก `backend/auth/test/permission-match.test.js` มาเป็น contract test
