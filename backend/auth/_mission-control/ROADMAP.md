@@ -1,7 +1,7 @@
 # Roadmap: Dynamic Permission — ภาพรวมทุก Phase
 
 > เอกสารแม่ของชุดงาน Dynamic Permission ทั้งระบบ — อัปเดตสถานะที่นี่เมื่อแต่ละ phase ขยับ
-> อัปเดตล่าสุด: 2026-06-12 (Phase 1 & 2 review ✅ approved, ready to merge บน branch `feature/auth-dynamic-permissions`)
+> อัปเดตล่าสุด: 2026-06-12 (Phase 1, 2, & 3 review ✅ approved, ready to merge บน branch `feature/auth-dynamic-permissions`)
 
 ## Phases
 
@@ -9,7 +9,7 @@
 | --- | -------------------------------------- | ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------- | --------------------------- |
 | 1   | **Auth** — Dynamic Permission in DB    | `backend/auth`          | [SPEC.md](./SPEC.md)                                             | ✅ Review ✓ (118/118 tests) Ready to merge        | —                           |
 | 2   | **G** — Forward `x-user-permissions`   | `backend/gateway`       | [SPEC.md](../../gateway/_mission-control/SPEC.md)                | ✅ Review & Ship ✓ (66/66 tests) Ready to merge   | หลัง 1 merge                |
-| 3   | **S** — Permission checks (dual-check) | `backend/service/staff` | [SPEC.md](../../service/staff/_mission-control/SPEC.md)          | ✅ Review & Ship ✓ (191/191 tests) Ready to merge | **ต้องหลัง G เท่านั้น**     |
+| 3   | **S** — Permission checks (dual-check) | `backend/service/staff` | [SPEC.md](../../service/staff/_mission-control/SPEC.md)          | ✅ Review & Ship ✓ (193/193 tests) Ready to merge | **ต้องหลัง G เท่านั้น**     |
 | 4   | **F** — Menu + guards                  | `frontend/backoffice`   | [SPEC.md](../../../frontend/backoffice/_mission-control/SPEC.md) | 📋 Spec อนุมัติแล้ว พร้อม `/plan`                 | หลัง 1 merge — ขนาน G/S ได้ |
 | 5   | **A** — Permission Admin API           | `backend/auth`          | [SPEC-permission-admin-api.md](./SPEC-permission-admin-api.md)   | 📋 Spec อนุมัติแล้ว พร้อม `/plan`                 | ทำท้ายสุด (หลัง G/S/F)      |
 | (6) | **F2** — หน้าจอจัดการสิทธิ์            | `frontend/backoffice`   | ยังไม่เขียน                                                      | 🔒 จองไว้                                         | หลัง A นิ่ง                 |
