@@ -4,13 +4,13 @@
 
 ## Phase 1: Foundation
 
-- [ ] **Task 1**: `lib/permission-match.js` — Permission Matching Contract (exact + wildcard `domain:*`) + unit tests `(S)`
-- [ ] **Task 2**: ลงทะเบียนคอลเลกชัน `auth_menus`/`auth_role_permissions` + repository queries + indexes ใน test helper `(S)`
+- [x] **Task 1**: `lib/permission-match.js` — Permission Matching Contract (exact + wildcard `domain:*`) + unit tests `(S)` — commit `9609e39`
+- [x] **Task 2**: ลงทะเบียนคอลเลกชัน `auth_menus`/`auth_role_permissions` + repository queries + indexes ใน test helper `(S)` — commit `52bf3f9`
 
 ### Checkpoint A
 
-- [ ] `npm test` ผ่านทั้งหมด (ของเดิมไม่พัง)
-- [ ] `npm run lint && npm run format:check` ผ่าน
+- [x] `npm test` ผ่านทั้งหมด (80/80 — ของเดิมไม่พัง)
+- [x] `npm run lint && npm run format:check` ผ่าน
 
 ## Phase 2: Core — เส้นทาง Token
 

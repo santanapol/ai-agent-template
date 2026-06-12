@@ -133,6 +133,21 @@ export class AuthService {
     await this.repo.deleteThrottleKeys(keys, undefined)
   }
 
+  /**
+   * Resolution Logic ตาม SPEC: (ou_id, role) → fallback (null, role) → [] (deny by default)
+   * คืน menu_keys ดิบ (exact + wildcard ปะปนได้ — ไม่ expand ที่นี่)
+   * DB error ปล่อยไหลออกเป็น 5xx — ห้ามตีความเป็น [] (token ที่ดู valid แต่สิทธิ์หายเงียบ ๆ)
+   * @param {{ ouId: import('mongodb').ObjectId | null, role: string }} p
+   * @returns {Promise<string[]>}
+   */
+  async resolveEffectivePermissions({ ouId, role }) {
+    let doc = await this.repo.findRolePermissions(ouId, role)
+    if (!doc && ouId !== null) {
+      doc = await this.repo.findRolePermissions(null, role)
+    }
+    return Array.isArray(doc?.menu_keys) ? doc.menu_keys : []
+  }
+
   async issueAccess(user) {
     const sub = user._id.toHexString()
     return signAccessJwt({
