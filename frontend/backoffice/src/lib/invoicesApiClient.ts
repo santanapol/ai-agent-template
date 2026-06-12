@@ -48,7 +48,8 @@ export async function generateInvoices(payload: GenerateInvoicesPayload) {
   return res.data;
 }
 
-export async function updateInvoiceStatus(id: string, status: 'PAID') {
-  const res = await client.put<ApiEnvelope<Invoice>>(`/api/v1/invoices/${id}/status`, { status });
+export async function updateInvoiceStatus(id: string, status: 'PAID' | 'VOID', etag?: string) {
+  const headers = etag ? { 'If-Match': etag } : undefined;
+  const res = await client.put<ApiEnvelope<Invoice>>(`/api/v1/invoices/${id}/status`, { status }, { headers });
   return res.data;
 }

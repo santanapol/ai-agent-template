@@ -127,7 +127,7 @@ describe('useInvoices', () => {
   });
 
   it('should mark invoice as PAID', async () => {
-    const paidInvoice = {
+    const mockInvoice = {
       _id: 'inv1',
       ou_id: 'ou1',
       branch_id: 'br1',
@@ -135,9 +135,22 @@ describe('useInvoices', () => {
       bet: 10000,
       net_win: 1000,
       amount: 100,
-      status: 'PAID',
+      status: 'READY',
       cr_date: '2025-01-01T00:00:00.000Z',
+      upd_date: '2025-01-01T00:00:00.000Z',
     };
+
+    const paidInvoice = {
+      ...mockInvoice,
+      status: 'PAID',
+    };
+
+    vi.mocked(api.getInvoiceById).mockResolvedValueOnce({
+      success: true,
+      code: 'SUCCESS',
+      message: 'ok',
+      data: mockInvoice,
+    });
 
     vi.mocked(api.updateInvoiceStatus).mockResolvedValueOnce({
       success: true,
@@ -149,11 +162,65 @@ describe('useInvoices', () => {
     const { result } = renderHook(() => useInvoices());
 
     await act(async () => {
+      await result.current.fetchInvoiceDetail('inv1');
+    });
+
+    await act(async () => {
       const ok = await result.current.markAsPaid('inv1');
       expect(ok).toBe(true);
     });
 
     expect(result.current.invoice).toEqual(paidInvoice);
-    expect(api.updateInvoiceStatus).toHaveBeenCalledWith('inv1', 'PAID');
+    const expectedEtag = `W/"${btoa(mockInvoice.upd_date)}"`;
+    expect(api.updateInvoiceStatus).toHaveBeenCalledWith('inv1', 'PAID', expectedEtag);
+  });
+
+  it('should cancel invoice', async () => {
+    const mockInvoice = {
+      _id: 'inv1',
+      ou_id: 'ou1',
+      branch_id: 'br1',
+      iv_no: 'IV-001',
+      bet: 10000,
+      net_win: 1000,
+      amount: 100,
+      status: 'READY',
+      cr_date: '2025-01-01T00:00:00.000Z',
+      upd_date: '2025-01-01T00:00:00.000Z',
+    };
+
+    const cancelledInvoice = {
+      ...mockInvoice,
+      status: 'VOID',
+    };
+
+    vi.mocked(api.getInvoiceById).mockResolvedValueOnce({
+      success: true,
+      code: 'SUCCESS',
+      message: 'ok',
+      data: mockInvoice,
+    });
+
+    vi.mocked(api.updateInvoiceStatus).mockResolvedValueOnce({
+      success: true,
+      code: 'SUCCESS',
+      message: 'ok',
+      data: cancelledInvoice,
+    });
+
+    const { result } = renderHook(() => useInvoices());
+
+    await act(async () => {
+      await result.current.fetchInvoiceDetail('inv1');
+    });
+
+    await act(async () => {
+      const ok = await result.current.cancelInvoice('inv1');
+      expect(ok).toBe(true);
+    });
+
+    expect(result.current.invoice).toEqual(cancelledInvoice);
+    const expectedEtag = `W/"${btoa(mockInvoice.upd_date)}"`;
+    expect(api.updateInvoiceStatus).toHaveBeenCalledWith('inv1', 'VOID', expectedEtag);
   });
 });

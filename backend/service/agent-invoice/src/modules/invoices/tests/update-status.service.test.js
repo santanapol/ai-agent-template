@@ -94,3 +94,41 @@ test("updateInvoiceStatus — returns VERSION_CONFLICT when DB matchedCount is 0
   assert.strictEqual(result.success, false);
   assert.strictEqual(result.code, "VERSION_CONFLICT");
 });
+
+test("updateInvoiceStatus — transitions to VOID successfully from READY", async () => {
+  const updDate = new Date("2025-01-01T00:00:00.000Z");
+  const etag = `W/"${Buffer.from(updDate.toISOString()).toString("base64")}"`;
+
+  const _repos = {
+    invoice: {
+      findById: async () => ({
+        _id: VALID_ID,
+        status: "READY",
+        upd_date: updDate,
+      }),
+      updateStatus: async () => ({ matchedCount: 1 }),
+      findDetailById: async () => ({
+        _id: VALID_ID,
+        ou_id: VALID_OU,
+        branch_id: "000000000000000000000789",
+        status: "VOID",
+      }),
+    },
+    masterData: {
+      findBranchDisplayName: async () => "Branch A",
+      findOuDisplayName: async () => "OU A",
+    },
+  };
+
+  const result = await updateInvoiceStatus({
+    id: VALID_ID,
+    status: "VOID",
+    actor: "user1",
+    ouId: VALID_OU,
+    ifMatch: etag,
+    _repos,
+  });
+
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.data.status, "VOID");
+});

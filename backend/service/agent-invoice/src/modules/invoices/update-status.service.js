@@ -33,7 +33,7 @@ export async function updateInvoiceStatus({
     return { success: false, code: "INVALID_PARAM" };
   }
 
-  if (status !== "PAID") {
+  if (status !== "PAID" && status !== "VOID") {
     return { success: false, code: "INVALID_PARAM" };
   }
 
@@ -59,8 +59,20 @@ export async function updateInvoiceStatus({
     return { success: false, code: "RESOURCE_NOT_FOUND" };
   }
 
-  if (invoice.status !== "READY") {
-    return { success: false, code: "INVALID_PARAM" };
+  if (status === "PAID") {
+    if (invoice.status !== "READY") {
+      return { success: false, code: "INVALID_PARAM" };
+    }
+  } else if (status === "VOID") {
+    const cancelableStatuses = new Set([
+      "READY",
+      "PENDING",
+      "MISSING_FEE",
+      "ERROR",
+    ]);
+    if (!cancelableStatuses.has(invoice.status)) {
+      return { success: false, code: "INVALID_PARAM" };
+    }
   }
 
   const { matchedCount } = await repoInvoice.updateStatus({
@@ -68,7 +80,7 @@ export async function updateInvoiceStatus({
 
     ouId,
 
-    status: "PAID",
+    status,
 
     actor,
 
@@ -76,7 +88,7 @@ export async function updateInvoiceStatus({
 
     expectedUpdDate,
 
-    expectedStatus: "READY",
+    expectedStatus: invoice.status,
   });
 
   if (matchedCount === 0) {

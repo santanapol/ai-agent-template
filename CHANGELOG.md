@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/agent-invoice/` & Backoffice:** Added support for cancelling invoices by changing their status to `VOID` instead of deleting them.
+- **`backend/service/agent-invoice/`:** Allowed status transitions from `READY`, `PENDING`, `MISSING_FEE`, and `ERROR` to `VOID` inside `updateInvoiceStatus` service, and updated schema validators to accept the `VOID` status.
+- **Backoffice:** Added the "Cancel Invoice" button to the invoice details page and wired it up via the `cancelInvoice` callback in `useInvoices` hook, which encodes the invoice `upd_date` as the `If-Match` ETag.
 - **`backend/auth/` & `backend/service/staff/`:** Added support for `support` role in the platform and allowed `platform_admin` to assign and update user roles for staff members during creation and profile edits.
 - **`backend/auth/`:** Added `PATCH /internal/users/{user_id}/role` endpoint to dynamically update user roles within a secure MongoDB transaction, revoking active sessions upon update.
 - **`backend/service/staff/`:** Added integration client support for setting user roles and restricted role update routes to `platform_admin`.

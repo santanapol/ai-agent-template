@@ -20,6 +20,7 @@ import {
   FileExcelOutlined,
   InfoCircleOutlined,
   CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -44,6 +45,7 @@ const InvoiceDetail: React.FC = () => {
     fetchInvoiceDetail,
     fetchTransactions,
     markAsPaid,
+    cancelInvoice,
   } = useInvoices();
 
   useEffect(() => {
@@ -130,6 +132,14 @@ const InvoiceDetail: React.FC = () => {
   const handleUpdateStatus = async () => {
     if (!id) return;
     const success = await markAsPaid(id);
+    if (success) {
+      fetchInvoiceDetail(id);
+    }
+  };
+
+  const handleCancelInvoice = async () => {
+    if (!id) return;
+    const success = await cancelInvoice(id);
     if (success) {
       fetchInvoiceDetail(id);
     }
@@ -265,6 +275,17 @@ const InvoiceDetail: React.FC = () => {
               loading={updatingStatus}
             >
               Mark as PAID
+            </Button>
+          )}
+          {['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status) && (
+            <Button
+              className="no-print"
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={handleCancelInvoice}
+              loading={updatingStatus}
+            >
+              Cancel Invoice
             </Button>
           )}
         </Space>
