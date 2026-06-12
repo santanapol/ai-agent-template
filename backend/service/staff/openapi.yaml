@@ -842,8 +842,6 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
 
-
-
     PermissionDenied:
       description: Permission denied (e.g. missing action permission)
       headers:
