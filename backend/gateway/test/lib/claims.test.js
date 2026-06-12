@@ -5,7 +5,8 @@ import {
   assertValidRoleHeader,
   assertValidUserIdHeader,
   normalizeRoleHeader,
-  normalizeUserIdClaim
+  normalizeUserIdClaim,
+  normalizePermissionsClaim
 } from '../../src/lib/claims.js'
 
 describe('claims', () => {
@@ -24,4 +25,48 @@ describe('claims', () => {
   test('assertValidRoleHeader rejects too long role header', () => {
     assert.throws(() => assertValidRoleHeader('x'.repeat(257)), /role_too_long/)
   })
+
+  describe('normalizePermissionsClaim', () => {
+    test('returns empty string when value is undefined or null', () => {
+      assert.strictEqual(normalizePermissionsClaim(undefined), '')
+      assert.strictEqual(normalizePermissionsClaim(null), '')
+    })
+
+    test('returns empty string when value is an empty array', () => {
+      assert.strictEqual(normalizePermissionsClaim([]), '')
+    })
+
+    test('joins array of valid strings with comma', () => {
+      assert.strictEqual(
+        normalizePermissionsClaim(['profiles:*', 'invoice:read']),
+        'profiles:*,invoice:read'
+      )
+    })
+
+    test('throws when value is not an array', () => {
+      assert.throws(() => normalizePermissionsClaim('profiles:*'), /invalid_permissions_claim_type/)
+      assert.throws(() => normalizePermissionsClaim(123), /invalid_permissions_claim_type/)
+      assert.throws(() => normalizePermissionsClaim({}), /invalid_permissions_claim_type/)
+    })
+
+    test('throws when array has non-string elements', () => {
+      assert.throws(() => normalizePermissionsClaim(['profiles:*', 123]), /invalid_permission_item_type/)
+    })
+
+    test('throws when array has empty strings or whitespace-only strings', () => {
+      assert.throws(() => normalizePermissionsClaim(['profiles:*', '']), /empty_permission_item/)
+      assert.throws(() => normalizePermissionsClaim(['profiles:*', '   ']), /invalid_permission_characters/)
+    })
+
+    test('throws when array element contains comma', () => {
+      assert.throws(() => normalizePermissionsClaim(['profiles:*,invoice:read']), /invalid_permission_characters/)
+    })
+
+    test('throws when array element contains whitespace', () => {
+      assert.throws(() => normalizePermissionsClaim(['profiles:* ', 'invoice:read']), /invalid_permission_characters/)
+      assert.throws(() => normalizePermissionsClaim(['profiles:*', 'invoice:\tread']), /invalid_permission_characters/)
+      assert.throws(() => normalizePermissionsClaim(['profiles:*', 'invoice:\nread']), /invalid_permission_characters/)
+    })
+  })
 })
+

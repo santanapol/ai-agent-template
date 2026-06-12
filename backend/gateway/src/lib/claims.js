@@ -62,3 +62,37 @@ export function normalizeTenantClaim(value) {
   }
   return String(value).trim()
 }
+
+/**
+ * Normalizes permissions claim from JWT to a comma-separated list of strings.
+ * Throws an error if format is invalid (not array, members not string, empty strings,
+ * or members containing commas/whitespace).
+ * Returns empty string if value is missing (undefined/null) or empty array.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizePermissionsClaim(value) {
+  if (value === undefined || value === null) {
+    return ''
+  }
+  if (!Array.isArray(value)) {
+    throw new Error('invalid_permissions_claim_type')
+  }
+  if (value.length === 0) {
+    return ''
+  }
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw new Error('invalid_permission_item_type')
+    }
+    if (item === '') {
+      throw new Error('empty_permission_item')
+    }
+    if (item.includes(',') || /\s/u.test(item)) {
+      throw new Error('invalid_permission_characters')
+    }
+  }
+  return value.join(',')
+}
+
