@@ -21,17 +21,17 @@
 
 - [x] `npm test` ผ่าน (95/95) — login → JWT มี `permissions` → refresh เคลมถูกต้อง
 - [x] `npm run spec:lint && npm run spec:codes` ผ่าน
-- [ ] **Human review** ก่อนเริ่ม Phase 3
+- [x] **Human review** ก่อนเริ่ม Phase 3 — อนุมัติแล้ว (พร้อมเคาะ 2 deviation: size guard ที่ service, ไม่เพิ่ม response schema ใน validator)
 
 ## Phase 3: Seed tooling + Menus endpoint (Task 5 ⟂ Task 6)
 
-- [ ] **Task 5**: `scripts/seed-permissions.js` + `scripts/seed-data/permissions.js` — validate 7 กฎ (fail ทันที), upsert + audit fields, `--prune`, สร้าง indexes + tests `(M)` — ต้องมี Task 1, 2
-- [ ] **Task 6**: `GET /auth/me/menus` — expand wildcard + ancestors ครบถึง root, flat list เรียง `sort_order`, rate limit 60/min, sync `openapi.yaml` + integration tests `(M)` — ต้องมี Task 1, 3
+- [x] **Task 5**: `scripts/seed-permissions.js` + `scripts/seed-data/permissions.js` — validate 7 กฎ (fail ทันที), upsert + audit fields, `--prune`, สร้าง indexes + tests `(M)` — commit `09943d5`
+- [x] **Task 6**: `GET /auth/me/menus` — expand wildcard + ancestors ครบถึง root, flat list เรียง `sort_order`, rate limit 60/min, sync `openapi.yaml` + integration tests `(M)` — commit `9fb456b`
 
 ### Checkpoint C: Complete
 
-- [ ] `npm run ci` ผ่านครบ
-- [ ] Flow ครบวงจรด้วยมือ: seed → dev → login → `/auth/me/menus` → refresh
-- [ ] Success Criteria ทั้ง 6 ข้อใน `SPEC.md` ผ่าน
-- [ ] อัปเดต `CHANGELOG.md`
+- [x] `npm run ci` ผ่านครบ (lint + format + 118/118 tests + audit)
+- [x] Flow ครบวงจรด้วยมือกับ dev MongoDB จริง: seed ×2 (idempotent) → login (`permissions` ใน body+JWT) → `GET /auth/me/menus` (โครง 3 ระดับครบ) → refresh (เคลมถูกต้อง) → no token = 401
+- [x] Success Criteria ทั้ง 6 ข้อใน `SPEC.md` ผ่าน
+- [x] อัปเดต `CHANGELOG.md`
 - [ ] **Human review** ก่อน merge
