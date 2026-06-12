@@ -6,7 +6,7 @@
 ## Assumptions I'm Making
 
 1. Gateway ส่ง `x-user-permissions` (comma-separated, ค่าดิบรวม wildcard `domain:*`, อาจเป็น string ว่าง) มากับทุก request ที่ผ่าน protected route และ spoofing ถูกปิดที่ gateway แล้ว
-2. Action keys ที่ staff service ใช้ตรงกับ registry ใน auth: `profiles:list`, `profiles:lookup`, `profiles:read`, `profiles:create`, `profiles:edit` (ดู `scripts/seed-data/permissions.js` ใน auth)
+2. Action keys ที่ staff service ใช้ตรงกับ registry ใน auth: `profiles:list`, `profiles:lookup`, `profiles:read`, `profiles:create`, `profiles:edit` และ **`roles:assign`** (ตัวหลังต้อง seed เพิ่มฝั่ง auth ก่อนเริ่ม phase นี้ — ดู `scripts/seed-data/permissions.js`)
 3. ช่วงเปลี่ยนผ่านต้องรองรับ token เก่าที่ยังไม่มีเคลม (header ว่าง) — ใช้กลยุทธ์ **dual-check** ควบคุมด้วย env
 4. กฎ "lookup/read ตัวเองได้เสมอ" (self-access) เป็น business rule แยกจาก permission — คงพฤติกรรมเดิมไว้ ไม่ผูกกับ permission key
 
@@ -16,14 +16,14 @@
 
 แทนที่การเช็คบทบาทแบบ static (`isAdminRole` / `assertAdminRole` / `ADMIN_ROLES` ใน `profiles.service.js`) ด้วยการเช็ค permission ราย action จาก header `x-user-permissions` ตาม **Permission Matching Contract** (exact หรือ `domain:*`) โดยมีโหมดเปลี่ยนผ่านแบบ dual-check เพื่อไม่ break token เก่าและถอยกลับได้โดยไม่ต้อง deploy ใหม่
 
-| Endpoint (profiles)        | Action key ที่ต้องมี                               | หมายเหตุ                               |
-| -------------------------- | -------------------------------------------------- | -------------------------------------- |
-| `GET /profiles` (list)     | `profiles:list`                                    |                                        |
-| `GET /profiles/lookup`     | `profiles:lookup`                                  | lookup ตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม) |
-| `GET /profiles/:id`        | `profiles:read`                                    | อ่านของตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม) |
-| `POST /profiles`           | `profiles:create`                                  |                                        |
-| `PATCH /profiles/:id`      | `profiles:edit`                                    |                                        |
-| `PATCH /profiles/:id/role` | `profiles:edit` + คงเงื่อนไข `platform_admin` เดิม | ดู Open Questions ข้อ 1                |
+| Endpoint (profiles)        | Action key ที่ต้องมี | หมายเหตุ                                           |
+| -------------------------- | -------------------- | -------------------------------------------------- |
+| `GET /profiles` (list)     | `profiles:list`      |                                                    |
+| `GET /profiles/lookup`     | `profiles:lookup`    | lookup ตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
+| `GET /profiles/:id`        | `profiles:read`      | อ่านของตัวเอง: ผ่านเสมอ (พฤติกรรมเดิม)             |
+| `POST /profiles`           | `profiles:create`    |                                                    |
+| `PATCH /profiles/:id`      | `profiles:edit`      |                                                    |
+| `PATCH /profiles/:id/role` | `roles:assign`       | domain แยกจาก `profiles` — กัน wildcard escalation |
 
 ---
 
@@ -94,6 +94,8 @@ assertPermission(userContext, "profiles:create", {
 - `lib/permission-match.js` ต้อง**เหมือน contract ฝั่ง auth ทุกประการ** (exact equality; `domain:*` ครอบ `domain:<action>`; ไม่รองรับ `*` รูปแบบอื่น) — copy test cases จาก `backend/auth/test/permission-match.test.js` มาเป็น contract test
 - เพิ่ม error code `PERMISSION_DENIED` ใน `lib/error-codes.js` (HTTP 403, envelope format เดิมของ service)
 - `isAdminRole`/`ADMIN_ROLES` **ยังไม่ลบ** ใน phase นี้ — ใช้เป็น `legacyRoleCheck` จนกว่าจะสลับ `enforce` แล้วค่อยลบใน phase cleanup
+- **หลักการตั้ง key**: action ที่ยกระดับสิทธิ์ได้ (เช่นเปลี่ยน role) **ห้ามอยู่ใน domain ที่นิยมแจกเป็น wildcard** — จึงใช้ `roles:assign` ไม่ใช่ `profiles:set_role` (เพราะ `branch_admin` ถือ `profiles:*` จะครอบโดยไม่ตั้งใจ)
+- **Fallback-hit logging**: ทุกครั้งที่ request ผ่านด้วย `legacyRoleCheck` (permission ไม่มีแต่ role เดิมผ่าน) ต้อง `log.warn({ action_key, role }, 'permission dual-check fallback used')` — เป็นทั้งสัญญาณว่า seed ตกหล่น key ไหน และเกณฑ์การถอด dual
 
 ## Testing Strategy
 
@@ -105,6 +107,7 @@ Node test runner ตามโครงเดิม (`src/**/tests/unit-test`, `s
    - `enforce`: มี `profiles:create` → 201; ไม่มี → 403 `PERMISSION_DENIED`; wildcard `profiles:*` → ผ่านทุก action
    - `dual`: ไม่มี permission แต่ role เดิมผ่าน (`branch_admin`) → ผ่าน; ทั้งคู่ไม่ผ่าน → 403
    - self lookup/read โดยไม่มี permission → ผ่าน (พฤติกรรมเดิมคงอยู่)
+   - dual fallback ถูกใช้ → มี warn log พร้อม `action_key` (mock logger)
 4. Coverage ไม่ต่ำกว่า gate เดิมของ service
 
 ## Boundaries
@@ -129,7 +132,7 @@ Node test runner ตามโครงเดิม (`src/**/tests/unit-test`, `s
 4. Self lookup/read ทำงานเหมือนเดิมทุกกรณี
 5. `npm run ci:with-coverage` ผ่าน; `openapi.yaml` ระบุ 403 `PERMISSION_DENIED` ที่ endpoint ที่เกี่ยวข้อง
 
-## Open Questions
+## Resolved Questions
 
-1. **`PATCH /profiles/:id/role`** ตอนนี้บังคับ `platform_admin` เท่านั้น — จะคงเป็น role-check (เพราะเป็น governance rule) หรือสร้าง key แยก `profiles:set_role` ให้ assign ได้ละเอียดขึ้น? _ข้อเสนอ: สร้าง key `profiles:set_role` และ seed ให้เฉพาะ `platform_admin` — ได้ความยืดหยุ่นโดย default เทียบเท่าเดิม_
-2. **แผนถอด dual**: กำหนดเกณฑ์เป็นเวลา (เช่น 1 สัปดาห์หลัง enforce นิ่ง) หรือรอ metrics? — เคาะตอน phase cleanup
+1. **`PATCH /profiles/:id/role`** — ใช้ key `roles:assign` ใน domain แยก (ไม่ใช่ `profiles:set_role`) seed ให้เฉพาะ `platform_admin`: ถ้าอยู่ใต้ `profiles` wildcard `profiles:*` ของ `branch_admin` จะครอบถึง = privilege escalation — ตั้งเป็นหลักการ "escalating action ห้ามอยู่ใน wildcard domain"
+2. **แผนถอด dual** — ใช้สัญญาณจริงจาก fallback-hit log: hit = 0 ติดต่อกัน 7 วันบน production → สลับ `PERMISSION_MODE=enforce` → release ถัดไปลบโค้ด dual + `isAdminRole`/`ADMIN_ROLES`

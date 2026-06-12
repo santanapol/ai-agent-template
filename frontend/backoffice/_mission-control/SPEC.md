@@ -8,7 +8,7 @@
 1. `POST /auth/login` และ `POST /auth/refresh` ตอบ `permissions: string[]` (ค่าดิบรวม wildcard `domain:*`) ใน body แล้ว — frontend ใช้จาก body ไม่ต้อง decode เพิ่ม
 2. `GET /auth/me/menus` ตอบ flat list `{ key, label, type, parent_key, sort_order }` เฉพาะโหนดที่ผู้ใช้มีสิทธิ์ พร้อมบรรพบุรุษครบถึง root
 3. **icon และ route path เป็นของ frontend** — map จาก `key` ในโค้ด (ตามที่เคาะใน auth SPEC: Resolved Question 4)
-4. ผังเมนูกลาง (`auth_menus`) จะถูกขยายให้ครอบเมนูปัจจุบันทั้งหมดของ Backoffice (dashboard, agents, invoices, smart-reports, staff) — เป็น **data dependency ฝั่ง auth** (แก้ `scripts/seed-data/permissions.js` + รัน seed) ดู Open Questions ข้อ 1
+4. ผังเมนูกลาง (`auth_menus`) จะถูกขยายให้ครอบเมนูปัจจุบันทั้งหมดของ Backoffice — เป็น **data dependency ฝั่ง auth** (แก้ `scripts/seed-data/permissions.js` + รัน seed ก่อน deploy frontend) ตามร่าง catalog ใน Resolved Questions ข้อ 1
 5. หน้า 403/404/Login/My Profile ไม่ผูกกับ permission (ทุกคนที่ login แล้วเข้าได้)
 
 ---
@@ -126,7 +126,18 @@ Vitest (โครงเดิม `src/**/*.test.ts`):
 4. `getMyMenus` ล้มเหลว → เมนูขั้นต่ำ + แอปไม่ crash
 5. `npm run build && npm test && npm run lint` ผ่านครบ; contract test ตรงกับฝั่ง auth
 
-## Open Questions
+## Resolved Questions
 
-1. **ขยาย seed catalog ฝั่ง auth** (dependency ของ phase นี้): ต้องเพิ่ม key ของเมนูปัจจุบัน — เสนอ `dashboard`, `agents:list`, `agents:fees`, `invoices:list`, `invoices:read`, `reports:smart` + กลุ่ม `billing`/`reports` และ map ให้ทุก role ที่ใช้งานอยู่ → ใครเป็นคนเคาะรายการ key/label ภาษาไทย? (ต้องจบก่อนเริ่ม implement เมนู)
-2. ระหว่างที่ seed ยังไม่ครอบทุกเมนู จะ rollout แบบไหน: (ก) เมนูทั้งหมดจาก API เลย (เมนูที่ยังไม่ seed จะหาย) หรือ (ข) ช่วงแรกใช้ API เฉพาะกลุ่ม staff แล้วเมนูอื่นคง static ไว้ก่อน? _ข้อเสนอ: (ก) + seed ให้ครบในคราวเดียว — เรียบกว่าและบังคับให้ catalog สมบูรณ์จริง_
+1. **Seed catalog** — draft จากเมนู/route guard จริงแล้วรีวิวผ่าน data-only PR ฝั่ง auth (ไม่ต้องรอ process แยก) ร่างที่เคาะ:
+
+   ```
+   dashboard:view                          (root action — ทุก role)
+   billing (menu) ├─ agents:list, agents:fees
+                  └─ invoices:list, invoices:read
+   reports (menu) └─ reports:smart
+   staff (มีอยู่แล้วจาก phase auth)
+   ```
+
+   **Label ใช้ภาษาอังกฤษตรงกับ UI ปัจจุบัน** ("Dashboard", "Invoices", ...) — งานนี้ต้อง behavior-preserving ห้ามเปลี่ยน UX ปนมา (อยากเปลี่ยนเป็นไทยค่อยแก้ data ทีหลัง ไม่ต้อง deploy)
+
+2. **Rollout** — ใช้ทาง (ก): เมนูทั้งหมดจาก API ในคราวเดียว — hybrid สร้างสอง source of truth ซึ่งคือสภาพที่กำลังกำจัด; เงื่อนไขคือ seed catalog ต้อง merge + รันก่อน deploy frontend และตรวจเมนูครบบน staging ก่อนปล่อย
