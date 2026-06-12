@@ -62,12 +62,20 @@ export const seedMenus = [
     parent_key: 'staff:profiles',
     sort_order: 50,
     ou_id: null
+  },
+  {
+    key: 'roles:assign',
+    label: 'กำหนดบทบาทพนักงาน',
+    type: 'action',
+    parent_key: 'staff:profiles',
+    sort_order: 60,
+    ou_id: null
   }
 ]
 
 /** สิทธิ์ตั้งต้นอิงพฤติกรรม static เดิมใน staff service (isAdminRole + self lookup) */
 export const seedRolePermissions = [
-  { ou_id: null, role: 'platform_admin', menu_keys: ['profiles:*'] },
+  { ou_id: null, role: 'platform_admin', menu_keys: ['profiles:*', 'roles:assign'] },
   { ou_id: null, role: 'branch_admin', menu_keys: ['profiles:*'] },
   {
     ou_id: null,
