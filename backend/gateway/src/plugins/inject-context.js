@@ -39,7 +39,8 @@ export default fp(
         ouId = normalizeTenantClaim(payload[env.JWT_CLAIM_OU])
         branchId = normalizeTenantClaim(payload[env.JWT_CLAIM_BRANCH])
         permissions = normalizePermissionsClaim(payload.permissions)
-      } catch {
+      } catch (err) {
+        request.log.debug({ err }, 'claim normalization or validation failed')
         return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
       }
 
