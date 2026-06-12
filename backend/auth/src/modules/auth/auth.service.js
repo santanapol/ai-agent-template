@@ -174,19 +174,18 @@ export class AuthService {
 
     // เติมบรรพบุรุษทีละชั้นจนถึง root (ลึกสุด 3 ระดับ — วนไม่เกิน 2 รอบ)
     const byKey = new Map(granted.map((m) => [m.key, m]))
-    let pendingKeys = [...new Set(granted.map((m) => m.parent_key))].filter(
-      (key) => key !== null && !byKey.has(key)
-    )
+    let pendingKeys = this.collectPendingParentKeys(granted, byKey)
     while (pendingKeys.length > 0) {
       const parents = await this.repo.findMenusByKeys(pendingKeys, user.ou_id)
       for (const parent of parents) byKey.set(parent.key, parent)
-      pendingKeys = [...new Set(parents.map((m) => m.parent_key))].filter(
-        (key) => key !== null && !byKey.has(key)
-      )
+      pendingKeys = this.collectPendingParentKeys(parents, byKey)
     }
 
     // cap ที่ 3 ตามกฎความลึกใน SPEC — detect cycle และขึ้นลึก
+    const depths = new Map()
     const depthOf = (menu) => {
+      if (depths.has(menu.key)) return depths.get(menu.key)
+
       const seen = new Set()
       let depth = 0
       let current = menu
@@ -201,8 +200,10 @@ export class AuthService {
           throw new Error(`Menu hierarchy exceeds depth limit at key: ${current.key}`)
         }
       }
+      depths.set(menu.key, depth)
       return depth
     }
+
     const menus = [...byKey.values()]
       .sort((a, b) => depthOf(a) - depthOf(b) || a.sort_order - b.sort_order)
       .map((m) => ({
@@ -214,6 +215,11 @@ export class AuthService {
       }))
 
     return { ok: true, status: 200, body: { menus } }
+  }
+
+  collectPendingParentKeys(menus, byKey) {
+    const parentKeys = menus.map((m) => m.parent_key)
+    return [...new Set(parentKeys)].filter((key) => key !== null && !byKey.has(key))
   }
 
   /**
