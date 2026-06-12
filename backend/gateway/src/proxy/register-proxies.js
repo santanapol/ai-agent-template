@@ -4,6 +4,7 @@ const DANGEROUS_HEADERS = new Set([
   'authorization',
   'x-user-id',
   'x-user-role',
+  'x-user-permissions',
   'x-user-ou',
   'x-user-branch',
   'x-gateway-secret',
@@ -45,6 +46,7 @@ export async function registerProxies(fastify, opts) {
         'x-user-branch': ctx['x-user-branch'],
         'x-user-id': ctx['x-user-id'],
         'x-user-role': ctx['x-user-role'],
+        'x-user-permissions': ctx['x-user-permissions'],
         ...(ctx['if-match'] ? { 'if-match': ctx['if-match'] } : {}),
         'x-request-id': ctx['x-request-id']
       }
@@ -54,6 +56,7 @@ export async function registerProxies(fastify, opts) {
       }
     }
   }
+
 
   for (const route of routes) {
     const proxyOpts = {

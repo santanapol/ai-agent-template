@@ -4,7 +4,8 @@ import {
   assertValidUserIdHeader,
   normalizeRoleHeader,
   normalizeUserIdClaim,
-  normalizeTenantClaim
+  normalizeTenantClaim,
+  normalizePermissionsClaim
 } from '../lib/claims.js'
 
 /**
@@ -29,6 +30,7 @@ export default fp(
       let role
       let ouId
       let branchId
+      let permissions
       try {
         userId = normalizeUserIdClaim(payload[env.JWT_CLAIM_USER_ID])
         assertValidUserIdHeader(userId)
@@ -36,6 +38,7 @@ export default fp(
         assertValidRoleHeader(role)
         ouId = normalizeTenantClaim(payload[env.JWT_CLAIM_OU])
         branchId = normalizeTenantClaim(payload[env.JWT_CLAIM_BRANCH])
+        permissions = normalizePermissionsClaim(payload.permissions)
       } catch {
         return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
       }
@@ -60,6 +63,7 @@ export default fp(
         'x-user-branch': branchId,
         'x-user-id': userId,
         'x-user-role': role,
+        'x-user-permissions': permissions,
         'x-request-id': requestId
       }
       if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
@@ -67,3 +71,4 @@ export default fp(
   },
   { name: 'gateway-inject-context' }
 )
+

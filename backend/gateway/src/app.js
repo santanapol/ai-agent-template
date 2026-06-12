@@ -19,9 +19,11 @@ const TRUSTED_HEADER_KEYS = [
   'x-user-branch',
   'x-user-id',
   'x-user-role',
+  'x-user-permissions',
   'if-match',
   'x-request-id'
 ]
+
 
 /**
  * Node exposes duplicated inbound headers via `raw.headersDistinct` (array values).
