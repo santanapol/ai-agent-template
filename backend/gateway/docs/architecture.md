@@ -11,7 +11,7 @@
 | **OpenAPI**          | [`openapi.yaml`](../openapi.yaml) — edge contract + health (`npm run spec:lint`); normative `/auth/*` ชี้ [`auth/openapi.yaml`](../../auth/openapi.yaml)                                                                                                                                                                                               |
 | **Scope**            | เอกสารนี้ **ไม่** แทน `auth` — login/refresh/JWKS อยู่ที่ [`auth` SoT](../../auth/docs/architecture.md); `gateway` ทำ verify JWT, optional `token_gen` gate, inject headers, proxy เท่านั้น                                                                                                                                                            |
 | **Package version**  | `0.2.4`                                                                                                                                                                                                                                                                                                                                                |
-| **Document version** | `1.4.1`                                                                                                                                                                                                                                                                                                                                                |
+| **Document version** | `1.5.0`                                                                                                                                                                                                                                                                                                                                                |
 | **Terms**            | **ต้อง (MUST)** = บังคับ production · **ควร (SHOULD)** = default ยกเว้นมี ADR · **อาจ (MAY)** = optional                                                                                                                                                                                                                                               |
 
 > **การเปลี่ยนแปลง:** หากแก้ **section 4 (headers), section 5 (env), section 7 (errors), section 8 (internal), sections 11–12 (decisions)** → ต้องมี **code review** + **bump เวอร์ชันเอกสาร** (อย่างน้อย minor) + อัปเดต `CHANGELOG.md` เมื่อ repo มีไฟล์นี้
@@ -133,14 +133,15 @@ gateway/
 
 ชื่อ header ด้านล่างถือเป็น **canonical** — **ต้อง** ใช้ constant ชุดเดียวกันใน gateway และ package กลางฝั่ง internal (ถ้ามี)
 
-| Header             | ตั้งโดย          | อ่านโดย     | ข้อกำหนด                                                                                                                                                   |
-| ------------------ | ---------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `x-gateway-secret` | Gateway          | ทุก service | constant-time compare · **ห้าม** log                                                                                                                       |
-| `x-user-id`        | Gateway          | identity    | จาก `JWT_CLAIM_USER_ID` · ASCII printable **ควร** · ≤ **128** chars — เกินหรือไม่ผ่าน validation ที่ขอบ gateway → **`401`** + **`GATEWAY_CLAIM_REJECTED`** |
-| `x-user-ou`        | Gateway          | tenant      | จาก `JWT_CLAIM_OU` · รหัสองค์กรของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**              |
-| `x-user-branch`    | Gateway          | tenant      | จาก `JWT_CLAIM_BRANCH` · รหัสสาขาของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**            |
-| `x-user-role`      | Gateway          | RBAC        | section 12.2                                                                                                                                               |
-| `x-request-id`     | Gateway / client | logs, trace | **ควร** ทุก request · client ไม่ส่ง → gateway **ควร** สร้าง UUID                                                                                           |
+| Header               | ตั้งโดย          | อ่านโดย       | ข้อกำหนด                                                                                                                                                   |
+| -------------------- | ---------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `x-gateway-secret`   | Gateway          | ทุก service   | constant-time compare · **ห้าม** log                                                                                                                       |
+| `x-user-id`          | Gateway          | identity      | จาก `JWT_CLAIM_USER_ID` · ASCII printable **ควร** · ≤ **128** chars — เกินหรือไม่ผ่าน validation ที่ขอบ gateway → **`401`** + **`GATEWAY_CLAIM_REJECTED`** |
+| `x-user-ou`          | Gateway          | tenant        | จาก `JWT_CLAIM_OU` · รหัสองค์กรของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**              |
+| `x-user-branch`      | Gateway          | tenant        | จาก `JWT_CLAIM_BRANCH` · รหัสสาขาของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**            |
+| `x-user-role`        | Gateway          | RBAC          | section 12.2                                                                                                                                               |
+| `x-user-permissions` | Gateway          | authorization | จากเคลม `permissions` · รายการสิทธิ์ดิบของผู้ใช้ (comma-separated, exact/wildcard ไม่ expand) — ต้องมีรูปแบบถูกต้อง (ห้ามมี Comma, Whitespace หรือสตริงว่างในสมาชิก) มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`** |
+| `x-request-id`       | Gateway / client | logs, trace   | **ควร** ทุก request · client ไม่ส่ง → gateway **ควร** สร้าง UUID                                                                                           |
 
 **JWT → claim mapping**
 
@@ -351,4 +352,4 @@ _หมายเหตุ:_ path ที่ขึ้นต้นด้วย `_en
 
 ---
 
-_Document version **1.4.1** — sync README document map + references; D3 `token_gen` implemented._
+_Document version **1.5.0** — add x-user-permissions to header contract; Phase G implemented._

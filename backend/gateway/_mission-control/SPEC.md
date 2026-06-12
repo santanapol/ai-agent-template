@@ -46,6 +46,8 @@ backend/gateway/
     proxy/register-proxies.js   ← [MODIFY] เพิ่มใน DANGEROUS_HEADERS (strip ขาเข้า) + trustedHeaders (inject ขาออก)
   openapi.yaml                  ← [MODIFY] เอกสาร header ที่ inject ไป upstream
   test/                         ← [NEW/MODIFY] tests ของ normalize + inject + strip
+  docs/architecture.md          ← [MODIFY] เพิ่ม 'x-user-permissions' ใน Section 4 (Header Contract) + Bump doc version ใน Section 15
+  CHANGELOG.md                  ← [MODIFY] บันทึกการเปลี่ยนแปลงและเลขเวอร์ชันเอกสาร
 ```
 
 ## Code Style
@@ -60,7 +62,7 @@ x-user-permissions: profiles:*,invoice:read
 
 - เคลมเป็นอาเรย์ของ string → join ด้วย `,` (ไม่มี space)
 - เคลม**หายไป** (token เก่าช่วง rollout) หรือเป็นอาเรย์ว่าง → header เป็น **string ว่าง** `''` (ยัง inject เสมอ — ผู้บริโภคตีความเป็น "ไม่มีสิทธิ์" deny by default)
-- เคลมรูปแบบผิด (ไม่ใช่อาเรย์, สมาชิกไม่ใช่ string, สมาชิกมี `,` หรือ whitespace) → **reject เป็น `GATEWAY_CLAIM_REJECTED`** (401 ตามแบบแผนเดิมของ `inject-context.js`) — claim ผิดรูปคือ token ที่ไม่น่าเชื่อถือ ไม่ใช่เคสว่าง
+- เคลมรูปแบบผิด (ไม่ใช่อาเรย์, สมาชิกไม่ใช่ string, สมาชิกเป็น string ว่าง/มีแต่ช่องว่าง, สมาชิกมี `,` หรือ whitespace ในคำ) → **reject เป็น `GATEWAY_CLAIM_REJECTED`** (401 ตามแบบแผนเดิมของ `inject-context.js`) — claim ผิดรูปคือ token ที่ไม่น่าเชื่อถือ ไม่ใช่เคสว่าง
 
 ### จุด inject (pattern เดิมใน `inject-context.js`)
 
@@ -108,7 +110,7 @@ Node test runner (แบบแผนเดิมใน `test/`):
 2. Client ส่ง `x-user-permissions` ปลอม → upstream ได้ค่าจาก JWT เสมอ; ส่งซ้ำหลายตัว → 401 `GATEWAY_CLAIM_REJECTED`
 3. Token ที่ไม่มีเคลม (ออกก่อน auth deploy) → ผ่านได้ปกติ, header เป็น string ว่าง
 4. เคลมผิดรูป → 401 `GATEWAY_CLAIM_REJECTED`
-5. `npm run ci` ผ่าน; `openapi.yaml` อัปเดต header ใหม่
+5. `npm run ci` ผ่าน; `openapi.yaml` อัปเดต header ใหม่; อัปเดต `docs/architecture.md` (Section 4 + 15) และ bump document version พร้อมอัปเดต `CHANGELOG.md`
 
 ## Open Questions
 

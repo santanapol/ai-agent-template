@@ -165,18 +165,19 @@ export class AuthService {
     if (!genCheck.ok) return genCheck
     const user = genCheck.user
 
+    const normalizedOuId = user.ou_id ?? null
     const permissions = await this.resolveEffectivePermissions({
-      ouId: user.ou_id ?? null,
+      ouId: normalizedOuId,
       role: user.role
     })
-    const actions = await this.repo.findActionMenusForOu(user.ou_id)
+    const actions = await this.repo.findActionMenusForOu(normalizedOuId)
     const granted = actions.filter((action) => anyPermissionMatches(permissions, action.key))
 
     // เติมบรรพบุรุษทีละชั้นจนถึง root (ลึกสุด 3 ระดับ — วนไม่เกิน 2 รอบ)
     const byKey = new Map(granted.map((m) => [m.key, m]))
     let pendingKeys = this.collectPendingParentKeys(granted, byKey)
     while (pendingKeys.length > 0) {
-      const parents = await this.repo.findMenusByKeys(pendingKeys, user.ou_id)
+      const parents = await this.repo.findMenusByKeys(pendingKeys, normalizedOuId)
       for (const parent of parents) byKey.set(parent.key, parent)
       pendingKeys = this.collectPendingParentKeys(parents, byKey)
     }
@@ -197,7 +198,10 @@ export class AuthService {
         current = byKey.get(current.parent_key)
         depth += 1
         if (depth > 3) {
-          throw new Error(`Menu hierarchy exceeds depth limit at key: ${current.key}`)
+          throw new Error(
+            `Menu hierarchy exceeds depth limit at key: ${menu.key} ` +
+            `(traversed: ${[...seen].join(' → ')})`
+          )
         }
       }
       depths.set(menu.key, depth)

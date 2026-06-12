@@ -8,7 +8,7 @@
 | #   | Phase                                  | Codebase                | Spec                                                             | สถานะ                                        | Dependency                  |
 | --- | -------------------------------------- | ----------------------- | ---------------------------------------------------------------- | -------------------------------------------- | --------------------------- |
 | 1   | **Auth** — Dynamic Permission in DB    | `backend/auth`          | [SPEC.md](./SPEC.md)                                             | ✅ โค้ดเสร็จ (118/118 tests) รอ review/merge | —                           |
-| 2   | **G** — Forward `x-user-permissions`   | `backend/gateway`       | [SPEC.md](../../gateway/_mission-control/SPEC.md)                | 📋 Spec อนุมัติแล้ว พร้อม `/plan`            | หลัง 1 merge                |
+| 2   | **G** — Forward `x-user-permissions`   | `backend/gateway`       | [SPEC.md](../../gateway/_mission-control/SPEC.md)                | ⏳ แผนอนุมัติแล้ว เริ่มพัฒนาระดับโค้ด         | หลัง 1 merge                |
 | 3   | **S** — Permission checks (dual-check) | `backend/service/staff` | [SPEC.md](../../service/staff/_mission-control/SPEC.md)          | 📋 Spec อนุมัติแล้ว พร้อม `/plan`            | **ต้องหลัง G เท่านั้น**     |
 | 4   | **F** — Menu + guards                  | `frontend/backoffice`   | [SPEC.md](../../../frontend/backoffice/_mission-control/SPEC.md) | 📋 Spec อนุมัติแล้ว พร้อม `/plan`            | หลัง 1 merge — ขนาน G/S ได้ |
 | 5   | **A** — Permission Admin API           | `backend/auth`          | [SPEC-permission-admin-api.md](./SPEC-permission-admin-api.md)   | 📋 Spec อนุมัติแล้ว พร้อม `/plan`            | ทำท้ายสุด (หลัง G/S/F)      |
