@@ -200,7 +200,7 @@ export class AuthService {
         if (depth > 3) {
           throw new Error(
             `Menu hierarchy exceeds depth limit at key: ${menu.key} ` +
-            `(traversed: ${[...seen].join(' → ')})`
+              `(traversed: ${[...seen].join(' → ')})`
           )
         }
       }
