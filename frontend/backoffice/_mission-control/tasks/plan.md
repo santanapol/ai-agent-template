@@ -213,14 +213,59 @@ npm run lint  # zero errors
 
 **Files to create/modify:**
 - `src/layouts/AdminLayout.tsx` — EXTEND with menu tree assembly
+- `src/pages/StaffManagement.tsx` — ADD button-level permission checks (T6.13)
 
-**Logic:**
-1. Get `menus` from AuthContext
-2. Build tree from flat list (parent_key → children mapping)
-3. Sort by depth + sort_order
-4. Map to Ant Menu items using MENU_UI map
-5. Filter out unknown keys (not in MENU_UI)
-6. Render as hierarchical menu
+**Tree Assembly Algorithm:**
+
+```typescript
+// Input: flat MenuNode[] with parent_key references
+const menus = [
+  { key: 'dashboard', label: 'Dashboard', parent_key: null, sort_order: 0 },
+  { key: 'staff', label: 'Staff', parent_key: null, sort_order: 10 },
+  { key: 'profiles:list', label: 'Staff List', parent_key: 'staff', sort_order: 0 }
+]
+
+// Output: hierarchical structure (grouped by parent)
+type MenuNode = { 
+  key: string
+  label: string
+  type: 'menu' | 'action'
+  children?: MenuNode[]
+}
+
+function buildMenuTree(menus: MenuNode[]): MenuNode[] {
+  // 1. Index by key for O(1) lookup
+  const byKey = new Map(menus.map(m => [m.key, m]))
+  
+  // 2. Group children by parent_key
+  const childrenByParent = new Map<string | null, MenuNode[]>()
+  for (const menu of menus) {
+    const parent = menu.parent_key ?? 'root'
+    if (!childrenByParent.has(parent)) childrenByParent.set(parent, [])
+    childrenByParent.get(parent)!.push(menu)
+  }
+  
+  // 3. Recursively build tree
+  function buildNode(menu: MenuNode): MenuNode {
+    const children = childrenByParent.get(menu.key)
+    return {
+      ...menu,
+      children: children?.map(buildNode).sort((a, b) => a.sort_order - b.sort_order)
+    }
+  }
+  
+  // 4. Return root nodes (parent_key is null)
+  return (childrenByParent.get('root') ?? [])
+    .map(buildNode)
+    .sort((a, b) => a.sort_order - b.sort_order)
+}
+```
+
+**Edge Cases Handled:**
+- **Orphaned parent_key** — if parent not in list, child appears as orphan (filtered by unknown keys check)
+- **Circular references** — depth limit from Phase 1 prevents infinite loops (5xx error if exceeded)
+- **Unknown keys** — keys not in MENU_UI mapping are filtered before rendering
+- **Empty menus** — shows minimal menu fallback (Dashboard, My Profile)
 
 **MENU_UI Mapping:**
 ```typescript
@@ -391,18 +436,19 @@ npm run test:coverage  # ensure no coverage regression
 
 ## Timeline & Sequencing
 
-| Slice | Task | Duration | Blocker | Status |
-|-------|------|----------|---------|--------|
-| 1 | Types & Contract Definition | 45 min | — | 🔵 Ready |
-| 2 | Permission Matching Contract | 1 h | Slice 1 | 🔵 Ready |
-| 3 | API Client Enhancement | 30 min | Slice 1 | 🔵 Ready |
-| 4 | AuthContext Enhancement | 1.5 h | Slice 1,3 | 🔵 Ready |
-| 5 | usePermission Hook & PermissionGuard | 1.5 h | Slice 2,4 | 🔵 Ready |
-| 6 | Dynamic Menu Rendering | 2 h | Slice 4,5 | 🔵 Ready |
-| 7 | Route Guard Replacement & Tests | 2 h | Slice 5,6 | 🔵 Ready |
-| CP | Full Integration Testing | 1.5 h | All | 🔵 Ready |
+| Slice | Task | Duration | Blocker | Parallelizable | Status |
+|-------|------|----------|---------|-----------------|--------|
+| 1 | Types & Contract Definition | 45 min | — | — | 🔵 Ready |
+| 2 | Permission Matching Contract | 1 h | Slice 1 | Yes (with 3) | 🔵 Ready |
+| 3 | API Client Enhancement | 30 min | Slice 1 | Yes (with 2) | 🔵 Ready |
+| 4 | AuthContext Enhancement | 1.5-2 h | Slice 1,3 | No | 🔵 Ready |
+| 5 | usePermission Hook & PermissionGuard | 1.5 h | Slice 2,4 | No | 🔵 Ready |
+| 6 | Dynamic Menu Rendering | 2-2.5 h | Slice 4,5 | No | 🔵 Ready |
+| 7 | Route Guard Replacement & Tests | 2 h | Slice 5,6 | No | 🔵 Ready |
+| CP | Full Integration Testing | 1.5 h | All | — | 🔵 Ready |
 
-**Total:** ~11 hours (3-4 days with breaks, code review, testing)
+**Total:** 11-12 hours (3-4 days with code review, testing)  
+**Parallelization Option:** Run T2 + T3 in parallel after T1 → saves 30 min (10.5-11.5 hours)
 
 ---
 
@@ -428,9 +474,28 @@ npm run test:coverage  # ensure no coverage regression
 
 ---
 
+## Plan Review & Improvements (A- Grade)
+
+**Review Date:** 2026-06-12  
+**Reviewer Notes:** Comprehensive plan with solid architecture. 7 improvements incorporated for clarity and completeness.
+
+**Improvements Made:**
+1. ✅ **T4.0** — Added CRITICAL verification task for Phase 1 permissions field in TokenResponse
+2. ✅ **T6.11** — Expanded edge case testing (orphaned parent_key, cycles, unknown keys, empty menus)
+3. ✅ **T6.13** — Added explicit button-level permission checks for S3 compliance (profiles:create/edit)
+4. ✅ **Pseudocode** — Detailed buildMenuTree algorithm with edge case handling
+5. ✅ **Parallelization** — Documented T2 + T3 can run in parallel (save 30 min)
+6. ✅ **Stale Data** — Documented intentional staleness (menus refresh on token refresh only)
+7. ✅ **Pre-kickoff** — Recommend frontend team lead review before starting
+
+**Outstanding Recommendations (Post-Phase-4):**
+- Confirm minimal menu UI design with frontend team before Slice 6
+- Consider concurrent getMyMenus deduplication (similar to refresh-promise pattern)
+- Monitor menuLoadingError frequency in production logs for ops visibility
+
 ## Post-Implementation (Future)
 
-- [ ] Add button-level permission checks: `usePermission('profiles:create')` in StaffManagement forms
 - [ ] Implement optional `refreshMenus()` manual trigger for urgent permission changes
-- [ ] Monitor `menuLoadingError` frequency for ops visibility
+- [ ] Monitor `menuLoadingError` frequency for ops visibility (set up alerting)
 - [ ] Consider caching menus in localStorage (post-Phase 4, if needed)
+- [ ] Add getMyMenus timeout strategy if API slowness observed
