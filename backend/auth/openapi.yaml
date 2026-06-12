@@ -754,6 +754,44 @@ paths:
                     status: 503
                     detail: Unable to publish access token generation to Redis.
                     code: AUTH_NOT_READY
+  /internal/users/{user_id}/role:
+    patch:
+      tags: [internal]
+      summary: Set user role (service)
+      description: |
+        Trusted caller (staff) sets a new role for a user and optionally revokes sessions.
+      operationId: setUserRoleInternal
+      security:
+        - InternalServiceBearer: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalSetRoleRequest'
+      responses:
+        '204':
+          description: Role updated.
+        '400':
+          description: Validation failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Internal service authentication failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: User not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   securitySchemes:
     BearerAccess:
@@ -928,6 +966,20 @@ components:
           type: integer
           minimum: 0
           description: User generation counter after `$inc` (0 when user not found).
+    InternalSetRoleRequest:
+      type: object
+      required: [role]
+      additionalProperties: false
+      properties:
+        role:
+          type: string
+          enum: [platform_admin, branch_admin, staff, support]
+        revoke_sessions:
+          type: boolean
+          default: true
+        correlation_id:
+          type: string
+          maxLength: 128
     LoginRequest:
       type: object
       description: Credential payload for `POST /auth/login` (TLS required in production).

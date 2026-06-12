@@ -57,4 +57,12 @@ export default async function profileRoutes(fastify, _options) {
     },
     controller.resetProfilePassword,
   );
+  fastify.patch(
+    "/:profileId/role",
+    {
+      schema: schema.changeRoleSchema,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    controller.changeProfileRole,
+  );
 }

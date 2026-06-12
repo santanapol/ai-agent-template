@@ -7,6 +7,7 @@ import CODES from "../../../../lib/error-codes.js";
 import {
   assertAdminRole,
   assertAdminCanLinkUser,
+  assertPlatformAdmin,
   tenantContextFromAuthUser,
   resolveGetByIdScope,
   assertAdminLifecycleAccess,
@@ -40,6 +41,13 @@ const staffUser = {
   role: "staff",
 };
 
+const supportUser = {
+  userId: userSelf,
+  ouId: ouA,
+  branchId: branchA1,
+  role: "support",
+};
+
 describe("assertAdminRole", () => {
   test("does not throw for platform_admin", () => {
     assert.doesNotThrow(() => assertAdminRole(platformAdmin));
@@ -58,6 +66,42 @@ describe("assertAdminRole", () => {
         assert.strictEqual(error.code, CODES.INVALID_USER_CONTEXT);
         return true;
       },
+    );
+  });
+
+  test("does not throw for support", () => {
+    assert.doesNotThrow(() => assertAdminRole(supportUser));
+  });
+});
+
+describe("assertPlatformAdmin", () => {
+  test("does not throw for platform_admin", () => {
+    assert.doesNotThrow(() => assertPlatformAdmin(platformAdmin));
+  });
+
+  test("throws 403 for branch_admin", () => {
+    assert.throws(
+      () => assertPlatformAdmin(branchAdmin),
+      (error) => {
+        assert.ok(error instanceof HttpError);
+        assert.strictEqual(error.status, 403);
+        assert.strictEqual(error.code, CODES.INVALID_USER_CONTEXT);
+        return true;
+      },
+    );
+  });
+
+  test("throws 403 for support", () => {
+    assert.throws(
+      () => assertPlatformAdmin(supportUser),
+      (error) => error instanceof HttpError && error.status === 403,
+    );
+  });
+
+  test("throws 403 for staff", () => {
+    assert.throws(
+      () => assertPlatformAdmin(staffUser),
+      (error) => error instanceof HttpError && error.status === 403,
     );
   });
 });
@@ -151,6 +195,12 @@ describe("resolveGetByIdScope", () => {
     assert.strictEqual(scope.ouId, ouA);
     assert.strictEqual(scope.branchId, branchA1);
   });
+
+  test("support gets OU-wide scope (no branchId)", () => {
+    const scope = resolveGetByIdScope(supportUser);
+    assert.strictEqual(scope.ouId, ouA);
+    assert.strictEqual(scope.branchId, undefined);
+  });
 });
 
 describe("assertAdminLifecycleAccess", () => {
@@ -221,6 +271,28 @@ describe("assertAdminLifecycleAccess", () => {
     assert.throws(
       () => assertAdminLifecycleAccess(otherProfileInBranchA2, branchAdmin),
       (error) => error instanceof HttpError && error.status === 403,
+    );
+  });
+
+  test("support can access another user's profile in same OU", () => {
+    assert.doesNotThrow(() =>
+      assertAdminLifecycleAccess(otherProfileInBranchA1, supportUser),
+    );
+  });
+
+  test("support can access profile in another branch (same OU)", () => {
+    assert.doesNotThrow(() =>
+      assertAdminLifecycleAccess(otherProfileInBranchA2, supportUser),
+    );
+  });
+
+  test("throws 403 when support tries to archive own profile", () => {
+    assert.throws(
+      () => assertAdminLifecycleAccess(ownProfile, supportUser),
+      (error) =>
+        error instanceof HttpError &&
+        error.status === 403 &&
+        error.code === CODES.INVALID_USER_CONTEXT,
     );
   });
 });

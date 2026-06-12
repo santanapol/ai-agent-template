@@ -17,4 +17,8 @@ export class InternalService {
   setPassword(params) {
     return this.authService.setPasswordByService(params)
   }
+
+  setRole(params) {
+    return this.authService.setRoleByService(params)
+  }
 }

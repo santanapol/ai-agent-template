@@ -1,5 +1,12 @@
 const objectIdPattern = "^[a-fA-F0-9]{24}$";
 
+export const VALID_ROLES = Object.freeze([
+  "platform_admin",
+  "branch_admin",
+  "staff",
+  "support",
+]);
+
 export const profileIdParamsSchema = {
   type: "object",
   required: ["profileId"],
@@ -67,6 +74,7 @@ export const createProfileBodySchema = {
       maxLength: 256,
       pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$",
     },
+    role: { type: "string", enum: [...VALID_ROLES] },
   },
 };
 
@@ -104,4 +112,16 @@ export const adminPasswordSchema = {
 
 export const lifecycleActionSchema = {
   params: profileIdParamsSchema,
+};
+
+export const changeRoleSchema = {
+  params: profileIdParamsSchema,
+  body: {
+    type: "object",
+    required: ["role"],
+    additionalProperties: false,
+    properties: {
+      role: { type: "string", enum: [...VALID_ROLES] },
+    },
+  },
 };

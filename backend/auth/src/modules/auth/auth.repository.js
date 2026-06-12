@@ -51,6 +51,30 @@ export class AuthRepository {
   }
 
   /**
+   * Update user role.
+   * @param {import('mongodb').ObjectId} userId
+   * @param {string} role
+   * @param {{ user_id: string, route: string }} actor
+   * @param {import('mongodb').ClientSession} [session]
+   */
+  async updateUserRole(userId, role, actor, session) {
+    const now = new Date()
+    const result = await this.db.collection(USERS).updateOne(
+      { _id: userId },
+      {
+        $set: {
+          role,
+          upd_by: actor.user_id,
+          upd_date: now,
+          upd_prog: actor.route
+        }
+      },
+      { session }
+    )
+    return { matchedCount: result.matchedCount }
+  }
+
+  /**
    * Update user fields with audit refresh.
    * Returns matchedCount for ETag / 404 disambiguation.
    * @param {import('mongodb').ObjectId} id

@@ -114,3 +114,14 @@ export async function resetProfilePassword(request, reply) {
   );
   return reply.status(204).send();
 }
+
+export async function changeProfileRole(request, reply) {
+  await service.changeProfileRole(
+    request.params.profileId,
+    request.body,
+    request.userContext,
+    getRouteTemplate(request),
+    request.id,
+  );
+  return reply.status(204).send();
+}
