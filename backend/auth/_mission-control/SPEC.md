@@ -1,5 +1,7 @@
 # Spec: Dynamic Permission in DB (Approach B)
 
+> 🗺️ ภาพรวมทุก phase และผลกระทบอนาคต: [ROADMAP](./ROADMAP.md)
+
 ## Assumptions I'm Making
 
 1. ระบบทั้งหมดใช้ฐานข้อมูล MongoDB ร่วมกันใน local development (`zero-platform-mongodb`).

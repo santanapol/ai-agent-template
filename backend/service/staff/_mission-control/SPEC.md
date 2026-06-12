@@ -1,5 +1,7 @@
 # Spec: Permission-based Authorization from Header (Dynamic Permission — Phase S)
 
+> 🗺️ ภาพรวมทุก phase: [ROADMAP](../../../auth/_mission-control/ROADMAP.md)
+>
 > ต่อจาก phase G ([`backend/gateway/_mission-control/SPEC.md`](../../../gateway/_mission-control/SPEC.md)) — phase นี้ทำให้ staff service เช็คสิทธิ์ราย action จาก `x-user-permissions` แทนตาราง role แบบ static
 > **Dependency แข็ง: ต้อง deploy หลัง gateway phase G เท่านั้น** (ไม่งั้น header ไม่มีวันมาถึง)
 

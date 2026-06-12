@@ -1,5 +1,7 @@
 # Spec: Forward `x-user-permissions` Header (Dynamic Permission — Phase G)
 
+> 🗺️ ภาพรวมทุก phase: [ROADMAP](../../auth/_mission-control/ROADMAP.md)
+>
 > ต่อจาก [`backend/auth/_mission-control/SPEC.md`](../../auth/_mission-control/SPEC.md) (merge แล้ว) — phase นี้ทำให้ gateway ส่งต่อเคลม `permissions` ไปยัง upstream services
 > ลำดับ rollout ของทั้งระบบ: **auth → gateway (phase นี้) → staff → frontend**
 

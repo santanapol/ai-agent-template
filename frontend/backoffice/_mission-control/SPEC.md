@@ -1,5 +1,7 @@
 # Spec: Permission-driven Menu & Route Guards (Dynamic Permission — Phase F)
 
+> 🗺️ ภาพรวมทุก phase: [ROADMAP](../../../backend/auth/_mission-control/ROADMAP.md)
+>
 > ใช้ความสามารถจาก auth phase ที่ merge แล้ว ([`backend/auth/_mission-control/SPEC.md`](../../../backend/auth/_mission-control/SPEC.md)): ฟิลด์ `permissions` ใน login/refresh response และ `GET /auth/me/menus`
 > **ทำขนานกับ phase G/S ได้** — ขึ้นกับ auth service อย่างเดียว ไม่ขึ้นกับ gateway/staff
 

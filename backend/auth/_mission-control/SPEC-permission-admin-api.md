@@ -1,5 +1,7 @@
 # Spec: Permission Admin API (Dynamic Permission — Phase A)
 
+> 🗺️ ภาพรวมทุก phase: [ROADMAP](./ROADMAP.md)
+>
 > ต่อยอดจาก [`SPEC.md`](./SPEC.md) (Dynamic Permission in DB — merge แล้ว) — phase นี้เพิ่ม API จัดการ `auth_menus` / `auth_role_permissions` แทนการแก้ผ่าน seed script/mongosh
 > **Phase สุดท้ายของชุด** — ควรทำหลัง G/S/F เพื่อให้หน้าจอจัดการสิทธิ์ใน Backoffice ใช้ guard จาก permission ของตัวเองได้
 > Open Questions ทั้งหมดถูกเคาะแล้ว (ดู Resolved Questions) — พร้อมเข้า `/plan`
