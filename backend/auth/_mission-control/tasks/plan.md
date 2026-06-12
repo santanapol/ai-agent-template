@@ -45,17 +45,20 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Description:** สร้างฟังก์ชัน match สิทธิ์กลางตาม contract ใน Spec — exact match และ wildcard `domain:*` (รูปแบบเดียว ไม่รองรับ `*` กลาง string) พร้อมฟังก์ชันช่วยตรวจรูปแบบ entry (เช่น `isWildcardEntry`, `matchesPermission(entry, actionKey)`, `anyPermissionMatches(entries, actionKey)`) เป็นจุดเดียวที่ logic นี้อยู่ในโปรเจกต์ `auth`
 
 **Acceptance criteria:**
+
 - [ ] `"profiles:create"` match `profiles:create` (exact) และไม่ match `profiles:list`
 - [ ] `"profiles:*"` match `profiles:create`/`profiles:list` แต่**ไม่** match `profile:create`, `invoice:read`, หรือ `profiles` เปล่า ๆ
 - [ ] ไม่รองรับ `*` เดี่ยวหรือ `*` กลาง string (คืน false / ถือเป็น entry ปกติที่ไม่ match)
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test` (ไฟล์ใหม่ `test/permission-match.test.js`)
 - [ ] Lint ผ่าน: `npm run lint`
 
 **Dependencies:** None
 
 **Files likely touched:**
+
 - `src/lib/permission-match.js`
 - `test/permission-match.test.js`
 
@@ -68,18 +71,21 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Description:** ลงทะเบียนคอลเลกชัน `auth_menus`, `auth_role_permissions` ใน `mongo-collections.js` และเพิ่มเมธอด query ดิบใน `AuthRepository`: `findRolePermissions(ou_id, role)` (query ตรงต่อหนึ่งคู่ — ไม่มี fallback logic ที่ชั้นนี้) และ `findActionMenusForOu(ouId)` / `findMenusByKeys(keys, ouId)` สำหรับ endpoint เมนู พร้อมเพิ่ม unique index `auth_menus.key`, `auth_role_permissions(ou_id, role)` และ index `auth_menus.parent_key` ใน `test/helpers/ensure-indexes.mjs`
 
 **Acceptance criteria:**
+
 - [ ] `AUTH_COLLECTIONS` มี `MENUS: 'auth_menus'`, `ROLE_PERMISSIONS: 'auth_role_permissions'` และอยู่ใน `AUTH_COLLECTION_NAME_LIST` (test reset ใช้)
 - [ ] `findRolePermissions(ouId, role)` คืนเอกสารหรือ `null` — รับ `ouId` เป็น `ObjectId | null` ได้ทั้งคู่
 - [ ] เมธอด query เมนูกรองด้วย `ou_id: { $in: [null, ouId] }` ตาม Spec
 - [ ] Index ใหม่ถูกสร้างใน test helper (unique ทำงานจริง — insert ซ้ำต้อง fail)
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test`
 - [ ] Lint ผ่าน: `npm run lint`
 
 **Dependencies:** None
 
 **Files likely touched:**
+
 - `src/config/mongo-collections.js`
 - `src/modules/auth/auth.repository.js`
 - `test/helpers/ensure-indexes.mjs`
@@ -89,6 +95,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 ---
 
 ### Checkpoint A: Foundation
+
 - [ ] `npm test` ผ่านทั้งหมด (ของเดิมไม่พัง)
 - [ ] `npm run lint && npm run format:check` ผ่าน
 
@@ -101,6 +108,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Description:** เพิ่มเมธอด `resolveEffectivePermissions({ ouId, role })` ใน `AuthService` ตาม Resolution Logic ของ Spec: query `(ou_id, role)` → ไม่พบจึง fallback `(null, role)` → ไม่พบทั้งคู่คืน `[]` (deny by default) คืนค่า `menu_keys` ดิบ (ไม่ expand wildcard) และ**ไม่**ดัก DB error (ปล่อยไหลเป็น 5xx)
 
 **Acceptance criteria:**
+
 - [ ] คู่ `(ou_id, role)` มีเอกสาร → ได้ `menu_keys` ของเอกสารนั้น (ไม่แตะ Global)
 - [ ] คู่ไม่มีเอกสาร แต่ `(null, role)` มี → ได้ Global Default; OU ที่ override role อื่นไม่กระทบ role นี้
 - [ ] เอกสาร `(ou_id, role)` ที่มี `menu_keys: []` → ได้ `[]` (override ปฏิเสธ — ไม่ fallback ต่อ)
@@ -108,12 +116,14 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 - [ ] Repository โยน error → error ทะลุออก (ทดสอบด้วย mock repo)
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test` (ไฟล์ใหม่ `test/permission-resolution.test.js` — unit test ด้วย mock repo)
 - [ ] Lint ผ่าน: `npm run lint`
 
 **Dependencies:** Task 2
 
 **Files likely touched:**
+
 - `src/modules/auth/auth.service.js`
 - `test/permission-resolution.test.js`
 
@@ -126,12 +136,14 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Description:** ต่อ resolution เข้าเส้นทางออก token: `issueAccess` เรียก `resolveEffectivePermissions` แล้วส่งเข้า `signAccessJwt` (เพิ่มพารามิเตอร์ `permissions` — ค่าดิบรวม wildcard), เพิ่ม `permissions` ใน response body ผ่าน `buildAccessTokenResponseBody`, เพิ่ม env `ACCESS_JWT_SOFT_LIMIT_BYTES` (default 4096) + warning log เมื่อ token ยาวเกิน, และ sync เอกสาร `openapi.yaml` (response schema ของ login/refresh)
 
 **Acceptance criteria:**
+
 - [ ] Login/Refresh สำเร็จ → body มี `permissions: string[]` และ JWT decode แล้วมีเคลม `permissions` ค่าตรงกับ `menu_keys` ใน DB (wildcard ไม่ถูก expand)
 - [ ] User ที่ไม่มี mapping → `permissions: []` ทั้ง body และเคลม (login ยังสำเร็จ)
 - [ ] Token ยาวเกิน soft limit → `log.warn` พร้อมจำนวน entries (ทดสอบด้วย mock logger); env default 4096 เมื่อไม่ตั้งค่า
 - [ ] `openapi.yaml` schema ของ `AccessTokenResponse` (ทั้ง login/refresh) มีฟิลด์ `permissions` พร้อม example
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test` (เพิ่มเคสใน `test/auth.integration.test.js` + unit ใน `test/env.test.js`)
 - [ ] OpenAPI ผ่าน: `npm run spec:lint && npm run spec:codes`
 - [ ] Lint ผ่าน: `npm run lint`
@@ -139,6 +151,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Dependencies:** Task 3
 
 **Files likely touched:**
+
 - `src/lib/jwt-access.js`
 - `src/config/env.js`
 - `src/modules/auth/auth.service.js`
@@ -150,6 +163,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 ---
 
 ### Checkpoint B: Token path ทำงานครบ
+
 - [ ] `npm test` ผ่านทั้งหมด — login → ได้ JWT มี `permissions` → refresh → เคลมยังถูกต้อง
 - [ ] `npm run spec:lint && npm run spec:codes` ผ่าน
 - [ ] **Human review** ก่อนเริ่ม Phase 3
@@ -160,15 +174,17 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 
 ## Task 5: Seed Script (`scripts/seed-permissions.js`)
 
-**Description:** สร้างสคริปต์ sync ข้อมูลสิทธิ์แบบ idempotent: validate ก่อนเขียนเสมอ (key ซ้ำ, parent ชี้ key ที่มีจริงและเป็น `type: "menu"`, ไม่มี cycle, ลึกไม่เกิน 3, action เป็น leaf, ทุก entry ใน `menu_keys` ต้อง match action ≥ 1 ตัว — wildcard match ศูนย์ = fail), upsert `auth_menus` ตาม `key` / `auth_role_permissions` ตาม `(ou_id, role)` พร้อม audit fields (`$setOnInsert` cr_*, `$set` upd_*), โหมด `--prune` ลบส่วนเกิน (แสดงรายการก่อนลบ), และสร้าง index ทั้งหมด ข้อมูลตั้งต้นแยกไฟล์ `scripts/seed-data/permissions.js` (โครง `staff` → `staff:profiles` → `profiles:*` 5 actions + role mappings ของ `branch_admin`, `platform_admin`, `support`, `staff` ตามสิทธิ์ static เดิมใน staff service)
+**Description:** สร้างสคริปต์ sync ข้อมูลสิทธิ์แบบ idempotent: validate ก่อนเขียนเสมอ (key ซ้ำ, parent ชี้ key ที่มีจริงและเป็น `type: "menu"`, ไม่มี cycle, ลึกไม่เกิน 3, action เป็น leaf, ทุก entry ใน `menu_keys` ต้อง match action ≥ 1 ตัว — wildcard match ศูนย์ = fail), upsert `auth_menus` ตาม `key` / `auth_role_permissions` ตาม `(ou_id, role)` พร้อม audit fields (`$setOnInsert` cr*\*, `$set` upd*_), โหมด `--prune` ลบส่วนเกิน (แสดงรายการก่อนลบ), และสร้าง index ทั้งหมด ข้อมูลตั้งต้นแยกไฟล์ `scripts/seed-data/permissions.js` (โครง `staff` → `staff:profiles` → `profiles:_`5 actions + role mappings ของ`branch_admin`, `platform_admin`, `support`, `staff` ตามสิทธิ์ static เดิมใน staff service)
 
 **Acceptance criteria:**
+
 - [ ] รันสองครั้งติดกัน → จำนวนเอกสารเท่าเดิม, `upd_date` อัปเดต, `cr_*` ไม่เปลี่ยน
 - [ ] ข้อมูลผิดทุกแบบ → exit code ≠ 0 พร้อมรายงานรายการที่ผิด: key ซ้ำ / parent ชี้ action / cycle / ลึกเกิน 3 / exact key ไม่มีจริง / wildcard match ศูนย์ / `menu_keys` อ้าง key ที่เป็น `type: "menu"`
 - [ ] `--prune`: ลบเมนูและ mapping ที่ไม่อยู่ในไฟล์ seed พร้อมแสดงรายการ; ไม่ส่ง flag → ไม่ลบ
 - [ ] Unique index ทั้งสองตัว + index `parent_key` ถูกสร้าง
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test` (ไฟล์ใหม่ `test/seed-permissions.test.js` — รัน logic ของสคริปต์กับ Mongo test server)
 - [ ] เช็คด้วยมือ: `node scripts/seed-permissions.js` กับ dev MongoDB แล้วตรวจเอกสารใน mongosh
 - [ ] Lint ผ่าน: `npm run lint`
@@ -176,6 +192,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Dependencies:** Task 1, Task 2
 
 **Files likely touched:**
+
 - `scripts/seed-permissions.js`
 - `scripts/seed-data/permissions.js`
 - `test/seed-permissions.test.js`
@@ -189,6 +206,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Description:** เพิ่ม endpoint ตอบโครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์: ใช้ `requireAccessBearer` + `assertAccessTokenGenMatches` (pattern เดียวกับ `/auth/me/password`), resolve permissions สดจาก DB, expand wildcard กับ `auth_menus` ผ่าน `permission-match`, เติมโหนดบรรพบุรุษ (`type: "menu"`) ครบถึง root, ตอบ flat list เรียงตาม (ระดับชั้น, `sort_order`) ใน `{ menus: [...] }`, rate limit 60 req/min, อัปเดต `openapi.yaml`
 
 **Acceptance criteria:**
+
 - [ ] ผู้ใช้มี `"profiles:*"` → ได้ทุก action ใต้ `profiles:` + โหนด `staff:profiles` + `staff` (ancestors ครบถึง root) เรียงตาม `sort_order`
 - [ ] ผู้ใช้ไม่มีสิทธิ์กิ่งใด → ไม่เห็นโหนด menu ของกิ่งนั้นเลย; ผู้ใช้ permissions `[]` → `{ menus: [] }`
 - [ ] เมนู OU-specific แสดงเฉพาะผู้ใช้ OU นั้น (กรอง `ou_id: { $in: [null, userOuId] }`)
@@ -196,6 +214,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 - [ ] `openapi.yaml` มี path `/auth/me/menus` + response schema + rate limit ระบุไว้
 
 **Verification:**
+
 - [ ] Tests ผ่าน: `npm test` (ไฟล์ใหม่ `test/me-menus.integration.test.js` — ตามแบบ `me-password.integration.test.js`)
 - [ ] OpenAPI ผ่าน: `npm run spec:lint && npm run spec:codes`
 - [ ] Lint ผ่าน: `npm run lint`
@@ -203,6 +222,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 **Dependencies:** Task 1, Task 3
 
 **Files likely touched:**
+
 - `src/modules/auth/auth.service.js`
 - `src/modules/auth/auth.controller.js`
 - `src/modules/auth/auth.route.js`
@@ -215,6 +235,7 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 ---
 
 ### Checkpoint C: Complete
+
 - [ ] `npm run ci` ผ่านครบ (lint + format + test + audit)
 - [ ] Flow ครบวงจรด้วยมือ: `node scripts/seed-permissions.js` → `npm run dev` → login ได้ `permissions` → เรียก `GET /auth/me/menus` ได้โครงเมนู → refresh เคลมถูกต้อง
 - [ ] Success Criteria ทั้ง 6 ข้อใน SPEC.md ผ่าน
@@ -225,13 +246,13 @@ Task 5 ⟂ Task 4/6 — ทำขนานกันได้หลัง Checkpo
 
 ## Risks and Mitigations
 
-| ความเสี่ยง | ผลกระทบ | วิธีรับมือ |
-|------|--------|------------|
-| Resolution เพิ่ม DB query ทุก login/refresh — ถ้า query ช้าจะหน่วงทุก token issue | Med | Index `(ou_id, role)` unique ครอบ query พอดี (covered lookup); ไม่ทำ cache รอบนี้ (premature) |
-| `permissions: []` ของ user เดิมที่ยังไม่ seed mapping — หลัง deploy ทุกคนเมนูหาย | High | ลำดับ rollout: รัน seed script **ก่อน** deploy โค้ดใหม่; integration test ครอบเคส user ไม่มี mapping ว่า login ไม่พัง |
-| เพิ่มฟิลด์ใน response body อาจชน frontend/gateway ที่ validate schema แบบ strict | Low | เป็น additive field; ตรวจ `routes.json`/gateway docs ตอน Checkpoint C ว่าไม่มี response validation ขวาง |
-| `withTransaction` + collection ใหม่บน MongoMemoryReplSet — resolution query ไม่อยู่ใน transaction ใด ไม่น่ามีปัญหา แต่ test แรกจะพิสูจน์ | Low | Task 4 รัน integration กับ replica set จริงตั้งแต่แรก (fail fast) |
-| Seed validation 7 กฎมี edge cases (cycle detection, depth) | Med | แยก validation เป็น pure functions ใน script ให้ unit test ได้ตรง ๆ; Task 5 มี test ต่อกฎครบทุกข้อ |
+| ความเสี่ยง                                                                                                                               | ผลกระทบ | วิธีรับมือ                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Resolution เพิ่ม DB query ทุก login/refresh — ถ้า query ช้าจะหน่วงทุก token issue                                                        | Med     | Index `(ou_id, role)` unique ครอบ query พอดี (covered lookup); ไม่ทำ cache รอบนี้ (premature)                         |
+| `permissions: []` ของ user เดิมที่ยังไม่ seed mapping — หลัง deploy ทุกคนเมนูหาย                                                         | High    | ลำดับ rollout: รัน seed script **ก่อน** deploy โค้ดใหม่; integration test ครอบเคส user ไม่มี mapping ว่า login ไม่พัง |
+| เพิ่มฟิลด์ใน response body อาจชน frontend/gateway ที่ validate schema แบบ strict                                                         | Low     | เป็น additive field; ตรวจ `routes.json`/gateway docs ตอน Checkpoint C ว่าไม่มี response validation ขวาง               |
+| `withTransaction` + collection ใหม่บน MongoMemoryReplSet — resolution query ไม่อยู่ใน transaction ใด ไม่น่ามีปัญหา แต่ test แรกจะพิสูจน์ | Low     | Task 4 รัน integration กับ replica set จริงตั้งแต่แรก (fail fast)                                                     |
+| Seed validation 7 กฎมี edge cases (cycle detection, depth)                                                                               | Med     | แยก validation เป็น pure functions ใน script ให้ unit test ได้ตรง ๆ; Task 5 มี test ต่อกฎครบทุกข้อ                    |
 
 ## Open Questions
 

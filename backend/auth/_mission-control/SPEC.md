@@ -1,6 +1,7 @@
 # Spec: Dynamic Permission in DB (Approach B)
 
 ## Assumptions I'm Making
+
 1. ระบบทั้งหมดใช้ฐานข้อมูล MongoDB ร่วมกันใน local development (`zero-platform-mongodb`).
 2. Gateway มีหน้าที่เพียง Verify JWT และส่งต่อ (Forward) ข้อมูลไปยัง Upstream Service ผ่าน HTTP headers โดยจะแกะเคลม `permissions` ใน JWT แล้วแปลงเป็น header `x-user-permissions` ส่งต่อไปให้ `staff` service **แบบไม่ expand wildcard** (ส่งต่อค่าตามเคลมตรง ๆ — ผู้บริโภคปลายทางเป็นคน match ตาม "Permission Matching Contract")
 3. หน้าบ้าน (Frontend Backoffice) นำฟิลด์ `permissions` จาก Response Body ตอน Login ไปบันทึกใน State/Context ได้เลย ส่วนโครงเมนูสำหรับ render UI ดึงจาก Endpoint `GET /auth/me/menus` (ตอบเป็น flat list พร้อม `parent_key` — frontend เป็นผู้ประกอบ tree เอง รวมถึง icon/route ที่เป็นเรื่องของ frontend ล้วน ๆ)
@@ -9,13 +10,16 @@
 ---
 
 ## Objective
+
 ขยายความสามารถของระบบ `auth` (Authentication Service) ให้รองรับการจัดการสิทธิ์การเข้าถึงเมนูและ API Actions แบบไดนามิกผ่านฐานข้อมูล (Dynamic Permission in DB - Approach B) แทนการใช้ตารางสิทธิ์แบบ Static ใน Memory ของแต่ละ Service
 
 โดยเมื่อผู้ใช้ทำการ Login หรือ Refresh Token ตัว `auth` service จะดึงรายการสิทธิ์ (`menu_keys`) ที่ผูกไว้กับบทบาท (`role`) และองค์กร (`ou_id`) ของผู้ใช้คนนั้นขึ้นมาจาก MongoDB แล้วนำไป:
+
 1. ฝังเข้าไปใน **Access JWT Payload** (ภายใต้เคลม `permissions`) เพื่อให้ Gateway ถอดรหัสและส่งต่อไปยัง Upstream Services
 2. แนบไปใน **HTTP Response Body** ของ Endpoint `/auth/login` และ `/auth/refresh` เพื่อให้ Frontend Backoffice นำไปซ่อน/แสดงเมนูและปุ่มต่าง ๆ ได้ทันที
 
 ดีไซน์รอบนี้รองรับโจทย์อนาคต 3 เรื่องตั้งแต่ต้น:
+
 1. **เพิ่ม/ลดเมนูแบบ data-driven** — `auth_menus` เป็น**ผังเมนูกลาง (Central Menu Registry)** แหล่งความจริงหนึ่งเดียวว่าระบบมีเมนู/Action key อะไรบ้าง และ seed script ทำหน้าที่ sync เต็มรูปแบบ (upsert + prune)
 2. **โครงเมนูหลายระดับ (สูงสุด 3 ระดับ)** — `auth_menus` เก็บลำดับชั้นผ่าน `parent_key` + `sort_order` + `type` และมี Endpoint **`GET /auth/me/menus`** ให้ Frontend ดึงโครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์
 3. **คุมขนาด JWT เมื่อเมนูโตขึ้น** — รองรับ **wildcard permission** (`domain:*`) ที่เก็บและส่งต่อแบบไม่ expand พร้อม soft-limit ขนาด token
@@ -23,6 +27,7 @@
 ---
 
 ## Tech Stack
+
 - **Runtime**: Node.js (version >=24 <25)
 - **Framework**: Fastify (v5.1.0)
 - **Database**: MongoDB (v8.x / Docker image mongo:8)
@@ -31,6 +36,7 @@
 ---
 
 ## Commands
+
 - **Dev**: `npm run dev` (จากโฟลเดอร์ `backend/auth`)
 - **Test**: `npm test`
 - **Lint**: `npm run lint`
@@ -41,6 +47,7 @@
 ---
 
 ## Project Structure
+
 ```
 backend/auth/
   _mission-control/
@@ -69,6 +76,7 @@ backend/auth/
 ### MongoDB Schema
 
 #### 1. คอลเลกชัน `auth_menus` (ผังเมนูกลาง — เก็บโครงเมนู/การกระทำทั้งหมดในระบบ)
+
 ```javascript
 {
   _id: ObjectId,
@@ -86,9 +94,11 @@ backend/auth/
   upd_prog: "scripts/seed-permissions.js"
 }
 ```
+
 **Index**: unique ที่ `key`, ธรรมดาที่ `parent_key`
 
 ตัวอย่างโครง 3 ระดับ:
+
 ```javascript
 { key: "staff",            label: "จัดการพนักงาน",    type: "menu",   parent_key: null,    sort_order: 10 }
 { key: "staff:profiles",   label: "โปรไฟล์",          type: "menu",   parent_key: "staff", sort_order: 10 }
@@ -97,6 +107,7 @@ backend/auth/
 ```
 
 **กฎของลำดับชั้น (Hierarchy Rules)**:
+
 - ความลึกรวมไม่เกิน **3 ระดับ** (root → ลูก → หลาน) — บังคับโดย seed script
 - `type: "action"` ต้องเป็น **leaf เสมอ** (ห้ามมีโหนดอื่นชี้ `parent_key` มาที่ action)
 - `parent_key` (ถ้าไม่ null) ต้องชี้ไปยัง key ที่มีอยู่จริงและเป็น `type: "menu"` เท่านั้น และห้ามมี cycle
@@ -106,6 +117,7 @@ backend/auth/
 > `auth_menus` คือ Registry กลาง: ทุก key ที่ปรากฏใน `auth_role_permissions.menu_keys` **ต้อง match กับ action ที่มีอยู่จริง**ในคอลเลกชันนี้ (บังคับโดย seed script — ดู "Seed Script Behavior")
 
 #### 2. คอลเลกชัน `auth_role_permissions` (จับคู่ Role กับสิทธิ์เมนู)
+
 ```javascript
 {
   _id: ObjectId,
@@ -123,12 +135,15 @@ backend/auth/
   upd_prog: "scripts/seed-permissions.js"
 }
 ```
+
 **Index**: unique compound ที่ `(ou_id, role)` — ป้องกันเอกสารซ้ำต่อคู่ OU/Role
 
 > **Tenant scoping (จงใจ deviate จาก standard 12):** ทั้งสองคอลเลกชัน scope ด้วย `ou_id` อย่างเดียว ไม่มี `branch_id` เพราะสิทธิ์เป็นข้อมูลระดับ OU โดยดีไซน์ — บันทึกไว้เพื่อกัน reviewer ทักเรื่องกฎ query ต้องมี `branch_id`
 
 ### Permission Matching Contract (สัญญากลางของทั้งระบบ)
+
 สิทธิ์หนึ่งรายการ (`entry`) ถือว่าครอบคลุม action key (`k`) เมื่อ:
+
 1. **Exact**: `entry === k` เช่น `"profiles:create"` ครอบคลุม `profiles:create`
 2. **Wildcard**: `entry` ลงท้ายด้วย `:*` และ `k` ขึ้นต้นด้วย prefix เดียวกัน เช่น `"profiles:*"` ครอบคลุม `profiles:create`, `profiles:list` (wildcard มีรูปแบบเดียวคือ `domain:*` — ไม่รองรับ `*` กลาง string หรือ `*` เดี่ยว)
 
@@ -137,6 +152,7 @@ backend/auth/
 **ค่าในเคลม `permissions` และ header `x-user-permissions` เก็บ/ส่งต่อตามที่อยู่ใน `menu_keys` แบบไม่ expand** — นี่คือกลไกคุมขนาด JWT: role ที่มีสิทธิ์ทั้ง domain ใช้ 1 entry (`"profiles:*"`) แทนการ list ทุก action
 
 ### Permission Resolution Logic
+
 การดึงสิทธิ์ทำที่ระดับคู่ `(ou_id, role)` เสมอ:
 
 1. Query `{ ou_id: <ou_id ของ user>, role: <role ของ user> }` ใน `auth_role_permissions`
@@ -144,13 +160,16 @@ backend/auth/
 3. ถ้าไม่พบทั้งสองระดับ ให้คืน `[]` (Deny by Default)
 
 หมายเหตุสำคัญ:
+
 - Fallback ตัดสิน**ต่อคู่ `(ou_id, role)`** ไม่ใช่ต่อ OU — OU ที่ override สิทธิ์ของ role หนึ่งไว้ จะไม่กระทบ role อื่นใน OU เดียวกัน (role อื่นยังได้ Global Default ตามปกติ)
 - กรณีต้องการ "ห้าม role นี้ใน OU นี้โดยสิ้นเชิง" ให้ insert เอกสาร `(ou_id, role)` ที่มี `menu_keys: []` อย่างชัดเจน — ห้ามอาศัยพฤติกรรม Fallback
 - ค่าที่ resolve ได้คือ `menu_keys` ดิบ (exact + wildcard ปะปนกันได้) — ไม่ expand ณ จุดนี้
 - **กรณี Query ผิดพลาด (DB error)** ให้ปล่อย error ออกไปตามทางปกติ (Login/Refresh ล้มเหลวเป็น 5xx) — **ห้าม**ตีความ error เป็น `[]` เพราะจะได้ token ที่ดู valid แต่ใช้งานอะไรไม่ได้แบบเงียบ ๆ ("หาไม่เจอ" = คำตอบจาก DB, "query พัง" = เราไม่รู้คำตอบ)
 
 ### JWT Signing Payload
+
 ในไฟล์ `lib/jwt-access.js` (เรียกผ่าน `auth.service.js`), เราจะแนบเคลม `permissions` เพิ่มเข้าไป:
+
 ```javascript
 // Payload ของ JWT — permissions เก็บค่าดิบจาก menu_keys (ไม่ expand wildcard)
 {
@@ -171,11 +190,13 @@ backend/auth/
 **JWT Size Guard**: หลัง sign token ใน `signAccessJwt` ให้วัดความยาว token — หากเกิน soft limit (env `ACCESS_JWT_SOFT_LIMIT_BYTES`, default `4096`) ให้ log warning พร้อมจำนวน permissions entries เพื่อให้ ops เห็นแนวโน้มก่อนชนเพดาน header ของ proxy (~8KB) การแก้ที่ถูกคือยุบสิทธิ์เป็น wildcard ฝั่งข้อมูล ไม่ใช่ขยาย limit
 
 ### Permission Staleness (Design Decision)
+
 สิทธิ์ใน Access JWT จะ stale ได้สูงสุดเท่าอายุของ access token (`ACCESS_TOKEN_TTL_SECONDS`) — การแก้ไข `auth_role_permissions` จะมีผลเมื่อผู้ใช้ Refresh Token ครั้งถัดไป **ยอมรับ trade-off นี้** เพราะ access token อายุสั้นโดยออกแบบ
 
 กรณี**ลดสิทธิ์เร่งด่วน** (เช่น ถอดสิทธิ์พนักงานทันที) ให้ใช้กลไกที่มีอยู่เดิมคือ `revokeSessionsByUser` (bump `access_token_gen`) เพื่อบังคับให้ token เก่าใช้ไม่ได้ทันที — ไม่ต้องสร้างกลไกใหม่
 
 ### Endpoint ใหม่: `GET /auth/me/menus`
+
 ให้ Frontend Backoffice ดึงโครงเมนูที่ผู้ใช้คนปัจจุบันมีสิทธิ์ สำหรับ render เมนูหลายระดับใน UI
 
 - **Auth**: ต้องส่ง `Authorization: Bearer <access JWT>` — ใช้ `requireAccessBearer` (preHandler เดิม pattern เดียวกับ `POST /auth/me/password`) และตรวจ `token_gen` ผ่าน `assertAccessTokenGenMatches` ก่อนตอบ
@@ -186,20 +207,35 @@ backend/auth/
   4. ตอบเป็น **flat list** เรียงตาม (ระดับชั้น, `sort_order`) — frontend ประกอบ tree จาก `parent_key` เอง
   5. ตอบเฉพาะโหนดที่เกี่ยวกับสิทธิ์ของผู้ใช้เท่านั้น — ไม่เปิดเผยผังเมนูทั้งระบบให้ผู้ใช้ทั่วไป
 - **Response `200`**:
+
 ```javascript
 {
   menus: [
-    { key: "staff",           label: "จัดการพนักงาน",     type: "menu",   parent_key: null,             sort_order: 10 },
-    { key: "staff:profiles",  label: "โปรไฟล์",           type: "menu",   parent_key: "staff",          sort_order: 10 },
-    { key: "profiles:list",   label: "รายชื่อพนักงาน",     type: "action", parent_key: "staff:profiles", sort_order: 10 },
-    { key: "profiles:create", label: "สร้างโปรไฟล์พนักงาน", type: "action", parent_key: "staff:profiles", sort_order: 20 }
+    { key: 'staff', label: 'จัดการพนักงาน', type: 'menu', parent_key: null, sort_order: 10 },
+    { key: 'staff:profiles', label: 'โปรไฟล์', type: 'menu', parent_key: 'staff', sort_order: 10 },
+    {
+      key: 'profiles:list',
+      label: 'รายชื่อพนักงาน',
+      type: 'action',
+      parent_key: 'staff:profiles',
+      sort_order: 10
+    },
+    {
+      key: 'profiles:create',
+      label: 'สร้างโปรไฟล์พนักงาน',
+      type: 'action',
+      parent_key: 'staff:profiles',
+      sort_order: 20
+    }
   ]
 }
 ```
+
 - **Error**: `401` เมื่อ token หาย/ผิด/`token_gen` ไม่ตรง (รูปแบบ RFC 7807 ตามมาตรฐานเดิมของ service — ใช้ code `TOKEN_REFRESH_REJECTED` ที่ลงทะเบียนใน `codes.yaml` อยู่แล้ว ไม่เพิ่ม code ใหม่)
 - **Rate limit**: 60 requests / 1 minute ต่อ IP (ระดับเดียวกับ logout)
 
 ### Seed Script Behavior (`scripts/seed-permissions.js`)
+
 สคริปต์ต้องเป็น **idempotent** — รันซ้ำกี่ครั้งก็ได้ผลลัพธ์เหมือนเดิม และเป็นเครื่องมือจัดการข้อมูลสิทธิ์หลักจนกว่าจะมี Admin API:
 
 1. **Validate ก่อนเขียนเสมอ** (fail ทั้งสคริปต์ถ้าผิดแม้ข้อเดียว พร้อมรายงานรายการที่ผิด):
@@ -215,6 +251,7 @@ backend/auth/
 ---
 
 ## Testing Strategy
+
 1. **Unit Test (`auth.service.test.js` หรือสร้างไฟล์ทดสอบใหม่)**:
    - ทดสอบจำลองการดึงสิทธิ์จาก Repository โดยส่ง Role และ OU ต่าง ๆ เข้าไป แล้วเช็คว่าได้รับ Permissions ตรงตามที่กำหนด
    - ทดสอบ Fallback: คู่ `(ou_id, role)` ไม่มีเอกสารเฉพาะ → ได้สิทธิ์จากเอกสาร `ou_id: null` ของ role เดียวกัน
@@ -239,6 +276,7 @@ backend/auth/
 ---
 
 ## Boundaries
+
 - **Always**:
   - เมื่อผู้ใช้ Login ผ่าน ต้องเช็คสิทธิ์ในคอลเลกชัน `auth_role_permissions` เสมอ ตาม Permission Resolution Logic
   - หากหาข้อมูลสิทธิ์ไม่เจอ (ทั้งระดับ OU และ Global) ให้ส่งค่ากลับเป็นอาเรย์ว่าง `[]` เสมอ (Deny by Default)
@@ -259,6 +297,7 @@ backend/auth/
 ---
 
 ## Out of Scope (Phase นี้)
+
 - **Admin CRUD API** สำหรับจัดการ `auth_menus` / `auth_role_permissions` — ช่วงแรกแก้ไขข้อมูลผ่าน seed script (ซึ่ง sync ได้เต็มรูปแบบด้วย `--prune`) หรือ mongosh โดยตรง; API จัดการสิทธิ์ (พร้อมคำถามเรื่องผู้มีสิทธิ์แก้, audit, validation) แยกเป็น Spec ถัดไป
 - **การแก้ไข Gateway** ให้แกะเคลม `permissions` → header `x-user-permissions` และ **การแก้ไข `staff` service** ให้เช็คสิทธิ์จาก header — เป็นงานคนละ service (ดู Assumption ข้อ 2) แต่ต้อง implement ตาม Permission Matching Contract ที่กำหนดใน Spec นี้
 - **การ bump `token_gen` อัตโนมัติเมื่อแก้สิทธิ์** — ใช้ `revokeSessionsByUser` ที่มีอยู่แล้วแบบ manual สำหรับเคสเร่งด่วน
@@ -267,6 +306,7 @@ backend/auth/
 ---
 
 ## Success Criteria
+
 1. รันสคริปต์ `node scripts/seed-permissions.js` แล้วพบข้อมูลในคอลเลกชัน `auth_menus` (พร้อมโครง `parent_key`/`sort_order`/`type`) และ `auth_role_permissions` บน MongoDB ครบถ้วน พร้อม unique index ที่ `auth_menus.key` และ `auth_role_permissions(ou_id, role)` — รันซ้ำได้โดยไม่เกิดข้อมูลซ้ำ และ `--prune` ลบส่วนเกินได้ถูกต้อง
 2. Seed script ปฏิเสธข้อมูลผิดทุกแบบ: key ซ้ำ, โครงลึกเกิน 3 ระดับ, parent ชี้ action, cycle, `menu_keys` ที่ไม่ match action ใด
 3. เมื่อเรียก API Login หรือ API Refresh สำเร็จ จะมีออปเจกต์ `permissions` (อาเรย์ของสตริง — ค่าดิบรวม wildcard) ส่งกลับมาใน JSON Body (อัปเดต response schema ใน `auth.validator.js` และเอกสาร OpenAPI ให้ตรงกัน)
@@ -277,6 +317,7 @@ backend/auth/
 ---
 
 ## Resolved Questions
+
 1. **Default Global Tenant Mapping** — ตัดสินใจใช้ `ou_id: null` เป็น Global Default ตามข้อเสนอของมีนา โดย Fallback ตัดสินที่ระดับคู่ `(ou_id, role)`: ค้นด้วย `(ou_id ของ user, role)` ก่อน ไม่พบจึง Fallback ไป `(null, role)` — รายละเอียดและเหตุผลอยู่ในหัวข้อ "Permission Resolution Logic"
 2. **เมนูหลายระดับ** — ใช้ adjacency list (`parent_key` + `sort_order` + `type`) ใน `auth_menus` จำกัด 3 ระดับ; โครงสร้างอยู่ในข้อมูล (`parent_key`) ไม่อยู่ใน identifier (`key`) เพื่อให้ย้ายเมนูได้โดยไม่ break สิทธิ์ — แทนที่ฟิลด์ `group` เดิม (โหนด root `type: "menu"` ทำหน้าที่จัดกลุ่มแทน)
 3. **ขนาด JWT เมื่อเมนูโต** — ใช้ wildcard `domain:*` ใน `menu_keys` เก็บและส่งต่อแบบไม่ expand ตาม Permission Matching Contract + soft-limit warning ที่ `signAccessJwt`; การ expand เกิดที่เดียวคือ `/auth/me/menus`
