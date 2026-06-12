@@ -247,6 +247,7 @@ paths:
                     access_token: '<access-jwt-placeholder>'
                     token_type: Bearer
                     expires_in: 900
+                    permissions: ['profiles:*', 'invoice:read']
                     refresh_token: '<opaque-refresh-placeholder>'
                 browserNoRefreshField:
                   summary: Browser — refresh only in HttpOnly cookie (no `refresh_token` field)
@@ -254,6 +255,7 @@ paths:
                     access_token: '<access-jwt-placeholder>'
                     token_type: Bearer
                     expires_in: 900
+                    permissions: ['profiles:*', 'invoice:read']
         '400':
           description: |
             Request validation failed (JSON shape, missing fields, invalid `client_kind`, etc.). RFC 7807 problem body.
@@ -378,6 +380,7 @@ paths:
                     access_token: '<access-jwt-placeholder>'
                     token_type: Bearer
                     expires_in: 900
+                    permissions: ['profiles:*', 'invoice:read']
                     refresh_token: '<new-opaque-refresh-placeholder>'
                 browserNoRefreshBody:
                   summary: Browser — access only; new refresh in Set-Cookie (not modeled here)
@@ -385,6 +388,7 @@ paths:
                     access_token: '<access-jwt-placeholder>'
                     token_type: Bearer
                     expires_in: 900
+                    permissions: ['profiles:*', 'invoice:read']
         '400':
           description: |
             Malformed or invalid refresh request body when present. RFC 7807 problem body.
@@ -1009,11 +1013,19 @@ components:
     LoginSuccess:
       type: object
       description: Successful login — O-05 style success (no outer envelope).
-      required: [access_token, token_type, expires_in]
+      required: [access_token, token_type, expires_in, permissions]
       properties:
         access_token:
           type: string
           description: RS256 JWT access token; send in the HTTP Authorization header as Bearer (gateway routes).
+        permissions:
+          type: array
+          items:
+            type: string
+          description: |
+            Effective permission entries for the user — raw values from role mapping:
+            exact action keys (e.g. `profiles:create`) or `domain:*` wildcards, never expanded.
+            Matching contract: exact equality, or `domain:*` covers any `domain:<action>`.
         refresh_token:
           type: string
           description: Opaque refresh token in JSON only for native client_kind (omitted for web cookie flow).
@@ -1039,10 +1051,18 @@ components:
     RefreshSuccess:
       type: object
       description: Successful rotation — same shape as login success.
-      required: [access_token, token_type, expires_in]
+      required: [access_token, token_type, expires_in, permissions]
       properties:
         access_token:
           type: string
+        permissions:
+          type: array
+          items:
+            type: string
+          description: |
+            Effective permission entries for the user — raw values from role mapping:
+            exact action keys (e.g. `profiles:create`) or `domain:*` wildcards, never expanded.
+            Matching contract: exact equality, or `domain:*` covers any `domain:<action>`.
         refresh_token:
           type: string
           description: New opaque refresh for native channel when returned in body.

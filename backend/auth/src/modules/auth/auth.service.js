@@ -35,12 +35,14 @@ function buildAccessTokenResponseBody(
   access_token,
   expiresInSeconds,
   refreshPlain,
-  omitRefreshToken
+  omitRefreshToken,
+  permissions
 ) {
   return {
     access_token,
     expires_in: expiresInSeconds,
     token_type: 'Bearer',
+    permissions,
     ...(omitRefreshToken ? {} : { refresh_token: refreshPlain })
   }
 }
@@ -148,9 +150,17 @@ export class AuthService {
     return Array.isArray(doc?.menu_keys) ? doc.menu_keys : []
   }
 
+  /**
+   * ออก access JWT พร้อมเคลม `permissions` (resolve สดจาก DB ทุกครั้งที่ออก token)
+   * @returns {Promise<{ access_token: string, permissions: string[] }>}
+   */
   async issueAccess(user) {
     const sub = user._id.toHexString()
-    return signAccessJwt({
+    const permissions = await this.resolveEffectivePermissions({
+      ouId: user.ou_id ?? null,
+      role: user.role
+    })
+    const access_token = await signAccessJwt({
       privateKey: this.privateKey,
       kid: this.env.JWT_KID,
       sub,
@@ -159,10 +169,25 @@ export class AuthService {
       ouId: user.ou_id?.toHexString?.() ?? String(user.ou_id),
       branchId: user.branch_id?.toHexString?.() ?? String(user.branch_id),
       tokenGen: coerceTokenGen(user),
+      permissions,
       issuer: this.env.JWT_ISSUER,
       audience: this.env.JWT_AUDIENCE,
       ttlSeconds: this.env.ACCESS_TOKEN_TTL_SECONDS
     })
+    this.warnIfAccessJwtOversize(access_token, permissions)
+    return { access_token, permissions }
+  }
+
+  /** Soft size guard — เกิน limit แค่เตือน (การแก้ที่ถูกคือยุบสิทธิ์เป็น wildcard ฝั่งข้อมูล) */
+  warnIfAccessJwtOversize(token, permissions) {
+    const limit = this.env.ACCESS_JWT_SOFT_LIMIT_BYTES ?? 4096
+    const bytes = Buffer.byteLength(token, 'utf8')
+    if (bytes > limit) {
+      this.log?.warn?.(
+        { bytes, limit, permission_entries: permissions.length },
+        'access JWT exceeds soft size limit'
+      )
+    }
   }
 
   async login({ username, password, client_kind, ip, request_id }) {
@@ -234,7 +259,7 @@ export class AuthService {
       undefined
     )
 
-    const access_token = await this.issueAccess(user)
+    const { access_token, permissions } = await this.issueAccess(user)
     const useCookie = client_kind !== 'native'
 
     await this.audit({
@@ -250,7 +275,8 @@ export class AuthService {
       access_token,
       this.env.ACCESS_TOKEN_TTL_SECONDS,
       refreshPlain,
-      useCookie
+      useCookie,
+      permissions
     )
 
     return {
@@ -389,7 +415,7 @@ export class AuthService {
       })
     }
 
-    const access_token = await this.issueAccess(u)
+    const { access_token, permissions } = await this.issueAccess(u)
 
     await this.audit({
       event_type: 'auth.refresh',
@@ -404,7 +430,8 @@ export class AuthService {
       access_token,
       this.env.ACCESS_TOKEN_TTL_SECONDS,
       newPlain,
-      useCookieChannel
+      useCookieChannel,
+      permissions
     )
 
     return {
