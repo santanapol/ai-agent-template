@@ -32,6 +32,9 @@
 ---
 
 ## Slice 4: AuthContext Enhancement
+- [ ] **T4.0** (CRITICAL) Verify Phase 1 response includes `permissions: string[]` field
+      └─ Check login/refresh response structure from auth service
+      └─ Add test assertion: `TokenResponse.permissions` is array of strings
 - [ ] **T4.1** Add `permissions: string[]` to AuthContextValue interface
 - [ ] **T4.2** Add `menus: MenuNode[]` to AuthContextValue interface
 - [ ] **T4.3** Add `menuLoadingError: boolean` to AuthContextValue interface
@@ -65,14 +68,27 @@
 - [ ] **T6.2** Remove `isStaffAdmin` role check from AdminLayout
 - [ ] **T6.3** Create `MENU_UI` mapping in AdminLayout (dashboard, staff, billing, reports, etc.)
 - [ ] **T6.4** Implement `buildMenuTree()` helper — flat list → nested tree structure
+      └─ Algorithm: Group by parent_key, build nested structure
+      └─ Example: [A(parent=null), B(parent=A)] → {key:A, children:[{key:B}]}
+      └─ Handle edge cases: orphaned parent_key (not in list), circular refs (caught by depth), unknown keys
 - [ ] **T6.5** Implement `sortMenuItems()` helper — sort by depth + sort_order
 - [ ] **T6.6** Get `menus` from AuthContext, render via buildMenuTree
 - [ ] **T6.7** Implement error state: if `menuLoadingError`, show minimal menu + toast
 - [ ] **T6.8** Filter unknown keys (not in MENU_UI) from rendering
 - [ ] **T6.9** Verify menu icons/routes render correctly
 - [ ] **T6.10** Verify selected item highlighting works
-- [ ] **T6.11** Lint & verify no errors
-- [ ] **T6.12** Manual testing: login → menus appear
+- [ ] **T6.11** Edge case testing (IMPORTANT):
+      └─ **T6.11.1** Orphaned parent_key (parent not in menus) — no crash
+      └─ **T6.11.2** Circular parent_key (A→B→A) — no infinite loop (depth limit catches)
+      └─ **T6.11.3** Unknown keys (not in MENU_UI) — silently skip, no crash
+      └─ **T6.11.4** Empty menus array — show minimal menu + toast
+      └─ **T6.11.5** Single root node (no children) — renders as standalone item
+- [ ] **T6.12** Lint & verify no errors
+- [ ] **T6.13** Button-level permission checks in StaffManagement
+      └─ Add: <Button disabled={!usePermission('profiles:create')}>Create Staff</Button>
+      └─ Add: <Button disabled={!usePermission('profiles:edit')}>Edit Staff</Button>
+      └─ (Explicit S3 compliance: "ปุ่มซ่อน-แสดง")
+- [ ] **T6.14** Manual testing: login → menus appear
 
 **Estimate:** 2 hours | **Owner:** Frontend dev | **Status:** 🔵 Depends on T4, T5
 
@@ -115,14 +131,22 @@
 ### Frontend Lead
 - Slices 1, 2, 3, 7 (types, contract, API, final integration)
 - Code review on slices 4, 5, 6
+- Verify T4.0 (permissions field from Phase 1)
 
 ### Frontend Dev(s)
 - Slices 4, 5, 6 (AuthContext, hook/guard, AdminLayout menu)
 - Pair with lead on integration tests
+- Focus on T6.11 edge cases (critical for robustness)
 
 ### QA / Testing
 - Checkpoint scenarios (manual + automated)
 - Regression test suite
+- Verify T6.11 edge cases pass
+
+### Note on Parallelization
+- T2 (Contract tests) and T3 (API client) can run in parallel after T1
+- Saves ~30 min if two devs available
+- Otherwise, sequential as planned (11-12 hours)
 
 ---
 

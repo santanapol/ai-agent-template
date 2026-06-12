@@ -736,10 +736,6 @@ function parseIfMatchHeader(ifMatchHeader) {
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
 export function assertAdminLifecycleAccess(profile, userContext, actionKey) {
-  assertPermission(userContext, actionKey, {
-    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
-  });
-
   if (profile.user_id === userContext.userId) {
     throw new HttpError(
       403,
