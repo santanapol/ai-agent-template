@@ -101,10 +101,10 @@ paths:
       tags: [profiles]
       summary: List or lookup staff profiles
       description: |
-        **List mode** (admin): omit `user_id` — supports `q`, `status`, `branch_id`, `sort`, pagination.
-        **`staff` role:** `403 INVALID_USER_CONTEXT`.
+        **List mode**: Omit `user_id` — supports `q`, `status`, `branch_id`, `sort`, pagination. Requires permission `profiles:list`.
 
-        **Lookup mode:** `user_id={hex24}` — returns a single profile object (no `pagination`).
+        **Lookup mode**: `user_id={hex24}` — returns a single profile object (no `pagination`). Requires permission `profiles:lookup` (except when looking up own profile).
+
         **Do not** combine `user_id` with list query parameters (`q`, `page`, …) → `400 INVALID_PARAM`.
       operationId: listOrLookupProfiles
       security:
@@ -140,7 +140,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "429":
@@ -154,6 +154,7 @@ paths:
       description: |
         Admin create. When `user_id` is omitted, **`username`** and **`password`** are required (provision via auth internal).
         When `user_id` is provided, link an existing auth user (no `username` / `password`).
+        Requires permission `profiles:create`.
       operationId: createProfile
       security:
         - GatewaySecret: []
@@ -187,7 +188,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "409":
           $ref: "#/components/responses/ProfileDuplicate"
         "415":
@@ -205,7 +206,7 @@ paths:
     get:
       tags: [profiles]
       summary: Get profile by id
-      description: Returns one profile when it exists within caller tenant scope.
+      description: Returns one profile when it exists within caller tenant scope. Requires permission `profiles:read` (except when retrieving own profile).
       operationId: getProfileById
       security:
         - GatewaySecret: []
@@ -231,7 +232,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "429":
@@ -245,6 +246,7 @@ paths:
       description: |
         Partial update with **`If-Match`** (weak ETag from `upd_date`).
         Own profile: `code` in body is ignored. **Do not** send `status` or `password` here.
+        Requires permission `profiles:edit` (except when updating own profile).
       operationId: updateProfile
       security:
         - GatewaySecret: []
@@ -280,7 +282,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "412":
@@ -300,7 +302,7 @@ paths:
     post:
       tags: [profiles]
       summary: Archive profile (soft delete)
-      description: Sets `status` to `archived` then revokes auth sessions. If revoke fails after persist → `503 STAFF_AUTH_REVOKE_PENDING`.
+      description: Sets `status` to `archived` then revokes auth sessions. If revoke fails after persist → `503 STAFF_AUTH_REVOKE_PENDING`. Requires permission `profiles:edit`.
       operationId: archiveProfile
       security:
         - GatewaySecret: []
@@ -327,7 +329,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "412":
@@ -347,7 +349,7 @@ paths:
     post:
       tags: [profiles]
       summary: Restore archived profile
-      description: Sets `status` to `active` with optimistic concurrency (`If-Match`).
+      description: Sets `status` to `active` with optimistic concurrency (`If-Match`). Requires permission `profiles:edit`.
       operationId: restoreProfile
       security:
         - GatewaySecret: []
@@ -374,7 +376,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "412":
@@ -395,6 +397,7 @@ paths:
       description: |
         Admin sets a new password for another user's profile (not own profile).
         Delegates to auth internal; optional session revoke (default `true`).
+        Requires permission `profiles:edit`.
       operationId: adminResetPassword
       security:
         - GatewaySecret: []
@@ -420,7 +423,7 @@ paths:
         "401":
           $ref: "#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "#/components/responses/InvalidUserContext"
+          $ref: "#/components/responses/PermissionDenied"
         "404":
           $ref: "#/components/responses/ProfileNotFound"
         "503":
@@ -839,8 +842,10 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
 
-    InvalidUserContext:
-      description: User or tenant context is invalid
+
+
+    PermissionDenied:
+      description: Permission denied (e.g. missing action permission)
       headers:
         x-request-id:
           $ref: "#/components/headers/XRequestId"
