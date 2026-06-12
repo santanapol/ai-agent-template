@@ -59,7 +59,7 @@ describe('invoicesApiClient', () => {
 
   it('updateInvoiceStatus calls PUT status endpoint', async () => {
     mockPut.mockResolvedValueOnce({ data: { success: true, data: {} } });
-    await updateInvoiceStatus('abc123', 'PAID');
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/invoices/abc123/status', { status: 'PAID' });
+    await updateInvoiceStatus('abc123', 'PAID', 'W/"abc"');
+    expect(mockPut).toHaveBeenCalledWith('/api/v1/invoices/abc123/status', { status: 'PAID' }, { headers: { 'If-Match': 'W/"abc"' } });
   });
 });

@@ -115,20 +115,31 @@ export function useInvoices() {
     }
   }, []);
 
-  const markAsPaid = useCallback(async (id: string) => {
+  const updateStatus = useCallback(async (id: string, nextStatus: 'PAID' | 'VOID', successMsg: string, errorMsg: string) => {
     setUpdatingStatus(true);
     try {
-      const res = await api.updateInvoiceStatus(id, 'PAID');
+      const etag = invoice?.upd_date ? `W/"${btoa(invoice.upd_date)}"` : undefined;
+      const res = await api.updateInvoiceStatus(id, nextStatus, etag);
       setInvoice(res.data);
-      message.success('Invoice marked as PAID');
+      message.success(successMsg);
       return true;
     } catch (error: unknown) {
-      message.error(apiErrorMessage(error, 'Failed to update invoice status'));
+      message.error(apiErrorMessage(error, errorMsg));
       return false;
     } finally {
       setUpdatingStatus(false);
     }
-  }, []);
+  }, [invoice]);
+
+  const markAsPaid = useCallback((id: string) =>
+    updateStatus(id, 'PAID', 'Invoice marked as PAID', 'Failed to update invoice status'),
+    [updateStatus]
+  );
+
+  const cancelInvoice = useCallback((id: string) =>
+    updateStatus(id, 'VOID', 'Invoice cancelled successfully', 'Failed to cancel invoice'),
+    [updateStatus]
+  );
 
   return {
     invoices,
@@ -150,5 +161,6 @@ export function useInvoices() {
     fetchInvoiceDetail,
     fetchTransactions,
     markAsPaid,
+    cancelInvoice,
   };
 }

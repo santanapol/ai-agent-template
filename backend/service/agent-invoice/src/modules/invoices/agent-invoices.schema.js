@@ -54,6 +54,6 @@ export const updateStatusBodySchema = {
   additionalProperties: false,
   required: ["status"],
   properties: {
-    status: { type: "string", enum: ["PAID"] },
+    status: { type: "string", enum: ["PAID", "VOID"] },
   },
 };
