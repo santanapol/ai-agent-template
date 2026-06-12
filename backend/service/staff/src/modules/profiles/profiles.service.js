@@ -13,6 +13,7 @@ import {
   normalizeUsername,
 } from "../../lib/utils/normalize.js";
 import * as repository from "./profiles.repository.js";
+import { anyPermissionMatches } from "../../lib/permission-match.js";
 
 export const ADMIN_ROLES = Object.freeze([
   "platform_admin",
@@ -37,29 +38,49 @@ export function isAdminRole(role) {
 }
 
 /**
+ * @param {{ userId: string, ouId: string, branchId: string, role: string, permissions: string[] }} userContext
+ * @param {string} actionKey
+ * @param {object} [options]
+ * @param {function} [options.legacyRoleCheck]
+ */
+export function assertPermission(userContext, actionKey, { legacyRoleCheck } = {}) {
+  if (anyPermissionMatches(userContext.permissions, actionKey)) {
+    return;
+  }
+
+  const env = getRuntimeEnv();
+  const mode = env.permissionMode || "dual";
+  if (mode === "dual" && legacyRoleCheck?.(userContext)) {
+    logger.warn(
+      { action_key: actionKey, role: userContext.role },
+      "permission dual-check fallback used",
+    );
+    return;
+  }
+
+  throw new HttpError(
+    403,
+    CODES.PERMISSION_DENIED,
+    `Requires permission: ${actionKey}`,
+  );
+}
+
+/**
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
 export function assertAdminRole(userContext) {
-  if (!isAdminRole(userContext.role)) {
-    throw new HttpError(
-      403,
-      CODES.INVALID_USER_CONTEXT,
-      "Create profile requires platform_admin or branch_admin role",
-    );
-  }
+  assertPermission(userContext, "profiles:create", {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
 }
 
 /**
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
 export function assertPlatformAdmin(userContext) {
-  if (userContext.role !== "platform_admin") {
-    throw new HttpError(
-      403,
-      CODES.INVALID_USER_CONTEXT,
-      "Only platform_admin may change user roles",
-    );
-  }
+  assertPermission(userContext, "roles:assign", {
+    legacyRoleCheck: (ctx) => ctx.role === "platform_admin",
+  });
 }
 
 /**
@@ -108,13 +129,9 @@ export function tenantContextFromAuthUser(authUser, actorUserId) {
  * @returns {{ ouId: string, branchId?: string }}
  */
 export function resolveListScope(userContext, query = {}) {
-  if (!isAdminRole(userContext.role)) {
-    throw new HttpError(
-      403,
-      CODES.INVALID_USER_CONTEXT,
-      "List access requires platform_admin or branch_admin role",
-    );
-  }
+  assertPermission(userContext, "profiles:list", {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
 
   const scope = { ouId: userContext.ouId };
 
@@ -152,13 +169,9 @@ export function resolveLookupScope(userContext, targetUserId) {
     };
   }
 
-  if (!isAdminRole(userContext.role)) {
-    throw new HttpError(
-      403,
-      CODES.INVALID_USER_CONTEXT,
-      "Lookup for another user requires admin role",
-    );
-  }
+  assertPermission(userContext, "profiles:lookup", {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
 
   if (userContext.role === "platform_admin" || userContext.role === "support") {
     return { ouId: userContext.ouId };
@@ -175,7 +188,7 @@ export function resolveLookupScope(userContext, targetUserId) {
  * @param {{ user_id: string, ou_id: string, branch_id: string }} profile
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export function assertProfileScope(profile, userContext) {
+export function assertProfileScope(profile, userContext, actionKey) {
   if (profile.user_id === userContext.userId) {
     if (
       profile.ou_id !== userContext.ouId ||
@@ -190,13 +203,9 @@ export function assertProfileScope(profile, userContext) {
     return;
   }
 
-  if (!isAdminRole(userContext.role)) {
-    throw new HttpError(
-      403,
-      CODES.INVALID_USER_CONTEXT,
-      "Insufficient role to access this profile",
-    );
-  }
+  assertPermission(userContext, actionKey, {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
 
   if (profile.ou_id !== userContext.ouId) {
     throw new HttpError(
@@ -270,7 +279,7 @@ export async function getProfileById(profileId, userContext) {
     );
   }
 
-  assertProfileScope(found.profile, userContext);
+  assertProfileScope(found.profile, userContext, "profiles:read");
   return found;
 }
 
@@ -290,7 +299,7 @@ export async function lookupProfileByUserId(targetUserId, userContext) {
     );
   }
 
-  assertProfileScope(found.profile, userContext);
+  assertProfileScope(found.profile, userContext, "profiles:read");
   return found;
 }
 
@@ -605,7 +614,7 @@ export async function patchProfile(
     );
   }
 
-  assertProfileScope(existing.profile, userContext);
+  assertProfileScope(existing.profile, userContext, "profiles:edit");
 
   const patchBody = { ...body };
   const isOwnProfile = existing.profile.user_id === userContext.userId;
@@ -722,8 +731,10 @@ function parseIfMatchHeader(ifMatchHeader) {
  * @param {{ user_id: string }} profile
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export function assertAdminLifecycleAccess(profile, userContext) {
-  assertAdminRole(userContext);
+export function assertAdminLifecycleAccess(profile, userContext, actionKey) {
+  assertPermission(userContext, actionKey, {
+    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+  });
 
   if (profile.user_id === userContext.userId) {
     throw new HttpError(
@@ -733,7 +744,7 @@ export function assertAdminLifecycleAccess(profile, userContext) {
     );
   }
 
-  assertProfileScope(profile, userContext);
+  assertProfileScope(profile, userContext, actionKey);
 }
 
 /**
@@ -763,7 +774,7 @@ async function transitionProfileStatus({
     );
   }
 
-  assertAdminLifecycleAccess(existing.profile, userContext);
+  assertAdminLifecycleAccess(existing.profile, userContext, "profiles:edit");
 
   if (existing.profile.status !== expectedStatus) {
     throw new HttpError(400, CODES.INVALID_PARAM, invalidTransitionMessage);
@@ -923,7 +934,7 @@ export async function resetProfilePassword(
     );
   }
 
-  assertAdminLifecycleAccess(existing.profile, userContext);
+  assertAdminLifecycleAccess(existing.profile, userContext, "profiles:edit");
 
   const env = getRuntimeEnv();
   const authClient = getAuthInternalClient(env);

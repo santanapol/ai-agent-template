@@ -236,7 +236,7 @@ if (!RUN) {
       assert.ok(audit);
     });
 
-    test("staff role archive returns 403 INVALID_USER_CONTEXT", async () => {
+    test("staff role archive returns 403 PERMISSION_DENIED", async () => {
       const res = await app.inject({
         method: "POST",
         url: `/api/v1/staff/profiles/${otherProfileId}/archive`,
@@ -247,7 +247,7 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 403);
-      assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
+      assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
     });
 
     test("archive requires If-Match and returns 428", async () => {
