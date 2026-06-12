@@ -14,13 +14,13 @@
 
 ## Phase 2: Core — เส้นทาง Token
 
-- [ ] **Task 3**: `resolveEffectivePermissions` ใน `AuthService` — fallback `(ou_id, role)` → `(null, role)` → `[]`, DB error ทะลุ + unit tests `(S)` — ต้องมี Task 2
-- [ ] **Task 4**: ฝัง `permissions` ใน JWT + response body login/refresh + `ACCESS_JWT_SOFT_LIMIT_BYTES` size guard + sync `openapi.yaml` + integration tests `(M)` — ต้องมี Task 3
+- [x] **Task 3**: `resolveEffectivePermissions` ใน `AuthService` — fallback `(ou_id, role)` → `(null, role)` → `[]`, DB error ทะลุ + unit tests `(S)` — commit `29fc772`
+- [x] **Task 4**: ฝัง `permissions` ใน JWT + response body login/refresh + `ACCESS_JWT_SOFT_LIMIT_BYTES` size guard + sync `openapi.yaml` + integration tests `(M)` — commit `3b4ffa2`
 
 ### Checkpoint B
 
-- [ ] `npm test` ผ่าน — login → JWT มี `permissions` → refresh เคลมถูกต้อง
-- [ ] `npm run spec:lint && npm run spec:codes` ผ่าน
+- [x] `npm test` ผ่าน (95/95) — login → JWT มี `permissions` → refresh เคลมถูกต้อง
+- [x] `npm run spec:lint && npm run spec:codes` ผ่าน
 - [ ] **Human review** ก่อนเริ่ม Phase 3
 
 ## Phase 3: Seed tooling + Menus endpoint (Task 5 ⟂ Task 6)
