@@ -11,7 +11,6 @@
 
 - **`loadEnv`:** trim `TZ` before validation (Windows CRLF on `.env.defaults`); set `process.env.TZ` to `UTC` after load.
 
-
 ## [0.2.4] - 2026-05-21
 
 ### Added
