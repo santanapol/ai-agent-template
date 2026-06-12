@@ -39,8 +39,8 @@ paths:
       summary: List or lookup profiles (via gateway)
       description: |
         Uses client Bearer JWT at gateway.
-        - List mode: omit `user_id` and use filters/pagination.
-        - Lookup mode: send `user_id` only (single object response).
+        - List mode: Omit `user_id` and use filters/pagination. Requires permission `profiles:list`.
+        - Lookup mode: Send `user_id` only (single object response). Requires permission `profiles:lookup` (except when looking up own profile).
         Mixing `user_id` with list params returns `400 INVALID_PARAM`.
       operationId: listOrLookupProfilesViaGateway
       security:
@@ -72,7 +72,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "429":
@@ -85,8 +85,9 @@ paths:
       summary: Create profile (via gateway)
       description: |
         Admin create endpoint.
-        - Link mode: provide `user_id`, do not send `username`/`password`.
-        - Provision mode: omit `user_id` and send `username` + `password`.
+        - Link mode: Provide `user_id`, do not send `username`/`password`.
+        - Provision mode: Omit `user_id` and send `username` + `password`.
+        Requires permission `profiles:create`.
       operationId: createProfileViaGateway
       security:
         - BearerJwt: []
@@ -115,7 +116,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "409":
           $ref: "./openapi.yaml#/components/responses/ProfileDuplicate"
         "415":
@@ -133,7 +134,7 @@ paths:
     get:
       tags: [profiles]
       summary: Get profile by id (via gateway)
-      description: Returns one profile by `profileId` when caller tenant scope is allowed.
+      description: Returns one profile by `profileId` when caller tenant scope is allowed. Requires permission `profiles:read` (except when retrieving own profile).
       operationId: getProfileByIdViaGateway
       security:
         - BearerJwt: []
@@ -154,7 +155,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "429":
@@ -165,7 +166,7 @@ paths:
     patch:
       tags: [profiles]
       summary: Update profile (via gateway)
-      description: Partial update with optimistic concurrency via `If-Match` (ETag).
+      description: Partial update with optimistic concurrency via `If-Match` (ETag). Requires permission `profiles:edit` (except when updating own profile).
       operationId: updateProfileViaGateway
       security:
         - BearerJwt: []
@@ -197,7 +198,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "412":
@@ -221,6 +222,7 @@ paths:
         Admin lifecycle action with `If-Match`.
         Persists archived status first, then revokes auth sessions; revoke failure returns
         `503 STAFF_AUTH_REVOKE_PENDING`.
+        Requires permission `profiles:edit`.
       operationId: archiveProfileViaGateway
       security:
         - BearerJwt: []
@@ -243,7 +245,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "412":
@@ -263,7 +265,7 @@ paths:
     post:
       tags: [profiles]
       summary: Restore profile (via gateway)
-      description: Admin lifecycle action to restore an archived profile back to active with `If-Match`.
+      description: Admin lifecycle action to restore an archived profile back to active with `If-Match`. Requires permission `profiles:edit`.
       operationId: restoreProfileViaGateway
       security:
         - BearerJwt: []
@@ -286,7 +288,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "412":
@@ -304,7 +306,7 @@ paths:
     post:
       tags: [profiles]
       summary: Admin reset password (via gateway)
-      description: Admin-only password reset for another profile; returns `204` on success.
+      description: Admin-only password reset for another profile; returns `204` on success. Requires permission `profiles:edit`.
       operationId: adminResetPasswordViaGateway
       security:
         - BearerJwt: []
@@ -325,7 +327,7 @@ paths:
         "401":
           $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
         "403":
-          $ref: "./openapi.yaml#/components/responses/InvalidUserContext"
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
         "404":
           $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
         "503":
