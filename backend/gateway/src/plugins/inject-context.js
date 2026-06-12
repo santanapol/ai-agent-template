@@ -4,7 +4,9 @@ import {
   assertValidUserIdHeader,
   normalizeRoleHeader,
   normalizeUserIdClaim,
-  normalizeTenantClaim
+  normalizeTenantClaim,
+  normalizePermissionsClaim,
+  assertValidPermissionsHeader
 } from '../lib/claims.js'
 
 /**
@@ -25,10 +27,26 @@ export default fp(
         return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED')
       }
 
+      const clientProvidedPermissionsCount = (request.raw.rawHeaders || []).reduce(
+        (count, name, idx) => {
+          return idx % 2 === 0 && String(name).toLowerCase() === 'x-user-permissions'
+            ? count + 1
+            : count
+        },
+        0
+      )
+
+      if (clientProvidedPermissionsCount > 1) {
+        return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED', {
+          detail: 'Duplicate header not allowed: x-user-permissions.'
+        })
+      }
+
       let userId
       let role
       let ouId
       let branchId
+      let permissions
       try {
         userId = normalizeUserIdClaim(payload[env.JWT_CLAIM_USER_ID])
         assertValidUserIdHeader(userId)
@@ -36,6 +54,8 @@ export default fp(
         assertValidRoleHeader(role)
         ouId = normalizeTenantClaim(payload[env.JWT_CLAIM_OU])
         branchId = normalizeTenantClaim(payload[env.JWT_CLAIM_BRANCH])
+        permissions = normalizePermissionsClaim(payload.permissions)
+        assertValidPermissionsHeader(permissions)
       } catch {
         return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
       }
@@ -60,6 +80,7 @@ export default fp(
         'x-user-branch': branchId,
         'x-user-id': userId,
         'x-user-role': role,
+        'x-user-permissions': permissions,
         'x-request-id': requestId
       }
       if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
