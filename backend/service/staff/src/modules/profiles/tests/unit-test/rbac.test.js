@@ -212,8 +212,7 @@ describe("profiles RBAC / scope", () => {
 
   test("assertProfileScope — staff cannot read another user profile", () => {
     assert.throws(
-      () =>
-        assertProfileScope(profileInBranchA1, staffUser, "profiles:read"),
+      () => assertProfileScope(profileInBranchA1, staffUser, "profiles:read"),
       (error) => error instanceof HttpError && error.status === 403,
     );
   });

@@ -1,0 +1,296 @@
+import { test, describe, before, after } from "node:test";
+import assert from "node:assert";
+import { ObjectId } from "mongodb";
+
+import { readEnv } from "../../../../config/env.js";
+import { STAFF_COLLECTIONS } from "../../../../config/mongo-collections.js";
+import { buildMeshHeaders } from "../../../../lib/test-helpers/mesh-headers.js";
+import CODES from "../../../../lib/error-codes.js";
+import { toObjectId } from "../../profiles.repository.js";
+import { setRuntimeEnv } from "../../../../config/runtime-env.js";
+
+const initialEnv = readEnv();
+const RUN = Boolean(initialEnv.mongoUri && initialEnv.mongoUri.trim());
+
+const ouId = "507f1f77bcf86cd799439011";
+const branchA1 = "507f1f77bcf86cd799439012";
+const staffUserId = "507f1f77bcf86cd799439013";
+
+const baseTestEnv = {
+  appName: "staff-service",
+  nodeEnv: "test",
+  port: 3101,
+  dbName: initialEnv.dbName || "auth_login",
+  mongoUri: initialEnv.mongoUri || "",
+  gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
+  authInternalBaseUrl: "http://127.0.0.1:3001",
+  authInternalServiceSecret: "internal-secret",
+  staffProvisionDefaultRole: "staff",
+  shutdownTimeoutMs: 5000,
+  bodyLimit: "1mb",
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  authRevokeMaxRetries: 3,
+  authRevokeBackoffMs: 200,
+  permissionMode: "dual",
+};
+
+if (!RUN) {
+  describe("Profiles Permissions Integration (skipped — no MONGODB_URI)", () => {
+    test("documented skip", () => {
+      assert.strictEqual(RUN, false);
+    });
+  });
+} else {
+  const { connectDatabase, closeDatabase, getDatabase } =
+    await import("../../../../config/database.js");
+  const { default: createApp } = await import("../../../../app.js");
+
+  describe("Profiles Permissions Integration", () => {
+    let app;
+    const suffix = Date.now();
+    const createdUserIds = [];
+    const createdProfileIds = [];
+
+    before(async () => {
+      await connectDatabase();
+      app = await createApp({ ...baseTestEnv });
+    });
+
+    after(async () => {
+      try {
+        const db = getDatabase();
+        if (createdProfileIds.length > 0) {
+          await db
+            .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+            .deleteMany({ _id: { $in: createdProfileIds } });
+        }
+        if (createdUserIds.length > 0) {
+          await db
+            .collection(STAFF_COLLECTIONS.USERS)
+            .deleteMany({ _id: { $in: createdUserIds } });
+        }
+      } finally {
+        await app?.close();
+        await closeDatabase();
+      }
+    });
+
+    describe("Dual Mode (Default)", () => {
+      before(() => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "dual" });
+      });
+
+      test("Dual mode: succeeds without permission header but with admin role", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 200);
+      });
+
+      test("Dual mode: fails with 403 PERMISSION_DENIED without permission header and non-admin role", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "staff",
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+        assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
+      });
+    });
+
+    describe("Enforce Mode", () => {
+      before(() => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+      });
+
+      after(() => {
+        // Reset back to dual
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "dual" });
+      });
+
+      test("Enforce mode: succeeds with profiles:list permission", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: { "x-user-permissions": "profiles:list" },
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 200);
+        assert.strictEqual(res.json().success, true);
+      });
+
+      test("Enforce mode: succeeds with profiles:* wildcard permission", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: { "x-user-permissions": "profiles:*" },
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 200);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED when permission mismatch", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "roles:assign" },
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+        assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED when no permission header is sent", async () => {
+        const res = await app.inject({
+          method: "GET",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+          }),
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+        assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
+      });
+    });
+
+    describe("Create Profile (POST /api/v1/staff/profiles)", () => {
+      let targetUserId;
+      let targetUserId2;
+      const now = new Date();
+
+      before(async () => {
+        const db = getDatabase();
+        targetUserId = new ObjectId();
+        createdUserIds.push(targetUserId);
+        await db.collection(STAFF_COLLECTIONS.USERS).insertOne({
+          _id: targetUserId,
+          ou_id: toObjectId(ouId),
+          branch_id: toObjectId(branchA1),
+          username: `permcreate1.${suffix}@test.invalid`,
+          password_hash: "hash",
+          role: "staff",
+          cr_by: staffUserId,
+          cr_date: now,
+          cr_prog: "test",
+          upd_by: staffUserId,
+          upd_date: now,
+          upd_prog: "test",
+        });
+
+        targetUserId2 = new ObjectId();
+        createdUserIds.push(targetUserId2);
+        await db.collection(STAFF_COLLECTIONS.USERS).insertOne({
+          _id: targetUserId2,
+          ou_id: toObjectId(ouId),
+          branch_id: toObjectId(branchA1),
+          username: `permcreate2.${suffix}@test.invalid`,
+          password_hash: "hash",
+          role: "staff",
+          cr_by: staffUserId,
+          cr_date: now,
+          cr_prog: "test",
+          upd_by: staffUserId,
+          upd_date: now,
+          upd_prog: "test",
+        });
+      });
+
+      test("Enforce mode: succeeds with profiles:create permission", async () => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: { "x-user-permissions": "profiles:create" },
+          }),
+          payload: {
+            user_id: targetUserId.toString(),
+            code: `P-C1-${suffix}`,
+            firstname: "Perm",
+            lastname: "Create1",
+            email: `p1.${suffix}@test.invalid`,
+            tel: "+66810000091",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 201);
+        const body = res.json();
+        assert.strictEqual(body.success, true);
+        if (body.data?.id) {
+          createdProfileIds.push(toObjectId(body.data.id));
+        }
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED when permission missing", async () => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+          payload: {
+            user_id: targetUserId2.toString(),
+            code: `P-C2-${suffix}`,
+            firstname: "Perm",
+            lastname: "Create2",
+            email: `p2.${suffix}@test.invalid`,
+            tel: "+66810000092",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+        assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
+      });
+
+      test("Dual mode: succeeds with admin role and no permissions", async () => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "dual" });
+
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+          }),
+          payload: {
+            user_id: targetUserId2.toString(),
+            code: `P-C2-${suffix}`,
+            firstname: "Perm",
+            lastname: "Create2",
+            email: `p2.${suffix}@test.invalid`,
+            tel: "+66810000092",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 201);
+        const body = res.json();
+        if (body.data?.id) {
+          createdProfileIds.push(toObjectId(body.data.id));
+        }
+      });
+    });
+  });
+}

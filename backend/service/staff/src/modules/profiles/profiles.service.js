@@ -43,7 +43,11 @@ export function isAdminRole(role) {
  * @param {object} [options]
  * @param {function} [options.legacyRoleCheck]
  */
-export function assertPermission(userContext, actionKey, { legacyRoleCheck } = {}) {
+export function assertPermission(
+  userContext,
+  actionKey,
+  { legacyRoleCheck } = {},
+) {
   if (anyPermissionMatches(userContext.permissions, actionKey)) {
     return;
   }

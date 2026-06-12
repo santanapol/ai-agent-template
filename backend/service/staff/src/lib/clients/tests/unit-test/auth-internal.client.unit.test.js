@@ -6,6 +6,9 @@ import { HttpError } from "../../../http-error.js";
 import {
   createAuthInternalClient,
   mapAuthProblemToHttpError,
+  setAuthInternalClientForTests,
+  resetAuthInternalClientForTests,
+  getAuthInternalClient,
 } from "../../auth-internal.client.js";
 
 describe("mapAuthProblemToHttpError", () => {
@@ -293,5 +296,151 @@ describe("createAuthInternalClient", () => {
         return true;
       },
     );
+  });
+
+  test("setUserRole succeeds on 204", async () => {
+    let capturedBody;
+    const httpClient = {
+      patch: async (_url, body) => {
+        capturedBody = body;
+        return { status: 204, data: null };
+      },
+    };
+
+    const client = createAuthInternalClient({
+      baseUrl: "http://auth.test",
+      serviceSecret: "secret",
+      defaultRole: "staff",
+      httpClient,
+    });
+
+    await client.setUserRole({
+      userId: "507f1f77bcf86cd799439099",
+      role: "branch_admin",
+      revokeSessions: true,
+      correlationId: "req-role-1",
+    });
+
+    assert.strictEqual(capturedBody.role, "branch_admin");
+    assert.strictEqual(capturedBody.revoke_sessions, true);
+    assert.strictEqual(capturedBody.correlation_id, "req-role-1");
+  });
+
+  test("setUserRole maps auth failure to SERVICE_UNAVAILABLE", async () => {
+    const httpClient = {
+      patch: async () => ({
+        status: 503,
+        data: { code: "AUTH_NOT_READY", detail: "down" },
+      }),
+    };
+
+    const client = createAuthInternalClient({
+      baseUrl: "http://auth.test",
+      serviceSecret: "secret",
+      defaultRole: "staff",
+      httpClient,
+    });
+
+    await assert.rejects(
+      () =>
+        client.setUserRole({
+          userId: "507f1f77bcf86cd799439099",
+          role: "platform_admin",
+        }),
+      (error) => {
+        assert.ok(error instanceof HttpError);
+        assert.strictEqual(error.status, 503);
+        assert.strictEqual(error.code, CODES.SERVICE_UNAVAILABLE);
+        return true;
+      },
+    );
+  });
+
+  test("deactivateUser returns true on 204", async () => {
+    const httpClient = {
+      post: async () => ({ status: 204, data: null }),
+    };
+
+    const client = createAuthInternalClient({
+      baseUrl: "http://auth.test",
+      serviceSecret: "secret",
+      defaultRole: "staff",
+      httpClient,
+    });
+
+    const ok = await client.deactivateUser("507f1f77bcf86cd799439099");
+    assert.strictEqual(ok, true);
+  });
+
+  test("deactivateUser returns false on exception", async () => {
+    const httpClient = {
+      post: async () => {
+        throw new Error("failure");
+      },
+    };
+
+    const client = createAuthInternalClient({
+      baseUrl: "http://auth.test",
+      serviceSecret: "secret",
+      defaultRole: "staff",
+      httpClient,
+    });
+
+    const ok = await client.deactivateUser("507f1f77bcf86cd799439099");
+    assert.strictEqual(ok, false);
+  });
+
+  test("setUserRole handles axios connection error", async () => {
+    const axiosError = new Error("Connection failed");
+    axiosError.isAxiosError = true;
+    axiosError.response = {
+      status: 502,
+      data: { code: "BAD_GATEWAY" },
+    };
+
+    const httpClient = {
+      patch: async () => {
+        throw axiosError;
+      },
+    };
+
+    const client = createAuthInternalClient({
+      baseUrl: "http://auth.test",
+      serviceSecret: "secret",
+      defaultRole: "staff",
+      httpClient,
+    });
+
+    await assert.rejects(
+      () =>
+        client.setUserRole({
+          userId: "507f1f77bcf86cd799439099",
+          role: "platform_admin",
+        }),
+      (error) => {
+        assert.ok(error instanceof HttpError);
+        assert.strictEqual(error.status, 503);
+        assert.strictEqual(error.code, CODES.SERVICE_UNAVAILABLE);
+        return true;
+      },
+    );
+  });
+
+  test("getAuthInternalClient handles test override and reset", () => {
+    const mockClient = {};
+    setAuthInternalClientForTests(mockClient);
+
+    const client = getAuthInternalClient({});
+    assert.strictEqual(client, mockClient);
+
+    resetAuthInternalClientForTests();
+    const client2 = getAuthInternalClient({
+      authInternalBaseUrl: "http://auth.test",
+      authInternalServiceSecret: "secret",
+      staffProvisionDefaultRole: "staff",
+      authRevokeMaxRetries: 3,
+      authRevokeBackoffMs: 200,
+    });
+    assert.ok(client2);
   });
 });

@@ -24,7 +24,7 @@ async function createTestApp() {
   await fastify.register(duplicateHeaderGuard);
   await fastify.register(userContextGuard);
 
-  fastify.get("/test-context", async (request, reply) => {
+  fastify.get("/test-context", async (request) => {
     return {
       userContext: request.userContext,
     };
