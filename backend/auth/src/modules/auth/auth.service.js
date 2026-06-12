@@ -218,8 +218,12 @@ export class AuthService {
   }
 
   collectPendingParentKeys(menus, byKey) {
-    const parentKeys = menus.map((m) => m.parent_key)
-    return [...new Set(parentKeys)].filter((key) => key !== null && !byKey.has(key))
+    const pending = new Set()
+    for (const menu of menus) {
+      const key = menu.parent_key
+      if (key !== null && !byKey.has(key)) pending.add(key)
+    }
+    return [...pending]
   }
 
   /**
