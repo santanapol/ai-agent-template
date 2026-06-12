@@ -100,6 +100,19 @@ export function createAuthController({ service, env, types }) {
       return reply.code(result.status).send()
     },
 
+    async getMyMenus(request, reply) {
+      const result = await service.getMyMenus({
+        user_id_hex: request.accessSub,
+        access_token_gen_claim: request.accessTokenGen
+      })
+
+      if (!result.ok) {
+        return sendServiceProblem(reply, result)
+      }
+
+      return reply.send(result.body)
+    },
+
     async changeOwnPassword(request, reply) {
       const value = request.body ?? {}
       const result = await service.changeOwnPassword({

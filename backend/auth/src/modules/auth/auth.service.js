@@ -4,6 +4,7 @@ import argon2 from 'argon2'
 import { applyFailure, isLocked } from '../../lib/throttle.js'
 import { generateOpaqueRefresh, hashRefreshToken } from '../../lib/refresh-token.js'
 import { signAccessJwt } from '../../lib/jwt-access.js'
+import { anyPermissionMatches } from '../../lib/permission-match.js'
 import { problemPayload } from '../../lib/problem.js'
 import {
   getAccessTokenGenFromRedis,
@@ -148,6 +149,63 @@ export class AuthService {
       doc = await this.repo.findRolePermissions(null, role)
     }
     return Array.isArray(doc?.menu_keys) ? doc.menu_keys : []
+  }
+
+  /**
+   * โครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์ (GET /auth/me/menus) — resolve สิทธิ์สดจาก DB,
+   * expand wildcard กับ auth_menus แล้วเติมโหนดบรรพบุรุษครบถึง root
+   * ตอบ flat list เรียงตาม (ระดับชั้น, sort_order) ให้ frontend ประกอบ tree เอง
+   * @param {{ user_id_hex: string, access_token_gen_claim: unknown }} p
+   */
+  async getMyMenus({ user_id_hex, access_token_gen_claim }) {
+    const genCheck = await this.assertAccessTokenGenMatches({
+      user_id_hex,
+      token_gen_claim: access_token_gen_claim
+    })
+    if (!genCheck.ok) return genCheck
+    const user = genCheck.user
+
+    const permissions = await this.resolveEffectivePermissions({
+      ouId: user.ou_id ?? null,
+      role: user.role
+    })
+    const actions = await this.repo.findActionMenusForOu(user.ou_id)
+    const granted = actions.filter((action) => anyPermissionMatches(permissions, action.key))
+
+    // เติมบรรพบุรุษทีละชั้นจนถึง root (ลึกสุด 3 ระดับ — วนไม่เกิน 2 รอบ)
+    const byKey = new Map(granted.map((m) => [m.key, m]))
+    let pendingKeys = [...new Set(granted.map((m) => m.parent_key))].filter(
+      (key) => key !== null && !byKey.has(key)
+    )
+    while (pendingKeys.length > 0) {
+      const parents = await this.repo.findMenusByKeys(pendingKeys, user.ou_id)
+      for (const parent of parents) byKey.set(parent.key, parent)
+      pendingKeys = [...new Set(parents.map((m) => m.parent_key))].filter(
+        (key) => key !== null && !byKey.has(key)
+      )
+    }
+
+    // cap ที่ 3 ตามกฎความลึกใน SPEC — กัน infinite loop หากข้อมูลใน DB มี cycle จากการแก้มือ
+    const depthOf = (menu) => {
+      let depth = 0
+      let current = menu
+      while (current && current.parent_key !== null && depth < 3) {
+        current = byKey.get(current.parent_key)
+        depth += 1
+      }
+      return depth
+    }
+    const menus = [...byKey.values()]
+      .sort((a, b) => depthOf(a) - depthOf(b) || a.sort_order - b.sort_order)
+      .map((m) => ({
+        key: m.key,
+        label: m.label,
+        type: m.type,
+        parent_key: m.parent_key,
+        sort_order: m.sort_order
+      }))
+
+    return { ok: true, status: 200, body: { menus } }
   }
 
   /**

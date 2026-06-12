@@ -14,6 +14,7 @@ const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
 const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }
 const RATE_LIMIT_LOGOUT = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_CHANGE_PASSWORD = { max: 10, timeWindow: '1 minute' }
+const RATE_LIMIT_ME_MENUS = { max: 60, timeWindow: '1 minute' }
 
 const OBJECT_ID_HEX = /^[a-fA-F0-9]{24}$/u
 
@@ -77,6 +78,15 @@ export default async function authRoutePlugin(fastify, opts) {
 
   await fastify.register(async (scope) => {
     await scope.register(rateLimit, buildRateLimitPluginOptions(types))
+
+    scope.get(
+      '/auth/me/menus',
+      {
+        config: { rateLimit: RATE_LIMIT_ME_MENUS },
+        preHandler: requireAccessBearer
+      },
+      (request, reply) => controller.getMyMenus(request, reply)
+    )
 
     scope.post(
       '/auth/me/password',

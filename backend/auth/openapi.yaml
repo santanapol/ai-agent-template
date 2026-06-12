@@ -558,6 +558,67 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /auth/me/menus:
+    get:
+      tags: [auth]
+      summary: Get my permitted menu structure
+      description: |
+        Returns the menu nodes the authenticated user is permitted to see, as a **flat list**
+        ordered by (depth, `sort_order`). Permissions are resolved fresh from the database
+        (not from the JWT claim), wildcards are expanded against the central menu registry,
+        and ancestor `menu` nodes are included up to the root so the client can assemble the tree
+        from `parent_key`. Only nodes relevant to the caller are returned.
+      operationId: getMyMenus
+      security:
+        - BearerAccess: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      responses:
+        '200':
+          description: Permitted menu nodes (may be empty).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyMenusSuccess'
+              examples:
+                granted:
+                  summary: User holding `profiles:*`
+                  value:
+                    menus:
+                      - {
+                          key: staff,
+                          label: 'จัดการพนักงาน',
+                          type: menu,
+                          parent_key: null,
+                          sort_order: 10
+                        }
+                      - {
+                          key: 'staff:profiles',
+                          label: 'โปรไฟล์พนักงาน',
+                          type: menu,
+                          parent_key: staff,
+                          sort_order: 10
+                        }
+                      - {
+                          key: 'profiles:list',
+                          label: 'รายชื่อพนักงาน',
+                          type: action,
+                          parent_key: 'staff:profiles',
+                          sort_order: 10
+                        }
+        '401':
+          description: Missing/invalid Bearer or stale `token_gen`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /internal/users:
     post:
       tags: [internal]
@@ -1072,6 +1133,34 @@ components:
         expires_in:
           type: integer
           minimum: 1
+    MyMenusSuccess:
+      type: object
+      description: Flat list of permitted menu nodes — client assembles the tree from `parent_key`.
+      required: [menus]
+      properties:
+        menus:
+          type: array
+          items:
+            type: object
+            required: [key, label, type, parent_key, sort_order]
+            properties:
+              key:
+                type: string
+                description: Permanent identifier (`domain:action` for actions). Never renamed.
+              label:
+                type: string
+                description: Display label for the UI.
+              type:
+                type: string
+                enum: [menu, action]
+                description: '`menu` = structural node, `action` = permission leaf.'
+              parent_key:
+                type: string
+                nullable: true
+                description: Key of the parent node (`null` = root). Max depth 3.
+              sort_order:
+                type: integer
+                description: Ordering within the same level (ascending).
     LogoutRequest:
       type: object
       description: Optional body for logout on native channel.
