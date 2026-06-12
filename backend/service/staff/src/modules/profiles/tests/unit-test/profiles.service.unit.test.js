@@ -57,13 +57,13 @@ describe("assertAdminRole", () => {
     assert.doesNotThrow(() => assertAdminRole(branchAdmin));
   });
 
-  test("throws 403 INVALID_USER_CONTEXT for staff role", () => {
+  test("throws 403 PERMISSION_DENIED for staff role", () => {
     assert.throws(
       () => assertAdminRole(staffUser),
       (error) => {
         assert.ok(error instanceof HttpError);
         assert.strictEqual(error.status, 403);
-        assert.strictEqual(error.code, CODES.INVALID_USER_CONTEXT);
+        assert.strictEqual(error.code, CODES.PERMISSION_DENIED);
         return true;
       },
     );
@@ -85,7 +85,7 @@ describe("assertPlatformAdmin", () => {
       (error) => {
         assert.ok(error instanceof HttpError);
         assert.strictEqual(error.status, 403);
-        assert.strictEqual(error.code, CODES.INVALID_USER_CONTEXT);
+        assert.strictEqual(error.code, CODES.PERMISSION_DENIED);
         return true;
       },
     );
