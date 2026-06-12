@@ -133,15 +133,15 @@ gateway/
 
 ชื่อ header ด้านล่างถือเป็น **canonical** — **ต้อง** ใช้ constant ชุดเดียวกันใน gateway และ package กลางฝั่ง internal (ถ้ามี)
 
-| Header               | ตั้งโดย          | อ่านโดย       | ข้อกำหนด                                                                                                                                                   |
-| -------------------- | ---------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `x-gateway-secret`   | Gateway          | ทุก service   | constant-time compare · **ห้าม** log                                                                                                                       |
-| `x-user-id`          | Gateway          | identity      | จาก `JWT_CLAIM_USER_ID` · ASCII printable **ควร** · ≤ **128** chars — เกินหรือไม่ผ่าน validation ที่ขอบ gateway → **`401`** + **`GATEWAY_CLAIM_REJECTED`** |
-| `x-user-ou`          | Gateway          | tenant        | จาก `JWT_CLAIM_OU` · รหัสองค์กรของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**              |
-| `x-user-branch`      | Gateway          | tenant        | จาก `JWT_CLAIM_BRANCH` · รหัสสาขาของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**            |
-| `x-user-role`        | Gateway          | RBAC          | section 12.2                                                                                                                                               |
+| Header               | ตั้งโดย          | อ่านโดย       | ข้อกำหนด                                                                                                                                                                                                               |
+| -------------------- | ---------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `x-gateway-secret`   | Gateway          | ทุก service   | constant-time compare · **ห้าม** log                                                                                                                                                                                   |
+| `x-user-id`          | Gateway          | identity      | จาก `JWT_CLAIM_USER_ID` · ASCII printable **ควร** · ≤ **128** chars — เกินหรือไม่ผ่าน validation ที่ขอบ gateway → **`401`** + **`GATEWAY_CLAIM_REJECTED`**                                                             |
+| `x-user-ou`          | Gateway          | tenant        | จาก `JWT_CLAIM_OU` · รหัสองค์กรของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**                                                                          |
+| `x-user-branch`      | Gateway          | tenant        | จาก `JWT_CLAIM_BRANCH` · รหัสสาขาของผู้ใช้ — **ต้อง** non-empty หลัง normalize ที่ขอบ gateway มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`**                                                                        |
+| `x-user-role`        | Gateway          | RBAC          | section 12.2                                                                                                                                                                                                           |
 | `x-user-permissions` | Gateway          | authorization | จากเคลม `permissions` · รายการสิทธิ์ดิบของผู้ใช้ (comma-separated, exact/wildcard ไม่ expand) — ต้องมีรูปแบบถูกต้อง (ห้ามมี Comma, Whitespace หรือสตริงว่างในสมาชิก) มิฉะนั้น **`401`** + **`GATEWAY_CLAIM_REJECTED`** |
-| `x-request-id`       | Gateway / client | logs, trace   | **ควร** ทุก request · client ไม่ส่ง → gateway **ควร** สร้าง UUID                                                                                           |
+| `x-request-id`       | Gateway / client | logs, trace   | **ควร** ทุก request · client ไม่ส่ง → gateway **ควร** สร้าง UUID                                                                                                                                                       |
 
 **JWT → claim mapping**
 

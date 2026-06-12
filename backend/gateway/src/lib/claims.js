@@ -95,4 +95,3 @@ export function normalizePermissionsClaim(value) {
   }
   return value.join(',')
 }
-

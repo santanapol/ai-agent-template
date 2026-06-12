@@ -71,4 +71,3 @@ export default fp(
   },
   { name: 'gateway-inject-context' }
 )
-

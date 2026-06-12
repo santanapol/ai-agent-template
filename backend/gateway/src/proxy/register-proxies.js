@@ -57,7 +57,6 @@ export async function registerProxies(fastify, opts) {
     }
   }
 
-
   for (const route of routes) {
     const proxyOpts = {
       upstream: route.upstream,

@@ -168,7 +168,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.ok(iRequestId > iIfMatch)
   })
 
-
   test('401 without bearer token (problem+json)', async () => {
     const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`)
     assert.strictEqual(res.status, 401)
@@ -303,25 +302,30 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('401 GATEWAY_CLAIM_REJECTED on duplicate x-user-permissions', async () => {
     const res = await new Promise((resolve, reject) => {
       const parsedUrl = new URL(`${gatewayBaseUrl}/api/echo/ping`)
-      const req = httpRequest({
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: 'GET',
-        headers: {
-          'authorization': `Bearer ${accessToken}`,
-          'x-user-permissions': ['a', 'b']
-        }
-      }, (res) => {
-        let data = ''
-        res.on('data', (chunk) => { data += chunk })
-        res.on('end', () => {
-          resolve({
-            status: res.statusCode,
-            body: data
+      const req = httpRequest(
+        {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port,
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: 'GET',
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'x-user-permissions': ['a', 'b']
+          }
+        },
+        (res) => {
+          let data = ''
+          res.on('data', (chunk) => {
+            data += chunk
           })
-        })
-      })
+          res.on('end', () => {
+            resolve({
+              status: res.statusCode,
+              body: data
+            })
+          })
+        }
+      )
       req.on('error', reject)
       req.end()
     })
@@ -331,8 +335,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
     assert.match(body.detail, /Duplicate header not allowed/u)
   })
-
-
 
   test('401 GATEWAY_CLAIM_REJECTED on invalid permissions claim format (not array)', async () => {
     const badToken = await new jose.SignJWT({
@@ -378,4 +380,3 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
   })
 })
-

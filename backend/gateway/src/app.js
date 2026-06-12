@@ -24,7 +24,6 @@ const TRUSTED_HEADER_KEYS = [
   'x-request-id'
 ]
 
-
 /**
  * Node exposes duplicated inbound headers via `raw.headersDistinct` (array values).
  * Fallback to `request.headers` array shape for test/inject environments.

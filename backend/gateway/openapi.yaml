@@ -423,7 +423,6 @@ components:
         detail: Required JWT claims for trusted headers (tenant or permissions) are missing or invalid.
         code: GATEWAY_CLAIM_REJECTED
 
-
     GatewayProblemUpstreamUnavailable:
       summary: Upstream connection refused or reset
       value:
