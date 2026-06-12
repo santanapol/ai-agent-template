@@ -6,7 +6,9 @@ export const AUTH_COLLECTIONS = Object.freeze({
   USERS: 'auth_users',
   REFRESH_TOKENS: 'auth_refresh_tokens',
   CREDENTIAL_THROTTLE: 'auth_credential_throttle',
-  AUDIT_EVENTS: 'auth_audit_events'
+  AUDIT_EVENTS: 'auth_audit_events',
+  MENUS: 'auth_menus',
+  ROLE_PERMISSIONS: 'auth_role_permissions'
 })
 
 /** Ordered list for test resets (same names as values). */

@@ -4,6 +4,8 @@ const USERS = AUTH_COLLECTIONS.USERS
 const REFRESH = AUTH_COLLECTIONS.REFRESH_TOKENS
 const THROTTLE = AUTH_COLLECTIONS.CREDENTIAL_THROTTLE
 const AUDIT = AUTH_COLLECTIONS.AUDIT_EVENTS
+const MENUS = AUTH_COLLECTIONS.MENUS
+const ROLE_PERMISSIONS = AUTH_COLLECTIONS.ROLE_PERMISSIONS
 
 const RETENTION_DAYS = 180
 
@@ -176,6 +178,40 @@ export class AuthRepository {
     await this.db
       .collection(REFRESH)
       .updateOne({ _id: oldId }, { $set: { replaced_by_id: newId } }, { session })
+  }
+
+  /**
+   * Query ดิบต่อหนึ่งคู่ (ou_id, role) — fallback logic อยู่ที่ service layer
+   * Tenant scoping ระดับ ou_id เท่านั้น (สิทธิ์เป็นข้อมูลระดับ OU โดยดีไซน์ — ดู SPEC)
+   * @param {import('mongodb').ObjectId | null} ouId
+   * @param {string} role
+   */
+  async findRolePermissions(ouId, role) {
+    return this.db.collection(ROLE_PERMISSIONS).findOne({ ou_id: ouId, role })
+  }
+
+  /**
+   * Action ทั้งหมดที่มองเห็นได้จาก OU นี้ (เมนูสากล + เมนูเฉพาะ OU)
+   * @param {import('mongodb').ObjectId} ouId
+   */
+  async findActionMenusForOu(ouId) {
+    return this.db
+      .collection(MENUS)
+      .find({ type: 'action', ou_id: { $in: [null, ouId] } })
+      .toArray()
+  }
+
+  /**
+   * เมนูตามรายการ key (ใช้ดึงโหนดบรรพบุรุษของ action ที่ผ่านการคัดสิทธิ์)
+   * @param {string[]} keys
+   * @param {import('mongodb').ObjectId} ouId
+   */
+  async findMenusByKeys(keys, ouId) {
+    if (!keys.length) return []
+    return this.db
+      .collection(MENUS)
+      .find({ key: { $in: keys }, ou_id: { $in: [null, ouId] } })
+      .toArray()
   }
 
   async insertAudit(row) {
