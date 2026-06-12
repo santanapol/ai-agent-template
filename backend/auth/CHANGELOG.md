@@ -19,6 +19,8 @@
 
 ### Added
 
+- **`PATCH /internal/users/{user_id}/role`** (`src/modules/internal/internal.route.js`): เพิ่ม internal endpoint สำหรับให้ trusted service อัปเดตบทบาทของผู้ใช้แบบ Atomic operation ใน MongoDB transaction พร้อมทำ session revocation
+- **Tests**: integration test `internal-set-role.integration.test.js` สำหรับตรวจสิทธิ์การเข้าใช้งาน การอัปเดตบทบาท และการยกเลิก session
 - **`InternalService`** (`src/modules/internal/internal.service.js`): thin delegation wrapper ระหว่าง `InternalController` กับ `AuthService` — รักษา module boundary
 - **Tests**: unit tests TTL `EX` option ใน `redis-access-token-gen.test.js` (EX > 0 และ EX = 0); integration mock `createMockRedis` capture `opts` + assert `{ EX: 87300 }` ใน `internal-revoke-redis.integration.test.js`
 

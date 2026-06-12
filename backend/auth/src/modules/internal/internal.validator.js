@@ -49,3 +49,17 @@ export const setPasswordBodySchema = {
   required: ['password'],
   additionalProperties: false
 }
+
+export const setRoleBodySchema = {
+  type: 'object',
+  required: ['role'],
+  additionalProperties: false,
+  properties: {
+    role: {
+      type: 'string',
+      enum: ['platform_admin', 'branch_admin', 'staff', 'support']
+    },
+    revoke_sessions: { type: 'boolean', default: true },
+    correlation_id: { type: 'string', maxLength: 128 }
+  }
+}

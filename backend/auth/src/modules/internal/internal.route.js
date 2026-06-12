@@ -6,6 +6,7 @@ import {
   createUserBodySchema,
   revokeBodySchema,
   setPasswordBodySchema,
+  setRoleBodySchema,
   userIdParamSchema
 } from './internal.validator.js'
 
@@ -67,6 +68,15 @@ export default async function internalRoutePlugin(fastify, opts) {
         config: { rateLimit: RATE_LIMIT_INTERNAL }
       },
       (request, reply) => controller.revokeSessions(request, reply)
+    )
+
+    scope.patch(
+      '/internal/users/:user_id/role',
+      {
+        schema: { params: userIdParamSchema, body: setRoleBodySchema },
+        config: { rateLimit: RATE_LIMIT_INTERNAL }
+      },
+      (request, reply) => controller.setRole(request, reply)
     )
   })
 }

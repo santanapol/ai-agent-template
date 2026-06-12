@@ -242,6 +242,49 @@ export function createAuthInternalClient(config) {
         return false;
       }
     },
+
+    /**
+     * @param {{ userId: string, role: string, revokeSessions?: boolean, correlationId?: string }} input
+     */
+    async setUserRole(input) {
+      try {
+        const response = await http.patch(
+          `${baseUrl}/internal/users/${input.userId}/role`,
+          {
+            role: input.role,
+            revoke_sessions: input.revokeSessions !== false,
+            correlation_id: input.correlationId,
+          },
+          {
+            headers: authInternalHeaders(config.serviceSecret),
+            timeout: timeoutMs,
+            validateStatus: () => true,
+          },
+        );
+
+        if (response.status === 204) {
+          return;
+        }
+
+        const problem =
+          response.data && typeof response.data === "object"
+            ? response.data
+            : undefined;
+        throw mapAuthProblemToHttpError(response.status, problem);
+      } catch (error) {
+        if (error instanceof HttpError) {
+          throw error;
+        }
+        if (isAxiosError(error)) {
+          throw mapAxiosFailure(error);
+        }
+        throw new HttpError(
+          503,
+          CODES.SERVICE_UNAVAILABLE,
+          "Auth service is temporarily unavailable",
+        );
+      }
+    },
   };
 }
 

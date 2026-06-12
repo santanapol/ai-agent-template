@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/auth/` & `backend/service/staff/`:** Added support for `support` role in the platform and allowed `platform_admin` to assign and update user roles for staff members during creation and profile edits.
+- **`backend/auth/`:** Added `PATCH /internal/users/{user_id}/role` endpoint to dynamically update user roles within a secure MongoDB transaction, revoking active sessions upon update.
+- **`backend/service/staff/`:** Added integration client support for setting user roles and restricted role update routes to `platform_admin`.
+
 - **Backoffice:** Added English description subtitles to the header section of [StaffManagement.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/StaffManagement.tsx), [Agents/index.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/Agents/index.tsx), and [InvoiceDetail.tsx](file:///home/santanapol/Documents/Workspace/Sandbox/agent-skill/code-base/zero-platform/frontend/backoffice/src/pages/Invoices/InvoiceDetail.tsx) to ensure header visual consistency across all routes.
 - **`backend/service/smart-report/`:** Added custom `"last"` day of month option for monthly report scheduler frequency.
 - **Backoffice:** Redesigned Create/Edit report flow to use a split-screen inline page instead of a Modal.

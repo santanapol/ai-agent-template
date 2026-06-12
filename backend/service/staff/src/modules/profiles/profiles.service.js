@@ -14,7 +14,7 @@ import {
 } from "../../lib/utils/normalize.js";
 import * as repository from "./profiles.repository.js";
 
-export const ADMIN_ROLES = Object.freeze(["platform_admin", "branch_admin"]);
+export const ADMIN_ROLES = Object.freeze(["platform_admin", "branch_admin", "support"]);
 
 const LIST_QUERY_KEYS = Object.freeze([
   "q",
@@ -41,6 +41,19 @@ export function assertAdminRole(userContext) {
       403,
       CODES.INVALID_USER_CONTEXT,
       "Create profile requires platform_admin or branch_admin role",
+    );
+  }
+}
+
+/**
+ * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
+ */
+export function assertPlatformAdmin(userContext) {
+  if (userContext.role !== "platform_admin") {
+    throw new HttpError(
+      403,
+      CODES.INVALID_USER_CONTEXT,
+      "Only platform_admin may change user roles",
     );
   }
 }
@@ -143,7 +156,7 @@ export function resolveLookupScope(userContext, targetUserId) {
     );
   }
 
-  if (userContext.role === "platform_admin") {
+  if (userContext.role === "platform_admin" || userContext.role === "support") {
     return { ouId: userContext.ouId };
   }
 
@@ -227,7 +240,7 @@ export function assertLookupQueryExclusive(query) {
  * @returns {{ ouId: string, branchId?: string }}
  */
 export function resolveGetByIdScope(userContext) {
-  if (userContext.role === "platform_admin") {
+  if (userContext.role === "platform_admin" || userContext.role === "support") {
     return { ouId: userContext.ouId };
   }
 
@@ -396,6 +409,7 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     const result = await authClient.provisionUser({
       username,
       password,
+      role: body.role,
       ouId: tenantContext.ouId,
       branchId: tenantContext.branchId,
     });
@@ -915,4 +929,71 @@ export async function resetProfilePassword(
     revokeSessions: body.revoke_sessions !== false,
     correlationId: requestId ?? routeTemplate,
   });
+}
+
+/**
+ * Change the auth role of a staff member's linked user account.
+ * Only platform_admin may perform this operation.
+ * @param {string} profileId
+ * @param {{ role: string }} body
+ * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
+ * @param {string} routeTemplate
+ * @param {string} [requestId]
+ */
+export async function changeProfileRole(
+  profileId,
+  body,
+  userContext,
+  routeTemplate,
+  requestId,
+) {
+  assertPlatformAdmin(userContext);
+
+  const scope = resolveGetByIdScope(userContext);
+  const existing = await repository.findById(profileId, scope);
+
+  if (!existing) {
+    throw new HttpError(
+      404,
+      CODES.RESOURCE_NOT_FOUND,
+      "The requested resource was not found",
+    );
+  }
+
+  if (!existing.profile.user_id) {
+    throw new HttpError(
+      409,
+      CODES.INVALID_PARAM,
+      "Profile is not linked to an auth user",
+    );
+  }
+
+  const env = getRuntimeEnv();
+  const authClient = getAuthInternalClient(env);
+  await authClient.setUserRole({
+    userId: existing.profile.user_id,
+    role: body.role,
+    revokeSessions: true,
+    correlationId: requestId ?? routeTemplate,
+  });
+
+  try {
+    await writeAuditEvent({
+      eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_UPDATE,
+      userContext: {
+        userId: userContext.userId,
+        ouId: existing.profile.ou_id,
+        branchId: existing.profile.branch_id,
+      },
+      routeTemplate,
+      profileId: existing.profile.id,
+      targetUserId: existing.profile.user_id,
+      payload: { role: body.role },
+    });
+  } catch (auditErr) {
+    logger.error(
+      { err: auditErr },
+      "audit write failed after profile role change",
+    );
+  }
 }

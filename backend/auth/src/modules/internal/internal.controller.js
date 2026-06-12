@@ -49,6 +49,20 @@ export function createInternalController({ service }) {
       })
 
       return sendServiceResult(reply, result, { emptyBody: true })
+    },
+
+    async setRole(request, reply) {
+      const userIdParam = request.params.user_id
+      const value = request.body ?? {}
+      const result = await service.setRole({
+        user_id_hex: userIdParam,
+        role: value.role,
+        revoke_sessions: value.revoke_sessions,
+        correlation_id: value.correlation_id,
+        request_id: request.id
+      })
+
+      return sendServiceResult(reply, result, { emptyBody: true })
     }
   }
 }
