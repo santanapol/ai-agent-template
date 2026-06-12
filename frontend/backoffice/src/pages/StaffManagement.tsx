@@ -128,6 +128,7 @@ const StaffManagement: React.FC = () => {
           lastname: record.lastname,
           email: record.email,
           tel: record.tel,
+          role: record.user?.role,
         });
         return;
       }
@@ -143,6 +144,7 @@ const StaffManagement: React.FC = () => {
           lastname: profile.lastname,
           email: profile.email,
           tel: profile.tel,
+          role: profile.user?.role,
         });
       } catch (err) {
         message.error(apiErrorMessage(err, 'Failed to load profile'));
@@ -204,10 +206,11 @@ const StaffManagement: React.FC = () => {
   }, [editingId, form, message, modal]);
 
   const handleSave = useCallback(async () => {
+    const isPlatformAdmin = user?.role === 'platform_admin';
     const isCreate = drawerMode === 'create';
     const fieldNames = isCreate
-        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword']
-        : ['firstname', 'lastname', 'email', 'tel'];
+        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword', ...(isPlatformAdmin ? ['role'] : [])]
+        : ['firstname', 'lastname', 'email', 'tel', ...(isPlatformAdmin ? ['role'] : [])];
 
     let values: DrawerFormValues;
     try {
@@ -219,7 +222,7 @@ const StaffManagement: React.FC = () => {
     setIsSaving(true);
     try {
       if (isCreate) {
-        const { code, firstname, lastname, email, tel, username, password } = values as Required<DrawerFormValues>;
+        const { code, firstname, lastname, email, tel, username, password, role } = values as Required<DrawerFormValues>;
         await staffApi.createProfile({
           code,
           firstname,
@@ -228,6 +231,7 @@ const StaffManagement: React.FC = () => {
           tel: formatTelephoneToE164(tel),
           username,
           password,
+          role,
         });
         message.success('Profile created');
         setIsDrawerOpen(false);
@@ -238,9 +242,15 @@ const StaffManagement: React.FC = () => {
       }
 
       if (editingId && currentEtag.current) {
-        const { firstname, lastname, email, tel } = values;
+        const { firstname, lastname, email, tel, role } = values;
         const payload: PatchProfilePayload = { firstname, lastname, email, tel: formatTelephoneToE164(tel) };
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
+
+        const existingRecord = profiles.find((p) => p.id === editingId);
+        if (isPlatformAdmin && role && role !== existingRecord?.user?.role) {
+          await staffApi.changeProfileRole(editingId, role);
+        }
+
         message.success('Profile updated');
         setIsDrawerOpen(false);
         refresh();
@@ -252,7 +262,7 @@ const StaffManagement: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [form, drawerMode, editingId, message, refresh]);
+  }, [form, drawerMode, editingId, message, refresh, user, profiles]);
 
   const handleArchive = useCallback(
     (record: StaffProfile) => {
@@ -357,6 +367,7 @@ const StaffManagement: React.FC = () => {
         isSaving={isSaving}
         updatingPassword={updatingPassword}
         showAdminResetPassword={showAdminResetPassword}
+        isPlatformAdmin={user?.role === 'platform_admin'}
         form={form}
         onClose={handleCloseDrawer}
         onSave={() => void handleSave()}
