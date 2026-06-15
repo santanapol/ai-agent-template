@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Backoffice:** Permission-driven sidebar menu and route guards (Dynamic Permission Phase F) — `AuthContext` fetches `GET /auth/me/menus` on login/refresh and exposes `permissions` / `menus` / `menuLoading` / `menuError`; `AdminLayout` builds the sidebar from the returned menu tree (sorted by `sort_order`, with depth/cycle guarding), falling back to a minimal menu plus a warning banner if menu loading fails. New `usePermission` hook and `PermissionGuard` component gate UI elements (e.g. the Edit button in `StaffManagement`) and routes by permission key.
+- **`backend/auth/`:** Permission Admin API (Dynamic Permission Phase A) — `GET/POST/PATCH/DELETE /auth/admin/menus` and `GET/PUT/DELETE /auth/admin/role-permissions` for managing the menu registry and role→permission mappings at runtime, with optimistic locking (`upd_date`/`If-Match`), audit logging (`auth.permissions_changed`), self-lockout protection (`permissions:manage` cannot be edited via the API), and an urgent `revoke_sessions` option on role-permission updates (revokes Redis sessions for affected users in batches of up to 1,000). New `409 AUTH_MENU_IN_USE` / `409 AUTH_ROLE_PERMISSION_IN_USE` error codes.
 - **`backend/service/agent-invoice/` & Backoffice:** Added support for cancelling invoices by changing their status to `VOID` instead of deleting them.
 - **`backend/service/agent-invoice/`:** Allowed status transitions from `READY`, `PENDING`, `MISSING_FEE`, and `ERROR` to `VOID` inside `updateInvoiceStatus` service, and updated schema validators to accept the `VOID` status.
 - **Backoffice:** Added the "Cancel Invoice" button to the invoice details page and wired it up via the `cancelInvoice` callback in `useInvoices` hook, which encodes the invoice `upd_date` as the `If-Match` ETag.
@@ -146,7 +148,7 @@ Repository snapshot: **auth 0.1.6**, **gateway 0.2.4**, **crud-service 0.1.1**. 
 ### Changed
 
 - Rename monorepo **access-platform** → **zero-platform**; GitHub **Chiang-Rai-Technology/zero-platform**.
-- Move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; `.gitignore` ignores `services/*` except **`services/.demo/**`**.
+- Move **`.demo/crud-service/`** → **`services/.demo/crud-service/`**; `.gitignore` ignores `services/*` except **`services/.demo/**`\*\*.
 - **ARCHITECTURE.md** v1.1.0 — `token_gen` + Redis session revocation (O-16/D3).
 - Gateway routes: `/api/v1/members` → `/api/v1/staff` (port **3101** planned).
 

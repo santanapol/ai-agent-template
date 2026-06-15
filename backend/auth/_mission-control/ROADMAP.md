@@ -1,18 +1,18 @@
 # Roadmap: Dynamic Permission — ภาพรวมทุก Phase
 
 > เอกสารแม่ของชุดงาน Dynamic Permission ทั้งระบบ — อัปเดตสถานะที่นี่เมื่อแต่ละ phase ขยับ
-> อัปเดตล่าสุด: 2026-06-15 (Phase 1, 2, & 3 รอ merge; Phase 4 เสร็จสมบูรณ์ผ่านการตรวจสอบ Pre-Launch แล้ว)
+> อัปเดตล่าสุด: 2026-06-15 (Phase 1, 2, & 3 รอ merge; Phase 4 & 5 เสร็จสมบูรณ์ผ่านการตรวจสอบ Pre-Launch แล้ว)
 
 ## Phases
 
-| #   | Phase                                  | Codebase                | Spec                                                             | สถานะ                                       | Dependency                  |
-| --- | -------------------------------------- | ----------------------- | ---------------------------------------------------------------- | ------------------------------------------- | --------------------------- |
-| 1   | **Auth** — Dynamic Permission in DB    | `backend/auth`          | [SPEC.md](./SPEC.md)                                             | ✅ ส่ง PR #12 แล้ว รอ merge (118/118 tests) | —                           |
-| 2   | **G** — Forward `x-user-permissions`   | `backend/gateway`       | [SPEC.md](../../gateway/_mission-control/SPEC.md)                | ✅ ส่ง PR #13 แล้ว รอ merge (66/66 tests)   | หลัง 1 merge                |
-| 3   | **S** — Permission checks (dual-check) | `backend/service/staff` | [SPEC.md](../../service/staff/_mission-control/SPEC.md)          | ✅ ส่ง PR #14 แล้ว รอ merge (193/193 tests) | **ต้องหลัง G เท่านั้น**     |
-| 4   | **F** — Menu + guards                  | `frontend/backoffice`   | [SPEC.md](../../../frontend/backoffice/_mission-control/SPEC.md) | ✅ เสร็จสมบูรณ์แล้ว ผ่านการตรวจสอบ (78/78 tests) | หลัง 1 merge — ขนาน G/S ได้ |
-| 5   | **A** — Permission Admin API           | `backend/auth`          | [SPEC-permission-admin-api.md](./SPEC-permission-admin-api.md)   | 📋 Spec อนุมัติแล้ว พร้อม `/plan`           | ทำท้ายสุด (หลัง G/S/F)      |
-| (6) | **F2** — หน้าจอจัดการสิทธิ์            | `frontend/backoffice`   | ยังไม่เขียน                                                      | 🔒 จองไว้                                   | หลัง A นิ่ง                 |
+| #   | Phase                                  | Codebase                | Spec                                                             | สถานะ                                              | Dependency                  |
+| --- | -------------------------------------- | ----------------------- | ---------------------------------------------------------------- | -------------------------------------------------- | --------------------------- |
+| 1   | **Auth** — Dynamic Permission in DB    | `backend/auth`          | [SPEC.md](./SPEC.md)                                             | ✅ ส่ง PR #12 แล้ว รอ merge (118/118 tests)        | —                           |
+| 2   | **G** — Forward `x-user-permissions`   | `backend/gateway`       | [SPEC.md](../../gateway/_mission-control/SPEC.md)                | ✅ ส่ง PR #13 แล้ว รอ merge (66/66 tests)          | หลัง 1 merge                |
+| 3   | **S** — Permission checks (dual-check) | `backend/service/staff` | [SPEC.md](../../service/staff/_mission-control/SPEC.md)          | ✅ ส่ง PR #14 แล้ว รอ merge (193/193 tests)        | **ต้องหลัง G เท่านั้น**     |
+| 4   | **F** — Menu + guards                  | `frontend/backoffice`   | [SPEC.md](../../../frontend/backoffice/_mission-control/SPEC.md) | ✅ เสร็จสมบูรณ์แล้ว ผ่านการตรวจสอบ (78/78 tests)   | หลัง 1 merge — ขนาน G/S ได้ |
+| 5   | **A** — Permission Admin API           | `backend/auth`          | [SPEC-permission-admin-api.md](./SPEC-permission-admin-api.md)   | ✅ เสร็จสมบูรณ์แล้ว ผ่านการตรวจสอบ (134/134 tests) | ทำท้ายสุด (หลัง G/S/F)      |
+| (6) | **F2** — หน้าจอจัดการสิทธิ์            | `frontend/backoffice`   | ยังไม่เขียน                                                      | 🔒 จองไว้                                          | หลัง A นิ่ง                 |
 
 ## Dependency Graph + ลำดับ Rollout
 
