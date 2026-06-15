@@ -1,8 +1,5 @@
 import rateLimit from '@fastify/rate-limit'
 import { buildRateLimitPluginOptions } from '../../lib/rate-limit.js'
-import { verifyAccessJwt } from '../../lib/jwt-access.js'
-import { extractBearerToken } from '../../lib/internal-bearer.js'
-import { problemPayload } from '../../lib/problem.js'
 import { buildRequireAccessBearer } from '../../lib/require-access-bearer.js'
 import {
   loginBodySchema,
@@ -16,8 +13,6 @@ const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }
 const RATE_LIMIT_LOGOUT = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_CHANGE_PASSWORD = { max: 10, timeWindow: '1 minute' }
 const RATE_LIMIT_ME_MENUS = { max: 60, timeWindow: '1 minute' }
-
-const OBJECT_ID_HEX = /^[a-fA-F0-9]{24}$/u
 
 /**
  * @param {import('fastify').FastifyInstance} fastify

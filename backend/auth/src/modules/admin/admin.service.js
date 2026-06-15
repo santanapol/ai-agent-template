@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto'
 import { ObjectId } from 'mongodb'
 import { validateSeedData } from '../../lib/permission-validation.js'
 import { problemPayload } from '../../lib/problem.js'
-import { setAccessTokenGenInRedis } from '../../lib/redis-access-token-gen.js'
 
 function ipDigest(ip) {
   if (!ip) return null
@@ -390,16 +389,13 @@ export class AdminService {
     let revokedTokensCount = 0
     if (revoke_sessions) {
       // Bump user token_gen in MongoDB
-      const bumpRes = await this.repo.bumpUsersTokenGen(ouId, role)
+      await this.repo.bumpUsersTokenGen(ouId, role)
 
       // Revoke in MongoDB: refresh tokens for those users
       const users = await this.repo.getUsersInScope(ouId, role)
       const userIds = users.map(u => u._id)
       if (userIds.length > 0) {
-        await this.repo.db.collection(AUTH_COLLECTIONS.REFRESH_TOKENS).updateMany(
-          { user_id: { $in: userIds }, revoked_at: null },
-          { $set: { revoked_at: now } }
-        )
+        await this.repo.revokeRefreshTokensForUsers(userIds, now)
       }
 
       // Sync Redis with pipeline in chunks
@@ -415,9 +411,7 @@ export class AdminService {
           for (const user of chunk) {
             const user_id_hex = user._id.toHexString()
             const redisKey = `auth:token_gen:${user_id_hex}`
-            // Read fresh user gen if needed, or query again
-            const dbUser = await this.repo.db.collection(AUTH_COLLECTIONS.USERS).findOne({ _id: user._id })
-            const gen = dbUser ? (dbUser.access_token_gen ?? 0) : 1
+            const gen = user.access_token_gen ?? 0
             
             pipeline.set(redisKey, String(gen))
             if (ttl > 0) {

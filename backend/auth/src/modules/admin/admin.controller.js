@@ -1,4 +1,4 @@
-export function createAdminController({ service, types }) {
+export function createAdminController({ service }) {
   const getContext = (request) => ({
     actorId: request.accessSub,
     ip: request.ip,

@@ -72,13 +72,20 @@ export class AdminRepository {
   }
 
   async getUsersInScope(ou_id, role) {
-    return this.db.collection(USERS).find({ ou_id, role }, { projection: { _id: 1 } }).toArray()
+    return this.db.collection(USERS).find({ ou_id, role }, { projection: { _id: 1, access_token_gen: 1 } }).toArray()
   }
 
   async bumpUsersTokenGen(ou_id, role) {
     return this.db.collection(USERS).updateMany(
       { ou_id, role },
       { $inc: { access_token_gen: 1 } }
+    )
+  }
+
+  async revokeRefreshTokensForUsers(userIds, now) {
+    return this.db.collection(AUTH_COLLECTIONS.REFRESH_TOKENS).updateMany(
+      { user_id: { $in: userIds }, revoked_at: null },
+      { $set: { revoked_at: now } }
     )
   }
   
