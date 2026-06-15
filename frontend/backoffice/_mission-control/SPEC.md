@@ -93,14 +93,15 @@ interface MenuItemUI {
 
 const MENU_UI: Record<string, MenuItemUI> = {
   'dashboard': { icon: <DashboardOutlined />, route: '/' },
+  'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
   'staff': { icon: <TeamOutlined /> },                 // โหนด menu = กลุ่ม ไม่มี route
   'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
   'billing': { icon: <DollarOutlined /> },              // group
-  'agents:list': { icon: <BotOutlined />, route: '/billing/agents' },
-  'invoices:list': { icon: <FileTextOutlined />, route: '/billing/invoices' },
-  'reports': { icon: <BarChartOutlined /> },            // group
-  'reports:smart': { icon: <BarChartOutlined />, route: '/reports/smart' },
-  // ...
+  'agents:list': { icon: <ShopOutlined />, route: '/agents' },
+  'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
+  'reports': { icon: <CodeOutlined /> },               // group
+  'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
+  'my_profile': { icon: <UserOutlined />, route: '/profile' }
 }
 ```
 
@@ -126,7 +127,24 @@ const minimalMenuItems: MenuNode[] = [
   { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
   { key: 'my_profile', label: 'My Profile', type: 'action', parent_key: null, sort_order: 100 }
 ]
-// + Toast/Banner: "Some menu items unavailable. Please refresh."
+```
+
+**UX Alert Banner สำหรับ Fallback:**
+เมื่อการดึงเมนูผิดพลาด (มีค่า `menuError` เป็น `true`) จะแสดงผล Alert สีส้มเตือนด้านบนสุดของ Content Layout ใน `AdminLayout.tsx` เพื่อให้สอดคล้องกับหน้าจออื่นๆ:
+```typescript
+import { Alert } from 'antd';
+
+// ส่วนแสดงผลใน Layout Content
+{menuError && (
+  <Alert
+    message="System warning"
+    description="Some menu items are temporarily unavailable. Please try refreshing the page or logging in again."
+    type="warning"
+    showIcon
+    closable
+    style={{ marginBottom: token.marginLG, borderRadius: token.borderRadius }}
+  />
+)}
 ```
 
 **ห้าม fallback ไปเมนูเต็มแบบ hardcode** (จะกลายเป็นช่องให้เห็นเมนูที่ไม่มีสิทธิ์)

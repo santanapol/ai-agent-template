@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Dropdown, Avatar, Space, Tag, Typography, theme } from 'antd';
-import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Layout, Menu, Dropdown, Avatar, Space, Tag, Typography, theme, Alert } from 'antd';
+import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined, DollarOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as staffApi from '../lib/staffApiClient';
@@ -26,6 +26,25 @@ function formatRoleLabel(role: string | undefined): string {
   );
 }
 
+interface MenuItemUI {
+  icon: React.ReactNode;
+  route?: string;  // undefined = menu group (no route)
+  disabled?: boolean;
+}
+
+const MENU_UI: Record<string, MenuItemUI> = {
+  'dashboard': { icon: <DashboardOutlined />, route: '/' },
+  'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
+  'staff': { icon: <TeamOutlined /> },                 // โหนด menu = กลุ่ม ไม่มี route
+  'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
+  'billing': { icon: <DollarOutlined /> },              // group
+  'agents:list': { icon: <ShopOutlined />, route: '/agents' },
+  'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
+  'reports': { icon: <CodeOutlined /> },               // group
+  'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
+  'my_profile': { icon: <UserOutlined />, route: '/profile' }
+};
+
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,8 +54,6 @@ const AdminLayout: React.FC = () => {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [branchName, setBranchName] = useState<string | null>(null);
 
-  const isStaffAdmin =
-    user?.role === 'platform_admin' || user?.role === 'branch_admin';
 
   // Resolve raw IDs from the JWT (`user.sub`, `user.branch_id`) into human-readable
   // names for the navbar — best-effort, falls back to the raw ID if lookups fail.
@@ -71,15 +88,74 @@ const AdminLayout: React.FC = () => {
     };
   }, [user]);
 
-  const menuItems = [
-    { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: '/agents', icon: <ShopOutlined />, label: 'Agent Fees' },
-    { key: '/invoices', icon: <FileTextOutlined />, label: 'Invoices' },
-    { key: '/smart-reports', icon: <CodeOutlined />, label: 'Smart Report' },
-    ...(isStaffAdmin
-      ? [{ key: '/staff', icon: <TeamOutlined />, label: 'Staff Management' }]
-      : []),
-  ];
+interface MenuItemType {
+  key: string;
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  children?: MenuItemType[];
+  sort_order: number;
+}
+
+  const { menus, menuError } = useAuth();
+
+  const menuItems = useMemo(() => {
+    const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
+
+    // 1. Create all items and map them by their original node.key
+    menus.forEach((node) => {
+      const ui = MENU_UI[node.key];
+      if (!ui) return; // Skip if not mapped in UI
+
+      const item: MenuItemType = {
+        key: ui.route || node.key,
+        label: node.label,
+        icon: ui.icon,
+        sort_order: node.sort_order,
+      };
+
+      itemMap.set(node.key, { item, parentKey: node.parent_key });
+    });
+
+    const rootItems: MenuItemType[] = [];
+
+    // 2. Link children to their parents
+    itemMap.forEach((val) => {
+      const { item, parentKey } = val;
+      if (parentKey && itemMap.has(parentKey)) {
+        const parentVal = itemMap.get(parentKey)!;
+        if (!parentVal.item.children) {
+          parentVal.item.children = [];
+        }
+        parentVal.item.children.push(item);
+      } else {
+        rootItems.push(item);
+      }
+    });
+
+    // 3. Sort recursively
+    const sortItems = (items: MenuItemType[]) => {
+      items.sort((a, b) => a.sort_order - b.sort_order);
+      items.forEach((item) => {
+        if (item.children) {
+          sortItems(item.children);
+        }
+      });
+    };
+
+    sortItems(rootItems);
+    return rootItems;
+  }, [menus]);
+
+  const defaultOpenKeys = useMemo(() => {
+    const keys: string[] = [];
+    menus.forEach((node) => {
+      const ui = MENU_UI[node.key];
+      if (ui && ui.route === location.pathname && node.parent_key) {
+        keys.push(node.parent_key);
+      }
+    });
+    return keys;
+  }, [menus, location.pathname]);
 
 
   const userMenu = {
@@ -131,11 +207,17 @@ const AdminLayout: React.FC = () => {
           </Typography.Title>
         </div>
         <Menu
+          key={defaultOpenKeys.join(',')}
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={defaultOpenKeys}
           style={{ borderRight: 0, marginTop: token.margin }}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => {
+            if (key.startsWith('/')) {
+              navigate(key);
+            }
+          }}
         />
       </Sider>
       <Layout>
@@ -176,6 +258,16 @@ const AdminLayout: React.FC = () => {
           </Space>
         </Header>
         <Content style={{ padding: token.paddingLG, background: token.colorBgLayout }}>
+          {menuError && (
+            <Alert
+              title="System warning"
+              description="Some menu items are temporarily unavailable. Please try refreshing the page or logging in again."
+              type="warning"
+              showIcon
+              closable
+              style={{ marginBottom: token.marginLG, borderRadius: token.borderRadius }}
+            />
+          )}
           <Outlet />
         </Content>
       </Layout>

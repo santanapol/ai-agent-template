@@ -1,4 +1,4 @@
-import type { TokenResponse } from '../types/auth';
+import type { TokenResponse, MenuNode } from '../types/auth';
 import { baseClient as authClient } from './baseApiClient';
 
 export async function login(username: string, password: string): Promise<TokenResponse> {
@@ -27,3 +27,9 @@ export interface ChangePasswordPayload {
 export async function changePassword(payload: ChangePasswordPayload): Promise<void> {
   await authClient.post('/auth/me/password', payload);
 }
+
+export async function getMyMenus(): Promise<MenuNode[]> {
+  const res = await authClient.get<{ menus: MenuNode[] }>('/auth/me/menus');
+  return res.data.menus;
+}
+

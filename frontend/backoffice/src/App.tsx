@@ -3,6 +3,7 @@ import { App as AntApp, ConfigProvider, Spin } from 'antd';
 import enUS from 'antd/locale/en_US';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
+import { PermissionGuard } from './components/PermissionGuard';
 import Dashboard from './pages/Dashboard';
 import StaffManagement from './pages/StaffManagement';
 import MyProfile from './pages/MyProfile';
@@ -39,15 +40,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const RoleGuard: React.FC<{ allowedRoles: string[]; children: React.ReactNode }> = ({
-  allowedRoles,
-  children,
-}) => {
-  const { user, loading } = useAuth();
-  if (loading) return <Spin size="large" fullscreen />;
-  if (!user || !allowedRoles.includes(user.role)) return <Navigate to="/403" replace />;
-  return <>{children}</>;
-};
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -69,9 +61,9 @@ const router = createBrowserRouter([
       {
         path: 'staff',
         element: (
-          <RoleGuard allowedRoles={['platform_admin', 'branch_admin']}>
+          <PermissionGuard required="profiles:list">
             <StaffManagement />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       { path: 'smart-reports', element: <SmartReport /> },
