@@ -38,6 +38,8 @@ tags:
     description: Liveness and readiness
   - name: internal
     description: Trusted service-to-service APIs (O-15 — not public internet)
+  - name: admin
+    description: Dynamic permissions admin APIs
 
 paths:
   /healthz:
@@ -619,6 +621,230 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /auth/admin/menus:
+    get:
+      tags: [admin]
+      summary: Get all menu nodes
+      description: Returns all menu/action nodes in the system without filtering.
+      operationId: getAdminMenus
+      security:
+        - BearerAccess: []
+      responses:
+        '200':
+          description: List of all menu nodes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  menus:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MenuNode'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      tags: [admin]
+      summary: Create a menu/action node
+      description: Create a new menu node in the registry, validating hierarchy rules.
+      operationId: createAdminMenu
+      security:
+        - BearerAccess: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuNode'
+        '400':
+          description: Validation failed (RFC 7807 problem)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/admin/menus/{key}:
+    patch:
+      tags: [admin]
+      summary: Update a menu node
+      description: Modify labels or parent of a menu node. key and type cannot be modified.
+      operationId: updateAdminMenu
+      security:
+        - BearerAccess: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMenuRequest'
+      responses:
+        '200':
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuNode'
+        '400':
+          description: Validation failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '412':
+          description: Precondition Failed (ETag/If-Match mismatch)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags: [admin]
+      summary: Delete a menu node
+      description: Remove a menu node if it has no children and is not referenced in role mappings.
+      operationId: deleteAdminMenu
+      security:
+        - BearerAccess: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted successfully
+        '409':
+          description: Conflict (has children or referenced)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '412':
+          description: Precondition Failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/admin/role-permissions:
+    get:
+      tags: [admin]
+      summary: Get all role permission mappings
+      description: Query permission mapping registries.
+      operationId: getAdminRolePermissions
+      security:
+        - BearerAccess: []
+      parameters:
+        - name: ou_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Mappings retrieved
+  /auth/admin/role-permissions/{ou_id}/{role}:
+    put:
+      tags: [admin]
+      summary: Upsert role permission mapping
+      description: Save permission mapping for (ou_id, role) pair. Supports revoking sessions.
+      operationId: upsertAdminRolePermission
+      security:
+        - BearerAccess: []
+      parameters:
+        - name: ou_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertRolePermissionRequest'
+      responses:
+        '200':
+          description: Upserted successfully
+        '400':
+          description: Validation failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags: [admin]
+      summary: Delete role permission mapping
+      description: Clear mapping override for (ou_id, role) pair.
+      operationId: deleteAdminRolePermission
+      security:
+        - BearerAccess: []
+      parameters:
+        - name: ou_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Mapping cleared
   /internal/users:
     post:
       tags: [internal]
@@ -1172,3 +1398,56 @@ components:
           minLength: 10
           maxLength: 512
           description: Opaque refresh to revoke (family-wide per SoT).
+    MenuNode:
+      type: object
+      required: [key, label, type, parent_key, sort_order]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum: [menu, action]
+        parent_key:
+          type: string
+          nullable: true
+        sort_order:
+          type: integer
+    CreateMenuRequest:
+      type: object
+      required: [key, label, type, parent_key, sort_order]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum: [menu, action]
+        parent_key:
+          type: string
+          nullable: true
+        sort_order:
+          type: integer
+    UpdateMenuRequest:
+      type: object
+      properties:
+        label:
+          type: string
+        parent_key:
+          type: string
+          nullable: true
+        sort_order:
+          type: integer
+    UpsertRolePermissionRequest:
+      type: object
+      required: [menu_keys]
+      properties:
+        menu_keys:
+          type: array
+          items:
+            type: string
+        revoke_sessions:
+          type: boolean
+          default: false
