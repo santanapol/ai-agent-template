@@ -89,21 +89,58 @@ test('Admin APIs Integration Tests', { timeout: 180_000 }, async (t) => {
   await db
     .collection(AUTH_COLLECTIONS.USERS)
     .insertMany([
-      await userDoc(now, TEST_ADMIN, 'platform_admin'),
+      await userDoc(now, TEST_ADMIN, 'platform_admin', null),
       await userDoc(now, TEST_STAFF, 'branch_staff', null)
     ])
 
   // Seed menus (key, label, type, parent_key, sort_order)
   await db.collection(AUTH_COLLECTIONS.MENUS).insertMany([
-    { key: 'staff', label: 'จัดการพนักงาน', type: 'menu', parent_key: null, sort_order: 10, ou_id: null, ...auditStamp(now) },
-    { key: 'staff:profiles', label: 'โปรไฟล์พนักงาน', type: 'menu', parent_key: 'staff', sort_order: 10, ou_id: null, ...auditStamp(now) },
-    { key: 'profiles:list', label: 'รายชื่อพนักงาน', type: 'action', parent_key: 'staff:profiles', sort_order: 10, ou_id: null, ...auditStamp(now) },
-    { key: 'permissions:manage', label: 'จัดการสิทธิ์', type: 'action', parent_key: 'staff:profiles', sort_order: 20, ou_id: null, ...auditStamp(now) }
+    {
+      key: 'staff',
+      label: 'จัดการพนักงาน',
+      type: 'menu',
+      parent_key: null,
+      sort_order: 10,
+      ou_id: null,
+      ...auditStamp(now)
+    },
+    {
+      key: 'staff:profiles',
+      label: 'โปรไฟล์พนักงาน',
+      type: 'menu',
+      parent_key: 'staff',
+      sort_order: 10,
+      ou_id: null,
+      ...auditStamp(now)
+    },
+    {
+      key: 'profiles:list',
+      label: 'รายชื่อพนักงาน',
+      type: 'action',
+      parent_key: 'staff:profiles',
+      sort_order: 10,
+      ou_id: null,
+      ...auditStamp(now)
+    },
+    {
+      key: 'permissions:manage',
+      label: 'จัดการสิทธิ์',
+      type: 'action',
+      parent_key: 'staff:profiles',
+      sort_order: 20,
+      ou_id: null,
+      ...auditStamp(now)
+    }
   ])
 
   // Seed roles mappings
   await db.collection(AUTH_COLLECTIONS.ROLE_PERMISSIONS).insertMany([
-    { ou_id: null, role: 'platform_admin', menu_keys: ['permissions:manage', 'profiles:*'], ...auditStamp(now) },
+    {
+      ou_id: null,
+      role: 'platform_admin',
+      menu_keys: ['permissions:manage', 'profiles:*'],
+      ...auditStamp(now)
+    },
     { ou_id: null, role: 'branch_staff', menu_keys: ['profiles:list'], ...auditStamp(now) }
   ])
 
@@ -123,7 +160,7 @@ test('Admin APIs Integration Tests', { timeout: 180_000 }, async (t) => {
     assert.equal(r.status, 200)
     const body = await r.json()
     assert.ok(body.menus.length >= 4)
-    assert.ok(body.menus.some(m => m.key === 'permissions:manage'))
+    assert.ok(body.menus.some((m) => m.key === 'permissions:manage'))
   })
 
   await t.test('GET /auth/admin/menus rejects staff without permissions:manage', async () => {
@@ -268,25 +305,83 @@ test('Admin APIs Integration Tests', { timeout: 180_000 }, async (t) => {
     assert.equal(user.access_token_gen, 1)
   })
 
-  await t.test('PUT /auth/admin/role-permissions 400 on self-lockout (remove permissions:manage from platform_admin)', async () => {
-    const r = await fetch(`${base}/auth/admin/role-permissions/null/platform_admin`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${adminToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        menu_keys: ['profiles:list'] // missing permissions:manage or permissions:*
+  await t.test(
+    'PUT /auth/admin/role-permissions 400 on self-lockout (remove permissions:manage from platform_admin)',
+    async () => {
+      const r = await fetch(`${base}/auth/admin/role-permissions/null/platform_admin`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          menu_keys: ['profiles:list'] // missing permissions:manage or permissions:*
+        })
       })
-    })
-    assert.equal(r.status, 400)
-  })
+      assert.equal(r.status, 400)
+    }
+  )
 
-  await t.test('DELETE /auth/admin/role-permissions 400 on deleting platform_admin mapping', async () => {
-    const r = await fetch(`${base}/auth/admin/role-permissions/null/platform_admin`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${adminToken}` }
-    })
-    assert.equal(r.status, 400)
-  })
+  await t.test(
+    'DELETE /auth/admin/role-permissions 409 AUTH_ROLE_PERMISSION_IN_USE when active users exist',
+    async () => {
+      // branch_staff user exists in the seed — deleting branch_staff mapping without confirm should block
+      const r = await fetch(`${base}/auth/admin/role-permissions/null/branch_staff`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` }
+      })
+      assert.equal(r.status, 409)
+      const body = await r.json()
+      assert.equal(body.code, 'AUTH_ROLE_PERMISSION_IN_USE')
+    }
+  )
+
+  await t.test(
+    'DELETE /auth/admin/role-permissions 204 when confirm=true is passed despite active users',
+    async () => {
+      const r = await fetch(`${base}/auth/admin/role-permissions/null/branch_staff?confirm=true`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` }
+      })
+      assert.equal(r.status, 204)
+    }
+  )
+
+  await t.test(
+    'PUT /auth/admin/role-permissions with revoke_sessions:true affecting own role → subsequent request with old token gets 401',
+    async () => {
+      // Re-create branch_staff mapping (was deleted above) then get a fresh admin token
+      await fetch(`${base}/auth/admin/role-permissions/null/branch_staff`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ menu_keys: ['profiles:list', 'permissions:manage'] })
+      })
+
+      // Capture a fresh admin token and store it as "stale" — we will revoke it
+      const staleAdminToken = await login(base, TEST_ADMIN)
+
+      // Now PUT platform_admin's own mapping with revoke_sessions:true — this increments access_token_gen
+      const rPut = await fetch(`${base}/auth/admin/role-permissions/null/platform_admin`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${staleAdminToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          menu_keys: ['permissions:manage', 'profiles:*'],
+          revoke_sessions: true
+        })
+      })
+      assert.equal(rPut.status, 200)
+
+      // Retry any admin endpoint with the stale token — must get 401 (token_gen mismatch)
+      const rRetry = await fetch(`${base}/auth/admin/menus`, {
+        headers: { Authorization: `Bearer ${staleAdminToken}` }
+      })
+      assert.equal(rRetry.status, 401)
+    }
+  )
 })

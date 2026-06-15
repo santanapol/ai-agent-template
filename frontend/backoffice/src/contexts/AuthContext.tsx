@@ -104,11 +104,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let cancelled = false;
 
-    Promise.resolve().then(() => {
-      if (cancelled) return;
-      setMenuLoading(true);
-      setMenuError(false);
-    });
+    /* eslint-disable react-hooks/set-state-in-effect --
+     * Intentional: synchronously set loading/error flags before the async
+     * API call so the UI reflects the pending state immediately (not after
+     * the microtask queue drains). Both setState calls are unconditional and
+     * do not depend on component state, so they don't cause cascading renders.
+     */
+    setMenuLoading(true);
+    setMenuError(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     authApi
       .getMyMenus()

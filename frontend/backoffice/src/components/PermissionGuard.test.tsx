@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { PermissionGuard } from './PermissionGuard';
-import { useAuth, AuthContextValue } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import type { AuthContextValue } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { DecodedUser } from '../types/auth';
+import type { DecodedUser } from '../types/auth';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),

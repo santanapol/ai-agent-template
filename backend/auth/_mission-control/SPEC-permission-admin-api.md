@@ -73,6 +73,7 @@ backend/auth/
 ### Validation = กฎเดียวกับ seed เสมอ
 
 ทุก mutation ตรวจกับ**สถานะรวมหลังแก้** (เอกสารปัจจุบัน in DB + การแก้ที่ขอ) ด้วย `permission-validation.js` — ผิดข้อใด → `400` RFC 7807 พร้อมรายการ error ทั้งหมดใน `detail`
+
 - **Sanitization:** ใน Controller/Validator ของ `PUT /auth/admin/role-permissions/:ou_id/:role` จะต้องมีกระบวนการแปลงค่าพารามิเตอร์ที่เป็น string `"null"` ให้กลายเป็น JS `null` (Global) อย่างปลอดภัย
 - **Race Condition Prevention:** เพื่อป้องกัน race condition ตอนที่แอดมินสองคนบันทึกแก้ไขผังเมนูย้อนกลับหากันในเวลาใกล้เคียงกัน (เช่น สลับกิ่งเมนูจนเป็น loop) ระบบจะต้องตรวจสอบกฎ 7 ข้อโดยอาศัยข้อมูลที่อ่านแบบสด (Real-time read) และครอบคลุมการตรวจสอบด้วย MongoDB Transaction หรือ application-level mutex lock
 

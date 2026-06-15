@@ -42,16 +42,19 @@ export class AdminService {
     const rolePermissions = await this.repo.getRolePermissions()
 
     // Simulate adding the new menu item to validate
-    const simulatedMenus = [...menus, {
-      ...doc,
-      ou_id: null,
-      cr_by: actorId,
-      cr_date: new Date(),
-      cr_prog: 'POST /auth/admin/menus',
-      upd_by: actorId,
-      upd_date: new Date(),
-      upd_prog: 'POST /auth/admin/menus'
-    }]
+    const simulatedMenus = [
+      ...menus,
+      {
+        ...doc,
+        ou_id: null,
+        cr_by: actorId,
+        cr_date: new Date(),
+        cr_prog: 'POST /auth/admin/menus',
+        upd_by: actorId,
+        upd_date: new Date(),
+        upd_prog: 'POST /auth/admin/menus'
+      }
+    ]
 
     const errors = validateSeedData({ menus: simulatedMenus, rolePermissions })
     if (errors.length > 0) {
@@ -105,7 +108,7 @@ export class AdminService {
         ok: false,
         status: 404,
         problem: problemPayload({
-          type: this.types.userNotFound, // Fallback error type
+          type: this.types.menuNotFound,
           title: 'Not Found',
           status: 404,
           detail: 'Menu node not found.',
@@ -121,7 +124,7 @@ export class AdminService {
         ok: false,
         status: 412,
         problem: problemPayload({
-          type: this.types.validation,
+          type: this.types.preconditionFailed,
           title: 'Precondition Failed',
           status: 412,
           detail: 'Precondition failed (If-Match mismatch).',
@@ -149,7 +152,7 @@ export class AdminService {
     const rolePermissions = await this.repo.getRolePermissions()
 
     // Simulate update
-    const simulatedMenus = menus.map(m => m.key === key ? { ...m, ...doc } : m)
+    const simulatedMenus = menus.map((m) => (m.key === key ? { ...m, ...doc } : m))
     const errors = validateSeedData({ menus: simulatedMenus, rolePermissions })
     if (errors.length > 0) {
       return {
@@ -173,7 +176,20 @@ export class AdminService {
       upd_prog: 'PATCH /auth/admin/menus'
     }
 
-    await this.repo.updateMenu(key, updateDoc)
+    const result = await this.repo.updateMenu(key, updateDoc, existing.upd_date)
+    if (result.matchedCount === 0) {
+      return {
+        ok: false,
+        status: 412,
+        problem: problemPayload({
+          type: this.types.preconditionFailed,
+          title: 'Precondition Failed',
+          status: 412,
+          detail: 'Resource was modified by another request. Refresh and retry.',
+          code: 'AUTH_PRECONDITION_FAILED'
+        })
+      }
+    }
 
     await this.audit({
       event_type: 'auth.permissions_changed',
@@ -194,7 +210,7 @@ export class AdminService {
         ok: false,
         status: 404,
         problem: problemPayload({
-          type: this.types.userNotFound,
+          type: this.types.menuNotFound,
           title: 'Not Found',
           status: 404,
           detail: 'Menu node not found.',
@@ -210,7 +226,7 @@ export class AdminService {
         ok: false,
         status: 412,
         problem: problemPayload({
-          type: this.types.validation,
+          type: this.types.preconditionFailed,
           title: 'Precondition Failed',
           status: 412,
           detail: 'Precondition failed (If-Match mismatch).',
@@ -245,7 +261,7 @@ export class AdminService {
           title: 'Conflict',
           status: 409,
           detail: 'Cannot delete menu key that has children.',
-          code: 'AUTH_INVALID_REQUEST'
+          code: 'AUTH_MENU_IN_USE'
         })
       }
     }
@@ -261,7 +277,7 @@ export class AdminService {
           title: 'Conflict',
           status: 409,
           detail: 'Cannot delete menu key that is explicitly referenced in role permissions.',
-          code: 'AUTH_INVALID_REQUEST'
+          code: 'AUTH_MENU_IN_USE'
         })
       }
     }
@@ -270,7 +286,7 @@ export class AdminService {
     const menus = await this.repo.getMenus()
     const rolePermissions = await this.repo.getRolePermissions()
 
-    const simulatedMenus = menus.filter(m => m.key !== key)
+    const simulatedMenus = menus.filter((m) => m.key !== key)
     const errors = validateSeedData({ menus: simulatedMenus, rolePermissions })
     if (errors.length > 0) {
       return {
@@ -281,12 +297,25 @@ export class AdminService {
           title: 'Conflict',
           status: 409,
           detail: `Cannot delete action: ${errors.join(', ')}`,
-          code: 'AUTH_INVALID_REQUEST'
+          code: 'AUTH_MENU_IN_USE'
         })
       }
     }
 
-    await this.repo.deleteMenu(key)
+    const result = await this.repo.deleteMenu(key, existing.upd_date)
+    if (result.deletedCount === 0) {
+      return {
+        ok: false,
+        status: 412,
+        problem: problemPayload({
+          type: this.types.preconditionFailed,
+          title: 'Precondition Failed',
+          status: 412,
+          detail: 'Resource was modified by another request. Refresh and retry.',
+          code: 'AUTH_PRECONDITION_FAILED'
+        })
+      }
+    }
 
     await this.audit({
       event_type: 'auth.permissions_changed',
@@ -310,9 +339,15 @@ export class AdminService {
     return { ok: true, status: 200, body: { role_permissions: list } }
   }
 
-  async upsertRolePermission(ouIdParam, role, menu_keys, revoke_sessions, { actorId, ip, request_id }) {
+  async upsertRolePermission(
+    ouIdParam,
+    role,
+    menu_keys,
+    revoke_sessions,
+    { actorId, ip, request_id }
+  ) {
     const ouId = ouIdParam === 'null' ? null : ouIdParam
-    
+
     if (ouId !== null) {
       return {
         ok: false,
@@ -330,7 +365,8 @@ export class AdminService {
     // Self-Lockout Prevention: ห้ามยกเลิก permissions:manage ออกจาก platform_admin
     if (role === 'platform_admin' && !menu_keys.includes('permissions:manage')) {
       // สำหรับ platform_admin, wildcard 'permissions:*' หรือ exact 'permissions:manage' ต้องมีอยู่
-      const hasManage = menu_keys.includes('permissions:manage') || menu_keys.includes('permissions:*')
+      const hasManage =
+        menu_keys.includes('permissions:manage') || menu_keys.includes('permissions:*')
       if (!hasManage) {
         return {
           ok: false,
@@ -350,7 +386,9 @@ export class AdminService {
     const rolePermissions = await this.repo.getRolePermissions()
 
     // Simulate upsert
-    const simulatedMappings = rolePermissions.filter(rp => !(rp.ou_id === ouId && rp.role === role))
+    const simulatedMappings = rolePermissions.filter(
+      (rp) => !(rp.ou_id === ouId && rp.role === role)
+    )
     simulatedMappings.push({ ou_id: ouId, role, menu_keys })
 
     const errors = validateSeedData({ menus, rolePermissions: simulatedMappings })
@@ -393,26 +431,27 @@ export class AdminService {
 
       // Revoke in MongoDB: refresh tokens for those users
       const users = await this.repo.getUsersInScope(ouId, role)
-      const userIds = users.map(u => u._id)
+      const userIds = users.map((u) => u._id)
       if (userIds.length > 0) {
         await this.repo.revokeRefreshTokensForUsers(userIds, now)
       }
 
       // Sync Redis with pipeline in chunks
       if (this.redisClient && users.length > 0) {
-        const ttl = (this.env.REFRESH_TOKEN_TTL_SECONDS ?? 0) + (this.env.ACCESS_TOKEN_TTL_SECONDS ?? 0)
-        
+        const ttl =
+          (this.env.REFRESH_TOKEN_TTL_SECONDS ?? 0) + (this.env.ACCESS_TOKEN_TTL_SECONDS ?? 0)
+
         // chunking to avoid blocking redis
         const chunkSize = 1000
         for (let i = 0; i < users.length; i += chunkSize) {
           const chunk = users.slice(i, i + chunkSize)
           const pipeline = this.redisClient.multi()
-          
+
           for (const user of chunk) {
             const user_id_hex = user._id.toHexString()
             const redisKey = `auth:token_gen:${user_id_hex}`
             const gen = user.access_token_gen ?? 0
-            
+
             pipeline.set(redisKey, String(gen))
             if (ttl > 0) {
               pipeline.expire(redisKey, ttl)
@@ -446,9 +485,10 @@ export class AdminService {
     }
   }
 
-  async deleteRolePermission(ouIdParam, role, { actorId, ip, request_id }) {
+  async deleteRolePermission(ouIdParam, role, confirm, { actorId, ip, request_id }) {
     const ouId = ouIdParam === 'null' ? null : ouIdParam
 
+    // 1. Reject non-global OU first (most specific structural guard)
     if (ouId !== null) {
       return {
         ok: false,
@@ -469,7 +509,7 @@ export class AdminService {
         ok: false,
         status: 404,
         problem: problemPayload({
-          type: this.types.userNotFound,
+          type: this.types.rolePermissionNotFound,
           title: 'Not Found',
           status: 404,
           detail: 'Role permission mapping not found.',
@@ -478,7 +518,7 @@ export class AdminService {
       }
     }
 
-    // Self-Lockout Prevention: ห้ามลบ platform_admin mapping
+    // 2. Self-Lockout Prevention: ห้ามลบ platform_admin mapping
     if (role === 'platform_admin') {
       return {
         ok: false,
@@ -489,6 +529,22 @@ export class AdminService {
           status: 400,
           detail: 'Deletion of platform_admin role mapping is prohibited.',
           code: 'AUTH_INVALID_REQUEST'
+        })
+      }
+    }
+
+    // 3. Active users check — last gate before destructive operation
+    const activeUsersCount = await this.repo.countUsersInScope(ouId, role)
+    if (activeUsersCount > 0 && confirm !== true) {
+      return {
+        ok: false,
+        status: 409,
+        problem: problemPayload({
+          type: this.types.validation,
+          title: 'Conflict',
+          status: 409,
+          detail: `Cannot delete role mapping because there are ${activeUsersCount} active users in this scope. Set confirm=true to force delete.`,
+          code: 'AUTH_ROLE_PERMISSION_IN_USE'
         })
       }
     }

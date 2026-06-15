@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Space, Tag, Typography, theme, Alert } from 'antd';
+import type { MenuProps } from 'antd';
 import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined, DollarOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,7 +30,23 @@ function formatRoleLabel(role: string | undefined): string {
 interface MenuItemUI {
   icon: React.ReactNode;
   route?: string;  // undefined = menu group (no route)
-  disabled?: boolean;
+}
+
+interface MenuItemType {
+  key: string;
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  children?: MenuItemType[];
+  sort_order: number;
+}
+
+function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
+  return items.map((item) => ({
+    key: item.key,
+    label: item.label,
+    icon: item.icon,
+    children: item.children?.length ? toAntdMenuItems(item.children) : undefined,
+  }));
 }
 
 const MENU_UI: Record<string, MenuItemUI> = {
@@ -88,14 +105,6 @@ const AdminLayout: React.FC = () => {
     };
   }, [user]);
 
-interface MenuItemType {
-  key: string;
-  label: React.ReactNode;
-  icon?: React.ReactNode;
-  children?: MenuItemType[];
-  sort_order: number;
-}
-
   const { menus, menuError } = useAuth();
 
   const menuItems = useMemo(() => {
@@ -132,18 +141,22 @@ interface MenuItemType {
       }
     });
 
-    // 3. Sort recursively
-    const sortItems = (items: MenuItemType[]) => {
+    // 3. Sort recursively with depth guard (max depth 5)
+    const sortItems = (items: MenuItemType[], depth = 0) => {
+      if (depth > 5) {
+        console.warn('Menu structure exceeded maximum depth or contains a cycle');
+        return;
+      }
       items.sort((a, b) => a.sort_order - b.sort_order);
       items.forEach((item) => {
         if (item.children) {
-          sortItems(item.children);
+          sortItems(item.children, depth + 1);
         }
       });
     };
 
     sortItems(rootItems);
-    return rootItems;
+    return toAntdMenuItems(rootItems);
   }, [menus]);
 
   const defaultOpenKeys = useMemo(() => {
@@ -156,6 +169,17 @@ interface MenuItemType {
     });
     return keys;
   }, [menus, location.pathname]);
+
+  const [openKeys, setOpenKeys] = useState<string[]>(defaultOpenKeys);
+
+  // Sync openKeys when defaultOpenKeys changes (e.g., route change or menu reload).
+  // Functional update (prev => ...) is safe: derives next state from prev only,
+  // never reads component state directly, so it does not cause cascading renders.
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setOpenKeys((prev) => [...new Set([...prev, ...defaultOpenKeys])]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [defaultOpenKeys]);
 
 
   const userMenu = {
@@ -207,10 +231,10 @@ interface MenuItemType {
           </Typography.Title>
         </div>
         <Menu
-          key={defaultOpenKeys.join(',')}
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={defaultOpenKeys}
+          openKeys={openKeys}
+          onOpenChange={setOpenKeys}
           style={{ borderRight: 0, marginTop: token.margin }}
           items={menuItems}
           onClick={({ key }) => {

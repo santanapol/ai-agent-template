@@ -18,6 +18,10 @@ export function problemTypes(base) {
   const b = base.replace(/\/$/u, '')
   return {
     validation: `${b}/invalid-request`,
+    forbidden: `${b}/forbidden`,
+    menuNotFound: `${b}/menu-not-found`,
+    rolePermissionNotFound: `${b}/role-permission-not-found`,
+    preconditionFailed: `${b}/precondition-failed`,
     invalidCredentials: `${b}/invalid-credentials`,
     rateLimit: `${b}/too-many-attempts`,
     ipThrottle: `${b}/too-many-attempts`,

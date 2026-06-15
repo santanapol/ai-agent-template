@@ -72,6 +72,18 @@ export function validateSeedData({ menus, rolePermissions }) {
         if (!actionKeys.some((k) => anyPermissionMatches([entry], k))) {
           errors.push(`wildcard "${entry}" of "${rp.role}" matches zero actions (likely a typo)`)
         }
+
+        // Task 5: [Phase 5] enforce กฎ "escalating action ห้ามอยู่ใต้ wildcard domain"
+        // Explicit allow-list ทำให้ชัดเจนและตรวจสอบได้ง่ายกว่า substring heuristic
+        const ESCALATING_ACTIONS = new Set(['roles:assign', 'permissions:manage'])
+        const prefix = entry.slice(0, -1)
+        for (const actionKey of actionKeys) {
+          if (actionKey.startsWith(prefix) && ESCALATING_ACTIONS.has(actionKey)) {
+            errors.push(
+              `Escalating action "${actionKey}" cannot be covered by wildcard "${entry}" in role "${rp.role}"`
+            )
+          }
+        }
       } else if (!actionKeys.includes(entry)) {
         errors.push(`menu_keys entry "${entry}" of "${rp.role}" matches no action`)
       }

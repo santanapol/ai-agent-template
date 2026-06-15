@@ -6,6 +6,7 @@ import { generateOpaqueRefresh, hashRefreshToken } from '../../lib/refresh-token
 import { signAccessJwt } from '../../lib/jwt-access.js'
 import { anyPermissionMatches } from '../../lib/permission-match.js'
 import { problemPayload } from '../../lib/problem.js'
+import { codeForProblemType } from '../../lib/auth-problem-codes.js'
 import {
   getAccessTokenGenFromRedis,
   setAccessTokenGenInRedis
@@ -58,8 +59,29 @@ function isTransactionUnsupportedOnTopology(err) {
 }
 
 /** Envelope for login/refresh outcomes that surface as HTTP 401 + RFC 7807 type. */
-function unauthorizedServiceOutcome(type) {
-  return { ok: false, status: 401, type, body: null, cookie: null }
+function unauthorizedServiceOutcome(type, types, detail) {
+  const code = codeForProblemType(types, type) || 'AUTH_UNAUTHORIZED'
+  let defaultDetail = 'Unauthorized access.'
+  if (type === types.invalidCredentials) {
+    defaultDetail = 'Invalid username or password.'
+  } else if (type === types.invalidToken) {
+    defaultDetail = 'Access token is no longer valid.'
+  }
+
+  return {
+    ok: false,
+    status: 401,
+    type,
+    body: null,
+    cookie: null,
+    problem: problemPayload({
+      type,
+      title: 'Unauthorized',
+      status: 401,
+      detail: detail || defaultDetail,
+      code
+    })
+  }
 }
 
 export class AuthService {
@@ -263,7 +285,7 @@ export class AuthService {
     const limit = this.env.ACCESS_JWT_SOFT_LIMIT_BYTES ?? 4096
     const bytes = Buffer.byteLength(token, 'utf8')
     if (bytes > limit) {
-      this.log.warn(
+      this.log?.warn?.(
         { bytes, limit, permission_entries: permissions.length },
         'access JWT exceeds soft size limit'
       )
@@ -295,7 +317,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     let valid = false
@@ -320,7 +342,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     await this.clearThrottleKeys([ipKey, userThrottleKey(user._id)])
@@ -407,7 +429,7 @@ export class AuthService {
       ip,
       detail_safe: { reason }
     })
-    return unauthorizedServiceOutcome(type)
+    return unauthorizedServiceOutcome(type, this.types)
   }
 
   async refresh({ rawRefresh, refreshChannel, ip, request_id }) {
@@ -473,7 +495,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'user_not_found' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const newPlain = generateOpaqueRefresh()
@@ -630,24 +652,24 @@ export class AuthService {
         ? token_gen_claim
         : Number.parseInt(String(token_gen_claim ?? ''), 10)
     if (!Number.isInteger(claim) || claim < 0) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const user = await this.repo.findUserById(new ObjectId(user_id_hex))
     if (!user) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const expected = coerceTokenGen(user)
     if (claim !== expected) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     if (this.redisClient) {
       try {
         const redisGen = await getAccessTokenGenFromRedis(this.redisClient, user_id_hex)
         if (redisGen !== null && redisGen !== expected) {
-          return unauthorizedServiceOutcome(this.types.invalidToken)
+          return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
         }
       } catch (err) {
         this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen read failed')
@@ -823,7 +845,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_current_password' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     const samePassword = await this.verifyPasswordHash(user.password_hash, new_password)

@@ -23,6 +23,7 @@ import { useAppFeedback } from '../hooks/useAppFeedback';
 import StaffTable from '../components/staff/StaffTable';
 import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../components/staff/StaffDrawer';
 import { formatTelephoneToE164 } from '../lib/telephone';
+import { usePermission } from '../hooks/usePermission';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -312,6 +313,9 @@ const StaffManagement: React.FC = () => {
     [message, modal, refresh],
   );
 
+  const canCreate = usePermission('profiles:create');
+  const canEdit = usePermission('profiles:edit');
+
   return (
     <div>
       <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
@@ -323,9 +327,11 @@ const StaffManagement: React.FC = () => {
             Manage staff profiles, system roles, and authentication credentials.
           </Typography.Text>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDrawer('create')}>
-          Add New Staff
-        </Button>
+        {canCreate && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDrawer('create')}>
+            Add New Staff
+          </Button>
+        )}
       </Flex>
 
       <Card styles={{ body: { padding: token.paddingLG } }}>
@@ -353,7 +359,7 @@ const StaffManagement: React.FC = () => {
           loading={tableLoading}
           pagination={paginationConfig}
           onView={(record) => handleOpenDrawer('view', record)}
-          onEdit={(record) => handleOpenDrawer('edit', record)}
+          onEdit={canEdit ? (record) => handleOpenDrawer('edit', record) : undefined}
           onArchive={handleArchive}
           onRestore={handleRestore}
           onTableChange={handleTableChange}

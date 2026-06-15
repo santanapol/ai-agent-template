@@ -52,7 +52,13 @@ export function createAdminController({ service }) {
       const ctx = getContext(request)
       const { ou_id, role } = request.params
       const { menu_keys, revoke_sessions } = request.body
-      const result = await service.upsertRolePermission(ou_id, role, menu_keys, revoke_sessions, ctx)
+      const result = await service.upsertRolePermission(
+        ou_id,
+        role,
+        menu_keys,
+        revoke_sessions,
+        ctx
+      )
       if (!result.ok) {
         return reply.code(result.status).type('application/problem+json').send(result.problem)
       }
@@ -62,7 +68,8 @@ export function createAdminController({ service }) {
     async deleteRolePermission(request, reply) {
       const ctx = getContext(request)
       const { ou_id, role } = request.params
-      const result = await service.deleteRolePermission(ou_id, role, ctx)
+      const { confirm } = request.query || {}
+      const result = await service.deleteRolePermission(ou_id, role, confirm, ctx)
       if (!result.ok) {
         return reply.code(result.status).type('application/problem+json').send(result.problem)
       }

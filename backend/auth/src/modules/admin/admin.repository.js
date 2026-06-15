@@ -22,13 +22,14 @@ export class AdminRepository {
     await this.db.collection(MENUS).insertOne(doc)
   }
 
-  async updateMenu(key, doc) {
-    // optimistic locking: ตรวจสอบ upd_date หรือ schema lock
-    return this.db.collection(MENUS).updateOne({ key }, { $set: doc })
+  async updateMenu(key, doc, upd_date) {
+    const filter = upd_date ? { key, upd_date } : { key }
+    return this.db.collection(MENUS).updateOne(filter, { $set: doc })
   }
 
-  async deleteMenu(key) {
-    await this.db.collection(MENUS).deleteOne({ key })
+  async deleteMenu(key, upd_date) {
+    const filter = upd_date ? { key, upd_date } : { key }
+    return this.db.collection(MENUS).deleteOne(filter)
   }
 
   async getRolePermissions(filter = {}) {
@@ -72,23 +73,22 @@ export class AdminRepository {
   }
 
   async getUsersInScope(ou_id, role) {
-    return this.db.collection(USERS).find({ ou_id, role }, { projection: { _id: 1, access_token_gen: 1 } }).toArray()
+    return this.db
+      .collection(USERS)
+      .find({ ou_id, role }, { projection: { _id: 1, access_token_gen: 1 } })
+      .toArray()
   }
 
   async bumpUsersTokenGen(ou_id, role) {
-    return this.db.collection(USERS).updateMany(
-      { ou_id, role },
-      { $inc: { access_token_gen: 1 } }
-    )
+    return this.db.collection(USERS).updateMany({ ou_id, role }, { $inc: { access_token_gen: 1 } })
   }
 
   async revokeRefreshTokensForUsers(userIds, now) {
-    return this.db.collection(AUTH_COLLECTIONS.REFRESH_TOKENS).updateMany(
-      { user_id: { $in: userIds }, revoked_at: null },
-      { $set: { revoked_at: now } }
-    )
+    return this.db
+      .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
+      .updateMany({ user_id: { $in: userIds }, revoked_at: null }, { $set: { revoked_at: now } })
   }
-  
+
   async insertAudit(doc) {
     return this.db.collection(AUTH_COLLECTIONS.AUDIT_EVENTS).insertOne(doc)
   }

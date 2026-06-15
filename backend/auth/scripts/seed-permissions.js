@@ -12,8 +12,6 @@ import { seedMenus, seedRolePermissions } from './seed-data/permissions.js'
 
 const SEED_PROG = 'scripts/seed-permissions.js'
 const SEED_BY = 'system'
-const MAX_DEPTH = 3
-const MENU_TYPES = ['menu', 'action']
 
 import { validateSeedData } from '../src/lib/permission-validation.js'
 

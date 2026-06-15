@@ -1,21 +1,21 @@
 # Phase A TODO List
 
-- [ ] **Task 1: Shared Validation & Concurrency Foundation**
-  - [ ] ย้าย `validateSeedData` จาก `scripts/seed-permissions.js` ไปยัง `src/lib/permission-validation.js`
-  - [ ] เขียน Unit Test ใหม่สำหรับ `permission-validation.js` เพื่อครอบคลุมกฎ 7 ข้อและกรณีขอบเขต
-  - [ ] แก้ไข `scripts/seed-permissions.js` ให้ดึงโมดูลร่วมนี้ไปใช้งาน และรันเทสเก่าให้ผ่านหมด
-- [ ] **Task 2: Modular Admin Route & Auth Guard**
-  - [ ] สร้างโครงสร้างไฟล์ใน `src/modules/admin/` (route, controller, service, repository, validator)
-  - [ ] พัฒนา Authorization Middleware ใน `admin.route.js` เพื่อตรวจสอบ Bearer token และสิทธิ์ `permissions:manage`
-  - [ ] ลงทะเบียน `adminRoutePlugin` ใน `src/app.js`
-- [ ] **Task 3: Menus Management API**
-  - [ ] พัฒนา `GET /auth/admin/menus` ดึงผังเมนูทั้งหมด
-  - [ ] พัฒนา `POST /auth/admin/menus` และ `PATCH /auth/admin/menus/:key` พร้อม Optimistic locking และ validation
-  - [ ] พัฒนา `DELETE /auth/admin/menus/:key` ปฏิเสธหากมีลูกหรือถูกอ้างอิงตรงๆ
-  - [ ] บันทึก audit event `auth.permissions_changed` ในทุก mutation
-  - [ ] เพิ่ม Hardcoded logic ป้องกันการลบหรือดัดแปลงสิทธิ์ `permissions:manage` (Self-Lockout Prevention)
-- [ ] **Task 4: Role Permissions Mappings & Urgent Revoke API**
-  - [ ] พัฒนา `GET /auth/admin/role-permissions` ดึง mappings ทั้งหมด
-  - [ ] พัฒนา `PUT` / `DELETE` สำหรับ mapping โดยรองรับการแปลง string `"null"` -> `null`
-  - [ ] พัฒนาฟังก์ชัน `revoke_sessions: true` ใน `PUT` สำหรับขยับ `token_gen` ของ user ใน scope
-  - [ ] พัฒนาการล้าง session ใน Redis ด้วย pipeline โดยมี limit 1,000 users ต่อ chunk
+- [x] **Task 1: Shared Validation & Concurrency Foundation**
+  - [x] ย้าย `validateSeedData` จาก `scripts/seed-permissions.js` ไปยัง `src/lib/permission-validation.js`
+  - [x] เขียน Unit Test ใหม่สำหรับ `permission-validation.js` เพื่อครอบคลุมกฎ 7 ข้อและกรณีขอบเขต
+  - [x] แก้ไข `scripts/seed-permissions.js` ให้ดึงโมดูลร่วมนี้ไปใช้งาน และรันเทสเก่าให้ผ่านหมด
+- [x] **Task 2: Modular Admin Route & Auth Guard**
+  - [x] สร้างโครงสร้างไฟล์ใน `src/modules/admin/` (route, controller, service, repository, validator)
+  - [x] พัฒนา Authorization Middleware ใน `admin.route.js` เพื่อตรวจสอบ Bearer token และสิทธิ์ `permissions:manage`
+  - [x] ลงทะเบียน `adminRoutePlugin` ใน `src/app.js`
+- [x] **Task 3: Menus Management API**
+  - [x] พัฒนา `GET /auth/admin/menus` ดึงผังเมนูทั้งหมด
+  - [x] พัฒนา `POST /auth/admin/menus` และ `PATCH /auth/admin/menus/:key` พร้อม Optimistic locking และ validation
+  - [x] พัฒนา `DELETE /auth/admin/menus/:key` ปฏิเสธหากมีลูกหรือถูกอ้างอิงตรงๆ
+  - [x] บันทึก audit event `auth.permissions_changed` ในทุก mutation
+  - [x] เพิ่ม Hardcoded logic ป้องกันการลบหรือดัดแปลงสิทธิ์ `permissions:manage` (Self-Lockout Prevention)
+- [x] **Task 4: Role Permissions Mappings & Urgent Revoke API**
+  - [x] พัฒนา `GET /auth/admin/role-permissions` ดึง mappings ทั้งหมด
+  - [x] พัฒนา `PUT` / `DELETE` สำหรับ mapping โดยรองรับการแปลง string `"null"` -> `null`
+  - [x] พัฒนาฟังก์ชัน `revoke_sessions: true` ใน `PUT` สำหรับขยับ `token_gen` ของ user ใน scope
+  - [x] พัฒนาการล้าง session ใน Redis ด้วย pipeline โดยมี limit 1,000 users ต่อ chunk

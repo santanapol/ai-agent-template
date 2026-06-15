@@ -296,6 +296,53 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/v1/staff/profiles/{profileId}/role:
+    parameters:
+      - $ref: "#/components/parameters/ProfileId"
+    patch:
+      tags: [profiles]
+      summary: Assign system role
+      description: |
+        Admin assigns a new system role to the profile.
+        Requires permission `roles:assign`.
+      operationId: assignRole
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [platform_admin, branch_admin, staff, support]
+      responses:
+        "204":
+          description: Role updated
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/PermissionDenied"
+        "404":
+          $ref: "#/components/responses/ProfileNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/v1/staff/profiles/{profileId}/archive:
     parameters:
       - $ref: "#/components/parameters/ProfileId"

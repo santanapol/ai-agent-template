@@ -337,6 +337,46 @@ paths:
         "500":
           $ref: "./openapi.yaml#/components/responses/InternalError"
 
+  /api/v1/staff/profiles/{profileId}/role:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ProfileId"
+    patch:
+      tags: [profiles]
+      summary: Assign system role (via gateway)
+      description: Admin assigns a new system role to the profile. Requires permission `roles:assign`.
+      operationId: assignRoleViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [platform_admin, branch_admin, staff, support]
+      responses:
+        "204":
+          description: Role updated
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/ProfileNotFound"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
 components:
   securitySchemes:
     BearerJwt:

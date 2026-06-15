@@ -735,6 +735,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     delete:
       tags: [admin]
       summary: Delete a menu node
@@ -757,13 +769,28 @@ paths:
         '204':
           description: Deleted successfully
         '409':
-          description: Conflict (has children or referenced)
+          description: |
+            Conflict — `409 AUTH_MENU_IN_USE` if the menu has children,
+            is referenced by a role-permission mapping, or its wildcard would
+            match zero remaining actions after deletion.
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
         '412':
           description: Precondition Failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
           content:
             application/problem+json:
               schema:
@@ -790,6 +817,18 @@ paths:
       responses:
         '200':
           description: Mappings retrieved
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /auth/admin/role-permissions/{ou_id}/{role}:
     put:
       tags: [admin]
@@ -824,10 +863,26 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     delete:
       tags: [admin]
       summary: Delete role permission mapping
-      description: Clear mapping override for (ou_id, role) pair.
+      description: |
+        Clear mapping override for (ou_id, role) pair.
+        If active users hold this role, the request is blocked with `409 AUTH_ROLE_PERMISSION_IN_USE`
+        unless `confirm=true` is passed to force delete.
+        Deleting `platform_admin` is always prohibited (400).
       operationId: deleteAdminRolePermission
       security:
         - BearerAccess: []
@@ -842,9 +897,46 @@ paths:
           required: true
           schema:
             type: string
+        - name: confirm
+          in: query
+          required: false
+          description: Set to `true` to force-delete even when active users exist.
+          schema:
+            type: boolean
+            default: false
       responses:
         '204':
           description: Mapping cleared
+        '400':
+          description: Bad request — OU-specific mappings not supported, or platform_admin deletion prohibited.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden — caller lacks permissions:manage
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Role permission mapping not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Active users exist — pass `confirm=true` to force delete
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /internal/users:
     post:
       tags: [internal]
@@ -1170,6 +1262,12 @@ components:
             - AUTH_USER_ALREADY_EXISTS
             - AUTH_PASSWORD_UNCHANGED
             - AUTH_PASSWORD_POLICY_VIOLATION
+            - AUTH_FORBIDDEN
+            - AUTH_MENU_NOT_FOUND
+            - AUTH_MENU_IN_USE
+            - AUTH_PRECONDITION_FAILED
+            - AUTH_ROLE_PERMISSION_NOT_FOUND
+            - AUTH_ROLE_PERMISSION_IN_USE
     ChangeOwnPasswordRequest:
       type: object
       additionalProperties: false

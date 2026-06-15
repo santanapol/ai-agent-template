@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { usePermission } from './usePermission';
-import { useAuth, AuthContextValue } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import type { AuthContextValue } from '../contexts/AuthContext';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),

@@ -59,3 +59,11 @@ export const upsertRolePermissionBodySchema = {
   required: ['menu_keys'],
   additionalProperties: false
 }
+
+export const deleteRolePermissionQuerySchema = {
+  type: 'object',
+  properties: {
+    confirm: { type: 'boolean', default: false }
+  },
+  additionalProperties: false
+}

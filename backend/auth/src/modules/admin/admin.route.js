@@ -1,14 +1,14 @@
 import { buildRequireAccessBearer } from '../../lib/require-access-bearer.js'
 import { anyPermissionMatches } from '../../lib/permission-match.js'
 import { problemPayload } from '../../lib/problem.js'
-import { ObjectId } from 'mongodb'
 import {
   menuKeyParamSchema,
   createMenuBodySchema,
   updateMenuBodySchema,
   rolePermissionParamsSchema,
   getRolePermissionsQuerySchema,
-  upsertRolePermissionBodySchema
+  upsertRolePermissionBodySchema,
+  deleteRolePermissionQuerySchema
 } from './admin.validator.js'
 
 /**
@@ -29,29 +29,47 @@ export default async function adminRoutePlugin(fastify, opts) {
   const requirePermissionManage = async (request, reply) => {
     const userId = request.accessSub
     if (!userId) {
-      return reply.code(401).type('application/problem+json').send(
-        problemPayload({
-          type: types.invalidToken,
-          title: 'Unauthorized',
-          status: 401,
-          detail: 'Access token is missing or invalid.',
-          code: 'TOKEN_REFRESH_REJECTED'
-        })
-      )
+      return reply
+        .code(401)
+        .type('application/problem+json')
+        .send(
+          problemPayload({
+            type: types.invalidToken,
+            title: 'Unauthorized',
+            status: 401,
+            detail: 'Access token is missing or invalid.',
+            code: 'TOKEN_REFRESH_REJECTED'
+          })
+        )
     }
 
     try {
-      const user = await authService.repo.findUserById(new ObjectId(userId))
+      const genCheck = await authService.assertAccessTokenGenMatches({
+        user_id_hex: userId,
+        token_gen_claim: request.accessTokenGen
+      })
+
+      if (!genCheck.ok) {
+        return reply
+          .code(genCheck.status ?? 401)
+          .type('application/problem+json')
+          .send(genCheck.problem)
+      }
+
+      const user = genCheck.user
       if (!user) {
-        return reply.code(403).type('application/problem+json').send(
-          problemPayload({
-            type: types.forbidden || 'AUTH_FORBIDDEN',
-            title: 'Forbidden',
-            status: 403,
-            detail: 'Access denied.',
-            code: 'AUTH_FORBIDDEN'
-          })
-        )
+        return reply
+          .code(403)
+          .type('application/problem+json')
+          .send(
+            problemPayload({
+              type: types.forbidden,
+              title: 'Forbidden',
+              status: 403,
+              detail: 'Access denied.',
+              code: 'AUTH_FORBIDDEN'
+            })
+          )
       }
 
       const permissions = await authService.resolveEffectivePermissions({
@@ -61,36 +79,54 @@ export default async function adminRoutePlugin(fastify, opts) {
 
       const hasPermission = anyPermissionMatches(permissions, 'permissions:manage')
       if (!hasPermission) {
-        return reply.code(403).type('application/problem+json').send(
+        return reply
+          .code(403)
+          .type('application/problem+json')
+          .send(
+            problemPayload({
+              type: types.forbidden,
+              title: 'Forbidden',
+              status: 403,
+              detail: 'Access denied.',
+              code: 'AUTH_FORBIDDEN'
+            })
+          )
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        return reply
+          .code(401)
+          .type('application/problem+json')
+          .send(
+            problemPayload({
+              type: types.invalidToken,
+              title: 'Unauthorized',
+              status: 401,
+              detail: err.message,
+              code: 'TOKEN_REFRESH_REJECTED'
+            })
+          )
+      }
+      fastify.log.error(err)
+      return reply
+        .code(403)
+        .type('application/problem+json')
+        .send(
           problemPayload({
-            type: types.forbidden || 'AUTH_FORBIDDEN',
+            type: types.forbidden,
             title: 'Forbidden',
             status: 403,
             detail: 'Access denied.',
             code: 'AUTH_FORBIDDEN'
           })
         )
-      }
-    } catch (err) {
-      fastify.log.error(err)
-      return reply.code(403).type('application/problem+json').send(
-        problemPayload({
-          type: types.forbidden || 'AUTH_FORBIDDEN',
-          title: 'Forbidden',
-          status: 403,
-          detail: 'Access denied.',
-          code: 'AUTH_FORBIDDEN'
-        })
-      )
     }
   }
 
   const adminGuard = [requireAccessBearer, requirePermissionManage]
 
-  fastify.get(
-    '/auth/admin/menus',
-    { preHandler: adminGuard },
-    (request, reply) => controller.getMenus(request, reply)
+  fastify.get('/auth/admin/menus', { preHandler: adminGuard }, (request, reply) =>
+    controller.getMenus(request, reply)
   )
 
   fastify.post(
@@ -147,7 +183,10 @@ export default async function adminRoutePlugin(fastify, opts) {
   fastify.delete(
     '/auth/admin/role-permissions/:ou_id/:role',
     {
-      schema: { params: rolePermissionParamsSchema },
+      schema: {
+        params: rolePermissionParamsSchema,
+        query: deleteRolePermissionQuerySchema
+      },
       preHandler: adminGuard
     },
     (request, reply) => controller.deleteRolePermission(request, reply)

@@ -8,6 +8,8 @@ import { buildMeshHeaders } from "../../../../lib/test-helpers/mesh-headers.js";
 import CODES from "../../../../lib/error-codes.js";
 import { toObjectId } from "../../profiles.repository.js";
 import { setRuntimeEnv } from "../../../../config/runtime-env.js";
+import { resetAuthInternalClientForTests } from "../../../../lib/clients/auth-internal.client.js";
+import { startMockAuthInternalServer } from "../../../../lib/test-helpers/mock-auth-internal-server.js";
 
 const initialEnv = readEnv();
 const RUN = Boolean(initialEnv.mongoUri && initialEnv.mongoUri.trim());
@@ -48,12 +50,22 @@ if (!RUN) {
 
   describe("Profiles Permissions Integration", () => {
     let app;
+    let mockAuth;
     const suffix = Date.now();
     const createdUserIds = [];
     const createdProfileIds = [];
 
     before(async () => {
       await connectDatabase();
+      mockAuth = await startMockAuthInternalServer({
+        getDatabase,
+        serviceSecret: baseTestEnv.authInternalServiceSecret,
+        defaultRole: baseTestEnv.staffProvisionDefaultRole,
+        actorUserId: staffUserId,
+        revokeBehavior: "success",
+      });
+      baseTestEnv.authInternalBaseUrl = mockAuth.baseUrl;
+      resetAuthInternalClientForTests();
       app = await createApp({ ...baseTestEnv });
     });
 
@@ -72,6 +84,8 @@ if (!RUN) {
         }
       } finally {
         await app?.close();
+        await mockAuth?.close();
+        resetAuthInternalClientForTests();
         await closeDatabase();
       }
     });
@@ -290,6 +304,296 @@ if (!RUN) {
         if (body.data?.id) {
           createdProfileIds.push(toObjectId(body.data.id));
         }
+      });
+    });
+
+    describe("Archive Profile (POST /api/v1/staff/profiles/:id/archive)", () => {
+      let targetProfileId;
+
+      before(async () => {
+        if (createdProfileIds.length > 0) {
+          targetProfileId = createdProfileIds[0];
+        }
+      });
+
+      test("Enforce mode: succeeds with profiles:edit permission", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        // First need to get the if-match header
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/archive`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:edit",
+              "if-match": etag,
+            },
+          }),
+          payload: {},
+        });
+
+        assert.strictEqual(res.statusCode, 200);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED without profiles:edit", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        // Fetch a valid etag first so parseIfMatchHeader succeeds and we reach the permission check
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/archive`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:read", // missing profiles:edit
+              "if-match": etag,
+            },
+          }),
+          payload: {},
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+      });
+    });
+
+    describe("Restore Profile (POST /api/v1/staff/profiles/:id/restore)", () => {
+      let targetProfileId;
+
+      before(async () => {
+        if (createdProfileIds.length > 0) {
+          targetProfileId = createdProfileIds[0];
+        }
+      });
+
+      test("Enforce mode: succeeds with profiles:edit permission", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/restore`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:edit",
+              "if-match": etag,
+            },
+          }),
+          payload: {},
+        });
+
+        assert.strictEqual(res.statusCode, 200);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED without profiles:edit", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/restore`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:read", // missing profiles:edit
+              "if-match": etag,
+            },
+          }),
+          payload: {},
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+      });
+    });
+
+    describe("Reset Password (POST /api/v1/staff/profiles/:id/reset-password)", () => {
+      let targetProfileId;
+
+      before(async () => {
+        if (createdProfileIds.length > 0) {
+          targetProfileId = createdProfileIds[0];
+        }
+      });
+
+      test("Enforce mode: succeeds with profiles:edit permission", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/password`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:edit",
+              "if-match": etag,
+            },
+          }),
+          payload: {
+            password: "NewPassword123!",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 204);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED without profiles:edit", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/v1/staff/profiles/${targetProfileId}/password`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:read", // missing profiles:edit
+              "if-match": etag,
+            },
+          }),
+          payload: {
+            password: "NewPassword123!",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 403);
+      });
+    });
+
+    describe("Update Role (PATCH /api/v1/staff/profiles/:id/role)", () => {
+      let targetProfileId;
+
+      before(async () => {
+        if (createdProfileIds.length > 0) {
+          targetProfileId = createdProfileIds[0];
+        }
+      });
+
+      test("Enforce mode: succeeds with roles:assign permission", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "PATCH",
+          url: `/api/v1/staff/profiles/${targetProfileId}/role`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "roles:assign",
+              "if-match": etag,
+            },
+          }),
+          payload: {
+            role: "support",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 204);
+      });
+
+      test("Enforce mode: fails with 403 PERMISSION_DENIED without roles:assign", async () => {
+        if (!targetProfileId) return;
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const getRes = await app.inject({
+          method: "GET",
+          url: `/api/v1/staff/profiles/${targetProfileId}`,
+          headers: buildMeshHeaders({
+            role: "platform_admin",
+            extraHeaders: { "x-user-permissions": "profiles:read" },
+          }),
+        });
+        const etag = getRes.headers.etag;
+
+        const res = await app.inject({
+          method: "PATCH",
+          url: `/api/v1/staff/profiles/${targetProfileId}/role`,
+          headers: buildMeshHeaders({
+            role: "staff",
+            extraHeaders: {
+              "x-user-permissions": "profiles:read", // missing roles:assign
+              "if-match": etag,
+            },
+          }),
+          payload: {
+            role: "support",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 403);
       });
     });
   });

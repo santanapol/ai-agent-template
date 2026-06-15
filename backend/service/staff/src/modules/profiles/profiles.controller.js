@@ -39,6 +39,7 @@ export async function getProfileById(request, reply) {
   const result = await service.getProfileById(
     request.params.profileId,
     request.userContext,
+    { log: request.log },
   );
   return sendProfileResponse(reply, result);
 }
@@ -51,11 +52,14 @@ export async function listOrLookupProfiles(request, reply) {
     const result = await service.lookupProfileByUserId(
       query.user_id,
       request.userContext,
+      { log: request.log },
     );
     return sendProfileResponse(reply, result);
   }
 
-  const result = await service.listProfiles(query, request.userContext);
+  const result = await service.listProfiles(query, request.userContext, {
+    log: request.log,
+  });
   return reply
     .status(200)
     .send(
@@ -68,6 +72,7 @@ export async function createProfile(request, reply) {
     request.body,
     request.userContext,
     getRouteTemplate(request),
+    { log: request.log },
   );
   return sendCreatedProfileResponse(reply, result);
 }
@@ -79,6 +84,7 @@ export async function patchProfile(request, reply) {
     request.headers["if-match"],
     request.userContext,
     getRouteTemplate(request),
+    { log: request.log },
   );
   return sendProfileResponse(reply, result);
 }
@@ -90,6 +96,7 @@ export async function archiveProfile(request, reply) {
     request.userContext,
     getRouteTemplate(request),
     request.id,
+    { log: request.log },
   );
   return sendProfileResponse(reply, result);
 }
@@ -100,6 +107,7 @@ export async function restoreProfile(request, reply) {
     request.headers["if-match"],
     request.userContext,
     getRouteTemplate(request),
+    { log: request.log },
   );
   return sendProfileResponse(reply, result);
 }
@@ -111,6 +119,7 @@ export async function resetProfilePassword(request, reply) {
     request.userContext,
     getRouteTemplate(request),
     request.id,
+    { log: request.log },
   );
   return reply.status(204).send();
 }
@@ -122,6 +131,7 @@ export async function changeProfileRole(request, reply) {
     request.userContext,
     getRouteTemplate(request),
     request.id,
+    { log: request.log },
   );
   return reply.status(204).send();
 }
