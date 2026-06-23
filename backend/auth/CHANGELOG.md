@@ -34,6 +34,13 @@
   - **`/auth/admin/role-permissions`** (`src/modules/admin/`): `GET`/`PUT`/`DELETE` จัดการ mapping `(ou_id, role) -> permissions[]`; รองรับ URL `:ou_id = "null"` -> global scope; `PUT` พร้อม `revoke_sessions: true` เพื่อขยับ `token_gen` ของผู้ใช้ในสโคป + ลบ Redis session ผ่าน pipeline (batch สูงสุด 1,000 users)
   - **Error codes**: เพิ่ม `AUTH_ROLE_PERMISSION_IN_USE` และ `AUTH_MENU_IN_USE` (ทั้งคู่ 409) ใน `Problem.code` enum
   - **Tests**: ขยาย `test/admin.integration.test.js` + `test/seed-permissions.test.js` ครอบคลุม Admin API ทั้งหมด (รวม 134/134 tests)
+- **Permission Admin UI (Phase F2)** — Backoffice `/permissions` สำหรับผู้มี `permissions:manage` (ดู `frontend/backoffice/_mission-control/SPEC-permission-admin-ui.md`):
+  - **`/permissions`** (`frontend/backoffice`): แท็บ Menu catalog (tree + CRUD) และ Role permissions (checkbox tree + PUT upsert + `revoke_sessions`) — consumer ของ Phase A API เท่านั้น
+  - **`settings` + `permissions:manage` seed**: เพิ่มกลุ่มเมนูนำทาง Settings → Permissions; reparent `permissions:manage` ใต้ `settings`
+  - **`authApiClient` admin methods**: If-Match (ISO ดิบ) เฉพาะ menus PATCH/DELETE; role PUT ไม่มี If-Match; DELETE role `?confirm=true`
+  - **Bruno `backend/_bruno/auth/admin/`**: collection 7 requests สำหรับ SIT; `Local.yml.example` แทนการ commit credentials
+  - **`admin.validator.js`**: `pattern` บน menu `key` (ห้าม wildcard ใน registry); `maxItems: 500` บน `menu_keys`
+  - **Tests**: backoffice 127/127 (PermissionAdmin, MenuCatalogTab, RolePermissionsTab, authApiClient, PermissionGuard)
 - **`PATCH /internal/users/{user_id}/role`** (`src/modules/internal/internal.route.js`): เพิ่ม internal endpoint สำหรับให้ trusted service อัปเดตบทบาทของผู้ใช้แบบ Atomic operation ใน MongoDB transaction พร้อมทำ session revocation
 - **Tests**: integration test `internal-set-role.integration.test.js` สำหรับตรวจสิทธิ์การเข้าใช้งาน การอัปเดตบทบาท และการยกเลิก session
 - **`InternalService`** (`src/modules/internal/internal.service.js`): thin delegation wrapper ระหว่าง `InternalController` กับ `AuthService` — รักษา module boundary
