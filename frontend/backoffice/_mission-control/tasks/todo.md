@@ -2,7 +2,7 @@
 
 > Plan: [plan.md](./plan.md) · Spec: [SPEC-permission-admin-ui.md](../SPEC-permission-admin-ui.md)
 >
-> **สถานะรวม:** 🟢 Task 1 เสร็จ · Task 2 ถัดไป
+> **สถานะรวม:** 🟢 Task 5 เสร็จ · Task 6 ถัดไป
 
 ---
 
