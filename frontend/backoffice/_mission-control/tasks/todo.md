@@ -19,7 +19,7 @@
 
 ## Phase 1: API Client Foundation
 
-- [ ] **Task 2** — Types + `permissionAdminUtils` + unit tests
+- [x] **Task 2** — Types + `permissionAdminUtils` + unit tests
   - [ ] `types/permissionAdmin.ts`
   - [ ] `permissionAdminUtils.ts` + `.test.ts`
   - [ ] Verify: `npm run test -- permissionAdminUtils`
