@@ -2,7 +2,7 @@
 
 > Plan: [plan.md](./plan.md) · Spec: [SPEC-permission-admin-ui.md](../SPEC-permission-admin-ui.md)
 >
-> **สถานะรวม:** 🟢 Task 5 เสร็จ · Task 6 ถัดไป
+> **สถานะรวม:** 🟢 Task 6 เสร็จ · Task 7 ถัดไป
 
 ---
 
@@ -49,12 +49,12 @@
 
 ## Phase 3: UI Vertical Slices
 
-- [ ] **Task 5** — Page shell + Tabs scaffold
+- [x] **Task 5** — Page shell + Tabs scaffold
   - [ ] `PermissionAdmin/index.tsx` + tab stubs
   - [ ] `PermissionAdmin.test.tsx` smoke
   - [ ] Verify: `npm run test -- PermissionAdmin`
 
-- [ ] **Task 6** — Menu catalog tab (tree + CRUD + guards)
+- [x] **Task 6** — Menu catalog tab (tree + CRUD + guards)
   - [ ] `MenuCatalogTab.tsx` + `MenuNodeFormModal.tsx`
   - [ ] Self-lockout: `permissions:manage` disable **ทั้ง Edit และ Delete** + 400/409/412 UX
   - [ ] Verify: component tests + manual SC-2, SC-4
