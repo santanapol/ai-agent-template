@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Space, Tag, Typography, theme, Alert } from 'antd';
 import type { MenuProps } from 'antd';
-import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined, DollarOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, DashboardOutlined, LogoutOutlined, FileTextOutlined, ShopOutlined, CodeOutlined, DollarOutlined, SettingOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as staffApi from '../lib/staffApiClient';
@@ -59,7 +59,9 @@ const MENU_UI: Record<string, MenuItemUI> = {
   'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
   'reports': { icon: <CodeOutlined /> },               // group
   'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
-  'my_profile': { icon: <UserOutlined />, route: '/profile' }
+  'my_profile': { icon: <UserOutlined />, route: '/profile' },
+  'settings': { icon: <SettingOutlined /> },
+  'permissions:manage': { icon: <SafetyCertificateOutlined />, route: '/permissions' },
 };
 
 const AdminLayout: React.FC = () => {

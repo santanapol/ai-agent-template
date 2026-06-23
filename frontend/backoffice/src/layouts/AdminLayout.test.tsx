@@ -199,4 +199,36 @@ describe('AdminLayout component', () => {
 
     warnSpy.mockRestore();
   });
+
+  it('renders Settings group with Permissions child when mapped in MENU_UI', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { sub: '123', role: 'platform_admin', branch_id: 'b1' } as unknown as DecodedUser,
+      permissions: ['permissions:manage'],
+      menus: [
+        { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+        { key: 'settings', label: 'Settings', type: 'menu', parent_key: null, sort_order: 90 },
+        {
+          key: 'permissions:manage',
+          label: 'Permissions',
+          type: 'action',
+          parent_key: 'settings',
+          sort_order: 10,
+        },
+      ],
+      menuLoading: false,
+      menuError: false,
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    } as unknown as AuthContextValue);
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Settings'));
+    expect(screen.getByText('Permissions')).toBeInTheDocument();
+  });
 });

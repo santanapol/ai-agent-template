@@ -13,6 +13,7 @@ import AgentsList from './pages/Agents';
 import AgentFeesPage from './pages/AgentFees';
 import Login from './pages/Login';
 import SmartReport from './pages/SmartReport';
+import PermissionAdmin from './pages/PermissionAdmin';
 import Error403 from './pages/Error403';
 
 import Error404 from './pages/Error404';
@@ -67,6 +68,14 @@ const router = createBrowserRouter([
         ),
       },
       { path: 'smart-reports', element: <SmartReport /> },
+      {
+        path: 'permissions',
+        element: (
+          <PermissionGuard required="permissions:manage">
+            <PermissionAdmin />
+          </PermissionGuard>
+        ),
+      },
       { path: '403', element: <Error403 /> },
 
       { path: '500', element: <Error500 /> },

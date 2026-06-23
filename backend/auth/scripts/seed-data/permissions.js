@@ -72,11 +72,19 @@ export const seedMenus = [
     ou_id: null
   },
   {
+    key: 'settings',
+    label: 'Settings',
+    type: 'menu',
+    parent_key: null,
+    sort_order: 90,
+    ou_id: null
+  },
+  {
     key: 'permissions:manage',
-    label: 'จัดการสิทธิ์',
+    label: 'Permissions',
     type: 'action',
-    parent_key: 'staff:profiles',
-    sort_order: 70,
+    parent_key: 'settings',
+    sort_order: 10,
     ou_id: null
   }
 ]
