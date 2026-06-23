@@ -1,0 +1,30 @@
+info:
+  name: Upsert role permissions
+  type: http
+  seq: 6
+  tags:
+    - admin
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/auth/admin/role-permissions/null/{{admin_test_role}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "menu_keys": ["profiles:lookup", "profiles:read"],
+        "revoke_sessions": false
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  Upsert Global (`null`) role mapping. **No If-Match** (last-write-wins). Path segment `null` is literal. Set `revoke_sessions: true` only when intentionally revoking active sessions.

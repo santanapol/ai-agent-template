@@ -1,0 +1,16 @@
+info:
+  name: admin
+  type: folder
+  seq: 2
+
+request:
+  auth:
+    type: bearer
+    token: "{{access_token}}"
+
+docs: |
+  Permission Admin API (`/auth/admin/*`) — requires `permissions:manage`.
+
+  **Prerequisites:** Run `auth/Login` first with a **platform_admin** user (set `username` / `password` in Local environment). `access_token` is captured automatically.
+
+  **If-Match:** Only `menus` PATCH/DELETE — value is raw ISO `upd_date` from response body (not `W/"..."`). Use `List menus` or `Create menu node` to populate `{{menu_upd_date}}`.

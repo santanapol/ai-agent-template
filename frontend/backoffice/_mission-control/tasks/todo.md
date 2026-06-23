@@ -24,7 +24,7 @@
   - [ ] `permissionAdminUtils.ts` + `.test.ts`
   - [ ] Verify: `npm run test -- permissionAdminUtils`
 
-- [ ] **Task 3** — `authApiClient` admin methods + `apiError` + tests
+- [x] **Task 3** — `authApiClient` admin methods + `apiError` + tests
   - [ ] 7 admin API methods — If-Match (ISO ดิบ) เฉพาะ menus PATCH/DELETE; role PUT ไม่มี; DELETE role `?confirm=true`
   - [ ] unwrap `{ menus }` / `{ role_permissions }`; ห้ามใช้ `extractETag`
   - [ ] `apiError` map `AUTH_PRECONDITION_FAILED`/`AUTH_MENU_IN_USE`/`AUTH_ROLE_PERMISSION_IN_USE`/`AUTH_INVALID_REQUEST` (detail string)
@@ -33,14 +33,14 @@
 
 ### Checkpoint: Foundation
 
-- [ ] `npm run test && npm run lint && npm run build` ผ่าน
+- [x] `npm run test && npm run lint && npm run build` ผ่าน
 - [ ] Human review ก่อน UI tabs
 
 ---
 
 ## Phase 2: Bruno Collection
 
-- [ ] **Task 4** — Bruno `backend/_bruno/auth/admin/` (7 requests)
+- [x] **Task 4** — Bruno `backend/_bruno/auth/admin/` (7 requests)
   - [ ] `folder.yml` + List / Create / Update / Delete menus
   - [ ] List / Upsert / Delete role-permissions
   - [ ] Verify: Bruno GUI smoke (Login → admin/*) — SC-8
