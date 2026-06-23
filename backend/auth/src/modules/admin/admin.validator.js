@@ -9,7 +9,12 @@ export const menuKeyParamSchema = {
 export const createMenuBodySchema = {
   type: 'object',
   properties: {
-    key: { type: 'string', minLength: 1, maxLength: 256 },
+    key: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 256,
+      pattern: '^[a-z][a-z0-9_-]*(?::[a-z][a-z0-9_-]*)*$'
+    },
     label: { type: 'string', minLength: 1, maxLength: 256 },
     type: { type: 'string', enum: ['menu', 'action'] },
     parent_key: { type: ['string', 'null'], maxLength: 256 },
@@ -52,6 +57,7 @@ export const upsertRolePermissionBodySchema = {
   properties: {
     menu_keys: {
       type: 'array',
+      maxItems: 500,
       items: { type: 'string', minLength: 1, maxLength: 256 }
     },
     revoke_sessions: { type: 'boolean', default: false }

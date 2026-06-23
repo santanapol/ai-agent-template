@@ -32,6 +32,14 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
       const detail = err.response?.data?.detail as string | undefined;
       if (detail) return detail;
     }
+    if (code === 'AUTH_MENU_NOT_FOUND') {
+      const detail = err.response?.data?.detail as string | undefined;
+      return detail ?? 'Menu node not found. Refresh the catalog and try again.';
+    }
+    if (code === 'AUTH_ROLE_PERMISSION_NOT_FOUND') {
+      const detail = err.response?.data?.detail as string | undefined;
+      return detail ?? 'Role permission mapping not found.';
+    }
     const detail = err.response?.data?.detail as string | undefined;
     if (detail) return detail;
     const msg = err.response?.data?.message as string | undefined;

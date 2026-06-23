@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { AdminMenuNode } from '../../types/permissionAdmin';
 import {
   buildMenuTree,
-  collectMenuKeys,
   isProtectedMenuKey,
-  platformAdminHasManagePermission,
+  splitMappingKeys,
+  buildSaveMenuKeys,
+  buildRoleSaveMenuKeys,
+  isPlatformAdminManageCheckboxDisabled,
 } from './permissionAdminUtils';
 
 function node(
@@ -51,16 +53,6 @@ describe('permissionAdminUtils', () => {
     });
   });
 
-  describe('collectMenuKeys', () => {
-    it('collects all keys from flat list', () => {
-      const flat = [
-        node('a'),
-        node('b', { parent_key: 'a' }),
-      ];
-      expect(collectMenuKeys(flat).sort()).toEqual(['a', 'b']);
-    });
-  });
-
   describe('isProtectedMenuKey', () => {
     it('returns true only for permissions:manage', () => {
       expect(isProtectedMenuKey('permissions:manage')).toBe(true);
@@ -68,17 +60,46 @@ describe('permissionAdminUtils', () => {
     });
   });
 
-  describe('platformAdminHasManagePermission', () => {
-    it('accepts exact permissions:manage', () => {
-      expect(platformAdminHasManagePermission(['permissions:manage'])).toBe(true);
+  describe('isPlatformAdminManageCheckboxDisabled', () => {
+    it('locks permissions:manage for platform_admin without permissions:*', () => {
+      expect(isPlatformAdminManageCheckboxDisabled('platform_admin', 'permissions:manage', [])).toBe(
+        true,
+      );
     });
 
-    it('accepts permissions:* wildcard', () => {
-      expect(platformAdminHasManagePermission(['permissions:*', 'profiles:list'])).toBe(true);
+    it('allows manage checkbox when permissions:* wildcard is present', () => {
+      expect(
+        isPlatformAdminManageCheckboxDisabled('platform_admin', 'permissions:manage', [
+          'permissions:*',
+        ]),
+      ).toBe(false);
+    });
+  });
+
+  describe('splitMappingKeys and buildSaveMenuKeys', () => {
+    it('preserves wildcards when building save payload', () => {
+      const { exact, wildcards } = splitMappingKeys(['profiles:*', 'profiles:list']);
+      expect(exact).toEqual(['profiles:list']);
+      expect(wildcards).toEqual(['profiles:*']);
+      expect(buildSaveMenuKeys(['profiles:read'], wildcards)).toEqual([
+        'profiles:read',
+        'profiles:*',
+      ]);
+    });
+  });
+
+  describe('buildRoleSaveMenuKeys', () => {
+    it('forces permissions:manage for platform_admin without permissions:*', () => {
+      expect(buildRoleSaveMenuKeys('platform_admin', ['profiles:list'], [])).toEqual(
+        expect.arrayContaining(['permissions:manage', 'profiles:list']),
+      );
+      expect(buildRoleSaveMenuKeys('platform_admin', ['profiles:list'], [])).toHaveLength(2);
     });
 
-    it('rejects when neither manage nor wildcard present', () => {
-      expect(platformAdminHasManagePermission(['profiles:*'])).toBe(false);
+    it('does not force permissions:manage when permissions:* wildcard is present', () => {
+      expect(buildRoleSaveMenuKeys('platform_admin', ['profiles:list'], ['permissions:*'])).toEqual(
+        ['profiles:list', 'permissions:*'],
+      );
     });
   });
 });

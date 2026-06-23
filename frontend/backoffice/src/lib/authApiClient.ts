@@ -7,7 +7,7 @@ import type {
   UpsertRolePermissionPayload,
   UpsertRolePermissionResult,
 } from '../types/permissionAdmin';
-import { ifMatchFromUpdDate } from '../pages/PermissionAdmin/permissionAdminUtils';
+import { ifMatchFromUpdDate } from './adminApiUtils';
 import { baseClient as authClient } from './baseApiClient';
 
 export async function login(username: string, password: string): Promise<TokenResponse> {

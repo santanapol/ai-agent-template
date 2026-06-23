@@ -30,18 +30,46 @@ export function buildMenuTree(flat: AdminMenuNode[]): MenuTreeNode[] {
   return sortNodes(roots);
 }
 
-export function collectMenuKeys(flat: AdminMenuNode[]): string[] {
-  return flat.map((item) => item.key);
-}
-
 export function isProtectedMenuKey(key: string): boolean {
   return key === PROTECTED_MENU_KEY;
 }
 
-export function platformAdminHasManagePermission(menuKeys: string[]): boolean {
-  return menuKeys.includes('permissions:manage') || menuKeys.includes('permissions:*');
+export function isWildcardMenuKey(key: string): boolean {
+  return key.endsWith(':*');
 }
 
-export function ifMatchFromUpdDate(updDate: string): string {
-  return updDate;
+export function splitMappingKeys(menuKeys: string[]): { exact: string[]; wildcards: string[] } {
+  const exact: string[] = [];
+  const wildcards: string[] = [];
+  for (const key of menuKeys) {
+    if (isWildcardMenuKey(key)) wildcards.push(key);
+    else exact.push(key);
+  }
+  return { exact, wildcards };
+}
+
+export function buildSaveMenuKeys(checkedExact: string[], wildcards: string[]): string[] {
+  return [...new Set([...checkedExact, ...wildcards])];
+}
+
+/** Ensures platform_admin self-lockout key is always included on save when required. */
+export function buildRoleSaveMenuKeys(
+  role: string,
+  checkedExact: string[],
+  wildcards: string[],
+): string[] {
+  let exact = checkedExact;
+  if (isPlatformAdminManageCheckboxDisabled(role, PROTECTED_MENU_KEY, wildcards)) {
+    exact = [...new Set([...exact, PROTECTED_MENU_KEY])];
+  }
+  return buildSaveMenuKeys(exact, wildcards);
+}
+
+export function isPlatformAdminManageCheckboxDisabled(
+  role: string,
+  key: string,
+  wildcards: string[],
+): boolean {
+  if (role !== 'platform_admin' || key !== PROTECTED_MENU_KEY) return false;
+  return !wildcards.includes('permissions:*');
 }

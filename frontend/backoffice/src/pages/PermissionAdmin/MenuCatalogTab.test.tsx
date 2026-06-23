@@ -72,6 +72,8 @@ describe('MenuCatalogTab', () => {
     createAdminMenu.mockReset();
     updateAdminMenu.mockReset();
     deleteAdminMenu.mockReset();
+    mockFeedback.message.success.mockReset();
+    mockFeedback.message.error.mockReset();
     listAdminMenus.mockResolvedValue(sampleMenus);
   });
 
@@ -129,6 +131,71 @@ describe('MenuCatalogTab', () => {
     });
   });
 
+  it('opens edit modal with read-only key and calls updateAdminMenu on save', async () => {
+    const user = userEvent.setup();
+    updateAdminMenu.mockResolvedValue({
+      ...sampleMenus[2],
+      label: 'SIT Test Updated',
+    });
+
+    renderWithProviders(<MenuCatalogTab />);
+    await screen.findByText('SIT Test');
+
+    await user.click(screen.getByRole('button', { name: /edit sit test/i }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByLabelText(/^key$/i)).toBeDisabled();
+
+    const labelInput = within(dialog).getByLabelText(/^label$/i);
+    await user.clear(labelInput);
+    await user.type(labelInput, 'SIT Test Updated');
+    await user.click(within(dialog).getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(updateAdminMenu).toHaveBeenCalledWith(
+        'sit:test',
+        {
+          label: 'SIT Test Updated',
+          parent_key: 'settings',
+          sort_order: 20,
+        },
+        '2026-06-10T12:00:00.000Z',
+      );
+    });
+    expect(mockFeedback.message.success).toHaveBeenCalledWith('Menu node updated');
+  });
+
+  it('shows API error when create returns AUTH_INVALID_REQUEST', async () => {
+    const user = userEvent.setup();
+    const err = new Error('Bad Request') as import('axios').AxiosError;
+    err.isAxiosError = true;
+    err.response = {
+      status: 400,
+      statusText: 'Bad Request',
+      data: {
+        code: 'AUTH_INVALID_REQUEST',
+        detail: 'Menu validation failed: duplicate key',
+      },
+      headers: {},
+      config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
+    };
+    createAdminMenu.mockRejectedValue(err);
+
+    renderWithProviders(<MenuCatalogTab />);
+    await screen.findByText('Settings');
+    await user.click(screen.getByRole('button', { name: /add node/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText(/^key$/i), 'dup:action');
+    await user.type(within(dialog).getByLabelText(/^label$/i), 'Duplicate');
+    await user.click(within(dialog).getByRole('button', { name: /^create$/i }));
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalledWith(
+        'Menu validation failed: duplicate key',
+      );
+    });
+  });
+
   it('calls deleteAdminMenu with If-Match upd_date', async () => {
     const user = userEvent.setup();
     deleteAdminMenu.mockResolvedValue(undefined);
@@ -144,6 +211,36 @@ describe('MenuCatalogTab', () => {
       expect(deleteAdminMenu).toHaveBeenCalledWith(
         'sit:test',
         '2026-06-10T12:00:00.000Z',
+      );
+    });
+  });
+
+  it('shows API error when delete returns 409 AUTH_MENU_IN_USE', async () => {
+    const user = userEvent.setup();
+    const err = new Error('Conflict') as import('axios').AxiosError;
+    err.isAxiosError = true;
+    err.response = {
+      status: 409,
+      statusText: 'Conflict',
+      data: {
+        code: 'AUTH_MENU_IN_USE',
+        detail: 'Cannot delete menu node while it has children',
+      },
+      headers: {},
+      config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
+    };
+    deleteAdminMenu.mockRejectedValue(err);
+
+    renderWithProviders(<MenuCatalogTab />);
+    await screen.findByText('SIT Test');
+
+    await user.click(screen.getByRole('button', { name: /delete sit test/i }));
+    const confirmButtons = await screen.findAllByRole('button', { name: /^delete$/i });
+    await user.click(confirmButtons[confirmButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalledWith(
+        'Cannot delete menu node while it has children',
       );
     });
   });

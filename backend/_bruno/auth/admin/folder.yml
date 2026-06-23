@@ -11,6 +11,9 @@ request:
 docs: |
   Permission Admin API (`/auth/admin/*`) — requires `permissions:manage`.
 
-  **Prerequisites:** Run `auth/Login` first with a **platform_admin** user (set `username` / `password` in Local environment). `access_token` is captured automatically.
+  **Prerequisites:** Run `auth/Login` first with a **platform_admin** user.
+  Copy `environments/Local.yml.example` → `environments/Local.yml` and set `username`, `password`, and IDs for your local stack. `access_token` is captured automatically by Login.
 
   **If-Match:** Only `menus` PATCH/DELETE — value is raw ISO `upd_date` from response body (not `W/"..."`). Use `List menus` or `Create menu node` to populate `{{menu_upd_date}}`.
+
+  **Role tests:** `admin_test_role` defaults to `platform_admin` in the example environment.

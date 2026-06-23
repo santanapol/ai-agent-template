@@ -90,7 +90,13 @@ const MenuNodeFormModal: React.FC<MenuNodeFormModalProps> = ({
         <Form.Item
           label="Key"
           name="key"
-          rules={[{ required: true, message: 'Key is required' }]}
+          rules={[
+            { required: true, message: 'Key is required' },
+            {
+              pattern: /^[a-z][a-z0-9_-]*(?::[a-z][a-z0-9_-]*)*$/,
+              message: 'Use lowercase segments separated by colons (e.g. reports:export). Wildcards are not allowed.',
+            },
+          ]}
         >
           <Input disabled={mode === 'edit'} placeholder="e.g. reports:export" maxLength={256} />
         </Form.Item>

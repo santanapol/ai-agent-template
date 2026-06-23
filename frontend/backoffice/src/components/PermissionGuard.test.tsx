@@ -92,4 +92,23 @@ describe('PermissionGuard component', () => {
     expect(navigateEl.getAttribute('data-to')).toBe('/403');
     expect(screen.queryByTestId('child')).not.toBeInTheDocument();
   });
+
+  it('redirects to /403 for /permissions route when permissions:manage is missing', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { sub: '123' } as unknown as DecodedUser,
+      loading: false,
+      menuLoading: false,
+    } as unknown as AuthContextValue);
+    vi.mocked(usePermission).mockReturnValue(false);
+
+    renderWithProviders(
+      <PermissionGuard required="permissions:manage">
+        <div data-testid="permission-admin">Permission Admin</div>
+      </PermissionGuard>
+    );
+
+    const navigateEl = screen.getByTestId('navigate');
+    expect(navigateEl.getAttribute('data-to')).toBe('/403');
+    expect(screen.queryByTestId('permission-admin')).not.toBeInTheDocument();
+  });
 });

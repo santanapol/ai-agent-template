@@ -1,501 +1,333 @@
-# Plan: Phase 4 (Frontend) — Permission-driven Menu & Route Guards
+# Implementation Plan: Permission Admin UI (Phase F2)
 
-**Branch:** `feature/phase-4-permission-menu` (created from main after Phase 1 merge)  
-**Scope:** Replace hardcoded role-based menu (RoleGuard) with permission-driven dynamic menus (PermissionGuard)  
-**Acceptance:** All success criteria from SPEC.md + zero regressions  
-**Timeline estimate:** 3-4 days (7 vertical slices)
+> Spec: [SPEC-permission-admin-ui.md](../SPEC-permission-admin-ui.md) · ROADMAP Phase 6 · อนุมัติ 2026-06-10
 
----
+## Overview
 
-## Architecture & Dependency Graph
+ส่งมอบหน้า Backoffice `/permissions` สำหรับแอดมินที่มี `permissions:manage` — จัดการ menu/action registry และ role → `menu_keys` mappings ผ่าน Phase A API (`/auth/admin/*`) พร้อม Bruno collection สำหรับ SIT
 
-```
-Phase 1 (Auth) ✅
-  ├─ POST /auth/login → TokenResponse { access_token, permissions: string[] }
-  ├─ POST /auth/refresh → TokenResponse { access_token, permissions: string[] }
-  └─ GET /auth/me/menus → MenuNode[] (flat list with parent_key)
-  
-Phase 4 (Frontend)
-  ├─ Slice 1: Types (MenuNode, extend TokenResponse)
-  ├─ Slice 2: permissionMatch contract (TS port of backend contract)
-  ├─ Slice 3: API layer (authApiClient.getMyMenus)
-  ├─ Slice 4: AuthContext (store permissions, menus, refresh on token change)
-  ├─ Slice 5: usePermission hook + PermissionGuard component
-  ├─ Slice 6: AdminLayout (render dynamic menus, tree assembly)
-  ├─ Slice 7: Integration tests + error handling
-  └─ Checkpoint: Full flow test (login → menus appear → refresh → menus update)
+**ขอบเขต:** consumer เท่านั้น — ไม่แก้ backend auth logic (Phase A เสร็จแล้ว) ยกเว้น **seed data PR** เพื่อย้ายเมนูนำทางให้ตรง Spec (`settings` group)
+
+**Commands หลัก:**
+
+```bash
+cd frontend/backoffice && npm run test && npm run lint && npm run build
 ```
 
-**Critical path:** Slices 1→3→4→5→6→7 (sequential for integration)  
-**Parallelizable:** None (each slice depends on types from prior slice)
+## Architecture Decisions
 
----
+| การตัดสินใจ | เหตุผล |
+| :--- | :--- |
+| `If-Match` = `upd_date` **ISO ดิบ** (ไม่ห่อ `W/"..."`) จาก response **body** เฉพาะ `menus` PATCH/DELETE | ตรงกับ `admin.service.js` (`existing.upd_date.toISOString() === ifMatch`); ห้ามใช้ `extractETag` (admin ไม่ set ETag header) |
+| `role-permissions` PUT ไม่มี If-Match (upsert); DELETE ใช้ `?confirm=true` | ตรงกับ `admin.controller.js`/`admin.service.js` — PUT last-write-wins; DELETE มี active users → ต้อง confirm |
+| `apiError` map code auth: `AUTH_PRECONDITION_FAILED`/`AUTH_MENU_IN_USE`/`AUTH_ROLE_PERMISSION_IN_USE`/`AUTH_INVALID_REQUEST` | ต่างจาก staff (`VERSION_CONFLICT`) — code มาจาก Phase A จริง |
+| `400` `detail` เป็น **string เดียว** (join `, `) | service join errors เป็นข้อความเดียว — ไม่มี `detail[]` array |
+| ไม่ invalidate `getMyMenus()` หลัง admin save | OQ-4 — admin tooling; ผู้ใช้ refresh session เอง |
+| Role Select hardcode 3 ค่า | OQ-3 — `platform_admin`, `branch_admin`, `staff` |
+| แยก `permissionAdminUtils.ts` สำหรับ flat→tree | ทดสอบ unit ได้โดยไม่ mount React; reuse ทั้ง 2 แท็บ |
+| Bruno ใช้ `.yml` ใน `backend/_bruno/auth/admin/` | สอดคล้อง collection `auth` ที่มีอยู่ + OQ-5 |
+| Seed: เพิ่ม `settings` group + reparent `permissions:manage` (ผ่าน seed เท่านั้น) | ปัจจุบัน key อยู่ใต้ `staff:profiles`; API `updateMenu` block การแก้ `permissions:manage` → ย้ายได้เฉพาะทาง seed data |
 
-## Slice 1: Types & Contract Definition
+## Dependency Graph
 
-**Goal:** Define MenuNode interface, extend TokenResponse with permissions, create contract stubs
+```
+[Task 1] Seed + route + MENU_UI
+    │
+    ├──→ [Task 2] Types + utils + unit tests
+    │         │
+    │         └──→ [Task 3] authApiClient + apiError + tests
+    │                   │
+    │                   ├──→ [Task 4] Bruno admin/*  (ขนานได้หลัง Task 3)
+    │                   │
+    │                   ├──→ [Task 5] Page shell + tabs
+    │                   │         │
+    │                   │         ├──→ [Task 6] Menu catalog tab (CRUD)
+    │                   │         │
+    │                   │         └──→ [Task 7] Role permissions tab
+    │                   │
+    │                   └──→ [Task 8] Component tests + guard
+    │
+    └──→ (manual smoke ต้องรอ Task 1 + 6 + 7)
+```
 
-**Files to create/modify:**
-- `src/types/auth.ts` — ADD MenuNode interface + extend TokenResponse
-- `src/lib/permissionMatch.ts` — NEW (contract functions + types)
+**External dependency:** Phase A API deploy บน environment ที่ backoffice proxy ชี้ไป — local dev ใช้ auth service + gateway ตาม `RUNBOOK.md`
 
-**Acceptance Criteria:**
-1. ✅ TokenResponse has `permissions: string[]` field
-2. ✅ MenuNode interface: `{ key, label, type, parent_key, sort_order }`
-3. ✅ permissionMatch exports: `isWildcardEntry`, `matchesPermission`, `anyPermissionMatches`
-4. ✅ TypeScript compilation passes with strict mode
+## Task List
+
+### Phase 0: Data + Navigation (Prerequisite)
+
+#### Task 1: Seed `settings` group + wire route & sidebar
+
+**Description:** เพิ่มเมนูนำทาง Settings → Permissions และ route `/permissions` ให้ `platform_admin` เข้าถึงได้ก่อน build UI เต็มรูปแบบ
+
+**Acceptance criteria:**
+- [ ] `permissions.js` มีโหนด `settings` (menu group) และ reparent `permissions:manage` → `parent_key: 'settings'` (ลำดับ: `settings` ต้องถูก declare ก่อน เพื่อให้ validation parent-exists ผ่าน)
+- [ ] `platform_admin` mapping ยังมี `permissions:manage` (หรือ `permissions:*`)
+- [ ] `MENU_UI` มี `'settings'` (group ไม่มี route) และ `'permissions:manage'` (icon + route `/permissions`)
+- [ ] `App.tsx` มี route `permissions` + `PermissionGuard required="permissions:manage"`
+- [ ] Placeholder page `PermissionAdmin` render ได้ (แม้ยังไม่มี CRUD)
+
+> **หมายเหตุ:** ห้าม reparent ผ่าน Admin API — `updateMenu` คืน `400` สำหรับ key `permissions:manage`; ต้องแก้ใน seed data แล้วรัน seed ก่อน deploy
 
 **Verification:**
-```bash
-npm run build  # zero TypeScript errors
-npm test -- permissionMatch  # contract tests all pass (skeleton/empty for now)
-```
+- [ ] `node --env-file=.env scripts/seed-permissions.js` ผ่าน (auth)
+- [ ] `npm run test -- AdminLayout` ผ่าน (ถ้าเพิ่มเคสเมนู settings)
+- [ ] Manual: login `platform_admin` → เห็น Settings → Permissions → เปิด `/permissions`
 
-**Estimate:** 45 min
+**Dependencies:** None
+
+**Files likely touched:**
+- `backend/auth/scripts/seed-data/permissions.js`
+- `frontend/backoffice/src/layouts/AdminLayout.tsx`
+- `frontend/backoffice/src/App.tsx`
+- `frontend/backoffice/src/pages/PermissionAdmin/index.tsx` (placeholder)
+
+**Estimated scope:** S (4–5 files)
 
 ---
 
-## Slice 2: Permission Matching Contract & Tests
+### Phase 1: API Client Foundation
 
-**Goal:** Implement exact + wildcard `domain:*` matching logic with comprehensive unit tests
+#### Task 2: Types + `permissionAdminUtils` + unit tests
 
-**Files to create/modify:**
-- `src/lib/permissionMatch.ts` — IMPLEMENT full contract
-- `src/lib/permissionMatch.test.ts` — NEW (8 test cases from backend suite)
+**Description:** สร้าง type contracts และ utility สำหรับแปลง flat menu list เป็น tree, เรียง `sort_order`, และ helper สำหรับ self-lockout guards
 
-**Acceptance Criteria:**
-1. ✅ `anyPermissionMatches(['profiles:*'], 'profiles:create')` → true
-2. ✅ `anyPermissionMatches(['profiles:*'], 'invoice:read')` → false
-3. ✅ `anyPermissionMatches(['profiles:create'], 'profiles:create')` → true
-4. ✅ All 8 test cases from backend match exactly (exact, wildcard, cross-domain, unsupported forms, null/undefined, multi-entry)
-5. ✅ Zero false negatives/positives in matching
+**Acceptance criteria:**
+- [ ] `types/permissionAdmin.ts` ครบ `AdminMenuNode`, DTOs สำหรับ create/update/upsert
+- [ ] `buildMenuTree(flat)` คืน hierarchy ถูกต้อง + เรียง `sort_order`
+- [ ] `collectMenuKeys(tree)` / `isProtectedMenuKey(key)` สำหรับ guards
+- [ ] `permissionAdminUtils.test.ts` ครอบคลุม edge cases (orphan parent, empty list, nested sort)
 
 **Verification:**
-```bash
-npm test -- permissionMatch  # 8/8 tests passing
-grep -c "it(" src/lib/permissionMatch.test.ts  # expect 8
-```
+- [ ] `npm run test -- permissionAdminUtils`
 
-**Estimate:** 1 hour
+**Dependencies:** Task 1 (optional — utils ไม่พึ่ง seed แต่ทำหลัง Task 1 เพื่อให้ checkpoint ชัด)
+
+**Files likely touched:**
+- `frontend/backoffice/src/types/permissionAdmin.ts`
+- `frontend/backoffice/src/pages/PermissionAdmin/permissionAdminUtils.ts`
+- `frontend/backoffice/src/pages/PermissionAdmin/permissionAdminUtils.test.ts`
+
+**Estimated scope:** S
 
 ---
 
-## Slice 3: API Client Enhancement
+#### Task 3: `authApiClient` admin methods + `apiError` extensions + tests
 
-**Goal:** Add getMyMenus() method to authApiClient, handle MenuNode response
+**Description:** เพิ่ม client methods ครบ 7 endpoints พร้อมส่ง `If-Match` และ map error codes ที่ Phase A คืน
 
-**Files to create/modify:**
-- `src/lib/authApiClient.ts` — ADD getMyMenus function
-
-**Acceptance Criteria:**
-1. ✅ `getMyMenus()` calls `GET /auth/me/menus` via baseApiClient
-2. ✅ Returns `MenuNode[]` (flat list)
-3. ✅ Error handling: throws on network/5xx (caller decides fallback strategy)
-4. ✅ Uses existing auth token from AuthContext (via baseApiClient interceptor)
+**Acceptance criteria:**
+- [ ] `listAdminMenus()` unwrap `{ menus }`; `createAdminMenu()`; `updateAdminMenu(key, body, updDate)` แนบ `If-Match: <updDate ISO ดิบ>`; `deleteAdminMenu(key, updDate)` แนบ `If-Match` (required)
+- [ ] `listRolePermissions({ role })` unwrap `{ role_permissions }`; `upsertRolePermission(role, body)` **ไม่มี** If-Match; `deleteRolePermission(role, { confirm })` ใส่ query `?confirm=true`
+- [ ] PUT/DELETE path ใช้ literal segment `null` สำหรับ Global: `/auth/admin/role-permissions/null/{role}`
+- [ ] `ifMatchFromUpdDate(updDate)` ส่งค่า ISO **ดิบ** (ไม่ห่อ `W/"..."`); **ห้าม** ใช้ `extractETag` (admin ไม่มี ETag header)
+- [ ] `apiErrorMessage` รองรับ codes: `AUTH_PRECONDITION_FAILED` (412), `AUTH_MENU_IN_USE`/`AUTH_ROLE_PERMISSION_IN_USE` (409), `AUTH_INVALID_REQUEST` (400 — `detail` เป็น string เดียว)
+- [ ] `authApiClient.test.ts` mock axios ยืนยัน path, body, headers (มี/ไม่มี If-Match ตาม endpoint, `?confirm=true`)
 
 **Verification:**
-```bash
-grep -A 5 "getMyMenus" src/lib/authApiClient.ts
-npm run lint  # no errors
-```
+- [ ] `npm run test -- authApiClient`
+- [ ] `npm run test -- apiError` (ถ้าแยกไฟล์ test)
 
-**Estimate:** 30 min
+**Dependencies:** Task 2
+
+**Files likely touched:**
+- `frontend/backoffice/src/lib/authApiClient.ts`
+- `frontend/backoffice/src/lib/authApiClient.test.ts`
+- `frontend/backoffice/src/lib/apiError.ts`
+- `frontend/backoffice/src/lib/apiError.test.ts` (ถ้ายังไม่มี — สร้าง)
+
+**Estimated scope:** M
 
 ---
 
-## Slice 4: AuthContext Enhancement
+### Checkpoint: Foundation
 
-**Goal:** Store permissions & menus, refresh on token change, expose via context
+- [ ] `npm run test && npm run lint && npm run build` ผ่าน
+- [ ] ไม่มี regression ใน auth client เดิม (login/refresh/getMyMenus)
+- [ ] **Human review** ก่อนเริ่ม UI tabs
 
-**Files to create/modify:**
-- `src/contexts/AuthContext.tsx` — EXTEND interface + add state + refresh logic
+---
 
-**Changes:**
-```typescript
-// Current:
-interface AuthContextValue {
-  user: DecodedUser | null;
-  loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
+### Phase 2: Bruno Collection (OQ-5)
 
-// New:
-interface AuthContextValue {
-  user: DecodedUser | null;
-  permissions: string[];
-  menus: MenuNode[];
-  menuLoadingError: boolean;  // true if getMyMenus failed
-  loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshMenus: () => Promise<void>;  // manual refresh (optional)
-}
-```
+#### Task 4: Bruno `backend/_bruno/auth/admin/` — 7 requests
 
-**Acceptance Criteria:**
-1. ✅ Login response → extract `permissions` from TokenResponse body, store in state
-2. ✅ Refresh response → extract `permissions` from fresh TokenResponse, update state
-3. ✅ After successful login/restore: call `getMyMenus()`, store result in `menus` state
-4. ✅ After successful token refresh: call `getMyMenus()` again (permissions may have changed)
-5. ✅ getMyMenus failure: set `menuLoadingError = true`, keep existing menus visible, don't crash
-6. ✅ Session restoration (on mount): fetch menus after token restore completes
-7. ✅ TypeScript: all new fields properly typed
+**Description:** ขยาย auth Bruno collection ครอบคลุม Permission Admin API สำหรับ SIT/manual smoke
+
+**Acceptance criteria:**
+- [ ] `admin/folder.yml` + 7 request files ตาม Spec
+- [ ] ทุก request ใช้ `Authorization: Bearer {{access_token}}` (inherit หรือ explicit)
+- [ ] **เฉพาะ** `menus` PATCH/DELETE มี `If-Match` (ISO ดิบ); `role-permissions` PUT ไม่มี If-Match; DELETE role ใช้ `?confirm=true`
+- [ ] capture `upd_date` จาก Create/List menu ลง env var (post-response script) เพื่อใช้ใน PATCH/DELETE
+- [ ] ใช้ `{{baseUrl}}` / `{{username}}` / `{{password}}` — ไม่ hardcode credentials
+- [ ] ลำดับรัน: Login → List menus → Create → Update → Delete → List role-permissions → Upsert (ตามความเหมาะสม)
 
 **Verification:**
-```bash
-npm test -- AuthContext  # integration test if exists, or manual verification
-npm run build  # zero type errors
-```
+- [ ] Manual: เปิด Bruno → chọn environment Local → Login → รัน admin requests ครบ 7 (SC-8)
+- [ ] ตรวจ syntax `.yml` เปิดใน Bruno ได้ไม่ error
 
-**Estimate:** 1.5 hours
+**Dependencies:** Task 3 (รู้ path/body ชัดจาก client + Phase A spec)
+
+**Files likely touched:**
+- `backend/_bruno/auth/admin/folder.yml`
+- `backend/_bruno/auth/admin/*.yml` (7 requests)
+
+**Estimated scope:** M
+
+> **Parallelization:** Task 4 ทำขนานกับ Task 5–6 ได้หลัง Task 3 เสร็จ
 
 ---
 
-## Slice 5: usePermission Hook & PermissionGuard Component
+### Phase 3: UI Vertical Slices
 
-**Goal:** Create hook for permission checking, PermissionGuard to replace RoleGuard
+#### Task 5: Page shell — `PermissionAdmin` + Tabs scaffold
 
-**Files to create/modify:**
-- `src/hooks/usePermission.ts` — NEW hook
-- `src/components/PermissionGuard.tsx` — NEW component
+**Description:** แทนที่ placeholder ด้วย page shell 2 แท็บ (Menu catalog | Role permissions) พร้อม loading/error boundary พื้นฐาน
 
-**usePermission Hook:**
-```typescript
-export function usePermission(actionKey: string): boolean {
-  const { permissions } = useAuth();
-  return anyPermissionMatches(permissions, actionKey);
-}
-```
-
-**PermissionGuard Component:**
-```typescript
-export const PermissionGuard: React.FC<{
-  required: string;
-  children: React.ReactNode;
-}> = ({ required, children }) => {
-  const { user, loading, permissions } = useAuth();
-  if (loading) return <Spin size="large" fullscreen />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!anyPermissionMatches(permissions, required)) {
-    return <Navigate to="/403" replace />;
-  }
-  return <>{children}</>;
-};
-```
-
-**Acceptance Criteria:**
-1. ✅ `usePermission('profiles:create')` returns true if user has permission
-2. ✅ Wildcard matching works: user with `profiles:*` returns true for `profiles:*`, `profiles:create`
-3. ✅ PermissionGuard renders children if permission matches
-4. ✅ PermissionGuard redirects to `/403` if permission missing
-5. ✅ PermissionGuard redirects to `/login` if not logged in
-6. ✅ PermissionGuard shows loading spinner during auth check
-
-**Unit Tests:**
-- `src/hooks/usePermission.test.ts` (3 tests: has permission, no permission, wildcard)
-- `src/components/PermissionGuard.test.ts` (4 tests: render, redirect 403, redirect login, loading)
+**Acceptance criteria:**
+- [ ] `index.tsx` ใช้ antd `Tabs` — labels ตาม Spec (English)
+- [ ] แต่ละแท็บเป็น lazy child component (หรือ import แยกไฟล์)
+- [ ] 403 จาก API แสดง `Result` ไม่ crash
+- [ ] `PermissionAdmin.test.tsx` smoke: render tabs เมื่อ mock permission ผ่าน
 
 **Verification:**
-```bash
-npm test -- usePermission  # 3/3 tests passing
-npm test -- PermissionGuard  # 4/4 tests passing
-npm run lint  # zero errors
-```
+- [ ] `npm run test -- PermissionAdmin`
 
-**Estimate:** 1.5 hours
+**Dependencies:** Task 1, Task 3
+
+**Files likely touched:**
+- `frontend/backoffice/src/pages/PermissionAdmin/index.tsx`
+- `frontend/backoffice/src/pages/PermissionAdmin/MenuCatalogTab.tsx` (stub → เต็มใน Task 6)
+- `frontend/backoffice/src/pages/PermissionAdmin/RolePermissionsTab.tsx` (stub → เต็มใน Task 7)
+- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
+
+**Estimated scope:** S
 
 ---
 
-## Slice 6: Dynamic Menu Rendering in AdminLayout
+#### Task 6: Menu catalog tab — tree + CRUD + self-lockout guards
 
-**Goal:** Replace hardcoded menuItems with dynamic tree built from API response
+**Description:** แท็บจัดการ registry — ดู tree, เพิ่ม/แก้/ลบโหนด ผ่าน API พร้อม validation/error UX
 
-**Files to create/modify:**
-- `src/layouts/AdminLayout.tsx` — EXTEND with menu tree assembly
-- `src/pages/StaffManagement.tsx` — ADD button-level permission checks (T6.13)
-
-**Tree Assembly Algorithm:**
-
-```typescript
-// Input: flat MenuNode[] with parent_key references
-const menus = [
-  { key: 'dashboard', label: 'Dashboard', parent_key: null, sort_order: 0 },
-  { key: 'staff', label: 'Staff', parent_key: null, sort_order: 10 },
-  { key: 'profiles:list', label: 'Staff List', parent_key: 'staff', sort_order: 0 }
-]
-
-// Output: hierarchical structure (grouped by parent)
-type MenuNode = { 
-  key: string
-  label: string
-  type: 'menu' | 'action'
-  children?: MenuNode[]
-}
-
-function buildMenuTree(menus: MenuNode[]): MenuNode[] {
-  // 1. Index by key for O(1) lookup
-  const byKey = new Map(menus.map(m => [m.key, m]))
-  
-  // 2. Group children by parent_key
-  const childrenByParent = new Map<string | null, MenuNode[]>()
-  for (const menu of menus) {
-    const parent = menu.parent_key ?? 'root'
-    if (!childrenByParent.has(parent)) childrenByParent.set(parent, [])
-    childrenByParent.get(parent)!.push(menu)
-  }
-  
-  // 3. Recursively build tree
-  function buildNode(menu: MenuNode): MenuNode {
-    const children = childrenByParent.get(menu.key)
-    return {
-      ...menu,
-      children: children?.map(buildNode).sort((a, b) => a.sort_order - b.sort_order)
-    }
-  }
-  
-  // 4. Return root nodes (parent_key is null)
-  return (childrenByParent.get('root') ?? [])
-    .map(buildNode)
-    .sort((a, b) => a.sort_order - b.sort_order)
-}
-```
-
-**Edge Cases Handled:**
-- **Orphaned parent_key** — if parent not in list, child appears as orphan (filtered by unknown keys check)
-- **Circular references** — depth limit from Phase 1 prevents infinite loops (5xx error if exceeded)
-- **Unknown keys** — keys not in MENU_UI mapping are filtered before rendering
-- **Empty menus** — shows minimal menu fallback (Dashboard, My Profile)
-
-**MENU_UI Mapping:**
-```typescript
-const MENU_UI: Record<string, MenuItemUI> = {
-  'dashboard': { icon: <DashboardOutlined />, route: '/' },
-  'staff': { icon: <TeamOutlined /> },  // no route = menu group
-  'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
-  'billing': { icon: <DollarOutlined /> },
-  'agents:list': { icon: <BotOutlined />, route: '/billing/agents' },
-  'invoices:list': { icon: <FileTextOutlined />, route: '/billing/invoices' },
-  'reports': { icon: <BarChartOutlined /> },
-  'reports:smart': { icon: <BarChartOutlined />, route: '/reports/smart' },
-  // Unknown keys: silently skip rendering
-};
-```
-
-**Acceptance Criteria:**
-1. ✅ Menu items render from `menus` (not hardcoded)
-2. ✅ Tree structure preserved (parent_key → children visual hierarchy)
-3. ✅ Sorted by depth (root items first) then sort_order
-4. ✅ Icons/routes from MENU_UI map, unknown keys skipped
-5. ✅ Menu group nodes (type='menu') have no clickable route
-6. ✅ Menu action nodes (type='action') are clickable, navigate to route
-7. ✅ Selected item highlights based on current pathname
-8. ✅ If menuLoadingError, show minimal menu + toast (Dashboard, My Profile + "Some menus unavailable")
-9. ✅ Remove isStaffAdmin check, remove hardcoded menuItems array
+**Acceptance criteria:**
+- [ ] โหลด `GET /auth/admin/menus` → แสดง Tree เรียง `sort_order`
+- [ ] **Add node** Modal: `key`, `label`, `type`, `parent_key`, `sort_order` → POST
+- [ ] **Edit** Modal: แก้ได้เฉพาะ `label`, `parent_key`, `sort_order`; `key`/`type` read-only; PATCH + `If-Match` (ISO ดิบ)
+- [ ] **Delete** + Popconfirm → DELETE + `If-Match`; 409 (`AUTH_MENU_IN_USE`) แสดงข้อความชัดเจน
+- [ ] Self-lockout: **ทั้ง Edit และ Delete disabled** + tooltip สำหรับ `permissions:manage` (backend block ทั้ง PATCH/DELETE)
+- [ ] `400` validation แสดง `detail` (string เดียว — split `, ` เป็น list ได้)
+- [ ] `412` (`AUTH_PRECONDITION_FAILED`) แสดงข้อความ refresh + reload tree
+- [ ] ใช้ `useAppFeedback` ตาม pattern `StaffManagement.tsx`
 
 **Verification:**
-```bash
-# Manual test: Login → menus appear from API
-# Manual test: Logout in other window, Admin revokes profiles:create → refresh → Staff menu updates
-# Manual test: Network error on /auth/me/menus → minimal menu shown
-npm run lint  # zero errors
-```
+- [ ] `npm run test -- PermissionAdmin` (mock CRUD flows)
+- [ ] Manual: สร้าง action key → เห็นใน tree (SC-2); ลบโหนดมีลูก → 409 (SC-4)
 
-**Estimate:** 2 hours (tree assembly + Ant Menu integration)
+**Dependencies:** Task 5
+
+**Files likely touched:**
+- `frontend/backoffice/src/pages/PermissionAdmin/MenuCatalogTab.tsx`
+- `frontend/backoffice/src/pages/PermissionAdmin/MenuNodeFormModal.tsx`
+- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
+
+**Estimated scope:** M–L (3–4 files)
 
 ---
 
-## Slice 7: Route Guard Replacement & Integration Tests
+#### Task 7: Role permissions tab — checkbox tree + save + revoke_sessions
 
-**Goal:** Replace RoleGuard with PermissionGuard, validate full flow, error handling
+**Description:** แท็บ map สิทธิ์ต่อ role (Global only) — เลือก role, ติ๊ก keys จาก registry, บันทึก PUT
 
-**Files to create/modify:**
-- `src/App.tsx` — REPLACE RoleGuard with PermissionGuard on /staff route
-- `src/pages/StaffManagement.tsx` — (no change, just remove RoleGuard parent)
-- Integration test (optional but recommended)
-
-**Changes in App.tsx:**
-```typescript
-// Before:
-{
-  path: 'staff',
-  element: (
-    <RoleGuard allowedRoles={['platform_admin', 'branch_admin']}>
-      <StaffManagement />
-    </RoleGuard>
-  ),
-}
-
-// After:
-{
-  path: 'staff',
-  element: (
-    <PermissionGuard required="profiles:list">
-      <StaffManagement />
-    </PermissionGuard>
-  ),
-}
-```
-
-**Acceptance Criteria:**
-1. ✅ `/staff` route protected by PermissionGuard (requires `profiles:list`)
-2. ✅ User with `profiles:*` can access `/staff`
-3. ✅ User with `profiles:list` can access `/staff`
-4. ✅ User without `profiles:*` or `profiles:list` → redirect to `/403`
-5. ✅ All other routes remain unchanged (Dashboard, MyProfile, Invoices, Agents, SmartReport)
-6. ✅ Zero regressions: existing tests pass, no breakage in other flows
-7. ✅ RoleGuard component removed (or kept but unused/deprecated)
-
-**Integration Test Scenarios:**
-```typescript
-// test('full login → menu → permission check → redirect flow')
-// 1. Login with branch_admin (has profiles:*)
-// 2. GET /auth/me/menus returns staff tree
-// 3. Navigate to /staff → PermissionGuard allows
-// 4. User without profiles:* → navigate to /staff → redirect /403
-
-// test('menu changes after token refresh')
-// 1. Login → menus appear
-// 2. Admin changes user's role (mock)
-// 3. Click refresh button (or wait for auto-refresh)
-// 4. New menus fetched, old menus gone
-
-// test('getMyMenus failure handling')
-// 1. Login succeeds, permissions in response
-// 2. getMyMenus() fails (network error)
-// 3. menuLoadingError = true
-// 4. Minimal menu shown (Dashboard, My Profile)
-// 5. Toast: "Some menu items unavailable. Please refresh."
-```
+**Acceptance criteria:**
+- [ ] Role `Select`: `platform_admin`, `branch_admin`, `staff`
+- [ ] โหลด menus + `GET role-permissions?role=` (unwrap `{ role_permissions }`) → Checkbox tree
+- [ ] **Save** → `PUT .../null/{role}` + `menu_keys` (**ไม่มี If-Match**)
+- [ ] Checkbox **Revoke active sessions** → `revoke_sessions: true` (default off) + คำเตือน
+- [ ] Self-lockout: `permissions:manage` ของ `platform_admin` ติ๊กไม่ได้ถอด — **นับ `permissions:*` เป็นมีสิทธิ์** (disabled + tooltip)
+- [ ] Success message ใช้ `revoked_users_count` จาก response (โชว์จำนวน session ที่ revoke หรือข้อความ staleness)
+- [ ] ไม่เรียก `getMyMenus()` invalidate หลัง save (OQ-4)
 
 **Verification:**
-```bash
-npm run build  # zero TypeScript errors
-npm test  # all tests pass including new PermissionGuard tests
-npm run lint  # zero lint errors
-npm run test:coverage  # ensure no coverage regression
-```
+- [ ] `npm run test -- PermissionAdmin` (mock PUT + checkbox state)
+- [ ] Manual staging: แก้ `branch_admin` → refresh test user → sidebar เปลี่ยน (SC-3)
 
-**Estimate:** 2 hours
+**Dependencies:** Task 5, Task 6 (reuse tree builder; อาจทำขนานถ้า utils พร้อม)
 
----
+**Files likely touched:**
+- `frontend/backoffice/src/pages/PermissionAdmin/RolePermissionsTab.tsx`
+- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
 
-## Checkpoint: Full Integration Test
-
-**Objective:** Validate end-to-end flow with all slices integrated
-
-**Pre-requisites:**
-- Phase 1 (auth service) merged and running
-- Seed catalog includes `dashboard:view`, `staff/*`, `billing/*`, `reports:*`
-- Staging environment: full auth service + frontend deployed
-
-**Test Scenarios:**
-
-### Scenario 1: Permission-Driven Menu Display
-```
-1. Login as branch_admin (has: profiles:*, dashboard:view)
-2. Observe: Staff menu visible, Billing/Reports hidden
-3. Admin adds reports:smart to branch_admin role
-4. User refreshes token
-5. Observe: Reports menu now visible
-```
-
-**Success:** Menu updates dynamically without page reload
-
-### Scenario 2: Route Guard Protection
-```
-1. User without profiles:* tries to navigate to /staff
-2. PermissionGuard blocks, redirect to /403
-3. User with profiles:* navigates to /staff
-4. Page loads successfully
-```
-
-**Success:** Route guard enforces permission check
-
-### Scenario 3: Menu Fallback on API Error
-```
-1. Network fails on /auth/me/menus call
-2. Minimal menu displayed (Dashboard, My Profile)
-3. Toast shown: "Some menu items unavailable"
-4. App does not crash
-```
-
-**Success:** Graceful degradation on error
-
-### Scenario 4: Menu Persistence on Token Refresh
-```
-1. Login → menus appear
-2. Wait for token auto-refresh (or force refresh)
-3. Menus re-fetched and updated
-4. Menu selection state preserved
-```
-
-**Success:** Menus refresh silently, user experience uninterrupted
+**Estimated scope:** M
 
 ---
 
-## Timeline & Sequencing
+### Checkpoint: Core Features
 
-| Slice | Task | Duration | Blocker | Parallelizable | Status |
-|-------|------|----------|---------|-----------------|--------|
-| 1 | Types & Contract Definition | 45 min | — | — | 🔵 Ready |
-| 2 | Permission Matching Contract | 1 h | Slice 1 | Yes (with 3) | 🔵 Ready |
-| 3 | API Client Enhancement | 30 min | Slice 1 | Yes (with 2) | 🔵 Ready |
-| 4 | AuthContext Enhancement | 1.5-2 h | Slice 1,3 | No | 🔵 Ready |
-| 5 | usePermission Hook & PermissionGuard | 1.5 h | Slice 2,4 | No | 🔵 Ready |
-| 6 | Dynamic Menu Rendering | 2-2.5 h | Slice 4,5 | No | 🔵 Ready |
-| 7 | Route Guard Replacement & Tests | 2 h | Slice 5,6 | No | 🔵 Ready |
-| CP | Full Integration Testing | 1.5 h | All | — | 🔵 Ready |
-
-**Total:** 11-12 hours (3-4 days with code review, testing)  
-**Parallelization Option:** Run T2 + T3 in parallel after T1 → saves 30 min (10.5-11.5 hours)
+- [ ] US-1 ถึง US-7 ครบตาม Spec user stories (ยกเว้น SC-3 ถ้าไม่มี staging)
+- [ ] `npm run test && npm run build` ผ่าน
+- [ ] Bruno admin smoke ผ่าน (SC-8)
+- [ ] **Human review** ก่อน polish
 
 ---
 
-## Success Criteria (from SPEC.md)
+### Phase 4: Polish & Gate
 
-✅ **S1.** User `branch_admin` (has `profiles:*`) sees Staff menu; user without → menu hidden + `/staff` redirect to `/403`  
-✅ **S2.** Menu sidebar matches `GET /auth/me/menus` (structure + order); change permission in DB + refresh token → menu updates without deploy  
-✅ **S3.** Buttons (Create/Edit Staff) hide when user lacks `profiles:create`/`profiles:edit`  
-✅ **S4.** `getMyMenus` failure → minimal menu + "Some items unavailable" + app doesn't crash  
-✅ **S5.** `npm run build && npm test && npm run lint` all pass; contract tests match backend  
+#### Task 8: Guard tests + lint/build gate + rollout notes
+
+**Description:** ปิดงานด้วย test coverage ที่เหลือ, อัปเดต ROADMAP status, ยืนยัน quality gate
+
+**Acceptance criteria:**
+- [ ] `PermissionGuard.test.tsx` มีเคส `/permissions` ไม่มีสิทธิ์ → redirect `/403` (SC-7)
+- [ ] `npm run test && npm run lint && npm run build` ผ่านทั้งหมด (SC-6)
+- [ ] ROADMAP Phase 6 อัปเดตเป็น "กำลังทำ" / "เสร็จ" ตามสถานะจริง
+- [ ] Rollout checklist ใน Spec ยังใช้ได้ (seed → deploy frontend → smoke)
+
+**Verification:**
+- [ ] CI-equivalent local: `npm run ci` ถ้ามีใน backoffice
+- [ ] Manual smoke ตาม Rollout section ใน Spec
+
+**Dependencies:** Task 6, Task 7, Task 4
+
+**Files likely touched:**
+- `frontend/backoffice/src/components/PermissionGuard.test.tsx`
+- `backend/auth/_mission-control/ROADMAP.md` (status only)
+
+**Estimated scope:** S
 
 ---
 
-## Known Risks & Mitigations
+### Checkpoint: Complete
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|-----------|
-| Slow API response on getMyMenus | Low | Menu render delays | Cache in state, show loading spinner |
-| Phase 1 seed missing catalog keys | Medium | Menu items not visible | Pre-verify seed catalog before frontend deploy |
-| AuthContext state out of sync with JWT | Low | Stale permissions | Fetch fresh on every token refresh |
-| TypeScript type mismatches | Low | Build failure | Strict mode enforced during build |
-| Network error on getMyMenus | Medium | UX degradation | Minimal menu fallback tested |
+- [ ] SC-1 ถึง SC-8 ครบ (หรือบันทึก manual-only items ที่ยังไม่รัน)
+- [ ] พร้อม `/code-build` review หรือ `/review` + `/ship`
 
 ---
 
-## Plan Review & Improvements (A- Grade)
+## Risks and Mitigations
 
-**Review Date:** 2026-06-12  
-**Reviewer Notes:** Comprehensive plan with solid architecture. 7 improvements incorporated for clarity and completeness.
+| ความเสี่ยง | ผลกระทบ | วิธีรับมือ |
+| :--- | :--- | :--- |
+| Seed ปัจจุบันมี `permissions:manage` ใต้ `staff:profiles` | Med | Task 1 reparent ไป `settings` **ผ่าน seed เท่านั้น** (API block) — รัน seed ก่อน deploy F2 |
+| `If-Match` format ผิด (`W/"..."` vs ISO ดิบ) → 412 ทุกครั้ง | High | Task 3 ส่ง ISO ดิบจาก body; ยืนยันด้วย Bruno PATCH ก่อนทำ UI |
+| ใช้ `extractETag` ผิด (admin ไม่มี ETag header) | High | Task 3 อ่าน `upd_date` จาก body เท่านั้น |
+| Wildcard `permissions:*` ในกฎ self-lockout | Med | Task 7 นับทั้ง `permissions:manage` และ `permissions:*` (สะท้อน backend) |
+| Checkbox tree + wildcard keys (`profiles:*`) | Med | แสดงเฉพาะ keys ใน registry; ไม่ expand wildcard ฝั่ง UI — ส่ง `menu_keys` ตามที่ติ๊ก |
+| Role `support` มีใน seed แต่ไม่อยู่ใน Select | Low | OQ-3 — ไม่แสดงใน UI; mapping ยังอยู่ใน DB |
+| Concurrent edit menu → 412 | Low | map `AUTH_PRECONDITION_FAILED` ใน `apiError` (Task 3 เพิ่มใหม่) |
+| DELETE role ที่มี active users → 409 | Low | UI ถาม confirm แล้วส่ง `?confirm=true` (สะท้อน `AUTH_ROLE_PERMISSION_IN_USE`) |
 
-**Improvements Made:**
-1. ✅ **T4.0** — Added CRITICAL verification task for Phase 1 permissions field in TokenResponse
-2. ✅ **T6.11** — Expanded edge case testing (orphaned parent_key, cycles, unknown keys, empty menus)
-3. ✅ **T6.13** — Added explicit button-level permission checks for S3 compliance (profiles:create/edit)
-4. ✅ **Pseudocode** — Detailed buildMenuTree algorithm with edge case handling
-5. ✅ **Parallelization** — Documented T2 + T3 can run in parallel (save 30 min)
-6. ✅ **Stale Data** — Documented intentional staleness (menus refresh on token refresh only)
-7. ✅ **Pre-kickoff** — Recommend frontend team lead review before starting
+## Open Questions
 
-**Outstanding Recommendations (Post-Phase-4):**
-- Confirm minimal menu UI design with frontend team before Slice 6
-- Consider concurrent getMyMenus deduplication (similar to refresh-promise pattern)
-- Monitor menuLoadingError frequency in production logs for ops visibility
+ไม่มี — Resolved ทั้งหมดใน Spec (OQ-1–5)
 
-## Post-Implementation (Future)
+## Parallelization Summary
 
-- [ ] Implement optional `refreshMenus()` manual trigger for urgent permission changes
-- [ ] Monitor `menuLoadingError` frequency for ops visibility (set up alerting)
-- [ ] Consider caching menus in localStorage (post-Phase 4, if needed)
-- [ ] Add getMyMenus timeout strategy if API slowness observed
+| ขนานได้ | ต้องเรียง |
+| :--- | :--- |
+| Task 4 (Bruno) หลัง Task 3 | Task 1 → 2 → 3 |
+| Task 7 เริ่มได้เมื่อ Task 5 + utils พร้อม (ไม่ต้องรอ Task 6 เสร็จ 100%) | Task 6 ก่อน checkpoint core ถ้าต้องการ US-2 ก่อน US-5 |
+
+## Approval
+
+- [ ] เบียร์อนุมัติ Plan นี้
+- [ ] หลังอนุมัติ → เริ่ม `/code-build` ที่ Task 1

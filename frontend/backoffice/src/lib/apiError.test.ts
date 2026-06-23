@@ -53,4 +53,17 @@ describe('apiErrorMessage', () => {
   it('returns fallback for unknown errors', () => {
     expect(apiErrorMessage(new Error('nope'), 'fallback')).toBe('fallback');
   });
+
+  it('maps AUTH_MENU_NOT_FOUND', () => {
+    const err = makeAxiosError({
+      code: 'AUTH_MENU_NOT_FOUND',
+      detail: 'Menu key missing',
+    });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Menu key missing');
+  });
+
+  it('maps AUTH_ROLE_PERMISSION_NOT_FOUND with default message', () => {
+    const err = makeAxiosError({ code: 'AUTH_ROLE_PERMISSION_NOT_FOUND' });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Role permission mapping not found.');
+  });
 });

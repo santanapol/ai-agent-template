@@ -4,9 +4,17 @@ import userEvent from '@testing-library/user-event';
 import PermissionAdmin from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 
+const listAdminMenus = vi.fn();
+
+vi.mock('../../lib/authApiClient', () => ({
+  listAdminMenus: (...args: unknown[]) => listAdminMenus(...args),
+  listRolePermissions: vi.fn().mockResolvedValue([]),
+}));
+
 describe('PermissionAdmin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listAdminMenus.mockResolvedValue([]);
   });
 
   it('renders Menu catalog and Role permissions tabs', () => {
@@ -25,5 +33,17 @@ describe('PermissionAdmin', () => {
     renderWithProviders(<PermissionAdmin />);
     await user.click(screen.getByRole('tab', { name: /role permissions/i }));
     expect(screen.getByTestId('role-permissions-tab')).toBeInTheDocument();
+  });
+
+  it('lazy-mounts role tab so listAdminMenus is not called until that tab opens', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PermissionAdmin />);
+
+    expect(screen.getByTestId('menu-catalog-tab')).toBeInTheDocument();
+    expect(listAdminMenus).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('tab', { name: /role permissions/i }));
+    expect(screen.getByTestId('role-permissions-tab')).toBeInTheDocument();
+    expect(listAdminMenus).toHaveBeenCalledTimes(2);
   });
 });
