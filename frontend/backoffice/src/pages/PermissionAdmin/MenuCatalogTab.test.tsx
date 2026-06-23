@@ -61,7 +61,7 @@ function axios403() {
     statusText: 'Forbidden',
     data: { code: 'AUTH_FORBIDDEN' },
     headers: {},
-    config: {} as import('axios').AxiosError['config'],
+    config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
   };
   return err;
 }
