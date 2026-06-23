@@ -13,6 +13,19 @@ vi.mock('../lib/authApiClient', () => ({
   getMyMenus: vi.fn(),
 }));
 
+let sessionRefresh: (() => Promise<string | null>) | null = null;
+
+vi.mock('../lib/baseApiClient', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../lib/baseApiClient')>();
+  return {
+    ...mod,
+    setRefreshCallback: (fn: (() => Promise<string | null>) | null) => {
+      sessionRefresh = fn;
+      mod.setRefreshCallback(fn);
+    },
+  };
+});
+
 // Mock token: sub: "123", role: "platform_admin", exp: 1 year from now
 const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMiLCJyb2xlIjoicGxhdGZvcm1fYWRtaW4iLCJleHAiOjE5MjQ5OTk5OTl9.signature";
 
@@ -77,5 +90,77 @@ describe('AuthContext', () => {
     });
 
     expect(mockedGetMyMenus).toHaveBeenCalledTimes(1);
+  });
+
+  test('reloads menus after token refresh when user session is restored (SC-3)', async () => {
+    const mockedLogin = authApi.login as Mock;
+    const mockedGetMyMenus = authApi.getMyMenus as Mock;
+    const mockedRefresh = authApi.refresh as Mock;
+
+    mockedRefresh.mockRejectedValueOnce(new Error('No session'));
+
+    mockedLogin.mockResolvedValue({
+      access_token: mockToken,
+      permissions: ['profiles:lookup', 'invoices:list'],
+    });
+
+    const menusWithInvoices = [
+      { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+      { key: 'billing', label: 'Billing', type: 'menu', parent_key: null, sort_order: 10 },
+      { key: 'invoices:list', label: 'Invoices', type: 'action', parent_key: 'billing', sort_order: 10 },
+    ];
+    const menusWithoutInvoices = [
+      { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+    ];
+
+    mockedGetMyMenus
+      .mockResolvedValueOnce(menusWithInvoices)
+      .mockResolvedValueOnce(menusWithoutInvoices);
+
+    mockedRefresh.mockResolvedValueOnce({
+      access_token: mockToken,
+      permissions: ['profiles:lookup'],
+    });
+
+    const MenuProbe = () => {
+      const { menus, permissions } = useAuth();
+      return (
+        <div>
+          <div data-testid="menu-keys">{menus.map((m) => m.key).join(',')}</div>
+          <div data-testid="session-permissions">{permissions.join(',')}</div>
+          <button type="button" onClick={() => void sessionRefresh?.()}>
+            Refresh session
+          </button>
+        </div>
+      );
+    };
+
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+        <MenuProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('user-id').textContent).toBe('no-user');
+    });
+
+    await user.click(screen.getByText('Login'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('menu-keys').textContent).toContain('invoices:list');
+    });
+    expect(mockedGetMyMenus).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByText('Refresh session'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('menu-keys').textContent).toBe('dashboard');
+      expect(screen.getByTestId('session-permissions').textContent).toBe('profiles:lookup');
+    });
+    expect(mockedGetMyMenus).toHaveBeenCalledTimes(2);
   });
 });

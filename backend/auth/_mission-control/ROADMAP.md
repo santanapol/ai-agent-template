@@ -1,7 +1,7 @@
 # Roadmap: Dynamic Permission — ภาพรวมทุก Phase
 
 > เอกสารแม่ของชุดงาน Dynamic Permission ทั้งระบบ — อัปเดตสถานะที่นี่เมื่อแต่ละ phase ขยับ
-> อัปเดตล่าสุด: 2026-06-23 (Phase 1–5 เสร็จ/รอ merge; Phase 6 F2 code complete — รอ manual smoke)
+> อัปเดตล่าสุด: 2026-06-23 (Phase 1–5 + F2 code complete; SC-3/SC-5/SC-8 verified — รอ merge PR #12–#15)
 
 ## Phases
 
@@ -12,7 +12,7 @@
 | 3   | **S** — Permission checks (dual-check) | `backend/service/staff`                       | [SPEC.md](../../service/staff/_mission-control/SPEC.md)                                                  | ✅ ส่ง PR #14 แล้ว รอ merge (193/193 tests)                               | **ต้องหลัง G เท่านั้น**     |
 | 4   | **F** — Menu + guards                  | `frontend/backoffice`                         | [SPEC.md](../../../frontend/backoffice/_mission-control/SPEC.md)                                         | ✅ เสร็จสมบูรณ์แล้ว ผ่านการตรวจสอบ (78/78 tests)                          | หลัง 1 merge — ขนาน G/S ได้ |
 | 5   | **A** — Permission Admin API           | `backend/auth`                                | [SPEC-permission-admin-api.md](./SPEC-permission-admin-api.md)                                           | ✅ เสร็จสมบูรณ์แล้ว ผ่านการตรวจสอบ (134/134 tests)                        | ทำท้ายสุด (หลัง G/S/F)      |
-| (6) | **F2** — หน้าจอจัดการสิทธิ์ + Bruno    | `frontend/backoffice` + `backend/_bruno/auth` | [SPEC-permission-admin-ui.md](../../../frontend/backoffice/_mission-control/SPEC-permission-admin-ui.md) | ✅ code complete (116/116 tests, lint, build) — รอ manual smoke SC-3/SC-5 | หลัง A deploy + seed เมนู   |
+| (6) | **F2** — หน้าจอจัดการสิทธิ์ + Bruno    | `frontend/backoffice` + `backend/_bruno/auth` | [SPEC-permission-admin-ui.md](../../../frontend/backoffice/_mission-control/SPEC-permission-admin-ui.md) | ✅ complete — 131/131 tests; SC-3/SC-5 component tests; SC-8 `smoke-admin-api.sh` ผ่าน local | หลัง A deploy + seed เมนู   |
 
 ## Dependency Graph + ลำดับ Rollout
 

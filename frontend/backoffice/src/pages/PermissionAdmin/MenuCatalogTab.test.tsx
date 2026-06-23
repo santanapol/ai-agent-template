@@ -215,6 +215,36 @@ describe('MenuCatalogTab', () => {
     });
   });
 
+  it('shows refresh message when update returns 412 AUTH_PRECONDITION_FAILED (SC-5)', async () => {
+    const user = userEvent.setup();
+    const err = new Error('Precondition Failed') as import('axios').AxiosError;
+    err.isAxiosError = true;
+    err.response = {
+      status: 412,
+      statusText: 'Precondition Failed',
+      data: { code: 'AUTH_PRECONDITION_FAILED' },
+      headers: {},
+      config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
+    };
+    updateAdminMenu.mockRejectedValue(err);
+
+    renderWithProviders(<MenuCatalogTab />);
+    await screen.findByText('SIT Test');
+
+    await user.click(screen.getByRole('button', { name: /edit sit test/i }));
+    const dialog = await screen.findByRole('dialog');
+    const labelInput = within(dialog).getByLabelText(/^label$/i);
+    await user.clear(labelInput);
+    await user.type(labelInput, 'Stale edit');
+    await user.click(within(dialog).getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalledWith(
+        'This record was modified by another session. Please refresh and try again.',
+      );
+    });
+  });
+
   it('shows API error when delete returns 409 AUTH_MENU_IN_USE', async () => {
     const user = userEvent.setup();
     const err = new Error('Conflict') as import('axios').AxiosError;

@@ -38,9 +38,9 @@
   - **`/permissions`** (`frontend/backoffice`): แท็บ Menu catalog (tree + CRUD) และ Role permissions (checkbox tree + PUT upsert + `revoke_sessions`) — consumer ของ Phase A API เท่านั้น
   - **`settings` + `permissions:manage` seed**: เพิ่มกลุ่มเมนูนำทาง Settings → Permissions; reparent `permissions:manage` ใต้ `settings`
   - **`authApiClient` admin methods**: If-Match (ISO ดิบ) เฉพาะ menus PATCH/DELETE; role PUT ไม่มี If-Match; DELETE role `?confirm=true`
-  - **Bruno `backend/_bruno/auth/admin/`**: collection 7 requests สำหรับ SIT; `Local.yml.example` แทนการ commit credentials
+  - **Bruno `backend/_bruno/auth/admin/`**: collection 7 requests สำหรับ SIT; `smoke-admin-api.sh` สำหรับ SC-8 CLI smoke; `Local.yml.example` แทนการ commit credentials
   - **`admin.validator.js`**: `pattern` บน menu `key` (ห้าม wildcard ใน registry); `maxItems: 500` บน `menu_keys`
-  - **Tests**: backoffice 127/127 (PermissionAdmin, MenuCatalogTab, RolePermissionsTab, authApiClient, PermissionGuard)
+  - **Tests**: backoffice 131/131 (SC-3 sidebar refresh, SC-5 If-Match 412, PermissionAdmin tabs, authApiClient, PermissionGuard)
 - **`PATCH /internal/users/{user_id}/role`** (`src/modules/internal/internal.route.js`): เพิ่ม internal endpoint สำหรับให้ trusted service อัปเดตบทบาทของผู้ใช้แบบ Atomic operation ใน MongoDB transaction พร้อมทำ session revocation
 - **Tests**: integration test `internal-set-role.integration.test.js` สำหรับตรวจสิทธิ์การเข้าใช้งาน การอัปเดตบทบาท และการยกเลิก session
 - **`InternalService`** (`src/modules/internal/internal.service.js`): thin delegation wrapper ระหว่าง `InternalController` กับ `AuthService` — รักษา module boundary
