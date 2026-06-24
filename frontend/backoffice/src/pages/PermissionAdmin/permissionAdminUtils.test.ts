@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AdminMenuNode } from '../../types/permissionAdmin';
 import {
   buildMenuTree,
+  expandRoleMappingToCheckedKeys,
+  filterCheckedActionKeys,
   isProtectedMenuKey,
   splitMappingKeys,
   buildSaveMenuKeys,
@@ -77,14 +79,52 @@ describe('permissionAdminUtils', () => {
   });
 
   describe('splitMappingKeys and buildSaveMenuKeys', () => {
-    it('preserves wildcards when building save payload', () => {
+    it('splits exact keys from wildcards', () => {
       const { exact, wildcards } = splitMappingKeys(['profiles:*', 'profiles:list']);
       expect(exact).toEqual(['profiles:list']);
       expect(wildcards).toEqual(['profiles:*']);
-      expect(buildSaveMenuKeys(['profiles:read'], wildcards)).toEqual([
+    });
+
+    it('merges wildcards when explicitly passed to buildSaveMenuKeys', () => {
+      expect(buildSaveMenuKeys(['profiles:read'], ['profiles:*'])).toEqual([
         'profiles:read',
         'profiles:*',
       ]);
+    });
+  });
+
+  describe('filterCheckedActionKeys', () => {
+    it('drops menu group keys and keeps only actions', () => {
+      const registry: AdminMenuNode[] = [
+        node('billing', { type: 'menu' }),
+        node('invoices:list', { parent_key: 'billing' }),
+        node('dashboard:view'),
+      ];
+
+      expect(
+        filterCheckedActionKeys(['billing', 'invoices:list', 'dashboard:view'], registry),
+      ).toEqual(['invoices:list', 'dashboard:view']);
+    });
+  });
+
+  describe('expandRoleMappingToCheckedKeys', () => {
+    it('expands wildcards to all matching action keys in the registry', () => {
+      const registry: AdminMenuNode[] = [
+        node('profiles:list', { parent_key: 'staff' }),
+        node('profiles:read', { parent_key: 'staff' }),
+        node('roles:assign', { parent_key: 'staff' }),
+        node('dashboard:view'),
+      ];
+
+      const expanded = expandRoleMappingToCheckedKeys(
+        ['profiles:*', 'dashboard:view'],
+        registry,
+      );
+
+      expect(expanded).toEqual(
+        expect.arrayContaining(['profiles:list', 'profiles:read', 'dashboard:view']),
+      );
+      expect(expanded).not.toContain('roles:assign');
     });
   });
 
@@ -96,7 +136,17 @@ describe('permissionAdminUtils', () => {
       expect(buildRoleSaveMenuKeys('platform_admin', ['profiles:list'], [])).toHaveLength(2);
     });
 
-    it('does not force permissions:manage when permissions:* wildcard is present', () => {
+    it('saves only checked keys without re-adding stored wildcards', () => {
+      expect(
+        buildRoleSaveMenuKeys(
+          'branch_admin',
+          ['dashboard:view', 'roles:assign', 'my_profile'],
+          [],
+        ),
+      ).toEqual(['dashboard:view', 'roles:assign', 'my_profile']);
+    });
+
+    it('does not force permissions:manage when permissions:* wildcard is passed', () => {
       expect(buildRoleSaveMenuKeys('platform_admin', ['profiles:list'], ['permissions:*'])).toEqual(
         ['profiles:list', 'permissions:*'],
       );

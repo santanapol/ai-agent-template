@@ -3,7 +3,13 @@ import { ObjectId } from "mongodb";
 import { HttpError } from "../lib/http-error.js";
 import CODES from "../lib/error-codes.js";
 
-const VALID_ROLES = new Set(["staff", "branch_admin", "platform_admin"]);
+const VALID_ROLES = new Set([
+  "staff",
+  "branch_admin",
+  "platform_admin",
+  "support",
+  "support_admin",
+]);
 
 function readHeader(request, name) {
   const value = request.headers[name];

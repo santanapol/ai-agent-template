@@ -151,6 +151,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                 options={[
                   { value: 'platform_admin', label: 'Platform Admin' },
                   { value: 'branch_admin', label: 'Branch Admin' },
+                  { value: 'support_admin', label: 'Support Admin' },
                   { value: 'support', label: 'Support' },
                   { value: 'staff', label: 'Staff' },
                 ]}

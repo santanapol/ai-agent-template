@@ -7,10 +7,16 @@
 โครงสร้าง URL Routing ของแอปพลิเคชัน:
 
 - `/login` : หน้า Login สำหรับยืนยันตัวตน
-- `/` : หน้า Dashboard หลัก (Home / Welcome)
-- `/profile` : หน้า **My Profile** (ดู/แก้โปรไฟล์ของตัวเอง — ทุก role ที่ login)
-- `/staff` : หน้า Staff Management (Table List) — เฉพาะ `platform_admin` / `branch_admin`
+- `/` : หน้า Dashboard หลัก (`dashboard:view`)
+- `/profile` : หน้า **My Profile** (`my_profile`)
+- `/invoices` : หน้า Invoice List (`invoices:list`)
+- `/invoices/:id` : หน้า Invoice Detail (`invoices:read`)
+- `/agents` : หน้า Agents List (`agents:list`)
+- `/agents/:id/fees` : หน้า Agent Fees (`agents:fees`)
+- `/smart-reports` : หน้า Smart Reports (`reports:smart`)
+- `/staff` : หน้า Staff Management (Table List) — ต้องมีสิทธิ์ `profiles:list`
   - *(หน้า Create, Edit, View แสดงเป็น Drawer ทับบนหน้า `/staff` โดยไม่เปลี่ยน URL)*
+- `/permissions` : หน้า Permission Admin — ต้องมีสิทธิ์ `permissions:manage`
 - `/403` : หน้า Error - Forbidden (ไม่มีสิทธิ์เข้าถึง)
 - `/404` : หน้า Error - Not Found (ไม่พบหน้า)
 - `/500` : หน้า Error - Internal Server Error (ระบบขัดข้อง)

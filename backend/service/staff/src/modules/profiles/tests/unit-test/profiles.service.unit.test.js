@@ -54,6 +54,13 @@ const supportUser = {
   role: "support",
 };
 
+const supportAdminUser = {
+  userId: userSelf,
+  ouId: ouA,
+  branchId: branchA1,
+  role: "support_admin",
+};
+
 describe("assertAdminRole", () => {
   test("does not throw for platform_admin", () => {
     assert.doesNotThrow(() => assertAdminRole(platformAdmin));
@@ -77,6 +84,10 @@ describe("assertAdminRole", () => {
 
   test("does not throw for support", () => {
     assert.doesNotThrow(() => assertAdminRole(supportUser));
+  });
+
+  test("does not throw for support_admin", () => {
+    assert.doesNotThrow(() => assertAdminRole(supportAdminUser));
   });
 });
 
@@ -204,6 +215,12 @@ describe("resolveGetByIdScope", () => {
 
   test("support gets OU-wide scope (no branchId)", () => {
     const scope = resolveGetByIdScope(supportUser);
+    assert.strictEqual(scope.ouId, ouA);
+    assert.strictEqual(scope.branchId, undefined);
+  });
+
+  test("support_admin gets OU-wide scope (no branchId)", () => {
+    const scope = resolveGetByIdScope(supportAdminUser);
     assert.strictEqual(scope.ouId, ouA);
     assert.strictEqual(scope.branchId, undefined);
   });

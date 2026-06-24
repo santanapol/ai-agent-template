@@ -53,12 +53,54 @@ const router = createBrowserRouter([
     ),
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'profile', element: <MyProfile /> },
-      { path: 'invoices', element: <InvoiceList /> },
-      { path: 'invoices/:id', element: <InvoiceDetail /> },
-      { path: 'agents', element: <AgentsList /> },
-      { path: 'agents/:id/fees', element: <AgentFeesPage /> },
+      {
+        index: true,
+        element: (
+          <PermissionGuard required="dashboard:view">
+            <Dashboard />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <PermissionGuard required="my_profile">
+            <MyProfile />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'invoices',
+        element: (
+          <PermissionGuard required="invoices:list">
+            <InvoiceList />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'invoices/:id',
+        element: (
+          <PermissionGuard required="invoices:read">
+            <InvoiceDetail />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'agents',
+        element: (
+          <PermissionGuard required="agents:list">
+            <AgentsList />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'agents/:id/fees',
+        element: (
+          <PermissionGuard required="agents:fees">
+            <AgentFeesPage />
+          </PermissionGuard>
+        ),
+      },
       {
         path: 'staff',
         element: (
@@ -67,7 +109,14 @@ const router = createBrowserRouter([
           </PermissionGuard>
         ),
       },
-      { path: 'smart-reports', element: <SmartReport /> },
+      {
+        path: 'smart-reports',
+        element: (
+          <PermissionGuard required="reports:smart">
+            <SmartReport />
+          </PermissionGuard>
+        ),
+      },
       {
         path: 'permissions',
         element: (

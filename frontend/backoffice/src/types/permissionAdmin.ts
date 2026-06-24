@@ -43,7 +43,13 @@ export interface UpsertRolePermissionResult {
   revoked_users_count: number;
 }
 
-export const KNOWN_ROLES = ['platform_admin', 'branch_admin', 'staff'] as const;
+export const KNOWN_ROLES = [
+  'platform_admin',
+  'branch_admin',
+  'support_admin',
+  'support',
+  'staff',
+] as const;
 export type KnownRole = (typeof KNOWN_ROLES)[number];
 
 export const PROTECTED_MENU_KEY = 'permissions:manage';

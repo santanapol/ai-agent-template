@@ -18,6 +18,13 @@ import { anyPermissionMatches } from "../../lib/permission-match.js";
 export const ADMIN_ROLES = Object.freeze([
   "platform_admin",
   "branch_admin",
+  "support_admin",
+  "support",
+]);
+
+const OU_WIDE_STAFF_ROLES = new Set([
+  "platform_admin",
+  "support_admin",
   "support",
 ]);
 
@@ -183,7 +190,7 @@ export function resolveLookupScope(userContext, targetUserId, { log } = {}) {
     log,
   });
 
-  if (userContext.role === "platform_admin" || userContext.role === "support") {
+  if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
     return { ouId: userContext.ouId };
   }
 
@@ -270,7 +277,7 @@ export function assertLookupQueryExclusive(query) {
  * @returns {{ ouId: string, branchId?: string }}
  */
 export function resolveGetByIdScope(userContext) {
-  if (userContext.role === "platform_admin" || userContext.role === "support") {
+  if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
     return { ouId: userContext.ouId };
   }
 

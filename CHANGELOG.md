@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/auth/`:** Expanded permission menu catalog seed to 20 action keys (billing, reports, dashboard, staff profiles, permissions admin) with English labels; flat `staff` hierarchy (`profiles:*` actions directly under `staff`, no `staff:profiles` group).
+- **`backend/auth/`:** `support_admin` role with default `profiles:*` mapping (OU-wide staff management without billing/reports/role assignment); dev seed users `support` and `support_admin` (`1234`).
+- **`backend/service/agent-invoice/`:** Permission enforcement middleware (`requirePermission`, `user-context` plugin) on invoice, agent, agent-fee, and master-data routes.
+- **`backend/service/smart-report/`:** `assertPermission` guard on report endpoints requiring `reports:smart`.
+- **Backoffice:** `PermissionGuard` on all protected routes (`/invoices`, `/agents`, `/smart-reports`, `/staff`, `/permissions`, etc.) aligned with `sitemap.md`.
+- **Backoffice:** `support` and `support_admin` in Role permissions admin role selector; parent menu checkboxes cascade to all child actions.
+
+### Changed
+
+- **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save); `AuthContext` reloads menus when JWT `permissions` change after refresh.
+- **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`).
+
+### Fixed
+
+- **Backoffice — Role permissions:** Parent menu group checkboxes were disabled (`type: menu` + `checkStrictly`); enabling cascade select/deselect while persisting action keys only.
+
 - **Backoffice:** Permission-driven sidebar menu and route guards (Dynamic Permission Phase F) — `AuthContext` fetches `GET /auth/me/menus` on login/refresh and exposes `permissions` / `menus` / `menuLoading` / `menuError`; `AdminLayout` builds the sidebar from the returned menu tree (sorted by `sort_order`, with depth/cycle guarding), falling back to a minimal menu plus a warning banner if menu loading fails. New `usePermission` hook and `PermissionGuard` component gate UI elements (e.g. the Edit button in `StaffManagement`) and routes by permission key.
 - **`backend/auth/`:** Permission Admin API (Dynamic Permission Phase A) — `GET/POST/PATCH/DELETE /auth/admin/menus` and `GET/PUT/DELETE /auth/admin/role-permissions` for managing the menu registry and role→permission mappings at runtime, with optimistic locking (`upd_date`/`If-Match`), audit logging (`auth.permissions_changed`), self-lockout protection (`permissions:manage` cannot be edited via the API), and an urgent `revoke_sessions` option on role-permission updates (revokes Redis sessions for affected users in batches of up to 1,000). New `409 AUTH_MENU_IN_USE` / `409 AUTH_ROLE_PERMISSION_IN_USE` error codes.
 - **`backend/service/agent-invoice/` & Backoffice:** Added support for cancelling invoices by changing their status to `VOID` instead of deleting them.

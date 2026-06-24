@@ -63,7 +63,7 @@ export const getAgentById = async (db, id, ouId) => {
   return db.collection(COLLECTION_NAME).findOne({
     _id: new ObjectId(id),
     ou_id: new ObjectId(ouId),
-    active: { $ne: false },
+    active: { $nin: [false, 0, "0"] },
   });
 };
 

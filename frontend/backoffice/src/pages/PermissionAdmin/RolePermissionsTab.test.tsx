@@ -108,7 +108,7 @@ describe('RolePermissionsTab', () => {
     upsertRolePermission.mockResolvedValue({
       ou_id: 'null',
       role: 'platform_admin',
-      menu_keys: ['permissions:manage', 'profiles:*', 'profiles:list'],
+      menu_keys: ['permissions:manage'],
       revoked_sessions: false,
       revoked_users_count: 0,
     });
@@ -128,16 +128,37 @@ describe('RolePermissionsTab', () => {
       'platform_admin',
       expect.objectContaining({
         revoke_sessions: false,
-        menu_keys: expect.arrayContaining([
-          'permissions:manage',
-          'profiles:*',
-          'profiles:list',
-        ]),
+        menu_keys: ['permissions:manage'],
       }),
     );
     expect(mockFeedback.message.success).toHaveBeenCalledWith(
       expect.stringContaining('refresh their session'),
     );
+  });
+
+  it('checks all action children when parent menu checkbox is clicked', async () => {
+    const user = userEvent.setup();
+    listRolePermissions.mockResolvedValue([
+      {
+        ou_id: null,
+        role: 'platform_admin',
+        menu_keys: ['permissions:manage'],
+        upd_date: '2026-06-10T10:00:00.000Z',
+      },
+    ]);
+
+    renderWithProviders(<RolePermissionsTab />);
+    await screen.findByText('Permissions');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^save$/i })).not.toBeDisabled(),
+    );
+
+    expect(screen.getByRole('checkbox', { name: /staff list/i })).not.toBeChecked();
+
+    await user.click(screen.getByRole('checkbox', { name: /settings/i }));
+
+    expect(screen.getByRole('checkbox', { name: /staff list/i })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /permissions/i })).toBeChecked();
   });
 
   it('sends revoke_sessions when checkbox enabled and confirmed', async () => {
@@ -164,7 +185,7 @@ describe('RolePermissionsTab', () => {
 
     await waitFor(() => {
       expect(upsertRolePermission).toHaveBeenCalledWith('platform_admin', {
-        menu_keys: ['permissions:manage', 'profiles:*'],
+        menu_keys: ['permissions:manage', 'profiles:list'],
         revoke_sessions: true,
       });
     });

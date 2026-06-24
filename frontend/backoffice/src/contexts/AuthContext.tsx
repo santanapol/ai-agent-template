@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, permissions]);
 
   const login = useCallback(
     async (username: string, password: string) => {

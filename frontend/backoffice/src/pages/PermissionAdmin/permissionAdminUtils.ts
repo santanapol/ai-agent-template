@@ -1,5 +1,6 @@
 import type { AdminMenuNode } from '../../types/permissionAdmin';
 import { PROTECTED_MENU_KEY } from '../../types/permissionAdmin';
+import { anyPermissionMatches } from '../../lib/permissionMatch';
 
 export interface MenuTreeNode extends AdminMenuNode {
   children?: MenuTreeNode[];
@@ -46,6 +47,23 @@ export function splitMappingKeys(menuKeys: string[]): { exact: string[]; wildcar
     else exact.push(key);
   }
   return { exact, wildcards };
+}
+
+/** Keep only action keys — menu group nodes are UI-only and must not be saved. */
+export function filterCheckedActionKeys(
+  keys: string[],
+  registry: AdminMenuNode[],
+): string[] {
+  const actionKeys = new Set(registry.filter((m) => m.type === 'action').map((m) => m.key));
+  return keys.filter((key) => actionKeys.has(key));
+}
+/** Expand stored menu_keys (incl. wildcards) to concrete action keys for the role tree UI. */
+export function expandRoleMappingToCheckedKeys(
+  menuKeys: string[],
+  registry: AdminMenuNode[],
+): string[] {
+  const actionKeys = registry.filter((m) => m.type === 'action').map((m) => m.key);
+  return actionKeys.filter((key) => anyPermissionMatches(menuKeys, key));
 }
 
 export function buildSaveMenuKeys(checkedExact: string[], wildcards: string[]): string[] {

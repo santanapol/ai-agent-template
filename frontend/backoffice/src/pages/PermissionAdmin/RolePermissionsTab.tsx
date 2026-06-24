@@ -23,6 +23,8 @@ import { useAppFeedback } from '../../hooks/useAppFeedback';
 import {
   buildMenuTree,
   buildRoleSaveMenuKeys,
+  expandRoleMappingToCheckedKeys,
+  filterCheckedActionKeys,
   isPlatformAdminManageCheckboxDisabled,
   splitMappingKeys,
   type MenuTreeNode,
@@ -37,6 +39,8 @@ const MANAGE_LOCKOUT_TOOLTIP =
 const ROLE_LABELS: Record<KnownRole, string> = {
   platform_admin: 'Platform Admin',
   branch_admin: 'Branch Admin',
+  support_admin: 'Support Admin',
+  support: 'Support',
   staff: 'Staff',
 };
 
@@ -62,7 +66,7 @@ function mapRoleCheckTree(
     return {
       key: node.key,
       title: checkboxLocked ? <Tooltip title={MANAGE_LOCKOUT_TOOLTIP}>{label}</Tooltip> : label,
-      disableCheckbox: node.type === 'menu' || checkboxLocked,
+      disableCheckbox: checkboxLocked,
       children: node.children?.length
         ? mapRoleCheckTree(node.children, role, wildcards)
         : undefined,
@@ -92,11 +96,10 @@ const RolePermissionsTab: React.FC = () => {
     const mappings = await authApi.listRolePermissions({ role: selectedRole });
     const mapping = mappings.find((m) => m.role === selectedRole);
     const menuKeys = mapping?.menu_keys ?? [];
-    const { exact, wildcards: mappingWildcards } = splitMappingKeys(menuKeys);
-    const registryKeys = new Set(registry.map((m) => m.key));
-    const nextExact = exact.filter((k) => registryKeys.has(k));
-    setCheckedExact(nextExact);
-    setBaselineCheckedExact(nextExact);
+    const { wildcards: mappingWildcards } = splitMappingKeys(menuKeys);
+    const expanded = expandRoleMappingToCheckedKeys(menuKeys, registry);
+    setCheckedExact(expanded);
+    setBaselineCheckedExact(expanded);
     setWildcards(mappingWildcards);
   }, []);
 
@@ -191,7 +194,7 @@ const RolePermissionsTab: React.FC = () => {
 
   const handleCheck = (checked: Key[] | { checked: Key[]; halfChecked: Key[] }) => {
     const keys = Array.isArray(checked) ? checked : checked.checked;
-    let next = keys.map(String);
+    let next = filterCheckedActionKeys(keys.map(String), menus);
     if (isPlatformAdminManageCheckboxDisabled(role, PROTECTED_MENU_KEY, wildcards)) {
       next = [...new Set([...next, PROTECTED_MENU_KEY])];
     }
@@ -215,7 +218,7 @@ const RolePermissionsTab: React.FC = () => {
 
     setSaving(true);
     try {
-      const menu_keys = buildRoleSaveMenuKeys(role, checkedExact, wildcards);
+      const menu_keys = buildRoleSaveMenuKeys(role, checkedExact, []);
       const result = await authApi.upsertRolePermission(role, {
         menu_keys,
         revoke_sessions: revokeSessions,
@@ -267,8 +270,8 @@ const RolePermissionsTab: React.FC = () => {
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
-          title="Wildcard permissions (preserved on save)"
-          description={wildcards.join(', ')}
+          title="Loaded mapping includes wildcards"
+          description={`${wildcards.join(', ')} — shown as checked action keys below. Uncheck and save to remove.`}
         />
       )}
 
@@ -287,7 +290,6 @@ const RolePermissionsTab: React.FC = () => {
       ) : (
         <Tree
           checkable
-          checkStrictly
           defaultExpandAll
           selectable={false}
           treeData={treeData}
