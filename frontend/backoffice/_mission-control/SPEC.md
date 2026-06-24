@@ -1,233 +1,368 @@
-# Spec: Permission-driven Menu & Route Guards (Dynamic Permission — Phase F)
+# Spec: Bulk Invoice Operations (Invoice List)
 
-> 🗺️ ภาพรวมทุก phase: [ROADMAP](../../../backend/auth/_mission-control/ROADMAP.md)
->
-> ใช้ความสามารถจาก auth phase ที่ merge แล้ว ([`backend/auth/_mission-control/SPEC.md`](../../../backend/auth/_mission-control/SPEC.md)): ฟิลด์ `permissions` ใน login/refresh response และ `GET /auth/me/menus`
-> **ทำขนานกับ phase G/S ได้** — ขึ้นกับ auth service อย่างเดียว ไม่ขึ้นกับ gateway/staff
+## Assumptions (ข้อสมมติฐาน)
 
-## Assumptions I'm Making
+1. **"โหลดหลาย invoice"** หมายถึง **export ไฟล์ PDF/Excel** จากหน้า `/invoices` โดยไม่ต้องเข้า detail ทีละใบ (ไม่ใช่ generate invoice หลายเดือนในรอบนี้)
+2. ผู้ใช้เป้าหมายคือ **เจ้าหน้าที่ backoffice / finance** ที่มีสิทธิ์ `invoices:list` และ `invoices:read`
+3. การ export รอบแรกทำ **ฝั่ง client** (ดึง detail + transactions แล้วสร้างไฟล์) — ไม่เพิ่ม backend endpoint ใน Phase 1
+4. รองรับเฉพาะ **เบราว์เซอร์ยุคใหม่** (Chrome, Firefox, Edge ล่าสุด) — ไม่รองรับ IE
+5. จำนวน invoice ที่เลือก export ต่อครั้งมี **ขีดจำกัดสูงสุด 50 รายการ** เพื่อป้องกัน browser OOM / timeout
+6. รูปแบบไฟล์ผลลัพธ์: **ZIP** ที่บรรจุไฟล์ละ `invoice_{iv_no}.pdf` หรือ `invoice_{iv_no}.xlsx` (ไม่รวมหลายใบเป็นไฟล์เดียว)
 
-1. `POST /auth/login` และ `POST /auth/refresh` ตอบ `permissions: string[]` (ค่าดิบรวม wildcard `domain:*`) ใน body แล้ว — frontend ใช้จาก body ไม่ต้อง decode เพิ่ม
-2. `GET /auth/me/menus` ตอบ flat list `{ key, label, type, parent_key, sort_order }` เฉพาะโหนดที่ผู้ใช้มีสิทธิ์ พร้อมบรรพบุรุษครบถึง root
-3. **icon และ route path เป็นของ frontend** — map จาก `key` ในโค้ด (ตามที่เคาะใน auth SPEC: Resolved Question 4)
-4. ผังเมนูกลาง (`auth_menus`) จะถูกขยายให้ครอบเมนูปัจจุบันทั้งหมดของ Backoffice — เป็น **data dependency ฝั่ง auth** (แก้ `scripts/seed-data/permissions.js` + รัน seed ก่อน deploy frontend) ตามร่าง catalog ใน Resolved Questions ข้อ 1
-5. หน้า 403/404/Login/My Profile ไม่ผูกกับ permission (ทุกคนที่ login แล้วเข้าได้)
-6. **Menu refresh timing:** เรียก `getMyMenus()` ครั้งแรกหลังจาก login/restore session สำเร็จ, cache ใน AuthContext; refresh เมนูใหม่เมื่อ `POST /auth/refresh` สำเร็จ (permissions อาจเปลี่ยน). ไม่ต้อง auto-detect เมื่อ admin เปลี่ยน permission ใน tab อื่น (staleness เป็นเจตนา — ต้อง refresh token ก่อน)
+→ หากข้อใดไม่ถูกต้อง โปรดแก้ไขก่อนอนุมัติ Spec
 
 ---
 
 ## Objective
 
-เปลี่ยนการคุมเมนูและ route จาก role แบบ hardcode (`allowedRoles` ใน `App.tsx`, `menuItems` + `isStaffAdmin` ใน `AdminLayout.tsx`) เป็น permission-driven:
+### ปัญหา
 
-1. **Sidebar** render จาก `GET /auth/me/menus` — ประกอบ tree จาก `parent_key`, เรียง `sort_order`, map `key → { icon, route }` ในโค้ด
-2. **Route guard** เช็คจาก `permissions` ใน AuthContext ด้วย matching contract เดียวกับ backend (`PermissionGuard` แทน `RoleGuard`)
-3. ปุ่ม/การกระทำราย action (เช่น ปุ่ม Create Staff) ซ่อน-แสดงด้วย hook `usePermission('profiles:create')`
+หน้า [Invoice List](https://zero.168bits.com/invoices) ปัจจุบัน export PDF/Excel ได้เฉพาะที่ `/invoices/:id` ทำให้ผู้ใช้ต้องเปิด detail ทีละใบเมื่อต้องการดาวน์โหลดหลาย invoice
 
-**User story:** แอดมินถอด key `profiles:create` ออกจาก role หนึ่งใน DB → หลังผู้ใช้ refresh token เมนูและปุ่มที่เกี่ยวข้องหายเองโดยไม่ต้อง deploy frontend
+### เป้าหมาย
+
+เพิ่มความสามารถ **เลือกหลาย invoice จากตาราง** แล้ว **export เป็น ZIP** พร้อม progress feedback และจัดการกรณีบางรายการล้มเหลว
+
+### User Stories
+
+| ID | ในฐานะ | ฉันต้องการ | เพื่อที่จะ |
+|----|--------|-----------|-----------|
+| US-1 | เจ้าหน้าที่ finance | เลือกหลาย invoice จากตาราง list | export ทีเดียวโดยไม่ต้องเข้า detail ทีละใบ |
+| US-2 | เจ้าหน้าที่ finance | เห็น progress ขณะ export | รู้ว่าระบบยังทำงานอยู่และเหลือกี่รายการ |
+| US-3 | เจ้าหน้าที่ finance | ได้ ZIP ที่มีไฟล์แยกตาม `iv_no` | นำไปส่งต่อหรือเก็บ archive ได้สะดวก |
+| US-4 | เจ้าหน้าที่ finance | เห็นรายการที่ export ไม่สำเร็จ | retry เฉพาะรายการที่ fail ได้ |
+
+### Delivery Phases (ขอบเขตตามที่ตกลง)
+
+| Phase | ฟีเจอร์ | Scope ใน Spec นี้ |
+|-------|---------|------------------|
+| **P0** | Row selection + bulk export PDF/Excel (ZIP) | ✅ Phase 1 — implement |
+| **P1** | Progress modal + retry รายการที่ fail | ✅ Phase 1 — implement |
+| **P2** | Multi-month generate + async job (backend) | 📋 Documented — out of scope Phase 1 |
+| **P3** | Bulk Mark PAID / Cancel | 📋 Documented — out of scope Phase 1 |
 
 ---
 
 ## Tech Stack
 
-- React + TypeScript + Vite + antd v6 + react-router-dom + axios (ตามที่ติดตั้งอยู่) — ไม่เพิ่ม dependency
+| Layer | Technology |
+|-------|------------|
+| Framework | React 19 + TypeScript (strict) |
+| Build | Vite 8 |
+| UI | Ant Design 6 + `@ant-design/icons` |
+| Routing | react-router-dom 7 |
+| HTTP | axios (`invoicesApiClient.ts`) |
+| Export (existing) | `jspdf`, `jspdf-autotable`, `xlsx` |
+| Export (new) | `jszip` — สร้าง ZIP ฝั่ง client |
+| Testing | vitest + @testing-library/react |
+
+**Backend (Phase 1):** ไม่เปลี่ยน — ใช้ API ที่มีอยู่:
+
+- `GET /api/v1/invoices` — list (มีอยู่แล้ว)
+- `GET /api/v1/invoices/:id` — detail
+- `GET /api/v1/invoices/:id/transactions` — transactions
+
+**Permissions:** ใช้สิทธิ์เดิม `invoices:list` (หน้า list) + `invoices:read` (ดึง detail/transactions ตอน export)
+
+---
 
 ## Commands
 
-- **Dev**: `npm run dev` (จาก `frontend/backoffice`)
-- **Build + typecheck**: `npm run build`
-- **Test**: `npm test` (vitest)
-- **Lint**: `npm run lint`
+```bash
+# Dev
+cd code-base/zero-platform/frontend/backoffice
+npm run dev
 
-## Project Structure (จุดที่แตะ)
+# Test
+npm test
+npm test -- src/pages/Invoices
+
+# Lint
+npm run lint
+
+# Build
+npm run build
+```
+
+---
+
+## Project Structure
 
 ```
-frontend/backoffice/src/
-  types/
-    auth.ts                   ← [MODIFY] TokenResponse + permissions: string[]; เพิ่ม MenuNode
-    # MenuNode interface:
-    #   interface MenuNode {
-    #     key: string
-    #     label: string
-    #     type: 'menu' | 'action'
-    #     parent_key: string | null
-    #     sort_order: number
-    #   }
-  
-  lib/
-    permissionMatch.ts        ← [NEW] TS port ของ contract (exact + domain:*) + contract tests
-    authApiClient.ts          ← [MODIFY] เพิ่ม getMyMenus(): Promise<MenuNode[]>; TokenResponse มี permissions: string[]
-  
-  contexts/AuthContext.tsx    ← [MODIFY] เก็บ permissions + menus จาก response body (login/refresh/getMyMenus)
-  hooks/usePermission.ts      ← [NEW] usePermission(actionKey): boolean
-  
-  components/PermissionGuard.tsx ← [NEW] route guard จาก permission (แทน RoleGuard)
-  layouts/AdminLayout.tsx     ← [MODIFY] render menus จาก GET /auth/me/menus + MENU_UI map; tree assembly logic
-  
-  App.tsx                     ← [MODIFY] เปลี่ยน RoleGuard → PermissionGuard ที่ /staff
+frontend/backoffice/
+├── _mission-control/
+│   └── SPEC.md                          ← เอกสารนี้
+├── src/
+│   ├── lib/
+│   │   └── invoicesApiClient.ts         ← (อาจเพิ่ม helper fetch หลาย id)
+│   ├── pages/Invoices/
+│   │   ├── index.tsx                    ← เพิ่ม rowSelection + action bar
+│   │   ├── InvoiceDetail.tsx            ← refactor: แยก export logic ออก
+│   │   ├── utils.ts                     ← format helpers (มีอยู่)
+│   │   ├── export/
+│   │   │   ├── buildInvoicePdf.ts       ← NEW: สร้าง PDF blob จาก invoice + txns
+│   │   │   ├── buildInvoiceXlsx.ts      ← NEW: สร้าง XLSX blob
+│   │   │   ├── bulkExport.ts            ← NEW: orchestrate fetch + zip
+│   │   │   └── bulkExport.test.ts       ← NEW: unit tests
+│   │   ├── components/
+│   │   │   ├── BulkExportBar.tsx        ← NEW: floating action bar
+│   │   │   └── BulkExportModal.tsx      ← NEW: progress + retry UI
+│   │   └── hooks/
+│   │       └── useInvoices.ts           ← ไม่แตะ (bulk export เรียก invoicesApiClient ตรง ไม่ผ่าน hook นี้)
+│   └── types/
+│       └── invoice.ts
+└── docs/
+    └── sitemap-and-flows.md             ← อัปเดต flow 2.x (หลัง implement)
 ```
+
+---
+
+## Functional Design
+
+### 1. Row Selection (P0)
+
+- เพิ่ม `rowSelection` บน Ant Design `Table` ในหน้า `/invoices`
+- `preserveSelectedRowKeys: true` — คงการเลือกขณะเปลี่ยนหน้า pagination
+- Checkbox แต่ละแถว + checkbox header (เลือกทั้งหมด**ในหน้าปัจจุบัน**)
+- จำกัดสูงสุด **50 รายการ** — เมื่อเลือกครบ แสดง warning และไม่ให้เลือกเพิ่ม
+
+### 2. Bulk Action Bar (P0)
+
+เมื่อ `selectedRowKeys.length > 0` แสดง bar ลอยด้านล่างกลางจอ:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  เลือกแล้ว 3 รายการ   [Export PDF]  [Export Excel]  [ยกเลิก] │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- ปุ่ม disabled ขณะ export กำลังทำงาน
+- ปุ่ม "ยกเลิก" = clear selection (ไม่ใช่ cancel job ที่กำลังรัน — ใช้ Cancel ใน modal แทน)
+- **Permission gating:** แสดงปุ่ม Export เฉพาะเมื่อ `usePermission('invoices:read')` เป็น true เพราะ bulk export เรียก `GET /invoices/:id` + `/transactions` ซึ่งต้องสิทธิ์ `invoices:read` (หน้า list guard ด้วย `invoices:list` เท่านั้น) — **ถ้าไม่มีสิทธิ์ให้ซ่อนปุ่ม** (ไม่ใช่ disable); ยังเลือกแถวได้แต่ไม่มีปุ่ม export ใน action bar
+
+### 3. Bulk Export Flow (P0)
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant UI as InvoiceList
+  participant M as BulkExportModal
+  participant E as bulkExport
+  participant API as invoicesApiClient
+
+  U->>UI: เลือก N invoices + กด Export PDF
+  UI->>M: เปิด modal (progress)
+  M->>E: startBulkExport(ids, format)
+  loop concurrency ≤ 5
+    E->>API: GET /invoices/:id
+    E->>API: GET /invoices/:id/transactions
+    E->>E: buildInvoicePdf / buildInvoiceXlsx
+    E->>M: onProgress(done, total, currentIvNo)
+  end
+  E->>E: JSZip.generateAsync
+  E->>U: download invoices_export_YYYYMMDD_HHmm.zip
+  M->>U: แสดงสรุป success/fail
+```
+
+**Concurrency:** ดึง detail + transactions พร้อมกันไม่เกิน **5 invoice** ต่อรอบ (pool)
+
+**ZIP naming:**
+
+- PDF: `invoices_export_20260624_1430.zip`
+- Excel: `invoices_export_20260624_1430.zip` (ภายในเป็น `.xlsx` แยกไฟล์)
+
+**Export content:** ใช้ layout และข้อมูลเดียวกับ `InvoiceDetail.tsx` (`handleExportPDF` / `handleExportExcel`) — refactor เป็น shared module ไม่ duplicate logic
+
+### 4. Progress Modal (P1)
+
+Modal แสดงระหว่าง export:
+
+| องค์ประกอบ | รายละเอียด |
+|-----------|-----------|
+| Progress bar | `done / total` |
+| รายการล่าสุด | ชื่อ `iv_no` ที่กำลังประมวลผล |
+| สถานะรายการ | ✓ สำเร็จ / ✗ ล้มเหลว (พร้อม error message สั้นๆ) |
+| ปุ่ม Cancel | ยกเลิกงานที่เหลือ (AbortController) — ดาวน์โหลด ZIP เฉพาะรายการที่สำเร็จแล้ว (ถ้ามี) |
+| ปุ่ม Retry failed | หลังจบ — retry เฉพาะ id ที่ fail |
+| ปุ่ม Close | ปิด modal + clear selection (optional — ถามใน Open Questions) |
+
+### 5. Error Handling
+
+| กรณี | พฤติกรรม |
+|------|----------|
+| API 404 สำหรับ invoice หนึ่งใบ | บันทึกเป็น failed, ดำเนินการต่อ |
+| Network error | บันทึกเป็น failed, ดำเนินการต่อ |
+| ทุกรายการ fail | ไม่สร้าง ZIP, แสดง error summary |
+| บางรายการ fail | สร้าง ZIP เฉพาะรายการสำเร็จ + แสดง warning |
+| User cancel กลางทาง | หยุด queue, ZIP จากรายการที่เสร็จแล้ว (ถ้ามี ≥ 1) |
+| รายการที่ถูก abort ขณะ in-flight | จัดเป็นสถานะ `cancelled` (ไม่ใช่ `failed`) — ไม่แสดงเป็น error และ retry ได้ |
+| Retry failed | สร้าง ZIP **ชุดใหม่** เฉพาะรายการที่ retry สำเร็จ (ไม่ merge กับ ZIP เดิมที่ดาวน์โหลดไปแล้ว) |
+
+### 6. Future Phases (documented, not Phase 1)
+
+#### P2 — Multi-month Generate + Async Job
+
+- ขยาย modal "Create Invoice" รองรับ `RangePicker picker="month"`
+- Backend: `POST /api/v1/invoices/generate-batch` + job polling
+- เหตุผลเลื่อน: `generate.service.js` คำนวณ fee แบบ sequential — งานหลายเดือน × หลาย branch ต้อง background job
+
+#### P3 — Bulk Mark PAID / Cancel
+
+- เพิ่มปุ่มใน action bar
+- เรียก `PUT /api/v1/invoices/:id/status` แบบ parallel (concurrency ≤ 5)
+- Confirm modal + partial success summary
+- อนุญาตเฉพาะ transition ที่ backend รองรับ (READY → PAID, READY/PENDING/MISSING_FEE/ERROR → VOID)
+
+#### Select All Matching Filter
+
+- ปุ่ม "เลือกทั้งหมดตาม filter (N รายการ)" ข้าม pagination
+- ต้อง API หรือส่ง filter params — out of scope Phase 1
+
+---
 
 ## Code Style
 
-### Contract (ต้องตรงกับ `backend/auth/src/lib/permission-match.js` ทุกเคส)
+ปฏิบัติตาม `coding-standard/frontend/backoffice/`:
+
+- Single quotes, 2 spaces, semicolons
+- ห้าม `any` — กำหนด type ชัดเจน
+- แยก API client (`lib/`), hooks (`hooks/`), presentational components (`components/`)
+- Export logic เป็น pure functions รับ `(invoice, transactions)` คืน `Blob`
+
+**ตัวอย่าง signature ที่คาดหวัง:**
 
 ```typescript
-// lib/permissionMatch.ts
-export function anyPermissionMatches(
-  entries: string[],
-  actionKey: string,
-): boolean;
-// 'profiles:*' ครอบ 'profiles:create' | ไม่ครอบ 'profile:create', 'invoice:read'
-// exact เท่านั้นนอกเหนือจาก wildcard รูปแบบ 'domain:*'
-```
+// src/pages/Invoices/export/buildInvoicePdf.ts
+import type { Invoice, InvoiceTransaction } from '../../../types/invoice';
 
-### Menu mapping (icon/route อยู่ในโค้ด — key มาจาก API)
-
-```typescript
-// AdminLayout.tsx — โหนดที่ไม่มีใน map = ไม่ render (กัน key ใหม่จาก DB พังเมนู)
-interface MenuItemUI {
-  icon: ReactNode
-  route?: string  // undefined = menu group (no route)
-  disabled?: boolean
-}
-
-const MENU_UI: Record<string, MenuItemUI> = {
-  'dashboard': { icon: <DashboardOutlined />, route: '/' },
-  'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
-  'staff': { icon: <TeamOutlined /> },                 // โหนด menu = กลุ่ม ไม่มี route
-  'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
-  'billing': { icon: <DollarOutlined /> },              // group
-  'agents:list': { icon: <ShopOutlined />, route: '/agents' },
-  'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
-  'reports': { icon: <CodeOutlined /> },               // group
-  'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
-  'my_profile': { icon: <UserOutlined />, route: '/profile' }
+export function buildInvoicePdf(
+  invoice: Invoice,
+  transactions: InvoiceTransaction[],
+): Blob {
+  // ใช้ jsPDF + autoTable — logic ย้ายมาจาก InvoiceDetail
+  // สำคัญ: คืน Blob ด้วย doc.output('blob') (ไม่ใช่ doc.save ที่ download ทันที)
 }
 ```
 
-### Guard + hook
+> **หมายเหตุการแปลง Blob (สำคัญ):** โค้ดเดิมใช้ `doc.save()` และ `XLSX.writeFile()` ซึ่ง trigger download ทันที — เมื่อแยกเป็น builder ที่คืน `Blob` ต้องเปลี่ยนเป็น:
+> - PDF: `doc.output('blob')`
+> - XLSX: `const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }); new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })`
+>
+> การ download จริง (single export + ZIP) ทำผ่าน `triggerBlobDownload(blob, filename)` ที่จุดเดียว
 
 ```typescript
-// ใช้ใน router แทน RoleGuard
-<PermissionGuard required="profiles:list"><StaffManagement /></PermissionGuard>
+// src/pages/Invoices/export/bulkExport.ts
+export type BulkExportFormat = 'pdf' | 'xlsx';
 
-// ใช้ซ่อนปุ่มราย action
-const canCreate = usePermission('profiles:create')
+export type BulkExportItemStatus = 'success' | 'failed' | 'cancelled';
+
+export interface BulkExportProgress {
+  done: number;
+  total: number;
+  currentIvNo?: string;
+  results: Array<{ id: string; ivNo: string; status: BulkExportItemStatus; error?: string }>;
+}
+
+export interface BulkExportOptions {
+  invoiceIds: string[];
+  format: BulkExportFormat;
+  concurrency?: number; // default 5
+  signal?: AbortSignal;
+  onProgress?: (progress: BulkExportProgress) => void;
+}
+
+export async function runBulkExport(options: BulkExportOptions): Promise<Blob | null>;
 ```
 
-- `permissions` มาจาก **response body** ของ login/refresh (single source — ไม่ decode JWT เพิ่ม เพราะ `DecodedUser` มีอยู่แล้วสำหรับ identity)
-- เรียก `getMyMenus()` หลัง login/restore session สำเร็จ แล้ว cache ใน state ของ layout — refresh เมนูเมื่อ token ถูก refresh (permissions อาจเปลี่ยน)
-- **เมนูคือ UX, การ enforce จริงอยู่ backend** — guard ฝั่ง frontend เป็นแค่การนำทาง ไม่ใช่ความปลอดภัย
+`InvoiceDetail.tsx` เรียก `buildInvoicePdf` / `buildInvoiceXlsx` แทน inline logic — single source of truth
 
-### พฤติกรรมเมื่อ `getMyMenus` ล้มเหลว (network/5xx)
-
-แสดงเมนูขั้นต่ำที่ไม่ผูก permission:
-```typescript
-const minimalMenuItems: MenuNode[] = [
-  { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
-  { key: 'my_profile', label: 'My Profile', type: 'action', parent_key: null, sort_order: 100 }
-]
-```
-
-**UX Alert Banner สำหรับ Fallback:**
-เมื่อการดึงเมนูผิดพลาด (มีค่า `menuError` เป็น `true`) จะแสดงผล Alert สีส้มเตือนด้านบนสุดของ Content Layout ใน `AdminLayout.tsx` เพื่อให้สอดคล้องกับหน้าจออื่นๆ:
-```typescript
-import { Alert } from 'antd';
-
-// ส่วนแสดงผลใน Layout Content
-{menuError && (
-  <Alert
-    message="System warning"
-    description="Some menu items are temporarily unavailable. Please try refreshing the page or logging in again."
-    type="warning"
-    showIcon
-    closable
-    style={{ marginBottom: token.marginLG, borderRadius: token.borderRadius }}
-  />
-)}
-```
-
-**ห้าม fallback ไปเมนูเต็มแบบ hardcode** (จะกลายเป็นช่องให้เห็นเมนูที่ไม่มีสิทธิ์)
-
-**Retry strategy:** Fail immediately (no retry) → show minimal menu. If users need full menu they must refresh page/token.
+---
 
 ## Testing Strategy
 
-Vitest (โครงเดิม `src/**/*.test.ts`):
+| ระดับ | ไฟล์ | ครอบคลุม |
+|-------|------|----------|
+| Unit | `export/buildInvoicePdf.test.ts` | สร้าง blob, header fields, empty transactions |
+| Unit | `export/buildInvoiceXlsx.test.ts` | โครงสร้าง sheet, totals row |
+| Unit | `export/bulkExport.test.ts` | concurrency, partial failure, abort, empty selection |
+| Component | `components/BulkExportModal.test.tsx` | แสดง progress, retry, cancel |
+| Hook/Page | `test/useInvoices.test.ts` (ขยาย) | integration กับ mock API |
 
-1. **Contract test (`permissionMatch.test.ts`)**: ชุดเดียวกับ `backend/auth/test/permission-match.test.js` ทุกเคส (exact, wildcard, cross-domain, null/undefined)
-2. **Unit tests**:
-   - `usePermission(actionKey)`: true/false ตาม permissions array + wildcard matching
-   - **Tree assembly**: flat list + parent_key pointers → nested tree structure (via AdminLayout)
-     - Input: `[{key:'staff', parent_key:null}, {key:'profiles:list', parent_key:'staff'}]`
-     - Output: tree with `staff.children = [{key: 'profiles:list'}]`
-   - Menu filtering: โหนดที่ไม่อยู่ใน `MENU_UI` ถูกข้าม (return undefined)
-   - Sorting: เรียงตาม `sort_order` ภายในแต่ละ level
-3. **Component test (`PermissionGuard.test.ts`)**:
-   - มี permission → render children
-   - ไม่มี permission → redirect to `/403`
-4. **Integration test (`AuthContext.test.ts`)**:
-   - login response (มี `permissions`) → ต้องบันทึกใน AuthContext
-   - refresh response (มี `permissions` อัปเดต) → อัปเดต AuthContext
-   - getMyMenus API response → update menu state
-5. **Build verification**: `npm run build` ผ่าน typecheck (TypeScript strict mode — `TokenResponse` ต้องเข้ากับ login/refresh callers)
+**Mock:** mock `invoicesApiClient` ด้วย vitest — ไม่ยิง API จริงใน unit test
+
+**Manual verify:**
+
+1. เลือก 2–3 invoice → Export PDF → ได้ ZIP เปิดได้
+2. เลือก invoice ที่ไม่มีสิทธิ์/ไม่มีอยู่ → partial failure แสดงถูกต้อง
+3. กด Cancel กลางทาง → หยุดและได้ ZIP บางส่วน
+4. เปลี่ยนหน้า pagination → selection คงอยู่
+5. เลือกเกิน 50 → ถูก block
+
+**Coverage target:** export modules ≥ 80% statements; ไม่บังคับ coverage ทั้งโปรเจกต์
+
+---
 
 ## Boundaries
 
-- **Always**:
-  - การ match ทุกจุดผ่าน `lib/permissionMatch.ts` เท่านั้น
-  - ทุก route ที่เคยมี `RoleGuard` ต้องมี guard ทดแทน (ห้ามหลุดเป็น unguarded)
-  - คง `ProtectedRoute` (เช็ค login) ไว้ตามเดิม — permission เป็นชั้นที่สอง
-- **Ask first**:
-  - การเพิ่ม key ใหม่เข้า `MENU_UI` ที่ยังไม่มีใน registry ฝั่ง auth
-  - การเปลี่ยน UX ของเมนู (โครงสร้าง/พฤติกรรมพับเก็บ) เกินกว่า map ของเดิมมาแสดง
-- **Never**:
-  - ห้ามตัดสินใจ authorization จริงฝั่ง frontend (ซ่อน UI ≠ ป้องกัน — backend enforce เสมอ)
-  - ห้าม hardcode รายการ permission/เมนูเต็มเป็น fallback
-  - ห้ามเก็บ `permissions` ลง localStorage (อยู่ใน memory ตาม access token เดิม)
+### Always
+
+- Refactor export logic จาก `InvoiceDetail` เป็น shared module — ห้าม duplicate
+- แสดง `loading` / progress ระหว่าง bulk export
+- รัน `npm test` และ `npm run lint` ก่อน PR
+- ใช้ `apiErrorMessage` สำหรับ error จาก API
+- จำกัด selection และ concurrency ตาม Spec
+
+### Ask first
+
+- เพิ่ม dependency ใหม่ (`jszip`) — **แนะนำใน Spec นี้แล้ว** ต้องได้รับอนุมัติก่อน `npm install`
+- เปลี่ยน backend API หรือ gateway routing
+- เพิ่ม permission ใหม่
+- เปลี่ยน limit 50 รายการ
+
+### Never
+
+- รวมหลาย invoice เป็น PDF/Excel ไฟล์เดียว (ต้องเป็น ZIP แยกไฟล์)
+- Block UI ทั้งหน้าโดยไม่มี progress modal
+- ส่ง invoice id ทั้งหมดไป endpoint ใหม่ใน Phase 1
+- Commit secrets หรือแก้ `.env.prod`
+
+---
 
 ## Success Criteria
 
-1. ผู้ใช้ `branch_admin` (มี `profiles:*`) เห็นเมนู Staff Management; ผู้ใช้ที่ไม่มี → เมนูไม่แสดง และเข้า `/staff` ตรง ๆ ถูก redirect `/403`
-2. เมนู sidebar ตรงกับผล `GET /auth/me/menus` (โครง+ลำดับ) — เปลี่ยนสิทธิ์ใน DB แล้ว refresh token → เมนูเปลี่ยนโดยไม่ deploy
-3. ปุ่ม Create/Edit ใน Staff Management ซ่อนเมื่อไม่มี `profiles:create`/`profiles:edit`
-4. `getMyMenus` ล้มเหลว → เมนูขั้นต่ำ + แอปไม่ crash
-5. `npm run build && npm test && npm run lint` ผ่านครบ; contract test ตรงกับฝั่ง auth
+Phase 1 ถือว่าเสร็จเมื่อ:
 
-## Resolved Questions
+- [ ] ผู้ใช้เลือกได้ 1–50 invoice จากตาราง `/invoices` (ข้าม pagination ได้)
+- [ ] กด Export PDF หรือ Export Excel แล้วได้ไฟล์ ZIP ดาวน์โหลดอัตโนมัติ
+- [ ] เนื้อหาแต่ละไฟล์ใน ZIP ตรงกับ export จากหน้า detail เดิม (field, totals, format)
+- [ ] Modal แสดง progress `done/total` และรายการ fail (ถ้ามี)
+- [ ] Retry failed ทำงานได้เฉพาะรายการที่ล้มเหลว
+- [ ] Cancel กลางทางหยุดงานที่เหลือได้
+- [ ] ปุ่ม Export ถูกซ่อนเมื่อผู้ใช้ไม่มีสิทธิ์ `invoices:read`
+- [ ] `InvoiceDetail` ยัง export ได้ปกติหลัง refactor
+- [ ] Unit tests ผ่าน; `npm run lint` และ `npm run build` ผ่าน
 
-1. **Seed catalog** — Finalized in Phase 1 (auth service). ต้องรัน `scripts/seed-permissions.js` ก่อน deploy frontend. Full catalog:
+---
 
-   ```
-   dashboard:view                (root action — ทุก role)
-   
-   staff (menu)                  [already in Phase 1 seed]
-   ├─ profiles:list              (action)
-   ├─ profiles:create            (action)
-   └─ profiles:edit              (action)
-   
-   roles:assign                  (standalone action — domain separate from profiles:*)
-   
-   billing (menu)                [NEW in frontend catalog extension]
-   ├─ agents:list                (action)
-   ├─ agents:fees                (action)
-   ├─ invoices:list              (action)
-   └─ invoices:read              (action)
-   
-   reports (menu)                [NEW in frontend catalog extension]
-   └─ reports:smart              (action)
-   ```
+## Decisions (Resolved)
 
-   **Implementation order:**
-   - Phase 1 seed: `dashboard:view`, `staff/*`, `roles:assign` (done ✓)
-   - Phase 4 pre-merge: Frontend team adds `billing/*`, `reports:*` to auth seed (data-only PR)
-   - Phase 4 deploy: Run seed script on production, then deploy frontend
-   
-   **Label conventions**: Use English labels matching current Backoffice UI ("Dashboard", "Staff", "Invoices", ...) — behavior-preserving, no UX change. Thai labels can be added later via data-only change.
+| # | คำถาม | การตัดสินใจ |
+|---|--------|-------------|
+| Q1 | หลัง export สำเร็จ ให้ clear selection อัตโนมัติหรือไม่? | **Clear** หลังปิด modal สำเร็จ |
+| Q2 | ขีดจำกัดรายการต่อครั้ง | **50 รายการ** |
+| Q3 | Phase 1 รองรับ export format ใดบ้าง? | **ทั้ง PDF และ Excel** |
+| Q4 | Permission สำหรับ bulk export | ใช้ **`invoices:read`** เดิม (ไม่เพิ่ม `invoices:export`) — **ซ่อนปุ่ม export เมื่อ `usePermission('invoices:read')` เป็น false** |
+| Q5 | Scope release | **แยก release** — ship P0+P1 ก่อน; P2/P3 ภายหลัง |
+| Q6 | Retry semantics | Retry สร้าง ZIP **ชุดใหม่** เฉพาะรายการที่ retry สำเร็จ — ไม่ merge กับ ZIP เดิม |
+| Q7 | Select-all เกิน limit | Header select-all เลือกได้ไม่เกิน 50; ถ้า pageSize > 50 ให้ cap ที่ 50 รายการแรก + warning |
 
-2. **Rollout** — Strategy (ก): All menus from API in one pass (no hybrid fallback). Prerequisites:
-   - ✅ Phase 1 seed merged + running (dashboard:view, staff/*, roles:assign)
-   - ✅ `billing/*` and `reports:*` keys added to Phase 1 seed (data-only PR)
-   - ✅ Seed script run on production **before** deploying frontend code
-   - ✅ Staging validation: all menus render, permission changes reflected on token refresh
-   - ✅ Rollback plan: revert to phase 1 seed (staff-only menus) until frontend fix ready
+---
+
+## Approval
+
+| Role | Status | Date |
+|------|--------|------|
+| Product / User | ✅ อนุมัติ (Open Questions = Default) | 2026-06-24 |
+| Engineering | ⏳ รออนุมัติ | |
+
+**ขั้นถัดไป:** Plan สร้างแล้ว → อนุมัติ `tasks/plan.md` → `/code-build`

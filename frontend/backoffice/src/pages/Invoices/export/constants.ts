@@ -1,0 +1,1 @@
+export const MAX_BULK_EXPORT_SELECTION = 50;

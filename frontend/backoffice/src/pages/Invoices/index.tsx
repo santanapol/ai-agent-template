@@ -15,17 +15,29 @@ import {
 import { SearchOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import type { TableRowSelection } from 'antd/es/table/interface';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useInvoices } from './hooks/useInvoices';
 import { formatDate, formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
 import { useAppFeedback } from '../../hooks/useAppFeedback';
+import { usePermission } from '../../hooks/usePermission';
+import { BulkExportBar } from './components/BulkExportBar';
+import { BulkExportModal } from './components/BulkExportModal';
+import { MAX_BULK_EXPORT_SELECTION } from './export/constants';
+import type { BulkExportFormat } from './export/types';
 
 const { Title } = Typography;
+
+interface ExportJobState {
+  ids: string[];
+  format: BulkExportFormat;
+}
 
 const InvoiceList: React.FC = () => {
   const { message } = useAppFeedback();
   const navigate = useNavigate();
+  const canExport = usePermission('invoices:read');
   const {
     invoices,
     total,
@@ -55,6 +67,8 @@ const InvoiceList: React.FC = () => {
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm<{ month: Dayjs; branch_id?: string }>();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [exportJob, setExportJob] = useState<ExportJobState | null>(null);
 
   // Keep filter/pagination state in the URL so it survives back-navigation from the detail page (I11)
   useEffect(() => {
@@ -91,6 +105,33 @@ const InvoiceList: React.FC = () => {
   const onSearch = (value: string) => {
     setSearchText(value);
     setPage(1);
+  };
+
+  const handleSelectionChange = (keys: React.Key[]) => {
+    if (keys.length > MAX_BULK_EXPORT_SELECTION) {
+      message.warning(`You can select up to ${MAX_BULK_EXPORT_SELECTION} invoices per export.`);
+      setSelectedRowKeys(keys.slice(0, MAX_BULK_EXPORT_SELECTION));
+      return;
+    }
+    setSelectedRowKeys(keys);
+  };
+
+  const rowSelection: TableRowSelection<Invoice> = {
+    selectedRowKeys,
+    onChange: handleSelectionChange,
+    preserveSelectedRowKeys: true,
+    getCheckboxProps: (record) => ({
+      disabled:
+        selectedRowKeys.length >= MAX_BULK_EXPORT_SELECTION
+        && !selectedRowKeys.includes(record._id),
+    }),
+  };
+
+  const openExport = (format: BulkExportFormat) => {
+    setExportJob({
+      ids: selectedRowKeys.map(String),
+      format,
+    });
   };
 
   const handleCreateInvoice = async () => {
@@ -250,11 +291,33 @@ const InvoiceList: React.FC = () => {
           columns={columns}
           dataSource={invoices}
           rowKey="_id"
+          rowSelection={rowSelection}
           loading={loading}
           pagination={{ current: page, pageSize, total, showSizeChanger: true }}
           onChange={handleTableChange}
         />
       </Card>
+
+      <BulkExportBar
+        selectedCount={selectedRowKeys.length}
+        canExport={canExport}
+        exporting={exportJob !== null}
+        onExportPdf={() => openExport('pdf')}
+        onExportExcel={() => openExport('xlsx')}
+        onClear={() => setSelectedRowKeys([])}
+      />
+
+      <BulkExportModal
+        open={exportJob !== null}
+        invoiceIds={exportJob?.ids ?? []}
+        format={exportJob?.format ?? 'pdf'}
+        onClose={(shouldClearSelection) => {
+          setExportJob(null);
+          if (shouldClearSelection) {
+            setSelectedRowKeys([]);
+          }
+        }}
+      />
 
       <Modal
         title="Create Invoice"

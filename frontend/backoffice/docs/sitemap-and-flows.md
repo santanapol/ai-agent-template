@@ -51,3 +51,6 @@
 | :--- | :--- |
 | **Admin** | Edit drawer → Reset password section → Confirm modal → `POST .../profiles/{id}/password` |
 | **User** | My Profile → Change password card → `POST /auth/me/password` → logout → login ใหม่ |
+
+### 2.8 Flow Bulk Export ใบแจ้งหนี้ (Invoice List)
+`เมนู Invoices (/invoices)` (`invoices:list`) ➔ `เลือก checkbox หลายรายการ (สูงสุด 50, ข้าม pagination ได้)` ➔ `แสดง Bulk Action Bar` ➔ `กด [Export PDF] หรือ [Export Excel]` *(ต้องมี `invoices:read` — ถ้าไม่มีสิทธิ์ปุ่ม export จะถูกซ่อน)* ➔ `ระบบแสดง Modal progress` ➔ `ดึง GET /invoices/:id` + `GET /invoices/:id/transactions` ต่อใบ (concurrency ≤ 5) ➔ `ดาวน์โหลด ZIP` (`invoice_{iv_no}.pdf` หรือ `.xlsx` แยกไฟล์) ➔ `กรณีบางรายการล้มเหลว: แสดงรายการ fail + ปุ่ม Retry` ➔ `ปิด Modal สำเร็จ → clear selection อัตโนมัติ`
