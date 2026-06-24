@@ -40,6 +40,7 @@ export async function signAccessJwt({
   roleClaim,
   ouId,
   branchId,
+  homeBranchId,
   tokenGen,
   permissions,
   issuer,
@@ -50,6 +51,7 @@ export async function signAccessJwt({
     [roleClaim]: role,
     ou_id: ouId,
     branch_id: branchId,
+    home_branch_id: homeBranchId,
     token_gen: tokenGen,
     // ค่าดิบจาก menu_keys (exact + wildcard 'domain:*') — ไม่ expand เพื่อคุมขนาด token
     permissions: Array.isArray(permissions) ? permissions : []

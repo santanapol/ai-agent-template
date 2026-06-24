@@ -254,14 +254,18 @@ export class AuthService {
 
   /**
    * ออก access JWT พร้อมเคลม `permissions` (resolve สดจาก DB ทุกครั้งที่ออก token)
+   * @param {import('mongodb').Document} user
+   * @param {{ activeBranchId?: string | null }} [opts]
    * @returns {Promise<{ access_token: string, permissions: string[] }>}
    */
-  async issueAccess(user) {
+  async issueAccess(user, opts = {}) {
     const sub = user._id.toHexString()
     const permissions = await this.resolveEffectivePermissions({
       ouId: user.ou_id ?? null,
       role: user.role
     })
+    const homeBranchId = user.branch_id?.toHexString?.() ?? String(user.branch_id)
+    const branchId = opts.activeBranchId ?? homeBranchId
     const access_token = await signAccessJwt({
       privateKey: this.privateKey,
       kid: this.env.JWT_KID,
@@ -269,7 +273,8 @@ export class AuthService {
       role: user.role,
       roleClaim: this.env.JWT_CLAIM_ROLE,
       ouId: user.ou_id?.toHexString?.() ?? String(user.ou_id),
-      branchId: user.branch_id?.toHexString?.() ?? String(user.branch_id),
+      branchId,
+      homeBranchId,
       tokenGen: coerceTokenGen(user),
       permissions,
       issuer: this.env.JWT_ISSUER,

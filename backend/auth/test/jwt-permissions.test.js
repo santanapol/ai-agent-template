@@ -49,6 +49,29 @@ function warnCollector() {
   }
 }
 
+test('issueAccess embeds home_branch_id matching user home branch', async () => {
+  const service = makeService({ menuKeys: ['profiles:*'] })
+  const user = makeUser()
+  const homeHex = user.branch_id.toHexString()
+  const { access_token } = await service.issueAccess(user)
+
+  const claims = decodeJwt(access_token)
+  assert.equal(claims.branch_id, homeHex)
+  assert.equal(claims.home_branch_id, homeHex)
+})
+
+test('issueAccess uses activeBranchId for branch_id while home_branch_id stays home', async () => {
+  const service = makeService({ menuKeys: ['profiles:*'] })
+  const user = makeUser()
+  const homeHex = user.branch_id.toHexString()
+  const activeHex = new ObjectId().toHexString()
+  const { access_token } = await service.issueAccess(user, { activeBranchId: activeHex })
+
+  const claims = decodeJwt(access_token)
+  assert.equal(claims.branch_id, activeHex)
+  assert.equal(claims.home_branch_id, homeHex)
+})
+
 test('issueAccess embeds raw permissions claim and returns the same entries', async () => {
   const service = makeService({ menuKeys: ['profiles:*', 'invoice:read'] })
   const { access_token, permissions } = await service.issueAccess(makeUser())
