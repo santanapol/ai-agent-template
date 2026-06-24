@@ -140,6 +140,7 @@ export class AuthRepository {
       family_id: doc.family_id,
       token_hash: doc.token_hash,
       expires_at: doc.expires_at,
+      active_branch_id: doc.active_branch_id ?? null,
       revoked_at: null,
       replaced_by_id: null,
       created_at: now

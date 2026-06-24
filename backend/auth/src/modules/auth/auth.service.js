@@ -422,7 +422,8 @@ export class AuthService {
         user_id: row.user_id,
         family_id: row.family_id,
         token_hash: newHash,
-        expires_at
+        expires_at,
+        active_branch_id: current.active_branch_id ?? null
       },
       session
     )
@@ -528,7 +529,9 @@ export class AuthService {
       })
     }
 
-    const { access_token, permissions } = await this.issueAccess(u)
+    const { access_token, permissions } = await this.issueAccess(u, {
+      activeBranchId: row.active_branch_id ?? undefined
+    })
 
     const redisResult = await this.publishTokenGenOrNotReady(u._id.toHexString(), coerceTokenGen(u))
     if (!redisResult.ok) return { ...redisResult, body: null, cookie: null }
