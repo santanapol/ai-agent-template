@@ -305,6 +305,63 @@ if (!RUN) {
           createdProfileIds.push(toObjectId(body.data.id));
         }
       });
+
+      test("Enforce mode: provision with non-default role requires roles:assign", async () => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const denied = await app.inject({
+          method: "POST",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "branch_admin",
+            extraHeaders: { "x-user-permissions": "profiles:create" },
+          }),
+          payload: {
+            code: `P-C3-${suffix}`,
+            firstname: "Role",
+            lastname: "Denied",
+            email: `p3.${suffix}@test.invalid`,
+            tel: "+66810000093",
+            username: `p3.${suffix}`,
+            password: "ChangeMe!1",
+            role: "support",
+          },
+        });
+
+        assert.strictEqual(denied.statusCode, 403);
+        assert.strictEqual(denied.json().code, CODES.PERMISSION_DENIED);
+      });
+
+      test("Enforce mode: provision with non-default role succeeds with roles:assign", async () => {
+        setRuntimeEnv({ ...baseTestEnv, permissionMode: "enforce" });
+
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/v1/staff/profiles",
+          headers: buildMeshHeaders({
+            role: "branch_admin",
+            extraHeaders: {
+              "x-user-permissions": "profiles:create,roles:assign",
+            },
+          }),
+          payload: {
+            code: `P-C4-${suffix}`,
+            firstname: "Role",
+            lastname: "Allowed",
+            email: `p4.${suffix}@test.invalid`,
+            tel: "+66810000094",
+            username: `p4.${suffix}`,
+            password: "ChangeMe!1",
+            role: "support",
+          },
+        });
+
+        assert.strictEqual(res.statusCode, 201);
+        const body = res.json();
+        if (body.data?.id) {
+          createdProfileIds.push(toObjectId(body.data.id));
+        }
+      });
     });
 
     describe("Archive Profile (POST /api/v1/staff/profiles/:id/archive)", () => {
