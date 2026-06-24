@@ -380,3 +380,80 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
   })
 })
+
+describe('gateway public /auth proxy', () => {
+  /** @type {import('node:http').Server | undefined} */
+  let upstreamServer
+  /** @type {import('fastify').FastifyInstance | undefined} */
+  let app
+  /** @type {string | undefined} */
+  let gatewayBaseUrl
+
+  before(async () => {
+    upstreamServer = createServer((req, res) => {
+      res.setHeader('content-type', 'application/json')
+      res.end(
+        JSON.stringify({
+          url: req.url,
+          hasAuthorization: Boolean(req.headers.authorization),
+          uid: req.headers['x-user-id'],
+          secret: req.headers['x-gateway-secret']
+        })
+      )
+    })
+
+    await new Promise((resolve) => upstreamServer.listen(0, '127.0.0.1', resolve))
+    const upstreamPort = /** @type {import('node:net').AddressInfo} */ (upstreamServer.address())
+      .port
+    const upstreamBase = `http://127.0.0.1:${upstreamPort}`
+
+    const routesJson = JSON.stringify([
+      {
+        prefix: '/auth',
+        upstream: upstreamBase,
+        stripPrefix: false,
+        isPublic: true
+      }
+    ])
+
+    const env = loadEnv({
+      NODE_ENV: 'test',
+      PORT: 3001,
+      JWT_JWKS_URL: 'http://127.0.0.1:9/.well-known/jwks.json',
+      JWT_ISSUER: '',
+      JWT_AUDIENCE: '',
+      JWT_CLAIM_USER_ID: 'sub',
+      JWT_CLAIM_ROLE: 'role',
+      GATEWAY_SECRET: 'gateway-secret-32-chars-minimum-ok!!',
+      UPSTREAM_TIMEOUT_MS: 5000,
+      ROUTES_JSON: routesJson,
+      ROUTES_FILE: ''
+    })
+
+    app = await buildApp(env, { logger: false, redisClient: null })
+    await app.listen({ port: 0, host: '127.0.0.1' })
+    const gwPort = /** @type {import('node:net').AddressInfo} */ (app.server.address()).port
+    gatewayBaseUrl = `http://127.0.0.1:${gwPort}`
+  })
+
+  after(async () => {
+    if (app) await app.close()
+    await new Promise((resolve) => upstreamServer?.close(() => resolve(undefined)))
+  })
+
+  test('forwards Authorization on isPublic /auth and strips spoofed mesh headers', async () => {
+    const res = await fetch(`${gatewayBaseUrl}/auth/me/menus`, {
+      headers: {
+        Authorization: 'Bearer upstream-test-token',
+        'x-user-id': 'spoofed-user',
+        'x-gateway-secret': 'evil-secret'
+      }
+    })
+    assert.strictEqual(res.status, 200)
+    const body = await res.json()
+    assert.strictEqual(body.url, '/auth/me/menus')
+    assert.strictEqual(body.hasAuthorization, true)
+    assert.strictEqual(body.uid, undefined)
+    assert.strictEqual(body.secret, undefined)
+  })
+})
