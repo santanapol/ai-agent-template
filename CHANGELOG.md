@@ -17,12 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save); `AuthContext` reloads menus when JWT `permissions` change after refresh.
+- **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save).
 - **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`).
 
 ### Fixed
 
 - **Backoffice — Role permissions:** Parent menu group checkboxes were disabled (`type: menu` + `checkStrictly`); enabling cascade select/deselect while persisting action keys only.
+- **Backoffice — Auth session:** Stop `GET /auth/me/menus` fetch storm on token refresh (stable `permissionsKey` deps instead of array reference); skip auto-refresh retry on `/auth/me/menus` 401 to avoid refresh-token rotation loops that surfaced as `TOKEN_REFRESH_REJECTED` on production.
 
 - **Backoffice:** Permission-driven sidebar menu and route guards (Dynamic Permission Phase F) — `AuthContext` fetches `GET /auth/me/menus` on login/refresh and exposes `permissions` / `menus` / `menuLoading` / `menuError`; `AdminLayout` builds the sidebar from the returned menu tree (sorted by `sort_order`, with depth/cycle guarding), falling back to a minimal menu plus a warning banner if menu loading fails. New `usePermission` hook and `PermissionGuard` component gate UI elements (e.g. the Edit button in `StaffManagement`) and routes by permission key.
 - **`backend/auth/`:** Permission Admin API (Dynamic Permission Phase A) — `GET/POST/PATCH/DELETE /auth/admin/menus` and `GET/PUT/DELETE /auth/admin/role-permissions` for managing the menu registry and role→permission mappings at runtime, with optimistic locking (`upd_date`/`If-Match`), audit logging (`auth.permissions_changed`), self-lockout protection (`permissions:manage` cannot be edited via the API), and an urgent `revoke_sessions` option on role-permission updates (revokes Redis sessions for affected users in batches of up to 1,000). New `409 AUTH_MENU_IN_USE` / `409 AUTH_ROLE_PERMISSION_IN_USE` error codes.
