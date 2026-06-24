@@ -1,333 +1,350 @@
-# Implementation Plan: Permission Admin UI (Phase F2)
-
-> Spec: [SPEC-permission-admin-ui.md](../SPEC-permission-admin-ui.md) · ROADMAP Phase 6 · อนุมัติ 2026-06-10
+# Implementation Plan: Bulk Invoice Export (Invoice List)
 
 ## Overview
 
-ส่งมอบหน้า Backoffice `/permissions` สำหรับแอดมินที่มี `permissions:manage` — จัดการ menu/action registry และ role → `menu_keys` mappings ผ่าน Phase A API (`/auth/admin/*`) พร้อม Bruno collection สำหรับ SIT
+เพิ่มความสามารถ **เลือกหลาย invoice** จากหน้า `/invoices` แล้ว **export เป็น ZIP** (PDF หรือ Excel แยกไฟล์ต่อ `iv_no`) พร้อม progress modal, cancel, และ retry รายการที่ล้มเหลว — ตาม [SPEC.md](../SPEC.md) Phase 1 (P0+P1)
 
-**ขอบเขต:** consumer เท่านั้น — ไม่แก้ backend auth logic (Phase A เสร็จแล้ว) ยกเว้น **seed data PR** เพื่อย้ายเมนูนำทางให้ตรง Spec (`settings` group)
+**ขอบเขต:** Frontend only — ใช้ API เดิม (`GET /invoices/:id`, `GET /transactions`) ไม่แก้ backend
 
-**Commands หลัก:**
-
-```bash
-cd frontend/backoffice && npm run test && npm run lint && npm run build
-```
+---
 
 ## Architecture Decisions
 
 | การตัดสินใจ | เหตุผล |
-| :--- | :--- |
-| `If-Match` = `upd_date` **ISO ดิบ** (ไม่ห่อ `W/"..."`) จาก response **body** เฉพาะ `menus` PATCH/DELETE | ตรงกับ `admin.service.js` (`existing.upd_date.toISOString() === ifMatch`); ห้ามใช้ `extractETag` (admin ไม่ set ETag header) |
-| `role-permissions` PUT ไม่มี If-Match (upsert); DELETE ใช้ `?confirm=true` | ตรงกับ `admin.controller.js`/`admin.service.js` — PUT last-write-wins; DELETE มี active users → ต้อง confirm |
-| `apiError` map code auth: `AUTH_PRECONDITION_FAILED`/`AUTH_MENU_IN_USE`/`AUTH_ROLE_PERMISSION_IN_USE`/`AUTH_INVALID_REQUEST` | ต่างจาก staff (`VERSION_CONFLICT`) — code มาจาก Phase A จริง |
-| `400` `detail` เป็น **string เดียว** (join `, `) | service join errors เป็นข้อความเดียว — ไม่มี `detail[]` array |
-| ไม่ invalidate `getMyMenus()` หลัง admin save | OQ-4 — admin tooling; ผู้ใช้ refresh session เอง |
-| Role Select hardcode 3 ค่า | OQ-3 — `platform_admin`, `branch_admin`, `staff` |
-| แยก `permissionAdminUtils.ts` สำหรับ flat→tree | ทดสอบ unit ได้โดยไม่ mount React; reuse ทั้ง 2 แท็บ |
-| Bruno ใช้ `.yml` ใน `backend/_bruno/auth/admin/` | สอดคล้อง collection `auth` ที่มีอยู่ + OQ-5 |
-| Seed: เพิ่ม `settings` group + reparent `permissions:manage` (ผ่าน seed เท่านั้น) | ปัจจุบัน key อยู่ใต้ `staff:profiles`; API `updateMenu` block การแก้ `permissions:manage` → ย้ายได้เฉพาะทาง seed data |
+|-------------|--------|
+| แยก export logic เป็น pure functions ใน `pages/Invoices/export/` | Single source of truth — `InvoiceDetail` และ bulk export ใช้ชุดเดียวกัน |
+| `runBulkExport` เป็น orchestrator แยกจาก UI | ทดสอบ concurrency / abort / partial failure ได้โดยไม่ต้อง mount React |
+| Concurrency pool = 5 | ลดโอกาส rate-limit / browser hang ตาม Spec |
+| `jszip` ฝั่ง client | ไม่ต้อง backend endpoint ใน Phase 1; ZIP แยกไฟล์ต่อ invoice |
+| `sortInvoiceTransactions()` ใน `utils.ts` | Logic เรียง `company_name` ใช้ร่วมกันระหว่าง detail และ export |
+| `triggerBlobDownload(blob, filename)` helper | ใช้ร่วมกันระหว่าง single export และ bulk ZIP download |
+| Clear selection หลังปิด modal สำเร็จ | ตาม Decisions Q1 |
+| Builder คืน `Blob` ด้วย `doc.output('blob')` / `XLSX.write({type:'array'})` | โค้ดเดิม `doc.save()`/`XLSX.writeFile()` download ทันที — ต้องเปลี่ยนเพื่อ reuse ใน ZIP |
+| Bulk export เรียก `invoicesApiClient` ตรง ไม่ผ่าน `useInvoices` | hook เก็บ state `invoice` เดี่ยวและ reset null ทุก fetch — ไม่เหมาะกับ concurrent multi-fetch |
+| ซ่อนปุ่ม export เมื่อไม่มี `usePermission('invoices:read')` | list guard แค่ `invoices:list`; bulk fetch ต้อง `invoices:read` (Decisions Q4) |
+
+---
 
 ## Dependency Graph
 
 ```
-[Task 1] Seed + route + MENU_UI
-    │
-    ├──→ [Task 2] Types + utils + unit tests
-    │         │
-    │         └──→ [Task 3] authApiClient + apiError + tests
-    │                   │
-    │                   ├──→ [Task 4] Bruno admin/*  (ขนานได้หลัง Task 3)
-    │                   │
-    │                   ├──→ [Task 5] Page shell + tabs
-    │                   │         │
-    │                   │         ├──→ [Task 6] Menu catalog tab (CRUD)
-    │                   │         │
-    │                   │         └──→ [Task 7] Role permissions tab
-    │                   │
-    │                   └──→ [Task 8] Component tests + guard
-    │
-    └──→ (manual smoke ต้องรอ Task 1 + 6 + 7)
+[jszip dependency]
+       │
+       ├── sortInvoiceTransactions (utils.ts)
+       │
+       ├── buildInvoicePdf.ts ──┐
+       ├── buildInvoiceXlsx.ts ─┼──► InvoiceDetail.tsx (refactor)
+       │                        │
+       └── bulkExport.ts ◄──────┘
+                │
+                ├── invoicesApiClient (existing GET APIs)
+                │
+                ├── BulkExportModal.tsx
+                │        │
+                └── BulkExportBar.tsx
+                         │
+                         └── index.tsx (rowSelection + wire-up)
 ```
 
-**External dependency:** Phase A API deploy บน environment ที่ backoffice proxy ชี้ไป — local dev ใช้ auth service + gateway ตาม `RUNBOOK.md`
+ลำดับ implement: **export builders → detail refactor → bulk orchestrator → UI components → list integration → docs**
+
+---
 
 ## Task List
 
-### Phase 0: Data + Navigation (Prerequisite)
+### Phase 1: Export Foundation
 
-#### Task 1: Seed `settings` group + wire route & sidebar
+## Task 1: เพิ่ม `jszip` และ shared download helper
 
-**Description:** เพิ่มเมนูนำทาง Settings → Permissions และ route `/permissions` ให้ `platform_admin` เข้าถึงได้ก่อน build UI เต็มรูปแบบ
+**Description:** ติดตั้ง dependency และสร้าง utility สำหรับดาวน์โหลด Blob จาก browser
 
 **Acceptance criteria:**
-- [ ] `permissions.js` มีโหนด `settings` (menu group) และ reparent `permissions:manage` → `parent_key: 'settings'` (ลำดับ: `settings` ต้องถูก declare ก่อน เพื่อให้ validation parent-exists ผ่าน)
-- [ ] `platform_admin` mapping ยังมี `permissions:manage` (หรือ `permissions:*`)
-- [ ] `MENU_UI` มี `'settings'` (group ไม่มี route) และ `'permissions:manage'` (icon + route `/permissions`)
-- [ ] `App.tsx` มี route `permissions` + `PermissionGuard required="permissions:manage"`
-- [ ] Placeholder page `PermissionAdmin` render ได้ (แม้ยังไม่มี CRUD)
-
-> **หมายเหตุ:** ห้าม reparent ผ่าน Admin API — `updateMenu` คืน `400` สำหรับ key `permissions:manage`; ต้องแก้ใน seed data แล้วรัน seed ก่อน deploy
+- [ ] `jszip` อยู่ใน `package.json` dependencies
+- [ ] มี `triggerBlobDownload(blob, filename)` ใน `export/downloadBlob.ts` (หรือ `utils.ts` ถ้าเล็กมาก)
+- [ ] ฟังก์ชัน trigger click บน `<a download>` แล้ว revoke object URL
 
 **Verification:**
-- [ ] `node --env-file=.env scripts/seed-permissions.js` ผ่าน (auth)
-- [ ] `npm run test -- AdminLayout` ผ่าน (ถ้าเพิ่มเคสเมนู settings)
-- [ ] Manual: login `platform_admin` → เห็น Settings → Permissions → เปิด `/permissions`
+- [ ] `npm run build` ผ่าน
+- [ ] Unit test: `downloadBlob.test.ts` — mock `URL.createObjectURL` / `revokeObjectURL`
 
 **Dependencies:** None
 
 **Files likely touched:**
-- `backend/auth/scripts/seed-data/permissions.js`
-- `frontend/backoffice/src/layouts/AdminLayout.tsx`
-- `frontend/backoffice/src/App.tsx`
-- `frontend/backoffice/src/pages/PermissionAdmin/index.tsx` (placeholder)
+- `package.json`, `package-lock.json`
+- `src/pages/Invoices/export/downloadBlob.ts`
+- `src/pages/Invoices/export/downloadBlob.test.ts`
 
-**Estimated scope:** S (4–5 files)
-
----
-
-### Phase 1: API Client Foundation
-
-#### Task 2: Types + `permissionAdminUtils` + unit tests
-
-**Description:** สร้าง type contracts และ utility สำหรับแปลง flat menu list เป็น tree, เรียง `sort_order`, และ helper สำหรับ self-lockout guards
-
-**Acceptance criteria:**
-- [ ] `types/permissionAdmin.ts` ครบ `AdminMenuNode`, DTOs สำหรับ create/update/upsert
-- [ ] `buildMenuTree(flat)` คืน hierarchy ถูกต้อง + เรียง `sort_order`
-- [ ] `collectMenuKeys(tree)` / `isProtectedMenuKey(key)` สำหรับ guards
-- [ ] `permissionAdminUtils.test.ts` ครอบคลุม edge cases (orphan parent, empty list, nested sort)
-
-**Verification:**
-- [ ] `npm run test -- permissionAdminUtils`
-
-**Dependencies:** Task 1 (optional — utils ไม่พึ่ง seed แต่ทำหลัง Task 1 เพื่อให้ checkpoint ชัด)
-
-**Files likely touched:**
-- `frontend/backoffice/src/types/permissionAdmin.ts`
-- `frontend/backoffice/src/pages/PermissionAdmin/permissionAdminUtils.ts`
-- `frontend/backoffice/src/pages/PermissionAdmin/permissionAdminUtils.test.ts`
-
-**Estimated scope:** S
+**Estimated scope:** XS
 
 ---
 
-#### Task 3: `authApiClient` admin methods + `apiError` extensions + tests
+## Task 2: แยก `buildInvoicePdf` + unit tests
 
-**Description:** เพิ่ม client methods ครบ 7 endpoints พร้อมส่ง `If-Match` และ map error codes ที่ Phase A คืน
+**Description:** ย้าย logic จาก `InvoiceDetail.handleExportPDF` เป็น pure function รับ `(invoice, transactions)` คืน `Blob`
 
 **Acceptance criteria:**
-- [ ] `listAdminMenus()` unwrap `{ menus }`; `createAdminMenu()`; `updateAdminMenu(key, body, updDate)` แนบ `If-Match: <updDate ISO ดิบ>`; `deleteAdminMenu(key, updDate)` แนบ `If-Match` (required)
-- [ ] `listRolePermissions({ role })` unwrap `{ role_permissions }`; `upsertRolePermission(role, body)` **ไม่มี** If-Match; `deleteRolePermission(role, { confirm })` ใส่ query `?confirm=true`
-- [ ] PUT/DELETE path ใช้ literal segment `null` สำหรับ Global: `/auth/admin/role-permissions/null/{role}`
-- [ ] `ifMatchFromUpdDate(updDate)` ส่งค่า ISO **ดิบ** (ไม่ห่อ `W/"..."`); **ห้าม** ใช้ `extractETag` (admin ไม่มี ETag header)
-- [ ] `apiErrorMessage` รองรับ codes: `AUTH_PRECONDITION_FAILED` (412), `AUTH_MENU_IN_USE`/`AUTH_ROLE_PERMISSION_IN_USE` (409), `AUTH_INVALID_REQUEST` (400 — `detail` เป็น string เดียว)
-- [ ] `authApiClient.test.ts` mock axios ยืนยัน path, body, headers (มี/ไม่มี If-Match ตาม endpoint, `?confirm=true`)
+- [ ] `buildInvoicePdf(invoice, transactions)` คืน PDF `Blob` ขนาด > 0 ผ่าน `doc.output('blob')` (ไม่ใช่ `doc.save`)
+- [ ] เรียง transactions ด้วย `sortInvoiceTransactions()` ก่อนสร้างตาราง
+- [ ] มีแถว Total และ header fields ตรงกับ behavior เดิม (iv_no, billing_month, branch_name, due_date)
+- [ ] Unit test ครอบคลุม empty transactions และ totals
 
 **Verification:**
-- [ ] `npm run test -- authApiClient`
-- [ ] `npm run test -- apiError` (ถ้าแยกไฟล์ test)
+- [ ] `npm test -- src/pages/Invoices/export/buildInvoicePdf.test.ts`
+- [ ] `npm run lint` ผ่าน
 
-**Dependencies:** Task 2
+**Dependencies:** Task 1 (optional — ไม่ block แต่ Task 4 ต้องการ)
 
 **Files likely touched:**
-- `frontend/backoffice/src/lib/authApiClient.ts`
-- `frontend/backoffice/src/lib/authApiClient.test.ts`
-- `frontend/backoffice/src/lib/apiError.ts`
-- `frontend/backoffice/src/lib/apiError.test.ts` (ถ้ายังไม่มี — สร้าง)
+- `src/pages/Invoices/utils.ts` — เพิ่ม `sortInvoiceTransactions`
+- `src/pages/Invoices/export/buildInvoicePdf.ts`
+- `src/pages/Invoices/export/buildInvoicePdf.test.ts`
 
 **Estimated scope:** M
 
 ---
 
-### Checkpoint: Foundation
+## Task 3: แยก `buildInvoiceXlsx` + unit tests
 
-- [ ] `npm run test && npm run lint && npm run build` ผ่าน
-- [ ] ไม่มี regression ใน auth client เดิม (login/refresh/getMyMenus)
-- [ ] **Human review** ก่อนเริ่ม UI tabs
-
----
-
-### Phase 2: Bruno Collection (OQ-5)
-
-#### Task 4: Bruno `backend/_bruno/auth/admin/` — 7 requests
-
-**Description:** ขยาย auth Bruno collection ครอบคลุม Permission Admin API สำหรับ SIT/manual smoke
+**Description:** ย้าย logic จาก `InvoiceDetail.handleExportExcel` เป็น pure function คืน `Blob`
 
 **Acceptance criteria:**
-- [ ] `admin/folder.yml` + 7 request files ตาม Spec
-- [ ] ทุก request ใช้ `Authorization: Bearer {{access_token}}` (inherit หรือ explicit)
-- [ ] **เฉพาะ** `menus` PATCH/DELETE มี `If-Match` (ISO ดิบ); `role-permissions` PUT ไม่มี If-Match; DELETE role ใช้ `?confirm=true`
-- [ ] capture `upd_date` จาก Create/List menu ลง env var (post-response script) เพื่อใช้ใน PATCH/DELETE
-- [ ] ใช้ `{{baseUrl}}` / `{{username}}` / `{{password}}` — ไม่ hardcode credentials
-- [ ] ลำดับรัน: Login → List menus → Create → Update → Delete → List role-permissions → Upsert (ตามความเหมาะสม)
+- [ ] `buildInvoiceXlsx(invoice, transactions)` คืน XLSX `Blob` ผ่าน `XLSX.write(wb, { bookType: 'xlsx', type: 'array' })` แล้ว wrap `Blob` (ไม่ใช่ `XLSX.writeFile`)
+- [ ] โครงสร้าง sheet (header rows, column headers, totals row) ตรง behavior เดิม
+- [ ] Unit test ตรวจจำนวนแถวและค่า totals
 
 **Verification:**
-- [ ] Manual: เปิด Bruno → chọn environment Local → Login → รัน admin requests ครบ 7 (SC-8)
-- [ ] ตรวจ syntax `.yml` เปิดใน Bruno ได้ไม่ error
+- [ ] `npm test -- src/pages/Invoices/export/buildInvoiceXlsx.test.ts`
 
-**Dependencies:** Task 3 (รู้ path/body ชัดจาก client + Phase A spec)
-
-**Files likely touched:**
-- `backend/_bruno/auth/admin/folder.yml`
-- `backend/_bruno/auth/admin/*.yml` (7 requests)
-
-**Estimated scope:** M
-
-> **Parallelization:** Task 4 ทำขนานกับ Task 5–6 ได้หลัง Task 3 เสร็จ
-
----
-
-### Phase 3: UI Vertical Slices
-
-#### Task 5: Page shell — `PermissionAdmin` + Tabs scaffold
-
-**Description:** แทนที่ placeholder ด้วย page shell 2 แท็บ (Menu catalog | Role permissions) พร้อม loading/error boundary พื้นฐาน
-
-**Acceptance criteria:**
-- [ ] `index.tsx` ใช้ antd `Tabs` — labels ตาม Spec (English)
-- [ ] แต่ละแท็บเป็น lazy child component (หรือ import แยกไฟล์)
-- [ ] 403 จาก API แสดง `Result` ไม่ crash
-- [ ] `PermissionAdmin.test.tsx` smoke: render tabs เมื่อ mock permission ผ่าน
-
-**Verification:**
-- [ ] `npm run test -- PermissionAdmin`
-
-**Dependencies:** Task 1, Task 3
+**Dependencies:** Task 2 (`sortInvoiceTransactions` ใน utils)
 
 **Files likely touched:**
-- `frontend/backoffice/src/pages/PermissionAdmin/index.tsx`
-- `frontend/backoffice/src/pages/PermissionAdmin/MenuCatalogTab.tsx` (stub → เต็มใน Task 6)
-- `frontend/backoffice/src/pages/PermissionAdmin/RolePermissionsTab.tsx` (stub → เต็มใน Task 7)
-- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
+- `src/pages/Invoices/export/buildInvoiceXlsx.ts`
+- `src/pages/Invoices/export/buildInvoiceXlsx.test.ts`
 
 **Estimated scope:** S
 
 ---
 
-#### Task 6: Menu catalog tab — tree + CRUD + self-lockout guards
+## Task 4: Refactor `InvoiceDetail` ใช้ shared export builders
 
-**Description:** แท็บจัดการ registry — ดู tree, เพิ่ม/แก้/ลบโหนด ผ่าน API พร้อม validation/error UX
+**Description:** ลบ inline jsPDF/XLSX logic จาก `InvoiceDetail.tsx` เรียก builders + `triggerBlobDownload` แทน
 
 **Acceptance criteria:**
-- [ ] โหลด `GET /auth/admin/menus` → แสดง Tree เรียง `sort_order`
-- [ ] **Add node** Modal: `key`, `label`, `type`, `parent_key`, `sort_order` → POST
-- [ ] **Edit** Modal: แก้ได้เฉพาะ `label`, `parent_key`, `sort_order`; `key`/`type` read-only; PATCH + `If-Match` (ISO ดิบ)
-- [ ] **Delete** + Popconfirm → DELETE + `If-Match`; 409 (`AUTH_MENU_IN_USE`) แสดงข้อความชัดเจน
-- [ ] Self-lockout: **ทั้ง Edit และ Delete disabled** + tooltip สำหรับ `permissions:manage` (backend block ทั้ง PATCH/DELETE)
-- [ ] `400` validation แสดง `detail` (string เดียว — split `, ` เป็น list ได้)
-- [ ] `412` (`AUTH_PRECONDITION_FAILED`) แสดงข้อความ refresh + reload tree
-- [ ] ใช้ `useAppFeedback` ตาม pattern `StaffManagement.tsx`
+- [ ] ปุ่ม Export PDF / Excel ยังทำงานเหมือนเดิม (manual หรือ test)
+- [ ] ไม่มี duplicate export logic ใน `InvoiceDetail.tsx`
+- [ ] Toast success ยังแสดงหลัง export
 
 **Verification:**
-- [ ] `npm run test -- PermissionAdmin` (mock CRUD flows)
-- [ ] Manual: สร้าง action key → เห็นใน tree (SC-2); ลบโหนดมีลูก → 409 (SC-4)
+- [ ] `npm test` (existing `useInvoices` tests ยังผ่าน)
+- [ ] `npm run build` ผ่าน
+- [ ] Manual: เปิด `/invoices/:id` → export PDF และ Excel ได้ไฟล์ถูกต้อง
+
+**Dependencies:** Task 2, Task 3, Task 1
+
+**Files likely touched:**
+- `src/pages/Invoices/InvoiceDetail.tsx`
+
+**Estimated scope:** S
+
+### Checkpoint: Export Foundation
+
+- [ ] Export builders มี unit tests ผ่าน
+- [ ] `InvoiceDetail` export ทำงานหลัง refactor
+- [ ] `npm run lint` และ `npm run build` ผ่าน
+- [ ] มนุษย์รีวิวก่อนเริ่ม bulk orchestration (optional แต่แนะนำ)
+
+---
+
+### Phase 2: Bulk Export Engine
+
+## Task 5: `runBulkExport` — fetch, build, ZIP, abort
+
+**Description:** Orchestrator ดึง detail + transactions ต่อ invoice (concurrency ≤ 5), สร้างไฟล์, รวม ZIP, รองรับ `AbortSignal` และ partial failure
+
+**Acceptance criteria:**
+- [ ] `runBulkExport({ invoiceIds, format, onProgress, signal })` คืน `Blob | null`
+- [ ] คืน `null` เมื่อไม่มีรายการสำเร็จเลย
+- [ ] `onProgress` เรียกหลังแต่ละ invoice (done, total, currentIvNo, results[] พร้อม status `success`/`failed`/`cancelled`)
+- [ ] Abort หยุด queue ที่เหลือ; ZIP จากรายการที่สำเร็จแล้ว (ถ้ามี)
+- [ ] รายการที่ถูก abort ขณะ in-flight → status `cancelled` (แยกจาก `failed`)
+- [ ] ส่ง `signal` ต่อไปยัง `getInvoiceById`/`listInvoiceTransactions` (รองรับอยู่แล้ว)
+- [ ] ชื่อไฟล์ใน ZIP: `invoice_{iv_no}.pdf` หรือ `.xlsx`
+- [ ] ZIP filename pattern: `invoices_export_YYYYMMDD_HHmm.zip`
+- [ ] API error ต่อรายการ → บันทึก `failed` แล้วดำเนินการต่อ
+
+**Verification:**
+- [ ] `npm test -- src/pages/Invoices/export/bulkExport.test.ts`
+  - concurrency จำกัดจริง
+  - partial failure
+  - abort กลางทาง
+  - empty `invoiceIds` → null
+- [ ] Mock `invoicesApiClient` — ไม่ยิง API จริง
+
+**Dependencies:** Task 2, Task 3, Task 1
+
+**Files likely touched:**
+- `src/pages/Invoices/export/bulkExport.ts`
+- `src/pages/Invoices/export/bulkExport.test.ts`
+- `src/pages/Invoices/export/types.ts` (optional — `BulkExportFormat`, progress types)
+
+**Estimated scope:** M
+
+### Checkpoint: Bulk Engine
+
+- [ ] `bulkExport.test.ts` ผ่านทุก case ตาม Spec error handling
+- [ ] สามารถเรียก `runBulkExport` จาก console/test ได้ ZIP จริง (integration smoke ใน test)
+
+---
+
+### Phase 3: UI Integration
+
+## Task 6: `BulkExportModal` — progress, cancel, retry, close
+
+**Description:** Modal แสดง progress bar, รายการผลลัพธ์, ปุ่ม Cancel (abort), Retry failed, Close (clear selection เมื่อสำเร็จ)
+
+**Acceptance criteria:**
+- [ ] แสดง `done/total` และ `iv_no` ปัจจุบัน
+- [ ] รายการ ✓/✗ พร้อม error message สั้นๆ
+- [ ] Cancel ส่ง `AbortSignal` ไป `runBulkExport`
+- [ ] Retry เรียก export เฉพาะ ids ที่ status `failed`/`cancelled` → สร้าง ZIP ชุดใหม่ (ไม่ merge เดิม)
+- [ ] ปิด modal หลังสำเร็จ → callback `onComplete` สำหรับ clear selection
+- [ ] ดาวน์โหลด ZIP อัตโนมัติเมื่อมี blob
+
+**Verification:**
+- [ ] `npm test -- src/pages/Invoices/components/BulkExportModal.test.tsx`
+- [ ] Manual: mock ช้าๆ ดู progress อัปเดต
 
 **Dependencies:** Task 5
 
 **Files likely touched:**
-- `frontend/backoffice/src/pages/PermissionAdmin/MenuCatalogTab.tsx`
-- `frontend/backoffice/src/pages/PermissionAdmin/MenuNodeFormModal.tsx`
-- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
-
-**Estimated scope:** M–L (3–4 files)
-
----
-
-#### Task 7: Role permissions tab — checkbox tree + save + revoke_sessions
-
-**Description:** แท็บ map สิทธิ์ต่อ role (Global only) — เลือก role, ติ๊ก keys จาก registry, บันทึก PUT
-
-**Acceptance criteria:**
-- [ ] Role `Select`: `platform_admin`, `branch_admin`, `staff`
-- [ ] โหลด menus + `GET role-permissions?role=` (unwrap `{ role_permissions }`) → Checkbox tree
-- [ ] **Save** → `PUT .../null/{role}` + `menu_keys` (**ไม่มี If-Match**)
-- [ ] Checkbox **Revoke active sessions** → `revoke_sessions: true` (default off) + คำเตือน
-- [ ] Self-lockout: `permissions:manage` ของ `platform_admin` ติ๊กไม่ได้ถอด — **นับ `permissions:*` เป็นมีสิทธิ์** (disabled + tooltip)
-- [ ] Success message ใช้ `revoked_users_count` จาก response (โชว์จำนวน session ที่ revoke หรือข้อความ staleness)
-- [ ] ไม่เรียก `getMyMenus()` invalidate หลัง save (OQ-4)
-
-**Verification:**
-- [ ] `npm run test -- PermissionAdmin` (mock PUT + checkbox state)
-- [ ] Manual staging: แก้ `branch_admin` → refresh test user → sidebar เปลี่ยน (SC-3)
-
-**Dependencies:** Task 5, Task 6 (reuse tree builder; อาจทำขนานถ้า utils พร้อม)
-
-**Files likely touched:**
-- `frontend/backoffice/src/pages/PermissionAdmin/RolePermissionsTab.tsx`
-- `frontend/backoffice/src/pages/PermissionAdmin/PermissionAdmin.test.tsx`
+- `src/pages/Invoices/components/BulkExportModal.tsx`
+- `src/pages/Invoices/components/BulkExportModal.test.tsx`
 
 **Estimated scope:** M
 
 ---
 
-### Checkpoint: Core Features
+## Task 7: Row selection + `BulkExportBar` + wire-up ใน `index.tsx`
 
-- [ ] US-1 ถึง US-7 ครบตาม Spec user stories (ยกเว้น SC-3 ถ้าไม่มี staging)
-- [ ] `npm run test && npm run build` ผ่าน
-- [ ] Bruno admin smoke ผ่าน (SC-8)
-- [ ] **Human review** ก่อน polish
-
----
-
-### Phase 4: Polish & Gate
-
-#### Task 8: Guard tests + lint/build gate + rollout notes
-
-**Description:** ปิดงานด้วย test coverage ที่เหลือ, อัปเดต ROADMAP status, ยืนยัน quality gate
+**Description:** เพิ่ม checkbox selection (max 50, preserve across pages), floating action bar, เชื่อม modal, gate ด้วย permission
 
 **Acceptance criteria:**
-- [ ] `PermissionGuard.test.tsx` มีเคส `/permissions` ไม่มีสิทธิ์ → redirect `/403` (SC-7)
-- [ ] `npm run test && npm run lint && npm run build` ผ่านทั้งหมด (SC-6)
-- [ ] ROADMAP Phase 6 อัปเดตเป็น "กำลังทำ" / "เสร็จ" ตามสถานะจริง
-- [ ] Rollout checklist ใน Spec ยังใช้ได้ (seed → deploy frontend → smoke)
+- [ ] `rowSelection` บน Table พร้อม `preserveSelectedRowKeys: true`
+- [ ] เลือกเกิน 50 → warning + block เพิ่ม (ใช้ `getCheckboxProps` disable แถวที่ยังไม่เลือกเมื่อครบ 50)
+- [ ] Header select-all cap ที่ 50 รายการแรก แม้ pageSize > 50 (Decisions Q7)
+- [ ] Action bar แสดงเมื่อเลือก ≥ 1: Export PDF, Export Excel, ยกเลิก (clear selection)
+- [ ] ซ่อนปุ่ม Export ใน action bar เมื่อ `usePermission('invoices:read')` เป็น false (Decisions Q4)
+- [ ] ปุ่ม export เปิด `BulkExportModal` พร้อม ids + format
+- [ ] ปิด modal สำเร็จ → clear `selectedRowKeys`
+- [ ] ปุ่ม disabled ขณะ export กำลังทำงาน
 
 **Verification:**
-- [ ] CI-equivalent local: `npm run ci` ถ้ามีใน backoffice
-- [ ] Manual smoke ตาม Rollout section ใน Spec
+- [ ] Manual ตาม Success Criteria ใน SPEC (5 ขั้นตอน)
+- [ ] `npm run build` ผ่าน
 
-**Dependencies:** Task 6, Task 7, Task 4
+**Dependencies:** Task 6
 
 **Files likely touched:**
-- `frontend/backoffice/src/components/PermissionGuard.test.tsx`
-- `backend/auth/_mission-control/ROADMAP.md` (status only)
+- `src/pages/Invoices/components/BulkExportBar.tsx`
+- `src/pages/Invoices/index.tsx`
 
-**Estimated scope:** S
+**Estimated scope:** M
+
+### Checkpoint: Core Features
+
+- [ ] End-to-end: เลือก 2–3 invoice → Export PDF → ได้ ZIP เปิดได้
+- [ ] End-to-end: Export Excel → ZIP มี `.xlsx` แยกไฟล์
+- [ ] Pagination ไม่เคลียร์ selection
+- [ ] Partial failure + retry ทำงาน
 
 ---
+
+### Phase 4: Polish & Documentation
+
+## Task 8: อัปเดตเอกสาร user flow
+
+**Description:** เพิ่ม flow bulk export ใน `docs/sitemap-and-flows.md`
+
+**Acceptance criteria:**
+- [ ] มี section 2.x อธิบาย flow เลือกหลาย invoice → export ZIP
+- [ ] ระบุ permission `invoices:list` + `invoices:read`
+
+**Verification:**
+- [ ] อ่านเอกสารแล้วสอดคล้องกับ UI จริง
+
+**Dependencies:** Task 7
+
+**Files likely touched:**
+- `docs/sitemap-and-flows.md`
+
+**Estimated scope:** XS
+
+---
+
+## Task 9: Final verification & lint
+
+**Description:** รัน test suite ทั้งหมด, lint, build — ยืนยัน Success Criteria ครบ
+
+**Acceptance criteria:**
+- [ ] ครบทุก checkbox ใน SPEC § Success Criteria
+- [ ] `npm test`, `npm run lint`, `npm run build` ผ่าน
+
+**Verification:**
+- [ ] รันคำสั่งทั้งสามใน `frontend/backoffice`
+- [ ] Manual smoke บน `/invoices` (ถ้ามี env เชื่อม API)
+
+**Dependencies:** Task 7, Task 8
+
+**Files likely touched:** (none หรือแก้เล็กน้อยจาก lint)
+
+**Estimated scope:** XS
 
 ### Checkpoint: Complete
 
-- [ ] SC-1 ถึง SC-8 ครบ (หรือบันทึก manual-only items ที่ยังไม่รัน)
-- [ ] พร้อม `/code-build` review หรือ `/review` + `/ship`
+- [ ] SPEC Success Criteria ครบ 8 ข้อ
+- [ ] พร้อม `/code-build` หรือ PR review
 
 ---
 
 ## Risks and Mitigations
 
 | ความเสี่ยง | ผลกระทบ | วิธีรับมือ |
-| :--- | :--- | :--- |
-| Seed ปัจจุบันมี `permissions:manage` ใต้ `staff:profiles` | Med | Task 1 reparent ไป `settings` **ผ่าน seed เท่านั้น** (API block) — รัน seed ก่อน deploy F2 |
-| `If-Match` format ผิด (`W/"..."` vs ISO ดิบ) → 412 ทุกครั้ง | High | Task 3 ส่ง ISO ดิบจาก body; ยืนยันด้วย Bruno PATCH ก่อนทำ UI |
-| ใช้ `extractETag` ผิด (admin ไม่มี ETag header) | High | Task 3 อ่าน `upd_date` จาก body เท่านั้น |
-| Wildcard `permissions:*` ในกฎ self-lockout | Med | Task 7 นับทั้ง `permissions:manage` และ `permissions:*` (สะท้อน backend) |
-| Checkbox tree + wildcard keys (`profiles:*`) | Med | แสดงเฉพาะ keys ใน registry; ไม่ expand wildcard ฝั่ง UI — ส่ง `menu_keys` ตามที่ติ๊ก |
-| Role `support` มีใน seed แต่ไม่อยู่ใน Select | Low | OQ-3 — ไม่แสดงใน UI; mapping ยังอยู่ใน DB |
-| Concurrent edit menu → 412 | Low | map `AUTH_PRECONDITION_FAILED` ใน `apiError` (Task 3 เพิ่มใหม่) |
-| DELETE role ที่มี active users → 409 | Low | UI ถาม confirm แล้วส่ง `?confirm=true` (สะท้อน `AUTH_ROLE_PERMISSION_IN_USE`) |
+|-----------|---------|-----------|
+| Export refactor ทำให้ detail export พัง | สูง | Task 4 + manual verify ก่อน bulk; unit tests บน builders |
+| Browser OOM เมื่อ export 50 ใบ | กลาง | จำกัด 50; สร้าง ZIP ทีละไฟล์; ไม่เก็บ blob ทั้งหมดใน memory นานเกินไป |
+| `jspdf`/`xlsx` ใน test environment | ต่ำ | Mock หรือ assert blob size/type แทน parse เนื้อหา |
+| Ant Design `rowSelection` + controlled pagination | ต่ำ | ใช้ `preserveSelectedRowKeys`; test manual ข้ามหน้า |
+| ไม่มี `@types/jszip` | ต่ำ | `jszip` ship types เอง — ไม่ต้องเพิ่ม `@types` |
+| User มี `invoices:list` แต่ไม่มี `invoices:read` | สูง | ซ่อนปุ่ม export ด้วย `usePermission('invoices:read')` (Task 7) |
+| `doc.save`/`XLSX.writeFile` download ทันที ไม่คืน Blob | สูง | Builder ใช้ `doc.output('blob')` + `XLSX.write({type:'array'})` (Task 2/3) |
+| `xlsx@0.18.5` มี known advisory (prototype pollution/ReDoS) ยังไม่มี fix บน npm | ต่ำ | dependency เดิม ไม่ขยาย attack surface (สร้างไฟล์ ไม่ parse input ภายนอก); ติดตามแยก |
 
-## Open Questions
+---
 
-ไม่มี — Resolved ทั้งหมดใน Spec (OQ-1–5)
+## Parallelization Opportunities
 
-## Parallelization Summary
+| ทำขนานได้ (หลัง Task 2) | ต้องทำตามลำดับ |
+|------------------------|----------------|
+| Task 3 (xlsx) ขนานกับ Task 2 ถ้าแยกคน — แต่ share `sortInvoiceTransactions` ควรทำ Task 2 ก่อน | Task 1 → 2 → 3 → 4 → 5 → 6 → 7 |
+| Task 8 (docs) ขนานกับ Task 9 บางส่วน | Task 6 ต้องรอ Task 5 |
 
-| ขนานได้ | ต้องเรียง |
-| :--- | :--- |
-| Task 4 (Bruno) หลัง Task 3 | Task 1 → 2 → 3 |
-| Task 7 เริ่มได้เมื่อ Task 5 + utils พร้อม (ไม่ต้องรอ Task 6 เสร็จ 100%) | Task 6 ก่อน checkpoint core ถ้าต้องการ US-2 ก่อน US-5 |
+---
+
+## Out of Scope (Phase 1)
+
+- P2: Multi-month generate + async job
+- P3: Bulk Mark PAID / Cancel
+- Select all matching filter across pages
+- Backend export endpoint
+- Permission `invoices:export` ใหม่
+
+---
 
 ## Approval
 
-- [ ] เบียร์อนุมัติ Plan นี้
-- [ ] หลังอนุมัติ → เริ่ม `/code-build` ที่ Task 1
+| Role | Status | Date |
+|------|--------|------|
+| Product / User | ⏳ รออนุมัติ Plan | |
+| Engineering | ⏳ รออนุมัติ Plan | |
+
+**ขั้นถัดไปหลังอนุมัติ:** `/code-build` — ทำทีละ Task ตาม `todo.md`

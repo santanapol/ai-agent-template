@@ -3,6 +3,7 @@ import axios from 'axios';
 import { message } from 'antd';
 import * as api from '../../../lib/invoicesApiClient';
 import { apiErrorMessage } from '../../../lib/apiError';
+import { buildInvoiceEtag } from '../bulk/invoiceEtag';
 import type {
   GenerateInvoicesPayload,
   Invoice,
@@ -118,7 +119,7 @@ export function useInvoices() {
   const updateStatus = useCallback(async (id: string, nextStatus: 'PAID' | 'VOID', successMsg: string, errorMsg: string) => {
     setUpdatingStatus(true);
     try {
-      const etag = invoice?.upd_date ? `W/"${btoa(invoice.upd_date)}"` : undefined;
+      const etag = buildInvoiceEtag(invoice?.upd_date);
       const res = await api.updateInvoiceStatus(id, nextStatus, etag);
       setInvoice(res.data);
       message.success(successMsg);

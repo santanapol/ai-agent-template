@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from '../../types/invoice';
+import type { InvoiceStatus, InvoiceTransaction } from '../../types/invoice';
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return '-';
@@ -48,4 +48,8 @@ export function ribbonColor(status: string): string {
   if (status === 'PENDING') return 'orange';
   if (status === 'ERROR') return 'red';
   return 'blue';
+}
+
+export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): InvoiceTransaction[] {
+  return [...transactions].sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
 }

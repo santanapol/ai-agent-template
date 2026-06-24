@@ -22,13 +22,13 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import type { ColumnsType } from 'antd/es/table';
 import { useInvoices } from './hooks/useInvoices';
-import { formatDate, formatFee, formatMoney, statusTagColor, formatCategoryName } from './utils';
+import { formatDate, formatFee, formatMoney, statusTagColor, formatCategoryName, sortInvoiceTransactions } from './utils';
 import type { InvoiceTransaction } from '../../types/invoice';
+import { buildInvoicePdf } from './export/buildInvoicePdf';
+import { buildInvoiceXlsx } from './export/buildInvoiceXlsx';
+import { triggerBlobDownload } from './export/downloadBlob';
 
 const { Title, Text } = Typography;
 
@@ -54,9 +54,7 @@ const InvoiceDetail: React.FC = () => {
     fetchTransactions(id);
   }, [id, fetchInvoiceDetail, fetchTransactions]);
 
-  const sortedTransactions = React.useMemo(() => {
-    return [...transactions].sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
-  }, [transactions]);
+  const sortedTransactions = React.useMemo(() => sortInvoiceTransactions(transactions), [transactions]);
 
   if (detailLoading) {
     return (
@@ -146,98 +144,14 @@ const InvoiceDetail: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-
-    doc.setFontSize(20);
-    doc.text('INVOICE', 14, 22);
-
-    doc.setFontSize(10);
-    doc.text(`Invoice No: ${invoice.iv_no}`, 14, 32);
-    doc.text(`Billing Month: ${invoice.billing_month || '-'}`, 14, 38);
-
-    doc.text(`Bill To: ${invoice.branch_name || '-'}`, 120, 32);
-    doc.text(
-      `Due Date: ${formatDate(invoice.due_date)}`,
-      120,
-      38,
-    );
-
-    const tableBody = sortedTransactions.map((t) => [
-      t.company_name || '-',
-      formatCategoryName(t.main_category_name),
-      formatMoney(t.bet || 0),
-      formatMoney(t.net_win),
-      formatFee(t.fee),
-      formatMoney(t.amount),
-    ]);
-
-    const totalBet = sortedTransactions.reduce((sum, t) => sum + (t.bet || 0), 0);
-    const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
-    const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
-
-    tableBody.push(['Total', '', formatMoney(totalBet), formatMoney(totalNetWin), '-', formatMoney(totalAmount)]);
-
-    autoTable(doc, {
-      startY: 48,
-      head: [['Game Provider', 'Game Category', 'Bet', 'Net Win', 'Fee (%)', 'Amount']],
-      body: tableBody,
-      theme: 'grid',
-      headStyles: { fillColor: [22, 119, 255] },
-      columnStyles: {
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-      },
-      didParseCell: (data) => {
-        if (data.row.index === tableBody.length - 1) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [240, 240, 240];
-        }
-      },
-    });
-
-    doc.save(`invoice_${invoice.iv_no}.pdf`);
+    const blob = buildInvoicePdf(invoice, sortedTransactions);
+    triggerBlobDownload(blob, `invoice_${invoice.iv_no}.pdf`);
     messageApi.success('PDF exported successfully!');
   };
 
   const handleExportExcel = () => {
-    const wsData: (string | number)[][] = [
-      ['INVOICE'],
-      ['Invoice No:', invoice.iv_no, '', 'Bill To:', invoice.branch_name || '-'],
-      [
-        'Billing Month:',
-        invoice.billing_month || '-',
-        '',
-        'Due Date:',
-        formatDate(invoice.due_date),
-      ],
-      [''],
-      ['Game Provider', 'Game Category', 'Bet', 'Net Win', 'Fee (%)', 'Amount'],
-    ];
-
-    sortedTransactions.forEach((t) => {
-      wsData.push([
-        t.company_name || '-',
-        formatCategoryName(t.main_category_name),
-        t.bet || 0,
-        t.net_win,
-        t.fee === 'N/A' ? 'N/A' : t.fee,
-        t.amount,
-      ]);
-    });
-
-    const totalBet = sortedTransactions.reduce((sum, t) => sum + (t.bet || 0), 0);
-    const totalNetWin = sortedTransactions.reduce((sum, t) => sum + t.net_win, 0);
-    const totalAmount = sortedTransactions.reduce((sum, t) => sum + t.amount, 0);
-    wsData.push(['Total', '', totalBet, totalNetWin, '', totalAmount]);
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
-    XLSX.writeFile(wb, `invoice_${invoice.iv_no}.xlsx`);
+    const blob = buildInvoiceXlsx(invoice, sortedTransactions);
+    triggerBlobDownload(blob, `invoice_${invoice.iv_no}.xlsx`);
     messageApi.success('Excel exported successfully!');
   };
 
