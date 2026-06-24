@@ -1,0 +1,47 @@
+info:
+  name: Create menu node
+  type: http
+  seq: 2
+  tags:
+    - admin
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/admin/menus"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "key": "{{admin_test_menu_key}}",
+        "label": "Bruno SIT test action",
+        "type": "action",
+        "parent_key": "settings",
+        "sort_order": 99
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 || (typeof res.getStatus === 'function' && res.getStatus() === 201)) {
+          var body = typeof res.getBody === 'function' ? res.getBody() : res.body;
+          if (body && body.upd_date) {
+            bru.setEnvVar('menu_upd_date', body.upd_date);
+          }
+          if (body && body.key) {
+            bru.setEnvVar('admin_test_menu_key', body.key);
+          }
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  Creates a disposable action under `settings` for SIT. Re-run safe if key already exists (expect 400). On success captures `menu_upd_date` and `admin_test_menu_key`.

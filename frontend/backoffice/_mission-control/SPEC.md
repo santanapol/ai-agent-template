@@ -12,6 +12,7 @@
 3. **icon และ route path เป็นของ frontend** — map จาก `key` ในโค้ด (ตามที่เคาะใน auth SPEC: Resolved Question 4)
 4. ผังเมนูกลาง (`auth_menus`) จะถูกขยายให้ครอบเมนูปัจจุบันทั้งหมดของ Backoffice — เป็น **data dependency ฝั่ง auth** (แก้ `scripts/seed-data/permissions.js` + รัน seed ก่อน deploy frontend) ตามร่าง catalog ใน Resolved Questions ข้อ 1
 5. หน้า 403/404/Login/My Profile ไม่ผูกกับ permission (ทุกคนที่ login แล้วเข้าได้)
+6. **Menu refresh timing:** เรียก `getMyMenus()` ครั้งแรกหลังจาก login/restore session สำเร็จ, cache ใน AuthContext; refresh เมนูใหม่เมื่อ `POST /auth/refresh` สำเร็จ (permissions อาจเปลี่ยน). ไม่ต้อง auto-detect เมื่อ admin เปลี่ยน permission ใน tab อื่น (staleness เป็นเจตนา — ต้อง refresh token ก่อน)
 
 ---
 
@@ -42,15 +43,28 @@
 
 ```
 frontend/backoffice/src/
+  types/
+    auth.ts                   ← [MODIFY] TokenResponse + permissions: string[]; เพิ่ม MenuNode
+    # MenuNode interface:
+    #   interface MenuNode {
+    #     key: string
+    #     label: string
+    #     type: 'menu' | 'action'
+    #     parent_key: string | null
+    #     sort_order: number
+    #   }
+  
   lib/
-    permissionMatch.ts          ← [NEW] TS port ของ contract (exact + domain:*) + contract tests
-    authApiClient.ts            ← [MODIFY] เพิ่ม getMyMenus(); TokenResponse ใช้ type ที่มี permissions
-  types/auth.ts                 ← [MODIFY] TokenResponse + permissions: string[]; เพิ่ม MenuNode
-  contexts/AuthContext.tsx      ← [MODIFY] เก็บ permissions จาก response body (login/refresh) + expose ผ่าน context
-  hooks/usePermission.ts        ← [NEW] usePermission(actionKey): boolean
-  components/PermissionGuard.tsx← [NEW] route guard จาก permission (แทน RoleGuard)
-  layouts/AdminLayout.tsx       ← [MODIFY] menuItems จาก GET /auth/me/menus + ICON_MAP/ROUTE_MAP
-  App.tsx                       ← [MODIFY] เปลี่ยน RoleGuard → PermissionGuard ที่ /staff
+    permissionMatch.ts        ← [NEW] TS port ของ contract (exact + domain:*) + contract tests
+    authApiClient.ts          ← [MODIFY] เพิ่ม getMyMenus(): Promise<MenuNode[]>; TokenResponse มี permissions: string[]
+  
+  contexts/AuthContext.tsx    ← [MODIFY] เก็บ permissions + menus จาก response body (login/refresh/getMyMenus)
+  hooks/usePermission.ts      ← [NEW] usePermission(actionKey): boolean
+  
+  components/PermissionGuard.tsx ← [NEW] route guard จาก permission (แทน RoleGuard)
+  layouts/AdminLayout.tsx     ← [MODIFY] render menus จาก GET /auth/me/menus + MENU_UI map; tree assembly logic
+  
+  App.tsx                     ← [MODIFY] เปลี่ยน RoleGuard → PermissionGuard ที่ /staff
 ```
 
 ## Code Style
@@ -71,11 +85,23 @@ export function anyPermissionMatches(
 
 ```typescript
 // AdminLayout.tsx — โหนดที่ไม่มีใน map = ไม่ render (กัน key ใหม่จาก DB พังเมนู)
-const MENU_UI: Record<string, { icon: ReactNode; route?: string }> = {
-  dashboard: { icon: <DashboardOutlined />, route: '/' },
+interface MenuItemUI {
+  icon: ReactNode
+  route?: string  // undefined = menu group (no route)
+  disabled?: boolean
+}
+
+const MENU_UI: Record<string, MenuItemUI> = {
+  'dashboard': { icon: <DashboardOutlined />, route: '/' },
+  'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
   'staff': { icon: <TeamOutlined /> },                 // โหนด menu = กลุ่ม ไม่มี route
   'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
-  // ...
+  'billing': { icon: <DollarOutlined /> },              // group
+  'agents:list': { icon: <ShopOutlined />, route: '/agents' },
+  'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
+  'reports': { icon: <CodeOutlined /> },               // group
+  'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
+  'my_profile': { icon: <UserOutlined />, route: '/profile' }
 }
 ```
 
@@ -95,16 +121,56 @@ const canCreate = usePermission('profiles:create')
 
 ### พฤติกรรมเมื่อ `getMyMenus` ล้มเหลว (network/5xx)
 
-แสดงเมนูขั้นต่ำที่ไม่ผูก permission (Dashboard, My Profile) + ข้อความ "เมนูบางส่วนไม่พร้อมใช้งาน" — **ห้าม fallback ไปเมนูเต็มแบบ hardcode** (จะกลายเป็นช่องให้เห็นเมนูที่ไม่มีสิทธิ์)
+แสดงเมนูขั้นต่ำที่ไม่ผูก permission:
+```typescript
+const minimalMenuItems: MenuNode[] = [
+  { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+  { key: 'my_profile', label: 'My Profile', type: 'action', parent_key: null, sort_order: 100 }
+]
+```
+
+**UX Alert Banner สำหรับ Fallback:**
+เมื่อการดึงเมนูผิดพลาด (มีค่า `menuError` เป็น `true`) จะแสดงผล Alert สีส้มเตือนด้านบนสุดของ Content Layout ใน `AdminLayout.tsx` เพื่อให้สอดคล้องกับหน้าจออื่นๆ:
+```typescript
+import { Alert } from 'antd';
+
+// ส่วนแสดงผลใน Layout Content
+{menuError && (
+  <Alert
+    message="System warning"
+    description="Some menu items are temporarily unavailable. Please try refreshing the page or logging in again."
+    type="warning"
+    showIcon
+    closable
+    style={{ marginBottom: token.marginLG, borderRadius: token.borderRadius }}
+  />
+)}
+```
+
+**ห้าม fallback ไปเมนูเต็มแบบ hardcode** (จะกลายเป็นช่องให้เห็นเมนูที่ไม่มีสิทธิ์)
+
+**Retry strategy:** Fail immediately (no retry) → show minimal menu. If users need full menu they must refresh page/token.
 
 ## Testing Strategy
 
 Vitest (โครงเดิม `src/**/*.test.ts`):
 
-1. **Contract test (`permissionMatch.test.ts`)**: ชุดเดียวกับ `backend/auth/test/permission-match.test.js` ทุกเคส
-2. **Unit**: `usePermission` (มี/ไม่มี/wildcard); ประกอบ tree จาก flat list + เรียง `sort_order`; โหนดที่ไม่อยู่ใน `MENU_UI` ถูกข้าม
-3. **Component**: `PermissionGuard` — มีสิทธิ์ render ลูก / ไม่มี → redirect `/403`; AuthContext เก็บ `permissions` จาก login และอัปเดตเมื่อ refresh
-4. `npm run build` ผ่าน (typecheck เข้ม — `TokenResponse` ที่เพิ่มฟิลด์ต้องไม่ทำ type พังที่อื่น)
+1. **Contract test (`permissionMatch.test.ts`)**: ชุดเดียวกับ `backend/auth/test/permission-match.test.js` ทุกเคส (exact, wildcard, cross-domain, null/undefined)
+2. **Unit tests**:
+   - `usePermission(actionKey)`: true/false ตาม permissions array + wildcard matching
+   - **Tree assembly**: flat list + parent_key pointers → nested tree structure (via AdminLayout)
+     - Input: `[{key:'staff', parent_key:null}, {key:'profiles:list', parent_key:'staff'}]`
+     - Output: tree with `staff.children = [{key: 'profiles:list'}]`
+   - Menu filtering: โหนดที่ไม่อยู่ใน `MENU_UI` ถูกข้าม (return undefined)
+   - Sorting: เรียงตาม `sort_order` ภายในแต่ละ level
+3. **Component test (`PermissionGuard.test.ts`)**:
+   - มี permission → render children
+   - ไม่มี permission → redirect to `/403`
+4. **Integration test (`AuthContext.test.ts`)**:
+   - login response (มี `permissions`) → ต้องบันทึกใน AuthContext
+   - refresh response (มี `permissions` อัปเดต) → อัปเดต AuthContext
+   - getMyMenus API response → update menu state
+5. **Build verification**: `npm run build` ผ่าน typecheck (TypeScript strict mode — `TokenResponse` ต้องเข้ากับ login/refresh callers)
 
 ## Boundaries
 
@@ -130,16 +196,38 @@ Vitest (โครงเดิม `src/**/*.test.ts`):
 
 ## Resolved Questions
 
-1. **Seed catalog** — draft จากเมนู/route guard จริงแล้วรีวิวผ่าน data-only PR ฝั่ง auth (ไม่ต้องรอ process แยก) ร่างที่เคาะ:
+1. **Seed catalog** — Finalized in Phase 1 (auth service). ต้องรัน `scripts/seed-permissions.js` ก่อน deploy frontend. Full catalog:
 
    ```
-   dashboard:view                          (root action — ทุก role)
-   billing (menu) ├─ agents:list, agents:fees
-                  └─ invoices:list, invoices:read
-   reports (menu) └─ reports:smart
-   staff (มีอยู่แล้วจาก phase auth)
+   dashboard:view                (root action — ทุก role)
+   
+   staff (menu)                  [already in Phase 1 seed]
+   ├─ profiles:list              (action)
+   ├─ profiles:create            (action)
+   └─ profiles:edit              (action)
+   
+   roles:assign                  (standalone action — domain separate from profiles:*)
+   
+   billing (menu)                [NEW in frontend catalog extension]
+   ├─ agents:list                (action)
+   ├─ agents:fees                (action)
+   ├─ invoices:list              (action)
+   └─ invoices:read              (action)
+   
+   reports (menu)                [NEW in frontend catalog extension]
+   └─ reports:smart              (action)
    ```
 
-   **Label ใช้ภาษาอังกฤษตรงกับ UI ปัจจุบัน** ("Dashboard", "Invoices", ...) — งานนี้ต้อง behavior-preserving ห้ามเปลี่ยน UX ปนมา (อยากเปลี่ยนเป็นไทยค่อยแก้ data ทีหลัง ไม่ต้อง deploy)
+   **Implementation order:**
+   - Phase 1 seed: `dashboard:view`, `staff/*`, `roles:assign` (done ✓)
+   - Phase 4 pre-merge: Frontend team adds `billing/*`, `reports:*` to auth seed (data-only PR)
+   - Phase 4 deploy: Run seed script on production, then deploy frontend
+   
+   **Label conventions**: Use English labels matching current Backoffice UI ("Dashboard", "Staff", "Invoices", ...) — behavior-preserving, no UX change. Thai labels can be added later via data-only change.
 
-2. **Rollout** — ใช้ทาง (ก): เมนูทั้งหมดจาก API ในคราวเดียว — hybrid สร้างสอง source of truth ซึ่งคือสภาพที่กำลังกำจัด; เงื่อนไขคือ seed catalog ต้อง merge + รันก่อน deploy frontend และตรวจเมนูครบบน staging ก่อนปล่อย
+2. **Rollout** — Strategy (ก): All menus from API in one pass (no hybrid fallback). Prerequisites:
+   - ✅ Phase 1 seed merged + running (dashboard:view, staff/*, roles:assign)
+   - ✅ `billing/*` and `reports:*` keys added to Phase 1 seed (data-only PR)
+   - ✅ Seed script run on production **before** deploying frontend code
+   - ✅ Staging validation: all menus render, permission changes reflected on token refresh
+   - ✅ Rollback plan: revert to phase 1 seed (staff-only menus) until frontend fix ready

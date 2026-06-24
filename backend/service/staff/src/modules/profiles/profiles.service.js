@@ -18,6 +18,13 @@ import { anyPermissionMatches } from "../../lib/permission-match.js";
 export const ADMIN_ROLES = Object.freeze([
   "platform_admin",
   "branch_admin",
+  "support_admin",
+  "support",
+]);
+
+const OU_WIDE_STAFF_ROLES = new Set([
+  "platform_admin",
+  "support_admin",
   "support",
 ]);
 
@@ -42,11 +49,12 @@ export function isAdminRole(role) {
  * @param {string} actionKey
  * @param {object} [options]
  * @param {function} [options.legacyRoleCheck]
+ * @param {{ warn?: function }} [options.log] - optional request-scoped logger; falls back to module-level logger
  */
 export function assertPermission(
   userContext,
   actionKey,
-  { legacyRoleCheck } = {},
+  { legacyRoleCheck, log } = {},
 ) {
   if (anyPermissionMatches(userContext.permissions, actionKey)) {
     return;
@@ -55,7 +63,8 @@ export function assertPermission(
   const env = getRuntimeEnv();
   const mode = env.permissionMode || "dual";
   if (mode === "dual" && legacyRoleCheck?.(userContext)) {
-    logger.warn(
+    const effectiveLog = log ?? logger;
+    effectiveLog.warn(
       { action_key: actionKey, role: userContext.role },
       "permission dual-check fallback used",
     );
@@ -72,18 +81,20 @@ export function assertPermission(
 /**
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export function assertAdminRole(userContext) {
+export function assertAdminRole(userContext, { log } = {}) {
   assertPermission(userContext, "profiles:create", {
     legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+    log,
   });
 }
 
 /**
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export function assertPlatformAdmin(userContext) {
+export function assertPlatformAdmin(userContext, { log } = {}) {
   assertPermission(userContext, "roles:assign", {
     legacyRoleCheck: (ctx) => ctx.role === "platform_admin",
+    log,
   });
 }
 
@@ -132,9 +143,10 @@ export function tenantContextFromAuthUser(authUser, actorUserId) {
  * @param {{ branch_id?: string }} [query]
  * @returns {{ ouId: string, branchId?: string }}
  */
-export function resolveListScope(userContext, query = {}) {
+export function resolveListScope(userContext, query = {}, { log } = {}) {
   assertPermission(userContext, "profiles:list", {
     legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+    log,
   });
 
   const scope = { ouId: userContext.ouId };
@@ -165,7 +177,7 @@ export function resolveListScope(userContext, query = {}) {
  * @param {string} targetUserId
  * @returns {{ ouId: string, branchId?: string }}
  */
-export function resolveLookupScope(userContext, targetUserId) {
+export function resolveLookupScope(userContext, targetUserId, { log } = {}) {
   if (targetUserId === userContext.userId) {
     return {
       ouId: userContext.ouId,
@@ -175,9 +187,10 @@ export function resolveLookupScope(userContext, targetUserId) {
 
   assertPermission(userContext, "profiles:lookup", {
     legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+    log,
   });
 
-  if (userContext.role === "platform_admin" || userContext.role === "support") {
+  if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
     return { ouId: userContext.ouId };
   }
 
@@ -191,8 +204,14 @@ export function resolveLookupScope(userContext, targetUserId) {
  * Assert caller may access a profile document (API shape).
  * @param {{ user_id: string, ou_id: string, branch_id: string }} profile
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
+ * @param {string} actionKey The required permission action key
  */
-export function assertProfileScope(profile, userContext, actionKey) {
+export function assertProfileScope(
+  profile,
+  userContext,
+  actionKey,
+  { log } = {},
+) {
   if (profile.user_id === userContext.userId) {
     if (
       profile.ou_id !== userContext.ouId ||
@@ -209,6 +228,7 @@ export function assertProfileScope(profile, userContext, actionKey) {
 
   assertPermission(userContext, actionKey, {
     legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+    log,
   });
 
   if (profile.ou_id !== userContext.ouId) {
@@ -257,7 +277,7 @@ export function assertLookupQueryExclusive(query) {
  * @returns {{ ouId: string, branchId?: string }}
  */
 export function resolveGetByIdScope(userContext) {
-  if (userContext.role === "platform_admin" || userContext.role === "support") {
+  if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
     return { ouId: userContext.ouId };
   }
 
@@ -271,7 +291,7 @@ export function resolveGetByIdScope(userContext) {
  * @param {string} profileId
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export async function getProfileById(profileId, userContext) {
+export async function getProfileById(profileId, userContext, { log } = {}) {
   const scope = resolveGetByIdScope(userContext);
   const found = await repository.findById(profileId, scope);
 
@@ -283,7 +303,7 @@ export async function getProfileById(profileId, userContext) {
     );
   }
 
-  assertProfileScope(found.profile, userContext, "profiles:read");
+  assertProfileScope(found.profile, userContext, "profiles:read", { log });
   return found;
 }
 
@@ -291,8 +311,12 @@ export async function getProfileById(profileId, userContext) {
  * @param {string} targetUserId
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export async function lookupProfileByUserId(targetUserId, userContext) {
-  const scope = resolveLookupScope(userContext, targetUserId);
+export async function lookupProfileByUserId(
+  targetUserId,
+  userContext,
+  { log } = {},
+) {
+  const scope = resolveLookupScope(userContext, targetUserId, { log });
   const found = await repository.findByUserId(targetUserId, scope);
 
   if (!found) {
@@ -303,7 +327,7 @@ export async function lookupProfileByUserId(targetUserId, userContext) {
     );
   }
 
-  assertProfileScope(found.profile, userContext, "profiles:read");
+  assertProfileScope(found.profile, userContext, "profiles:read", { log });
   return found;
 }
 
@@ -326,11 +350,15 @@ function normalizeListQuery(query) {
  * @param {Record<string, unknown>} query
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export async function listProfiles(query, userContext) {
+export async function listProfiles(query, userContext, { log } = {}) {
   const normalized = normalizeListQuery(query);
-  const scope = resolveListScope(userContext, {
-    branch_id: normalized.branch_id,
-  });
+  const scope = resolveListScope(
+    userContext,
+    {
+      branch_id: normalized.branch_id,
+    },
+    { log },
+  );
 
   try {
     return await repository.listProfiles(normalized, scope);
@@ -347,8 +375,13 @@ export async function listProfiles(query, userContext) {
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  * @param {string} routeTemplate
  */
-export async function createProfile(body, userContext, routeTemplate) {
-  assertAdminRole(userContext);
+export async function createProfile(
+  body,
+  userContext,
+  routeTemplate,
+  { log } = {},
+) {
+  assertAdminRole(userContext, { log });
 
   if (body.user_id) {
     return createProfileLinked(body, userContext, routeTemplate);
@@ -603,6 +636,7 @@ export async function patchProfile(
   ifMatchHeader,
   userContext,
   routeTemplate,
+  { log } = {},
 ) {
   assertPatchBodyAllowed(body);
 
@@ -618,7 +652,7 @@ export async function patchProfile(
     );
   }
 
-  assertProfileScope(existing.profile, userContext, "profiles:edit");
+  assertProfileScope(existing.profile, userContext, "profiles:edit", { log });
 
   const patchBody = { ...body };
   const isOwnProfile = existing.profile.user_id === userContext.userId;
@@ -735,11 +769,12 @@ function parseIfMatchHeader(ifMatchHeader) {
  * @param {{ user_id: string }} profile
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  */
-export function assertAdminLifecycleAccess(profile, userContext, actionKey) {
-  assertPermission(userContext, actionKey, {
-    legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
-  });
-
+export function assertAdminLifecycleAccess(
+  profile,
+  userContext,
+  actionKey,
+  { log } = {},
+) {
   if (profile.user_id === userContext.userId) {
     throw new HttpError(
       403,
@@ -748,7 +783,7 @@ export function assertAdminLifecycleAccess(profile, userContext, actionKey) {
     );
   }
 
-  assertProfileScope(profile, userContext, actionKey);
+  assertProfileScope(profile, userContext, actionKey, { log });
 }
 
 /**
@@ -763,9 +798,9 @@ async function transitionProfileStatus({
   nextStatus,
   eventType,
   invalidTransitionMessage,
+  actionKey,
+  log,
 }) {
-  assertAdminRole(userContext);
-
   const ifMatchDate = parseIfMatchHeader(ifMatchHeader);
   const scope = resolveGetByIdScope(userContext);
   const existing = await repository.findById(profileId, scope);
@@ -778,7 +813,7 @@ async function transitionProfileStatus({
     );
   }
 
-  assertAdminLifecycleAccess(existing.profile, userContext, "profiles:edit");
+  assertAdminLifecycleAccess(existing.profile, userContext, actionKey, { log });
 
   if (existing.profile.status !== expectedStatus) {
     throw new HttpError(400, CODES.INVALID_PARAM, invalidTransitionMessage);
@@ -850,6 +885,7 @@ export async function archiveProfile(
   userContext,
   routeTemplate,
   requestId,
+  { log } = {},
 ) {
   const result = await transitionProfileStatus({
     profileId,
@@ -859,7 +895,9 @@ export async function archiveProfile(
     expectedStatus: "active",
     nextStatus: "archived",
     eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_ARCHIVE,
-    invalidTransitionMessage: "Profile is already archived",
+    invalidTransitionMessage: "Only active profiles can be archived",
+    actionKey: "profiles:edit",
+    log,
   });
 
   const env = getRuntimeEnv();
@@ -900,6 +938,7 @@ export async function restoreProfile(
   ifMatchHeader,
   userContext,
   routeTemplate,
+  { log } = {},
 ) {
   return transitionProfileStatus({
     profileId,
@@ -909,7 +948,9 @@ export async function restoreProfile(
     expectedStatus: "archived",
     nextStatus: "active",
     eventType: STAFF_AUDIT_EVENT_TYPES.PROFILE_RESTORE,
-    invalidTransitionMessage: "Profile is not archived",
+    invalidTransitionMessage: "Profile is already active",
+    actionKey: "profiles:edit",
+    log,
   });
 }
 
@@ -926,6 +967,7 @@ export async function resetProfilePassword(
   userContext,
   routeTemplate,
   requestId,
+  { log } = {},
 ) {
   const scope = resolveGetByIdScope(userContext);
   const existing = await repository.findById(profileId, scope);
@@ -938,7 +980,9 @@ export async function resetProfilePassword(
     );
   }
 
-  assertAdminLifecycleAccess(existing.profile, userContext, "profiles:edit");
+  assertAdminLifecycleAccess(existing.profile, userContext, "profiles:edit", {
+    log,
+  });
 
   const env = getRuntimeEnv();
   const authClient = getAuthInternalClient(env);
@@ -965,8 +1009,9 @@ export async function changeProfileRole(
   userContext,
   routeTemplate,
   requestId,
+  { log } = {},
 ) {
-  assertPlatformAdmin(userContext);
+  assertPlatformAdmin(userContext, { log });
 
   const scope = resolveGetByIdScope(userContext);
   const existing = await repository.findById(profileId, scope);

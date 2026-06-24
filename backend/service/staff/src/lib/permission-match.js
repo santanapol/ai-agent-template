@@ -1,3 +1,7 @@
+/**
+ * WARNING: This file is a mirror of backend/auth/src/lib/permission-match.js.
+ * Always sync changes with the canonical version in backend/auth.
+ */
 const WILDCARD_SUFFIX = ":*";
 
 /** @param {unknown} entry */

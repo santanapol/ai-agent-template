@@ -96,6 +96,8 @@ describe("profiles RBAC / scope", () => {
   test("isAdminRole identifies admin roles", () => {
     assert.strictEqual(isAdminRole("platform_admin"), true);
     assert.strictEqual(isAdminRole("branch_admin"), true);
+    assert.strictEqual(isAdminRole("support_admin"), true);
+    assert.strictEqual(isAdminRole("support"), true);
     assert.strictEqual(isAdminRole("staff"), false);
   });
 

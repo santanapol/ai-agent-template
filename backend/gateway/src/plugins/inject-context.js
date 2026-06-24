@@ -5,8 +5,7 @@ import {
   normalizeRoleHeader,
   normalizeUserIdClaim,
   normalizeTenantClaim,
-  normalizePermissionsClaim,
-  assertValidPermissionsHeader
+  normalizePermissionsClaim
 } from '../lib/claims.js'
 
 /**
@@ -27,21 +26,6 @@ export default fp(
         return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED')
       }
 
-      const clientProvidedPermissionsCount = (request.raw.rawHeaders || []).reduce(
-        (count, name, idx) => {
-          return idx % 2 === 0 && String(name).toLowerCase() === 'x-user-permissions'
-            ? count + 1
-            : count
-        },
-        0
-      )
-
-      if (clientProvidedPermissionsCount > 1) {
-        return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED', {
-          detail: 'Duplicate header not allowed: x-user-permissions.'
-        })
-      }
-
       let userId
       let role
       let ouId
@@ -55,8 +39,11 @@ export default fp(
         ouId = normalizeTenantClaim(payload[env.JWT_CLAIM_OU])
         branchId = normalizeTenantClaim(payload[env.JWT_CLAIM_BRANCH])
         permissions = normalizePermissionsClaim(payload.permissions)
-        assertValidPermissionsHeader(permissions)
-      } catch {
+      } catch (err) {
+        request.log.debug(
+          { claimRejectReason: err?.message },
+          'claim normalization or validation failed'
+        )
         return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
       }
 
@@ -68,12 +55,6 @@ export default fp(
       }
 
       const requestId = String(request.id)
-      const incomingIfMatch = request.headers['if-match']
-      const ifMatch =
-        typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== ''
-          ? incomingIfMatch.trim()
-          : ''
-
       request.gatewayUpstreamHeaders = {
         'x-gateway-secret': env.GATEWAY_SECRET,
         'x-user-ou': ouId,
@@ -83,7 +64,11 @@ export default fp(
         'x-user-permissions': permissions,
         'x-request-id': requestId
       }
-      if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
+
+      const incomingIfMatch = request.headers['if-match']
+      if (typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== '') {
+        request.gatewayUpstreamHeaders['if-match'] = incomingIfMatch.trim()
+      }
     })
   },
   { name: 'gateway-inject-context' }

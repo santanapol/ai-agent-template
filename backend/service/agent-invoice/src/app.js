@@ -9,6 +9,7 @@ import agentFeesRoute from "./modules/agent-fees/agent-fees.route.js";
 import masterDataRoute from "./modules/agent-fees/master-data.route.js";
 import agentsRoute from "./modules/agents/agents.route.js";
 import invoicesRoute from "./modules/invoices/agent-invoices.route.js";
+import userContextPlugin from "./plugins/user-context.js";
 import { pingInvoiceDatabase } from "./config/database-invoice.js";
 import { pingReadDatabase } from "./config/database-read.js";
 
@@ -26,6 +27,7 @@ const CRITICAL_HEADERS = [
   "x-user-branch",
   "x-user-id",
   "x-user-role",
+  "x-user-permissions",
 ];
 
 export default async function buildApp(opts = {}) {
@@ -113,6 +115,7 @@ export default async function buildApp(opts = {}) {
   await app.register(mongodbRead);
   await app.register(mongodbInvoice);
   await app.register(apiRateLimit);
+  await app.register(userContextPlugin);
 
   // Health probes
   app.get("/healthz", async () => ({

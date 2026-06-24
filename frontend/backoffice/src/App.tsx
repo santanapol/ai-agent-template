@@ -3,6 +3,7 @@ import { App as AntApp, ConfigProvider, Spin } from 'antd';
 import enUS from 'antd/locale/en_US';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
+import { PermissionGuard } from './components/PermissionGuard';
 import Dashboard from './pages/Dashboard';
 import StaffManagement from './pages/StaffManagement';
 import MyProfile from './pages/MyProfile';
@@ -12,6 +13,7 @@ import AgentsList from './pages/Agents';
 import AgentFeesPage from './pages/AgentFees';
 import Login from './pages/Login';
 import SmartReport from './pages/SmartReport';
+import PermissionAdmin from './pages/PermissionAdmin';
 import Error403 from './pages/Error403';
 
 import Error404 from './pages/Error404';
@@ -39,15 +41,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const RoleGuard: React.FC<{ allowedRoles: string[]; children: React.ReactNode }> = ({
-  allowedRoles,
-  children,
-}) => {
-  const { user, loading } = useAuth();
-  if (loading) return <Spin size="large" fullscreen />;
-  if (!user || !allowedRoles.includes(user.role)) return <Navigate to="/403" replace />;
-  return <>{children}</>;
-};
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -60,21 +53,78 @@ const router = createBrowserRouter([
     ),
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'profile', element: <MyProfile /> },
-      { path: 'invoices', element: <InvoiceList /> },
-      { path: 'invoices/:id', element: <InvoiceDetail /> },
-      { path: 'agents', element: <AgentsList /> },
-      { path: 'agents/:id/fees', element: <AgentFeesPage /> },
+      {
+        index: true,
+        element: (
+          <PermissionGuard required="dashboard:view">
+            <Dashboard />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <PermissionGuard required="my_profile">
+            <MyProfile />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'invoices',
+        element: (
+          <PermissionGuard required="invoices:list">
+            <InvoiceList />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'invoices/:id',
+        element: (
+          <PermissionGuard required="invoices:read">
+            <InvoiceDetail />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'agents',
+        element: (
+          <PermissionGuard required="agents:list">
+            <AgentsList />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'agents/:id/fees',
+        element: (
+          <PermissionGuard required="agents:fees">
+            <AgentFeesPage />
+          </PermissionGuard>
+        ),
+      },
       {
         path: 'staff',
         element: (
-          <RoleGuard allowedRoles={['platform_admin', 'branch_admin']}>
+          <PermissionGuard required="profiles:list">
             <StaffManagement />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
-      { path: 'smart-reports', element: <SmartReport /> },
+      {
+        path: 'smart-reports',
+        element: (
+          <PermissionGuard required="reports:smart">
+            <SmartReport />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'permissions',
+        element: (
+          <PermissionGuard required="permissions:manage">
+            <PermissionAdmin />
+          </PermissionGuard>
+        ),
+      },
       { path: '403', element: <Error403 /> },
 
       { path: '500', element: <Error500 /> },

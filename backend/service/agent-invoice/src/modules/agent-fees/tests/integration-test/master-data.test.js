@@ -1,16 +1,15 @@
 import test from "node:test";
 import assert from "node:assert";
 import buildApp from "../../../../app.js";
+import { buildMeshHeaders } from "../../../../lib/test-helpers/mesh-headers.js";
 
 test("Master Data API - Game Companies and Categories", async (t) => {
   const app = await buildApp();
-  const validHeaders = {
-    "x-gateway-secret": process.env.GATEWAY_SECRET || "change-me",
-    "x-user-ou": "665a3d76b1e5f8b9e6f2b9b1",
-    "x-user-branch": "665a3d76b1e5f8b9e6f2b9c1",
-    "x-user-id": "test_master_data_user",
-    "x-user-role": "admin",
-  };
+  const validHeaders = buildMeshHeaders({
+    userId: "test_master_data_user",
+    role: "admin",
+    permissions: "agents:fees",
+  });
 
   t.after(async () => {
     await app.close();

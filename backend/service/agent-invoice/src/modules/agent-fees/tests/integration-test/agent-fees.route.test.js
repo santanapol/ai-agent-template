@@ -1,6 +1,7 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
 import buildApp from "../../../../app.js";
+import { buildMeshHeaders } from "../../../../lib/test-helpers/mesh-headers.js";
 import { ObjectId } from "mongodb";
 
 describe("Agent Fees API Integration Tests", () => {
@@ -12,13 +13,13 @@ describe("Agent Fees API Integration Tests", () => {
   let createdFeeId;
   let currentEtag;
 
-  const baseHeaders = {
-    "x-gateway-secret": process.env.GATEWAY_SECRET || "change-me",
-    "x-user-ou": ouId,
-    "x-user-branch": branchId,
-    "x-user-id": mockUserId,
-    "x-user-role": "admin",
-  };
+  const baseHeaders = buildMeshHeaders({
+    ouId,
+    branchId,
+    userId: mockUserId,
+    role: "admin",
+    permissions: "agents:fees,agents:*",
+  });
 
   before(async () => {
     app = await buildApp({ logger: false });

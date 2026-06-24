@@ -1,0 +1,21 @@
+info:
+  name: admin
+  type: folder
+  seq: 2
+
+request:
+  auth:
+    type: bearer
+    token: "{{access_token}}"
+
+docs: |
+  Permission Admin API (`/auth/admin/*`) — requires `permissions:manage`.
+
+  **Prerequisites:** Run `auth/Login` first with a **platform_admin** user.
+  Copy `environments/Local.yml.example` → `environments/Local.yml` and set `username`, `password`, and IDs for your local stack. `access_token` is captured automatically by Login.
+
+  **If-Match:** Only `menus` PATCH/DELETE — value is raw ISO `upd_date` from response body (not `W/"..."`). Use `List menus` or `Create menu node` to populate `{{menu_upd_date}}`.
+
+  **SC-8 smoke (CLI):** `backend/_bruno/auth/admin/smoke-admin-api.sh` — login + 7 admin ops + stale If-Match 412 check. Requires `AUTH_SMOKE_USERNAME` / `AUTH_SMOKE_PASSWORD` and running auth (`seed-permissions.js` first).
+
+  **Role tests:** `admin_test_role` defaults to `platform_admin` in the example environment.

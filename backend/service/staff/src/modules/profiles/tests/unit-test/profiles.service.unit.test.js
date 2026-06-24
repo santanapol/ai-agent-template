@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, mock, afterEach } from "node:test";
 import assert from "node:assert";
 import { ObjectId } from "mongodb";
 
@@ -12,7 +12,13 @@ import {
   resolveGetByIdScope,
   assertAdminLifecycleAccess,
   assertPatchBodyAllowed,
+  assertPermission,
 } from "../../profiles.service.js";
+import logger from "../../../../config/logger.js";
+import {
+  setRuntimeEnv,
+  resetRuntimeEnvForTests,
+} from "../../../../config/runtime-env.js";
 
 const ouA = "507f1f77bcf86cd799439011";
 const branchA1 = "507f1f77bcf86cd799439012";
@@ -48,6 +54,13 @@ const supportUser = {
   role: "support",
 };
 
+const supportAdminUser = {
+  userId: userSelf,
+  ouId: ouA,
+  branchId: branchA1,
+  role: "support_admin",
+};
+
 describe("assertAdminRole", () => {
   test("does not throw for platform_admin", () => {
     assert.doesNotThrow(() => assertAdminRole(platformAdmin));
@@ -71,6 +84,10 @@ describe("assertAdminRole", () => {
 
   test("does not throw for support", () => {
     assert.doesNotThrow(() => assertAdminRole(supportUser));
+  });
+
+  test("does not throw for support_admin", () => {
+    assert.doesNotThrow(() => assertAdminRole(supportAdminUser));
   });
 });
 
@@ -198,6 +215,12 @@ describe("resolveGetByIdScope", () => {
 
   test("support gets OU-wide scope (no branchId)", () => {
     const scope = resolveGetByIdScope(supportUser);
+    assert.strictEqual(scope.ouId, ouA);
+    assert.strictEqual(scope.branchId, undefined);
+  });
+
+  test("support_admin gets OU-wide scope (no branchId)", () => {
+    const scope = resolveGetByIdScope(supportAdminUser);
     assert.strictEqual(scope.ouId, ouA);
     assert.strictEqual(scope.branchId, undefined);
   });
@@ -350,5 +373,46 @@ describe("assertPatchBodyAllowed", () => {
 
   test("does not throw for empty body", () => {
     assert.doesNotThrow(() => assertPatchBodyAllowed({}));
+  });
+});
+
+describe("assertPermission", () => {
+  afterEach(() => {
+    resetRuntimeEnvForTests();
+  });
+
+  test("logs warning and does not throw in dual mode with valid legacy role", () => {
+    setRuntimeEnv({ permissionMode: "dual" });
+    const warnMock = mock.method(logger, "warn", () => {});
+
+    assert.doesNotThrow(() =>
+      assertPermission(platformAdmin, "some:action", {
+        legacyRoleCheck: (ctx) => ctx.role === "platform_admin",
+      }),
+    );
+
+    assert.strictEqual(warnMock.mock.calls.length, 1);
+    assert.deepStrictEqual(warnMock.mock.calls[0].arguments[0], {
+      action_key: "some:action",
+      role: "platform_admin",
+    });
+    assert.strictEqual(
+      warnMock.mock.calls[0].arguments[1],
+      "permission dual-check fallback used",
+    );
+
+    warnMock.mock.restore();
+  });
+
+  test("throws in enforce mode even with valid legacy role", () => {
+    setRuntimeEnv({ permissionMode: "enforce" });
+
+    assert.throws(
+      () =>
+        assertPermission(platformAdmin, "some:action", {
+          legacyRoleCheck: (ctx) => ctx.role === "platform_admin",
+        }),
+      (error) => error instanceof HttpError && error.status === 403,
+    );
   });
 });

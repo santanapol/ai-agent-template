@@ -56,6 +56,12 @@ export function readEnv() {
     permissionMode: process.env.PERMISSION_MODE || "dual",
   };
 
+  if (!["dual", "enforce"].includes(env.permissionMode)) {
+    throw new Error(
+      `Invalid PERMISSION_MODE: ${env.permissionMode}. Must be "dual" or "enforce"`,
+    );
+  }
+
   if (env.nodeEnv === "production") {
     const missing = REQUIRED_IN_PRODUCTION.filter((key) => !process.env[key]);
     if (missing.length > 0) {

@@ -4,7 +4,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { MongoClient } from 'mongodb'
-import { validateSeedData, syncPermissions } from '../scripts/seed-permissions.js'
+import { syncPermissions } from '../scripts/seed-permissions.js'
+import { validateSeedData } from '../src/lib/permission-validation.js'
 import { seedMenus, seedRolePermissions } from '../scripts/seed-data/permissions.js'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
 import { startMongoForTests, resetDatabase } from './helpers/mongo-test-server.mjs'
@@ -124,6 +125,47 @@ test('rejects duplicate (ou_id, role) pairs', () => {
     ]
   })
   assert.ok(errors.some((e) => e.includes('support') && /duplicate/i.test(e)))
+})
+
+test('rejects escalating action covered by wildcard (explicit allow-list check)', () => {
+  // branch_admin has profiles:* wildcard — roles:assign is under profiles domain? No.
+  // Test: if roles:assign were under profiles domain, wildcard profiles:* should block it.
+  const menusWithRolesUnderProfiles = [
+    menu('staff', 'menu', null),
+    menu('staff:profiles', 'menu', 'staff'),
+    menu('profiles:create', 'action', 'staff:profiles'),
+    menu('profiles:roles_assign', 'action', 'staff:profiles') // escalating under profiles domain
+  ]
+  const errors = validateSeedData({
+    menus: menusWithRolesUnderProfiles,
+    rolePermissions: [
+      // branch_admin has profiles:* which would cover profiles:roles_assign — must be blocked
+      { ou_id: null, role: 'branch_admin', menu_keys: ['profiles:*'] }
+    ]
+  })
+  // profiles:roles_assign is NOT in ESCALATING_ACTIONS set (only roles:assign and permissions:manage are)
+  // so this should NOT produce an escalation error — wildcard is allowed for non-escalating keys
+  assert.deepEqual(
+    errors.filter((e) => /escalat/i.test(e)),
+    [],
+    'Non-escalating actions under wildcard should be allowed'
+  )
+
+  // Now test with an actual escalating action under a matching wildcard domain
+  const menusWithPermUnderPermDomain = [
+    menu('staff', 'menu', null),
+    menu('staff:profiles', 'menu', 'staff'),
+    menu('profiles:list', 'action', 'staff:profiles'),
+    menu('permissions:manage', 'action', 'staff:profiles')
+  ]
+  const errors2 = validateSeedData({
+    menus: menusWithPermUnderPermDomain,
+    rolePermissions: [{ ou_id: null, role: 'branch_admin', menu_keys: ['permissions:*'] }]
+  })
+  assert.ok(
+    errors2.some((e) => e.includes('permissions:manage') && /escalat/i.test(e)),
+    'permissions:manage under permissions:* wildcard must be rejected'
+  )
 })
 
 test('seed sync + prune against Mongo', { timeout: 180_000 }, async (t) => {

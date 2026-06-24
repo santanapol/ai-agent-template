@@ -12,6 +12,9 @@ export async function ensureAuthIndexes(db) {
     .collection(AUTH_COLLECTIONS.USERS)
     .createIndex({ ou_id: 1, branch_id: 1 }, { name: 'by_ou_branch' })
   await db
+    .collection(AUTH_COLLECTIONS.USERS)
+    .createIndex({ ou_id: 1, role: 1 }, { name: 'by_ou_role' })
+  await db
     .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
     .createIndex({ token_hash: 1 }, { unique: true, name: 'uniq_token_hash' })
   await db

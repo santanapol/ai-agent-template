@@ -18,6 +18,7 @@ export function buildMeshHeaders(overrides = {}) {
     "x-user-ou": overrides.ouId ?? "507f1f77bcf86cd799439011",
     "x-user-branch": overrides.branchId ?? "507f1f77bcf86cd799439012",
     "x-user-role": overrides.role ?? "platform_admin",
+    "x-user-permissions": overrides.permissions ?? "reports:smart",
     accept: "application/json",
     "content-type": "application/json",
     ...overrides.extraHeaders,

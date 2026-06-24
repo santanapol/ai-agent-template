@@ -1,6 +1,8 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
+import { ObjectId } from "mongodb";
 import buildApp from "../../../../app.js";
+import { buildMeshHeaders } from "../../../../lib/test-helpers/mesh-headers.js";
 
 describe("Agents API Integration Tests", () => {
   let app;
@@ -9,13 +11,12 @@ describe("Agents API Integration Tests", () => {
   let createdAgentId;
   let currentEtag;
 
-  const baseHeaders = {
-    "x-gateway-secret": process.env.GATEWAY_SECRET || "change-me",
-    "x-user-ou": ouId,
-    "x-user-branch": "665a3d76b1e5f8b9e6f2b3c1",
-    "x-user-id": mockUserId,
-    "x-user-role": "admin",
-  };
+  const baseHeaders = buildMeshHeaders({
+    ouId,
+    branchId: "665a3d76b1e5f8b9e6f2b3c1",
+    userId: mockUserId,
+    role: "admin",
+  });
 
   const validPayload = {
     branch_id: "665a3d76b1e5f8b9e6f2b3d1",
@@ -26,14 +27,24 @@ describe("Agents API Integration Tests", () => {
     default_fee_rate: 10,
   };
 
+  async function cleanupAgents() {
+    await app.db.collection("agents").deleteMany({
+      $or: [
+        { cr_by: mockUserId },
+        { branch_code: validPayload.branch_code },
+        { branch_id: new ObjectId(validPayload.branch_id) },
+      ],
+    });
+  }
+
   before(async () => {
     app = await buildApp({ logger: false });
-    await app.db.collection("agents").deleteMany({ cr_by: mockUserId });
+    await cleanupAgents();
   });
 
   after(async () => {
     if (app && app.db) {
-      await app.db.collection("agents").deleteMany({ cr_by: mockUserId });
+      await cleanupAgents();
     }
     if (app) await app.close();
   });

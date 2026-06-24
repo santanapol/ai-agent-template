@@ -65,6 +65,15 @@ export async function startMockAuthInternalServer(options) {
       return;
     }
 
+    const roleMatch = req.url?.match(
+      /^\/internal\/users\/([a-fA-F0-9]{24})\/role$/,
+    );
+    if (req.method === "PATCH" && roleMatch) {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     const revokeMatch = req.url?.match(USER_ID_PATTERN);
     if (req.method === "POST" && revokeMatch) {
       if (revokeBehavior === "fail") {

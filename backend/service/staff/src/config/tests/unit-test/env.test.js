@@ -51,3 +51,21 @@ describe("readEnv production secret guards", () => {
     );
   });
 });
+
+describe("readEnv PERMISSION_MODE validation", () => {
+  test("accepts 'dual' and 'enforce'", () => {
+    assert.doesNotThrow(() =>
+      withEnv({ PERMISSION_MODE: "dual" }, () => readEnv()),
+    );
+    assert.doesNotThrow(() =>
+      withEnv({ PERMISSION_MODE: "enforce" }, () => readEnv()),
+    );
+  });
+
+  test("rejects invalid PERMISSION_MODE", () => {
+    assert.throws(
+      () => withEnv({ PERMISSION_MODE: "strict" }, () => readEnv()),
+      /Invalid PERMISSION_MODE: strict/,
+    );
+  });
+});

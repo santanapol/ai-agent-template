@@ -1,6 +1,4 @@
-import { isValidObjectId } from "../../lib/object-id.js";
-import { resolveRequestId } from "../../lib/request-id.js";
-import { sendError } from "../../lib/response.js";
+import { requirePermission } from "../../lib/require-permission.js";
 import {
   getAgentInvoiceDetail,
   getInvoiceAgents,
@@ -18,69 +16,46 @@ import {
   updateStatusBodySchema,
 } from "./agent-invoices.schema.js";
 
-const OBJECT_ID_HEADERS = ["x-user-ou", "x-user-branch"];
-
 async function agentInvoiceRoutes(fastify) {
-  fastify.addHook("onRequest", async (request, reply) => {
-    const requestId = resolveRequestId(request.headers["x-request-id"]);
-
-    const userId = request.headers["x-user-id"];
-    const userOu = request.headers["x-user-ou"];
-    const userBranch = request.headers["x-user-branch"];
-    const userRole = request.headers["x-user-role"];
-
-    if (!userId || !userOu || !userBranch || !userRole) {
-      return sendError(reply, {
-        statusCode: 403,
-        code: "MISSING_GATEWAY_USER_CONTEXT",
-        message: "Required user context is missing",
-        requestId,
-      });
-    }
-
-    for (const header of OBJECT_ID_HEADERS) {
-      const value = request.headers[header];
-      if (!isValidObjectId(String(value))) {
-        return sendError(reply, {
-          statusCode: 403,
-          code: "INVALID_USER_CONTEXT",
-          message: "Invalid user context",
-          requestId,
-        });
-      }
-    }
-
-    request.userContext = {
-      id: userId,
-      ouId: userOu,
-      branchId: userBranch,
-      role: userRole,
-    };
-  });
-
   fastify.post(
     "/api/v1/invoices/generate",
-    { schema: { body: generateBodySchema } },
+    {
+      schema: { body: generateBodySchema },
+      preHandler: requirePermission("invoices:write"),
+    },
     postGenerate,
   );
 
   fastify.post(
     "/api/v1/invoices/calculate-fee",
-    { schema: { body: calculateFeeBodySchema } },
+    {
+      schema: { body: calculateFeeBodySchema },
+      preHandler: requirePermission("invoices:write"),
+    },
     postCalculateFee,
   );
 
   fastify.get(
     "/api/v1/invoices",
-    { schema: { querystring: listInvoicesQuerySchema } },
+    {
+      schema: { querystring: listInvoicesQuerySchema },
+      preHandler: requirePermission("invoices:list"),
+    },
     getInvoiceList,
   );
 
-  fastify.get("/api/v1/invoices/agent", getInvoiceAgents);
+  fastify.get(
+    "/api/v1/invoices/agent",
+    { preHandler: requirePermission("invoices:list") },
+    getInvoiceAgents,
+  );
 
   fastify.get(
     "/api/v1/invoices/:id/transactions",
-    { schema: { params: getDetailParamsSchema } },
+    {
+      schema: { params: getDetailParamsSchema },
+      preHandler: requirePermission("invoices:read"),
+    },
     getInvoiceTransactions,
   );
 
@@ -91,13 +66,17 @@ async function agentInvoiceRoutes(fastify) {
         params: getDetailParamsSchema,
         body: updateStatusBodySchema,
       },
+      preHandler: requirePermission("invoices:write"),
     },
     putInvoiceStatus,
   );
 
   fastify.get(
     "/api/v1/invoices/:id",
-    { schema: { params: getDetailParamsSchema } },
+    {
+      schema: { params: getDetailParamsSchema },
+      preHandler: requirePermission("invoices:read"),
+    },
     getAgentInvoiceDetail,
   );
 }

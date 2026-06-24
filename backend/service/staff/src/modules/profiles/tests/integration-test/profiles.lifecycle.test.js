@@ -237,13 +237,19 @@ if (!RUN) {
     });
 
     test("staff role archive returns 403 PERMISSION_DENIED", async () => {
+      const etag = await fetchEtag(
+        otherProfileId,
+        lifecycleMeshHeaders({ userId: adminUserId, role: "platform_admin" }),
+      );
+
       const res = await app.inject({
         method: "POST",
         url: `/api/v1/staff/profiles/${otherProfileId}/archive`,
         headers: {
           ...lifecycleMeshHeaders({ userId: staffUserId, role: "staff" }),
-          "if-match": 'W/"dGVzdC1ldGFn"',
+          "if-match": etag,
         },
+        payload: {},
       });
 
       assert.strictEqual(res.statusCode, 403);
