@@ -101,4 +101,24 @@ describe('StaffManagement', () => {
       expect(screen.queryByRole('button', { name: /Add New Staff/i })).not.toBeInTheDocument();
     });
   });
+
+  test('shows System Role in create drawer when roles:assign is granted', async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === 'profiles:create') return true;
+      if (permission === 'roles:assign') return true;
+      return false;
+    });
+
+    render(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+    });
+
+    screen.getByRole('button', { name: /Add New Staff/i }).click();
+
+    await waitFor(() => {
+      expect(screen.getByText('System Role')).toBeInTheDocument();
+    });
+  });
 });

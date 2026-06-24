@@ -28,7 +28,7 @@
   - **Permission:** `reports:smart`
 - **Path:** `/staff`
   - **Page:** Staff Management (หน้าจัดการพนักงาน รวมการดูข้อมูล เพิ่ม แก้ไข และระงับไว้ในหน้าเดียว)
-  - **Permission:** `profiles:list`
+  - **Permission:** `profiles:list` (ดูรายการ); `profiles:create` / `profiles:edit` สำหรับปุ่มเพิ่ม/แก้ไข; `roles:assign` สำหรับ dropdown System Role
 - **Path:** `/permissions`
   - **Page:** Permission Admin (จัดการเมนูและ role mappings)
   - **Permission:** `permissions:manage`

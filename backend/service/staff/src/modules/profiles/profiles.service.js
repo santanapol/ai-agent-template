@@ -387,7 +387,7 @@ export async function createProfile(
     return createProfileLinked(body, userContext, routeTemplate);
   }
 
-  return createProfileProvision(body, userContext, routeTemplate);
+  return createProfileProvision(body, userContext, routeTemplate, { log });
 }
 
 /**
@@ -395,7 +395,12 @@ export async function createProfile(
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  * @param {string} routeTemplate
  */
-async function createProfileProvision(body, userContext, routeTemplate) {
+async function createProfileProvision(
+  body,
+  userContext,
+  routeTemplate,
+  { log } = {},
+) {
   if (body.user_id !== undefined) {
     throw new HttpError(
       400,
@@ -415,6 +420,11 @@ async function createProfileProvision(body, userContext, routeTemplate) {
   const username = normalizeUsername(String(body.username));
   const password = String(body.password);
   const fields = normalizeProfileFields(body);
+  const defaultRole = getRuntimeEnv().staffProvisionDefaultRole || "staff";
+  const requestedRole = body.role ?? defaultRole;
+  if (requestedRole !== defaultRole) {
+    assertPlatformAdmin(userContext, { log });
+  }
 
   const tenantContext = {
     userId: userContext.userId,
@@ -459,7 +469,7 @@ async function createProfileProvision(body, userContext, routeTemplate) {
     const result = await authClient.provisionUser({
       username,
       password,
-      role: body.role,
+      role: requestedRole,
       ouId: tenantContext.ouId,
       branchId: tenantContext.branchId,
     });
@@ -996,7 +1006,7 @@ export async function resetProfilePassword(
 
 /**
  * Change the auth role of a staff member's linked user account.
- * Only platform_admin may perform this operation.
+ * Requires `roles:assign` (or platform_admin legacy fallback in dual mode).
  * @param {string} profileId
  * @param {{ role: string }} body
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext

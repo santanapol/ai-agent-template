@@ -40,7 +40,8 @@ interface StaffDrawerProps {
   isSaving: boolean;
   updatingPassword: boolean;
   showAdminResetPassword: boolean;
-  isPlatformAdmin?: boolean;
+  /** When true, show System Role field (requires `roles:assign` permission). */
+  canAssignRole?: boolean;
   form: FormInstance;
   onClose: () => void;
   onSave: () => void;
@@ -55,7 +56,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   isSaving,
   updatingPassword,
   showAdminResetPassword,
-  isPlatformAdmin = false,
+  canAssignRole = false,
   form,
   onClose,
   onSave,
@@ -139,7 +140,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
             <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
           </Form.Item>
 
-          {isPlatformAdmin && (
+          {canAssignRole && (
             <Form.Item
               label="System Role"
               name="role"

@@ -54,6 +54,9 @@ const StaffManagement: React.FC = () => {
   const [form] = Form.useForm();
   const { token } = theme.useToken();
   const currentEtag = useRef<string | null>(null);
+  const canCreate = usePermission('profiles:create');
+  const canEdit = usePermission('profiles:edit');
+  const canAssignRole = usePermission('roles:assign');
 
   // Debounce search input — resets to page 1 on new query
   useEffect(() => {
@@ -207,11 +210,10 @@ const StaffManagement: React.FC = () => {
   }, [editingId, form, message, modal]);
 
   const handleSave = useCallback(async () => {
-    const isPlatformAdmin = user?.role === 'platform_admin';
     const isCreate = drawerMode === 'create';
     const fieldNames = isCreate
-        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword', ...(isPlatformAdmin ? ['role'] : [])]
-        : ['firstname', 'lastname', 'email', 'tel', ...(isPlatformAdmin ? ['role'] : [])];
+        ? ['code', 'firstname', 'lastname', 'email', 'tel', 'username', 'password', 'confirmPassword', ...(canAssignRole ? ['role'] : [])]
+        : ['firstname', 'lastname', 'email', 'tel', ...(canAssignRole ? ['role'] : [])];
 
     let values: DrawerFormValues;
     try {
@@ -232,7 +234,7 @@ const StaffManagement: React.FC = () => {
           tel: formatTelephoneToE164(tel),
           username,
           password,
-          role,
+          ...(canAssignRole && role ? { role } : {}),
         });
         message.success('Profile created');
         setIsDrawerOpen(false);
@@ -248,7 +250,7 @@ const StaffManagement: React.FC = () => {
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
 
         const existingRecord = profiles.find((p) => p.id === editingId);
-        if (isPlatformAdmin && role && role !== existingRecord?.user?.role) {
+        if (canAssignRole && role && role !== existingRecord?.user?.role) {
           await staffApi.changeProfileRole(editingId, role);
         }
 
@@ -263,7 +265,7 @@ const StaffManagement: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [form, drawerMode, editingId, message, refresh, user, profiles]);
+  }, [form, drawerMode, editingId, message, refresh, profiles, canAssignRole]);
 
   const handleArchive = useCallback(
     (record: StaffProfile) => {
@@ -312,9 +314,6 @@ const StaffManagement: React.FC = () => {
     },
     [message, modal, refresh],
   );
-
-  const canCreate = usePermission('profiles:create');
-  const canEdit = usePermission('profiles:edit');
 
   return (
     <div>
@@ -373,7 +372,7 @@ const StaffManagement: React.FC = () => {
         isSaving={isSaving}
         updatingPassword={updatingPassword}
         showAdminResetPassword={showAdminResetPassword}
-        isPlatformAdmin={user?.role === 'platform_admin'}
+        canAssignRole={canAssignRole}
         form={form}
         onClose={handleCloseDrawer}
         onSave={() => void handleSave()}

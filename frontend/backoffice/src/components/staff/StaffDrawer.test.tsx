@@ -9,9 +9,15 @@ interface WrapperProps {
   mode: DrawerMode;
   isSaving?: boolean;
   showAdminResetPassword?: boolean;
+  canAssignRole?: boolean;
 }
 
-const Wrapper: React.FC<WrapperProps> = ({ mode, isSaving = false, showAdminResetPassword = false }) => {
+const Wrapper: React.FC<WrapperProps> = ({
+  mode,
+  isSaving = false,
+  showAdminResetPassword = false,
+  canAssignRole = false,
+}) => {
   const [form] = Form.useForm();
   return (
     <StaffDrawer
@@ -21,6 +27,7 @@ const Wrapper: React.FC<WrapperProps> = ({ mode, isSaving = false, showAdminRese
       isSaving={isSaving}
       updatingPassword={false}
       showAdminResetPassword={showAdminResetPassword}
+      canAssignRole={canAssignRole}
       form={form}
       onClose={vi.fn()}
       onSave={vi.fn()}
@@ -41,6 +48,16 @@ describe('StaffDrawer', () => {
     it('shows Create Profile button', () => {
       renderWithProviders(<Wrapper mode="create" />);
       expect(screen.getByRole('button', { name: /create profile/i })).toBeInTheDocument();
+    });
+
+    it('shows System Role when canAssignRole is true', () => {
+      renderWithProviders(<Wrapper mode="create" canAssignRole={true} />);
+      expect(screen.getByText('System Role')).toBeInTheDocument();
+    });
+
+    it('hides System Role when canAssignRole is false', () => {
+      renderWithProviders(<Wrapper mode="create" />);
+      expect(screen.queryByText('System Role')).not.toBeInTheDocument();
     });
 
     it('disables Create Profile button while saving', () => {
