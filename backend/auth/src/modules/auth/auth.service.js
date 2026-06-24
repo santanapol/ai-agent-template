@@ -364,6 +364,12 @@ export class AuthService {
     const { access_token, permissions } = await this.issueAccess(user)
     const useCookie = client_kind !== 'native'
 
+    const redisResult = await this.publishTokenGenOrNotReady(
+      user._id.toHexString(),
+      coerceTokenGen(user)
+    )
+    if (!redisResult.ok) return { ...redisResult, body: null, cookie: null }
+
     await this.audit({
       event_type: 'auth.login',
       outcome: 'success',
@@ -518,6 +524,9 @@ export class AuthService {
     }
 
     const { access_token, permissions } = await this.issueAccess(u)
+
+    const redisResult = await this.publishTokenGenOrNotReady(u._id.toHexString(), coerceTokenGen(u))
+    if (!redisResult.ok) return { ...redisResult, body: null, cookie: null }
 
     await this.audit({
       event_type: 'auth.refresh',

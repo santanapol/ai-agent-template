@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { ObjectId } from 'mongodb'
 import { validateSeedData } from '../../lib/permission-validation.js'
 import { problemPayload } from '../../lib/problem.js'
+import { accessTokenGenRedisKey } from '../../lib/redis-access-token-gen.js'
 
 function ipDigest(ip) {
   if (!ip) return null
@@ -449,9 +450,8 @@ export class AdminService {
 
           for (const user of chunk) {
             const user_id_hex = user._id.toHexString()
-            const redisKey = `auth:token_gen:${user_id_hex}`
             const gen = user.access_token_gen ?? 0
-
+            const redisKey = accessTokenGenRedisKey(user_id_hex)
             pipeline.set(redisKey, String(gen))
             if (ttl > 0) {
               pipeline.expire(redisKey, ttl)
