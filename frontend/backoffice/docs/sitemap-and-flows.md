@@ -54,3 +54,6 @@
 
 ### 2.8 Flow Bulk Export ใบแจ้งหนี้ (Invoice List)
 `เมนู Invoices (/invoices)` (`invoices:list`) ➔ `เลือก checkbox หลายรายการ (สูงสุด 50, ข้าม pagination ได้)` ➔ `แสดง Bulk Action Bar` ➔ `กด [Export PDF] หรือ [Export Excel]` *(ต้องมี `invoices:read` — ถ้าไม่มีสิทธิ์ปุ่ม export จะถูกซ่อน)* ➔ `ระบบแสดง Modal progress` ➔ `ดึง GET /invoices/:id` + `GET /invoices/:id/transactions` ต่อใบ (concurrency ≤ 5) ➔ `ดาวน์โหลด ZIP` (`invoice_{iv_no}.pdf` หรือ `.xlsx` แยกไฟล์) ➔ `กรณีบางรายการล้มเหลว: แสดงรายการ fail + ปุ่ม Retry` ➔ `ปิด Modal สำเร็จ → clear selection อัตโนมัติ`
+
+### 2.9 Flow Bulk Mark PAID / Cancel (Invoice List)
+`เมนู Invoices (/invoices)` (`invoices:list`) ➔ `เลือก checkbox หลายรายการ (สูงสุด 50)` ➔ `แสดง Bulk Action Bar` ➔ `กด [Mark as PAID] หรือ [Cancel]` *(ต้องมี `invoices:write` — ถ้าไม่มีสิทธิ์ปุ่มจะถูกซ่อน)* ➔ `Modal ยืนยัน` ➔ `Modal progress` ➔ `ดึง GET /invoices/:id` แล้ว `PUT /invoices/:id/status` ต่อใบ (concurrency ≤ 5, ใช้ If-Match จาก `upd_date`) ➔ `Mark PAID: เฉพาะ status READY` · `Cancel: READY / PENDING / MISSING_FEE / ERROR` ➔ `กรณีบางรายการล้มเหลว: แสดงรายการ fail + Retry` ➔ `มีรายการสำเร็จ → รีเฟรชตาราง` · `สำเร็จครบ → clear selection`

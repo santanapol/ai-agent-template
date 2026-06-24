@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Backoffice — Invoices:** Bulk export from `/invoices` list — select up to 50 invoices (across pagination), download PDF or Excel files as a ZIP with progress modal, partial-failure retry, and cancel (`invoices:read`).
+- **Backoffice — Invoices:** Bulk Mark PAID and Cancel from list — confirmation dialog, progress modal, status rules aligned with invoice detail (`invoices:write`; PAID for `READY`, Cancel for `READY` / `PENDING` / `MISSING_FEE` / `ERROR`).
 - **`backend/auth/`:** Expanded permission menu catalog seed to 20 action keys (billing, reports, dashboard, staff profiles, permissions admin) with English labels; flat `staff` hierarchy (`profiles:*` actions directly under `staff`, no `staff:profiles` group).
 - **`backend/auth/`:** `support_admin` role with default `profiles:*` mapping (OU-wide staff management without billing/reports/role assignment); dev seed users `support` and `support_admin` (`1234`).
 - **`backend/service/agent-invoice/`:** Permission enforcement middleware (`requirePermission`, `user-context` plugin) on invoice, agent, agent-fee, and master-data routes.
@@ -17,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Backoffice — Invoices:** Shared bulk orchestration module (`bulk/` — concurrency pool, etag helper, progress types); `BulkInvoiceActionBar` and `BulkProgressModal` replace export-only bar/modal duplication.
 - **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save).
 - **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`).
 

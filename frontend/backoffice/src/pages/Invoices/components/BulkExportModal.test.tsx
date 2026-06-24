@@ -49,7 +49,39 @@ describe('BulkExportModal', () => {
     expect(onClose).toHaveBeenCalledWith(true);
   });
 
-  it('retries only failed or cancelled items', async () => {
+  it('keeps running state until export finishes after cancel is clicked', async () => {
+    let resolveExport: ((value: Blob | null) => void) | undefined;
+    const exportPromise = new Promise<Blob | null>((resolve) => {
+      resolveExport = resolve;
+    });
+
+    vi.mocked(bulkExport.runBulkExport).mockReturnValue(exportPromise);
+
+    const onRunningChange = vi.fn();
+    render(
+      <BulkExportModal
+        open
+        invoiceIds={['inv1']}
+        format="pdf"
+        onClose={vi.fn()}
+        onRunningChange={onRunningChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+
+    resolveExport?.(null);
+    await waitFor(() => {
+      expect(onRunningChange).toHaveBeenLastCalledWith(false);
+    });
+  });
+
+  it('retries only failed items', async () => {
     vi.mocked(bulkExport.runBulkExport)
       .mockImplementationOnce(async ({ onProgress }) => {
         onProgress?.({
@@ -57,7 +89,7 @@ describe('BulkExportModal', () => {
           total: 2,
           results: [
             { id: 'inv1', ivNo: 'IV-001', status: 'failed', error: 'boom' },
-            { id: 'inv2', ivNo: 'IV-002', status: 'success' },
+            { id: 'inv2', ivNo: 'IV-002', status: 'cancelled' },
           ],
         });
         return new Blob(['zip'], { type: 'application/zip' });

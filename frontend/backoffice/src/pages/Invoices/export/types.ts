@@ -1,20 +1,14 @@
+import type {
+  BulkItemStatus,
+  BulkProgress,
+  BulkResultItem,
+} from '../bulk/types';
+
 export type BulkExportFormat = 'pdf' | 'xlsx';
 
-export type BulkExportItemStatus = 'success' | 'failed' | 'cancelled';
-
-export interface BulkExportResultItem {
-  id: string;
-  ivNo: string;
-  status: BulkExportItemStatus;
-  error?: string;
-}
-
-export interface BulkExportProgress {
-  done: number;
-  total: number;
-  currentIvNo?: string;
-  results: BulkExportResultItem[];
-}
+export type BulkExportItemStatus = BulkItemStatus;
+export type BulkExportResultItem = BulkResultItem;
+export type BulkExportProgress = BulkProgress;
 
 export interface BulkExportOptions {
   invoiceIds: string[];

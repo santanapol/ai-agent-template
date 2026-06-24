@@ -22,10 +22,12 @@ import { formatDate, formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
 import { useAppFeedback } from '../../hooks/useAppFeedback';
 import { usePermission } from '../../hooks/usePermission';
-import { BulkExportBar } from './components/BulkExportBar';
+import { BulkInvoiceActionBar } from './components/BulkInvoiceActionBar';
 import { BulkExportModal } from './components/BulkExportModal';
-import { MAX_BULK_EXPORT_SELECTION } from './export/constants';
+import { BulkStatusModal } from './components/BulkStatusModal';
+import { MAX_BULK_INVOICE_SELECTION } from './bulk/constants';
 import type { BulkExportFormat } from './export/types';
+import type { BulkStatusAction } from './status/types';
 
 const { Title } = Typography;
 
@@ -34,10 +36,16 @@ interface ExportJobState {
   format: BulkExportFormat;
 }
 
+interface StatusJobState {
+  ids: string[];
+  action: BulkStatusAction;
+}
+
 const InvoiceList: React.FC = () => {
   const { message } = useAppFeedback();
   const navigate = useNavigate();
   const canExport = usePermission('invoices:read');
+  const canWrite = usePermission('invoices:write');
   const {
     invoices,
     total,
@@ -69,6 +77,11 @@ const InvoiceList: React.FC = () => {
   const [form] = Form.useForm<{ month: Dayjs; branch_id?: string }>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [exportJob, setExportJob] = useState<ExportJobState | null>(null);
+  const [exportRunning, setExportRunning] = useState(false);
+  const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
+  const [statusRunning, setStatusRunning] = useState(false);
+
+  const bulkBusy = exportRunning || statusRunning;
 
   // Keep filter/pagination state in the URL so it survives back-navigation from the detail page (I11)
   useEffect(() => {
@@ -108,9 +121,9 @@ const InvoiceList: React.FC = () => {
   };
 
   const handleSelectionChange = (keys: React.Key[]) => {
-    if (keys.length > MAX_BULK_EXPORT_SELECTION) {
-      message.warning(`You can select up to ${MAX_BULK_EXPORT_SELECTION} invoices per export.`);
-      setSelectedRowKeys(keys.slice(0, MAX_BULK_EXPORT_SELECTION));
+    if (keys.length > MAX_BULK_INVOICE_SELECTION) {
+      message.warning(`You can select up to ${MAX_BULK_INVOICE_SELECTION} invoices per bulk action.`);
+      setSelectedRowKeys(keys.slice(0, MAX_BULK_INVOICE_SELECTION));
       return;
     }
     setSelectedRowKeys(keys);
@@ -122,15 +135,49 @@ const InvoiceList: React.FC = () => {
     preserveSelectedRowKeys: true,
     getCheckboxProps: (record) => ({
       disabled:
-        selectedRowKeys.length >= MAX_BULK_EXPORT_SELECTION
+        selectedRowKeys.length >= MAX_BULK_INVOICE_SELECTION
         && !selectedRowKeys.includes(record._id),
     }),
+  };
+
+  const refreshInvoiceList = () => {
+    fetchInvoices({
+      page,
+      limit: pageSize,
+      iv_no: searchText || undefined,
+      branch_id: selectedBranchId,
+      billing_month: billingMonth,
+      status: selectedStatus,
+    });
   };
 
   const openExport = (format: BulkExportFormat) => {
     setExportJob({
       ids: selectedRowKeys.map(String),
       format,
+    });
+  };
+
+  const openStatusAction = (action: BulkStatusAction) => {
+    if (statusJob !== null || bulkBusy) {
+      return;
+    }
+
+    const count = selectedRowKeys.length;
+    const isPaid = action === 'PAID';
+    Modal.confirm({
+      title: isPaid ? 'Mark as PAID' : 'Cancel Invoices',
+      content: isPaid
+        ? `Mark ${count} selected invoice(s) as PAID? Only invoices with status READY will be updated.`
+        : `Cancel ${count} selected invoice(s)? Only READY, PENDING, MISSING_FEE, or ERROR invoices will be updated.`,
+      okText: isPaid ? 'Mark as PAID' : 'Cancel Invoices',
+      okButtonProps: isPaid ? undefined : { danger: true },
+      onOk: () => {
+        setStatusJob({
+          ids: selectedRowKeys.map(String),
+          action,
+        });
+      },
     });
   };
 
@@ -298,12 +345,15 @@ const InvoiceList: React.FC = () => {
         />
       </Card>
 
-      <BulkExportBar
+      <BulkInvoiceActionBar
         selectedCount={selectedRowKeys.length}
         canExport={canExport}
-        exporting={exportJob !== null}
+        canWrite={canWrite}
+        busy={bulkBusy}
         onExportPdf={() => openExport('pdf')}
         onExportExcel={() => openExport('xlsx')}
+        onMarkPaid={() => openStatusAction('PAID')}
+        onCancelInvoices={() => openStatusAction('VOID')}
         onClear={() => setSelectedRowKeys([])}
       />
 
@@ -311,8 +361,27 @@ const InvoiceList: React.FC = () => {
         open={exportJob !== null}
         invoiceIds={exportJob?.ids ?? []}
         format={exportJob?.format ?? 'pdf'}
+        onRunningChange={setExportRunning}
         onClose={(shouldClearSelection) => {
           setExportJob(null);
+          setExportRunning(false);
+          if (shouldClearSelection) {
+            setSelectedRowKeys([]);
+          }
+        }}
+      />
+
+      <BulkStatusModal
+        open={statusJob !== null}
+        invoiceIds={statusJob?.ids ?? []}
+        action={statusJob?.action ?? 'PAID'}
+        onRunningChange={setStatusRunning}
+        onClose={(shouldClearSelection, hadSuccess) => {
+          setStatusJob(null);
+          setStatusRunning(false);
+          if (hadSuccess) {
+            refreshInvoiceList();
+          }
           if (shouldClearSelection) {
             setSelectedRowKeys([]);
           }

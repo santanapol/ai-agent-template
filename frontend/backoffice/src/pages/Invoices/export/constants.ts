@@ -1,1 +1,1 @@
-export const MAX_BULK_EXPORT_SELECTION = 50;
+export { MAX_BULK_INVOICE_SELECTION } from '../bulk/constants';

@@ -2,19 +2,20 @@ import JSZip from 'jszip';
 import * as api from '../../../lib/invoicesApiClient';
 import { apiErrorMessage } from '../../../lib/apiError';
 import type { Invoice, InvoiceTransaction } from '../../../types/invoice';
+import { runWithConcurrency } from '../bulk/runWithConcurrency';
 import { buildInvoicePdf } from './buildInvoicePdf';
 import { buildInvoiceXlsx } from './buildInvoiceXlsx';
 import type {
   BulkExportFormat,
   BulkExportOptions,
-  BulkExportProgress,
-  BulkExportResultItem,
 } from './types';
-
-const DEFAULT_CONCURRENCY = 5;
 
 function extensionForFormat(format: BulkExportFormat): string {
   return format === 'pdf' ? 'pdf' : 'xlsx';
+}
+
+export function sanitizeInvoiceFilename(ivNo: string): string {
+  return ivNo.replace(/[/\\]/g, '_');
 }
 
 function buildFileForFormat(
@@ -36,117 +37,59 @@ export function formatBulkExportZipFilename(date = new Date()): string {
   return `invoices_export_${y}${m}${d}_${h}${min}.zip`;
 }
 
-async function exportOneInvoice(
-  id: string,
-  format: BulkExportFormat,
-  signal?: AbortSignal,
-): Promise<{ blob: Blob; ivNo: string }> {
-  const [detailRes, txnRes] = await Promise.all([
-    api.getInvoiceById(id, signal),
-    api.listInvoiceTransactions(id, signal),
-  ]);
-
-  if (!detailRes.data) {
-    throw new Error('Invoice not found');
-  }
-
-  const invoice = detailRes.data;
-  const transactions = Array.isArray(txnRes.data) ? txnRes.data : [];
-  const blob = buildFileForFormat(format, invoice, transactions);
-
-  return { blob, ivNo: invoice.iv_no };
-}
-
-function emitProgress(
-  onProgress: BulkExportOptions['onProgress'],
-  progress: BulkExportProgress,
-): void {
-  onProgress?.(progress);
-}
-
 export async function runBulkExport(options: BulkExportOptions): Promise<Blob | null> {
-  const {
-    invoiceIds,
-    format,
-    concurrency = DEFAULT_CONCURRENCY,
-    signal,
-    onProgress,
-  } = options;
+  const { invoiceIds, format, concurrency, signal, onProgress } = options;
 
   if (invoiceIds.length === 0) {
     return null;
   }
 
-  const results: BulkExportResultItem[] = [];
   const successfulFiles: Array<{ filename: string; blob: Blob }> = [];
-  let done = 0;
-  const total = invoiceIds.length;
-  let nextIndex = 0;
 
-  const report = (currentIvNo?: string) => {
-    emitProgress(onProgress, { done, total, currentIvNo, results: [...results] });
-  };
-
-  const workerCount = Math.min(concurrency, invoiceIds.length);
-  const workers = Array.from({ length: workerCount }, async () => {
-    while (true) {
-      if (signal?.aborted) {
-        return;
-      }
-
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      if (currentIndex >= invoiceIds.length) {
-        return;
-      }
-
-      const id = invoiceIds[currentIndex];
-
-      if (signal?.aborted) {
-        results.push({ id, ivNo: id, status: 'cancelled' });
-        done += 1;
-        report();
-        continue;
-      }
-
-      report(id);
+  await runWithConcurrency({
+    invoiceIds,
+    concurrency,
+    signal,
+    onProgress,
+    processInvoice: async (id, processSignal) => {
+      let ivNo = id;
 
       try {
-        const { blob, ivNo } = await exportOneInvoice(id, format, signal);
-
-        if (signal?.aborted) {
-          results.push({ id, ivNo, status: 'cancelled' });
-        } else {
-          const ext = extensionForFormat(format);
-          successfulFiles.push({ filename: `invoice_${ivNo}.${ext}`, blob });
-          results.push({ id, ivNo, status: 'success' });
+        if (processSignal?.aborted) {
+          return { id, ivNo, status: 'cancelled' };
         }
+
+        const detailRes = await api.getInvoiceById(id, processSignal);
+        if (!detailRes.data) {
+          throw new Error('Invoice not found');
+        }
+        ivNo = detailRes.data.iv_no;
+
+        const txnRes = await api.listInvoiceTransactions(id, processSignal);
+        const transactions = Array.isArray(txnRes.data) ? txnRes.data : [];
+        const blob = buildFileForFormat(format, detailRes.data, transactions);
+
+        if (processSignal?.aborted) {
+          return { id, ivNo, status: 'cancelled' };
+        }
+
+        const ext = extensionForFormat(format);
+        const safeIvNo = sanitizeInvoiceFilename(ivNo);
+        successfulFiles.push({ filename: `invoice_${safeIvNo}.${ext}`, blob });
+        return { id, ivNo, status: 'success' };
       } catch (err) {
-        if (signal?.aborted) {
-          results.push({ id, ivNo: id, status: 'cancelled' });
-        } else {
-          results.push({
-            id,
-            ivNo: id,
-            status: 'failed',
-            error: apiErrorMessage(err, 'Export failed'),
-          });
+        if (processSignal?.aborted) {
+          return { id, ivNo, status: 'cancelled' };
         }
+        return {
+          id,
+          ivNo,
+          status: 'failed',
+          error: apiErrorMessage(err, 'Export failed'),
+        };
       }
-
-      done += 1;
-      report();
-    }
+    },
   });
-
-  await Promise.all(workers);
-
-  for (let i = results.length; i < total; i += 1) {
-    const id = invoiceIds[i];
-    results.push({ id, ivNo: id, status: 'cancelled' });
-    done += 1;
-  }
-  report();
 
   if (successfulFiles.length === 0) {
     return null;

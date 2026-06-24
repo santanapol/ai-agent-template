@@ -1,56 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { formatBulkExportZipFilename, runBulkExport } from '../export/bulkExport';
-import { triggerBlobDownload } from '../export/downloadBlob';
-import type { BulkExportFormat } from '../export/types';
+import { bulkStatusActionLabel, runBulkStatusUpdate } from '../status/bulkStatusUpdate';
+import type { BulkStatusAction } from '../status/types';
 import type { BulkProgress } from '../bulk/types';
 import { BulkProgressModal } from './BulkProgressModal';
 
-interface BulkExportModalProps {
+interface BulkStatusModalProps {
   open: boolean;
   invoiceIds: string[];
-  format: BulkExportFormat;
-  onClose: (shouldClearSelection: boolean) => void;
+  action: BulkStatusAction;
+  onClose: (shouldClearSelection: boolean, hadSuccess: boolean) => void;
   onRunningChange?: (running: boolean) => void;
 }
 
-export function BulkExportModal({
+export function BulkStatusModal({
   open,
   invoiceIds,
-  format,
+  action,
   onClose,
   onRunningChange,
-}: BulkExportModalProps) {
+}: BulkStatusModalProps) {
   const [progress, setProgress] = useState<BulkProgress>({ done: 0, total: 0, results: [] });
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const activeFormatRef = useRef<BulkExportFormat>(format);
+  const activeActionRef = useRef<BulkStatusAction>(action);
 
   const setRunningState = useCallback((value: boolean) => {
     setRunning(value);
     onRunningChange?.(value);
   }, [onRunningChange]);
 
-  const runExport = useCallback(async (ids: string[], exportFormat: BulkExportFormat) => {
+  const runUpdate = useCallback(async (ids: string[], statusAction: BulkStatusAction) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    activeFormatRef.current = exportFormat;
+    activeActionRef.current = statusAction;
     setRunningState(true);
     setFinished(false);
     setProgress({ done: 0, total: ids.length, results: [] });
 
     try {
-      const zipBlob = await runBulkExport({
+      await runBulkStatusUpdate({
         invoiceIds: ids,
-        format: exportFormat,
+        action: statusAction,
         signal: controller.signal,
         onProgress: setProgress,
       });
-
-      if (zipBlob) {
-        triggerBlobDownload(zipBlob, formatBulkExportZipFilename());
-      }
     } finally {
       setRunningState(false);
       setFinished(true);
@@ -63,33 +58,37 @@ export function BulkExportModal({
     }
 
     const timeoutId = window.setTimeout(() => {
-      void runExport(invoiceIds, format);
+      void runUpdate(invoiceIds, action);
     }, 0);
 
     return () => {
       window.clearTimeout(timeoutId);
       abortRef.current?.abort();
     };
-  }, [open, invoiceIds, format, runExport]);
+  }, [open, invoiceIds, action, runUpdate]);
 
   const handleClose = () => {
     abortRef.current?.abort();
+    const hadSuccess = progress.results.some((item) => item.status === 'success');
     const shouldClearSelection =
       finished &&
       progress.results.length > 0 &&
       progress.results.every((item) => item.status === 'success');
-    onClose(shouldClearSelection);
+    onClose(shouldClearSelection, hadSuccess);
   };
+
+  const successCount = progress.results.filter((item) => item.status === 'success').length;
 
   return (
     <BulkProgressModal
-      title={`Export ${format.toUpperCase()}`}
+      title={bulkStatusActionLabel(action)}
       open={open}
       running={running}
       finished={finished}
       progress={progress}
+      summaryText={`${successCount} updated successfully`}
       onCancelRun={() => abortRef.current?.abort()}
-      onRetry={(ids) => void runExport(ids, activeFormatRef.current)}
+      onRetry={(ids) => void runUpdate(ids, activeActionRef.current)}
       onClose={handleClose}
     />
   );

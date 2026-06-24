@@ -38,8 +38,8 @@
 |-------|---------|------------------|
 | **P0** | Row selection + bulk export PDF/Excel (ZIP) | ✅ Phase 1 — implement |
 | **P1** | Progress modal + retry รายการที่ fail | ✅ Phase 1 — implement |
-| **P2** | Multi-month generate + async job (backend) | 📋 Documented — out of scope Phase 1 |
-| **P3** | Bulk Mark PAID / Cancel | 📋 Documented — out of scope Phase 1 |
+| **P2** | Multi-month generate + async job (backend) | ❌ Out of scope — ไม่ทำ |
+| **P3** | Bulk Mark PAID / Cancel | ✅ Phase 1 extension — implement |
 
 ---
 
@@ -352,7 +352,7 @@ Phase 1 ถือว่าเสร็จเมื่อ:
 | Q2 | ขีดจำกัดรายการต่อครั้ง | **50 รายการ** |
 | Q3 | Phase 1 รองรับ export format ใดบ้าง? | **ทั้ง PDF และ Excel** |
 | Q4 | Permission สำหรับ bulk export | ใช้ **`invoices:read`** เดิม (ไม่เพิ่ม `invoices:export`) — **ซ่อนปุ่ม export เมื่อ `usePermission('invoices:read')` เป็น false** |
-| Q5 | Scope release | **แยก release** — ship P0+P1 ก่อน; P2/P3 ภายหลัง |
+| Q5 | Scope release | **P0+P1+P3** ในรอบนี้; **P2 ไม่ทำ** (multi-month + async job) |
 | Q6 | Retry semantics | Retry สร้าง ZIP **ชุดใหม่** เฉพาะรายการที่ retry สำเร็จ — ไม่ merge กับ ZIP เดิม |
 | Q7 | Select-all เกิน limit | Header select-all เลือกได้ไม่เกิน 50; ถ้า pageSize > 50 ให้ cap ที่ 50 รายการแรก + warning |
 

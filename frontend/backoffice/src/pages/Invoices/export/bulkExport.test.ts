@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as api from '../../../lib/invoicesApiClient';
-import { runBulkExport } from './bulkExport';
+import { runBulkExport, sanitizeInvoiceFilename } from './bulkExport';
 import { makeTestInvoice, makeTestTransaction } from './testFixtures';
+import type { BulkExportProgress } from './types';
 
 vi.mock('../../../lib/invoicesApiClient');
 
@@ -30,6 +31,12 @@ function mockInvoiceSuccess(id: string, ivNo: string) {
     };
   });
 }
+
+describe('sanitizeInvoiceFilename', () => {
+  it('replaces path separators', () => {
+    expect(sanitizeInvoiceFilename('IV/001\\test')).toBe('IV_001_test');
+  });
+});
 
 describe('runBulkExport', () => {
   afterEach(() => {
@@ -76,15 +83,43 @@ describe('runBulkExport', () => {
       throw new Error('not found');
     });
 
-    const progressSnapshots: number[] = [];
+    const progressState: { value: BulkExportProgress | null } = { value: null };
     const result = await runBulkExport({
       invoiceIds: ['inv-ok', 'inv-fail'],
       format: 'pdf',
-      onProgress: (p) => progressSnapshots.push(p.done),
+      onProgress: (p) => {
+        progressState.value = p;
+      },
     });
 
     expect(result).not.toBeNull();
-    expect(progressSnapshots.at(-1)).toBe(2);
+    expect(progressState.value?.done).toBe(2);
+    expect(progressState.value?.results).toHaveLength(2);
+    expect(progressState.value?.results.find((r) => r.id === 'inv-ok')?.ivNo).toBe('IV-OK');
+    expect(progressState.value?.results.find((r) => r.id === 'inv-fail')?.status).toBe('failed');
+  });
+
+  it('uses iv_no when detail succeeds but transactions fail', async () => {
+    vi.mocked(api.getInvoiceById).mockResolvedValue({
+      success: true,
+      code: 'SUCCESS',
+      message: 'ok',
+      data: makeTestInvoice({ _id: 'inv1', iv_no: 'IV-TXN-FAIL' }),
+    });
+    vi.mocked(api.listInvoiceTransactions).mockRejectedValue(new Error('txn failed'));
+
+    const progressState: { value: BulkExportProgress | null } = { value: null };
+    const result = await runBulkExport({
+      invoiceIds: ['inv1'],
+      format: 'pdf',
+      onProgress: (p) => {
+        progressState.value = p;
+      },
+    });
+
+    expect(result).toBeNull();
+    expect(progressState.value?.results[0]?.ivNo).toBe('IV-TXN-FAIL');
+    expect(progressState.value?.results[0]?.status).toBe('failed');
   });
 
   it('returns null when every invoice fails', async () => {
@@ -95,22 +130,18 @@ describe('runBulkExport', () => {
     expect(result).toBeNull();
   });
 
-  it('stops remaining work when aborted', async () => {
+  it('returns partial ZIP and marks unprocessed items cancelled when aborted', async () => {
     const controller = new AbortController();
-    let inFlight = 0;
-    let maxInFlight = 0;
+    let callCount = 0;
 
     vi.mocked(api.getInvoiceById).mockImplementation(async (id, signal) => {
-      inFlight += 1;
-      maxInFlight = Math.max(maxInFlight, inFlight);
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      if (signal?.aborted) {
-        inFlight -= 1;
-        const err = new Error('aborted');
-        err.name = 'AbortError';
-        throw err;
+      callCount += 1;
+      if (id !== '1') {
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      inFlight -= 1;
+      if (signal?.aborted) {
+        throw new Error('aborted');
+      }
       return {
         success: true,
         code: 'SUCCESS',
@@ -126,17 +157,31 @@ describe('runBulkExport', () => {
       data: [],
     });
 
+    const progressState: { value: BulkExportProgress | null } = { value: null };
+
     const promise = runBulkExport({
       invoiceIds: ['1', '2', '3', '4'],
       format: 'pdf',
       concurrency: 1,
       signal: controller.signal,
+      onProgress: (p) => {
+        progressState.value = p;
+      },
     });
 
-    setTimeout(() => controller.abort(), 5);
+    setTimeout(() => controller.abort(), 20);
     const result = await promise;
 
-    expect(maxInFlight).toBeLessThanOrEqual(1);
-    expect(result === null || result instanceof Blob).toBe(true);
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe('application/zip');
+    expect(progressState.value?.done).toBe(4);
+    expect(progressState.value?.total).toBe(4);
+    expect(progressState.value?.results).toHaveLength(4);
+
+    const statuses = progressState.value?.results.map((r) => r.status) ?? [];
+    expect(statuses.filter((s) => s === 'success')).toHaveLength(1);
+    expect(statuses.filter((s) => s === 'cancelled').length).toBeGreaterThanOrEqual(2);
+    expect(new Set(progressState.value?.results.map((r) => r.id)).size).toBe(4);
+    expect(callCount).toBeLessThan(4);
   });
 });

@@ -83,3 +83,27 @@
 ### Checkpoint: Complete
 
 - [x] พร้อม PR / `/code-build`
+
+---
+
+## Phase 5: Bulk Status Actions (P3)
+
+- [x] **Task 10:** `runBulkStatusUpdate` — concurrency, abort, partial failure, etag  
+  - **Acceptance:** ครบ behavior ตาม detail page rules; tests mock API  
+  - **Verify:** `npm test -- bulkStatusUpdate`  
+  - **Files:** `status/bulkStatusUpdate.ts`, `status/utils.ts`, `status/types.ts`, tests
+
+- [x] **Task 11:** `BulkStatusModal` + action bar buttons + permission gate + wire-up  
+  - **Acceptance:** Mark PAID / Cancel จาก list; ซ่อนปุ่มเมื่อไม่มี `invoices:write`; confirm ก่อนรัน  
+  - **Verify:** `npm test -- BulkStatusModal` · manual  
+  - **Files:** `components/BulkStatusModal.tsx`, `components/BulkExportBar.tsx`, `index.tsx`
+
+- [x] **Task 12:** อัปเดต docs flow 2.9  
+  - **Files:** `docs/sitemap-and-flows.md`, `SPEC.md`
+
+### Checkpoint: P3
+
+- [ ] E2E manual: bulk Mark PAID (READY only)
+- [ ] E2E manual: bulk Cancel
+- [ ] Partial failure + retry
+- [ ] User `invoices:list` only — status buttons hidden

@@ -1,23 +1,34 @@
-import { FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  FileExcelOutlined,
+  FilePdfOutlined,
+} from '@ant-design/icons';
 import { Button, Space } from 'antd';
 
-interface BulkExportBarProps {
+interface BulkInvoiceActionBarProps {
   selectedCount: number;
   canExport: boolean;
-  exporting: boolean;
+  canWrite: boolean;
+  busy: boolean;
   onExportPdf: () => void;
   onExportExcel: () => void;
+  onMarkPaid: () => void;
+  onCancelInvoices: () => void;
   onClear: () => void;
 }
 
-export function BulkExportBar({
+export function BulkInvoiceActionBar({
   selectedCount,
   canExport,
-  exporting,
+  canWrite,
+  busy,
   onExportPdf,
   onExportExcel,
+  onMarkPaid,
+  onCancelInvoices,
   onClear,
-}: BulkExportBarProps) {
+}: BulkInvoiceActionBarProps) {
   if (selectedCount === 0) {
     return null;
   }
@@ -38,25 +49,45 @@ export function BulkExportBar({
     >
       <Space wrap>
         <span>Selected {selectedCount}</span>
+        {canWrite && (
+          <>
+            <Button
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              onClick={onMarkPaid}
+              disabled={busy}
+            >
+              Mark as PAID
+            </Button>
+            <Button
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={onCancelInvoices}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+          </>
+        )}
         {canExport && (
           <>
             <Button
               icon={<FilePdfOutlined />}
               onClick={onExportPdf}
-              disabled={exporting}
+              disabled={busy}
             >
               Export PDF
             </Button>
             <Button
               icon={<FileExcelOutlined />}
               onClick={onExportExcel}
-              disabled={exporting}
+              disabled={busy}
             >
               Export Excel
             </Button>
           </>
         )}
-        <Button onClick={onClear} disabled={exporting}>
+        <Button onClick={onClear} disabled={busy}>
           Clear
         </Button>
       </Space>
