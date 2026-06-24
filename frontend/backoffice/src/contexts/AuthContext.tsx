@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
@@ -27,9 +27,13 @@ function decodeJwt(token: string): DecodedUser | null {
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
-    const decoded = JSON.parse(jsonPayload) as DecodedUser;
+    const decoded = JSON.parse(jsonPayload) as DecodedUser & { token_gen?: unknown };
     if (decoded.exp && decoded.exp * 1000 < Date.now()) return null;
-    return decoded;
+    const rawGen = decoded.token_gen;
+    const tokenGen =
+      rawGen === undefined || rawGen === null ? 0 : Number(rawGen);
+    if (!Number.isInteger(tokenGen) || tokenGen < 0) return null;
+    return { ...decoded, token_gen: tokenGen };
   } catch {
     return null;
   }
@@ -98,9 +102,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshFn().finally(() => setLoading(false));
   }, [refreshFn]);
 
-  // Dynamic Menu loading based on user authenticated state
+  const permissionsKey = useMemo(
+    () => [...permissions].sort().join('\u0001'),
+    [permissions],
+  );
+
+  // Load menus when session or effective permissions change. Use a stable permissionsKey
+  // (not the array reference) so token refresh does not spam GET /auth/me/menus.
   useEffect(() => {
-    if (!user) return;
+    if (!user?.sub) return;
 
     let cancelled = false;
 
@@ -137,7 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-  }, [user, permissions]);
+    // permissionsKey captures permission changes without refetching on every refresh identity
+  }, [user?.sub, user?.token_gen, permissionsKey]);
 
   const login = useCallback(
     async (username: string, password: string) => {
