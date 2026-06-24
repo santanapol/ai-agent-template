@@ -1,0 +1,26 @@
+name: Local
+variables:
+  - name: baseUrl
+    value: http://127.0.0.1:{{port}}
+  - name: port
+    value: "3001"
+  - name: ou_id
+    value: ""
+  - name: branch_id
+    value: ""
+  - name: user_id
+    value: ""
+  - name: username
+    value: platform_admin
+  - name: password
+    value: ""
+  - name: access_token
+    value: ""
+  - name: refresh_token
+    value: ""
+  - name: admin_test_menu_key
+    value: sit:bruno:test
+  - name: menu_upd_date
+    value: ""
+  - name: admin_test_role
+    value: platform_admin

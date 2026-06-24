@@ -5,7 +5,7 @@
  *   npm run seed:example
  *
  * รหัส default อยู่ใน repo เพื่อความสะดวก local เท่านั้น — ห้ามใช้ใน production
- * กำหนดเองได้: EXAMPLE_ADMIN_PASSWORD, EXAMPLE_BRANCH_ADMIN_PASSWORD, EXAMPLE_STAFF_PASSWORD
+ * กำหนดเองได้: EXAMPLE_ADMIN_PASSWORD, EXAMPLE_BRANCH_ADMIN_PASSWORD, EXAMPLE_SUPPORT_ADMIN_PASSWORD, EXAMPLE_SUPPORT_PASSWORD, EXAMPLE_STAFF_PASSWORD
  *
  * ล้าง token/throttle/audit ก่อน seed user: npm run seed:example -- --reset-sessions
  */
@@ -64,6 +64,18 @@ const examples = [
     username: 'branch_admin',
     password: process.env.EXAMPLE_BRANCH_ADMIN_PASSWORD ?? '1234',
     role: 'branch_admin'
+  },
+  {
+    _id: new ObjectId('6a190d6db5711c10d35d85eb'),
+    username: 'support_admin',
+    password: process.env.EXAMPLE_SUPPORT_ADMIN_PASSWORD ?? '1234',
+    role: 'support_admin'
+  },
+  {
+    _id: new ObjectId('6a190d6db5711c10d35d85ec'),
+    username: 'support',
+    password: process.env.EXAMPLE_SUPPORT_PASSWORD ?? '1234',
+    role: 'support'
   },
   {
     _id: new ObjectId('6a190d6db5711c10d35d85ea'),

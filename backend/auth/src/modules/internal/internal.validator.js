@@ -57,7 +57,7 @@ export const setRoleBodySchema = {
   properties: {
     role: {
       type: 'string',
-      enum: ['platform_admin', 'branch_admin', 'staff', 'support']
+      enum: ['platform_admin', 'branch_admin', 'staff', 'support', 'support_admin']
     },
     revoke_sessions: { type: 'boolean', default: true },
     correlation_id: { type: 'string', maxLength: 128 }

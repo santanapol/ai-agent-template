@@ -1,8 +1,6 @@
 import rateLimit from '@fastify/rate-limit'
 import { buildRateLimitPluginOptions } from '../../lib/rate-limit.js'
-import { verifyAccessJwt } from '../../lib/jwt-access.js'
-import { extractBearerToken } from '../../lib/internal-bearer.js'
-import { problemPayload } from '../../lib/problem.js'
+import { buildRequireAccessBearer } from '../../lib/require-access-bearer.js'
 import {
   loginBodySchema,
   refreshBodySchema,
@@ -14,8 +12,7 @@ const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
 const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }
 const RATE_LIMIT_LOGOUT = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_CHANGE_PASSWORD = { max: 10, timeWindow: '1 minute' }
-
-const OBJECT_ID_HEX = /^[a-fA-F0-9]{24}$/u
+const RATE_LIMIT_ME_MENUS = { max: 60, timeWindow: '1 minute' }
 
 /**
  * @param {import('fastify').FastifyInstance} fastify
@@ -29,54 +26,19 @@ const OBJECT_ID_HEX = /^[a-fA-F0-9]{24}$/u
 export default async function authRoutePlugin(fastify, opts) {
   const { controller, types, env, publicKey } = opts
 
-  const requireAccessBearer = async (request, reply) => {
-    const token = extractBearerToken(request.headers.authorization)
-    if (!token) {
-      return reply
-        .code(401)
-        .type('application/problem+json')
-        .send(
-          problemPayload({
-            type: types.invalidToken,
-            title: 'Unauthorized',
-            status: 401,
-            detail: 'Access token is missing or invalid.',
-            code: 'TOKEN_REFRESH_REJECTED'
-          })
-        )
-    }
-
-    try {
-      const payload = await verifyAccessJwt({
-        token,
-        publicKey,
-        issuer: env.JWT_ISSUER,
-        audience: env.JWT_AUDIENCE
-      })
-      const sub = typeof payload.sub === 'string' ? payload.sub : ''
-      if (!OBJECT_ID_HEX.test(sub)) {
-        throw new Error('invalid sub')
-      }
-      request.accessSub = sub
-      request.accessTokenGen = payload.token_gen
-    } catch {
-      return reply
-        .code(401)
-        .type('application/problem+json')
-        .send(
-          problemPayload({
-            type: types.invalidToken,
-            title: 'Unauthorized',
-            status: 401,
-            detail: 'Access token is missing or invalid.',
-            code: 'TOKEN_REFRESH_REJECTED'
-          })
-        )
-    }
-  }
+  const requireAccessBearer = buildRequireAccessBearer({ publicKey, env, types })
 
   await fastify.register(async (scope) => {
     await scope.register(rateLimit, buildRateLimitPluginOptions(types))
+
+    scope.get(
+      '/auth/me/menus',
+      {
+        config: { rateLimit: RATE_LIMIT_ME_MENUS },
+        preHandler: requireAccessBearer
+      },
+      (request, reply) => controller.getMyMenus(request, reply)
+    )
 
     scope.post(
       '/auth/me/password',

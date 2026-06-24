@@ -41,6 +41,7 @@ export async function signAccessJwt({
   ouId,
   branchId,
   tokenGen,
+  permissions,
   issuer,
   audience,
   ttlSeconds
@@ -49,7 +50,9 @@ export async function signAccessJwt({
     [roleClaim]: role,
     ou_id: ouId,
     branch_id: branchId,
-    token_gen: tokenGen
+    token_gen: tokenGen,
+    // ค่าดิบจาก menu_keys (exact + wildcard 'domain:*') — ไม่ expand เพื่อคุมขนาด token
+    permissions: Array.isArray(permissions) ? permissions : []
   })
     .setProtectedHeader({ alg: 'RS256', kid })
     .setSubject(sub)

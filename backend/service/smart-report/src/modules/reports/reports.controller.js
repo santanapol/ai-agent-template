@@ -5,6 +5,7 @@ import { successEnvelope } from "../../lib/envelope.js";
 import { buildEtag } from "../../lib/etag.js";
 import { HttpError } from "../../lib/http-error.js";
 import CODES from "../../lib/error-codes.js";
+import { assertPermission } from "../../lib/assert-permission.js";
 import * as service from "./reports.service.js";
 
 const CONTENT_TYPES = {
@@ -13,6 +14,7 @@ const CONTENT_TYPES = {
 };
 
 export async function listReportsHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const { page, limit } = request.query;
   const { data, pagination } = await service.listReports({ page, limit });
   return reply
@@ -21,6 +23,7 @@ export async function listReportsHandler(request, reply) {
 }
 
 export async function createReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const { userId } = request.userContext;
   const created = await service.createReport(request.body, userId);
 
@@ -33,6 +36,7 @@ export async function createReportHandler(request, reply) {
 }
 
 export async function updateReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const { userId } = request.userContext;
   const ifMatch = request.headers["if-match"];
 
@@ -48,6 +52,7 @@ export async function updateReportHandler(request, reply) {
 }
 
 export async function deleteReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const ifMatch = request.headers["if-match"];
 
   await service.deleteReportById(request.params.id, ifMatch);
@@ -56,11 +61,13 @@ export async function deleteReportHandler(request, reply) {
 }
 
 export async function runReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const record = await service.runReportById(request.params.id);
   return reply.status(200).send(successEnvelope(record));
 }
 
 export async function listHistoryHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const { page, limit } = request.query;
   const { data, pagination } = await service.listHistory({ page, limit });
   return reply
@@ -69,6 +76,7 @@ export async function listHistoryHandler(request, reply) {
 }
 
 export async function downloadFileHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
   const record = await service.getDownloadFile(request.params.fileId);
 
   try {

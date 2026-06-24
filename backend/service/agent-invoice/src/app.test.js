@@ -1,17 +1,18 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
 import buildApp from "./app.js";
+import {
+  buildMeshHeaders,
+  testGatewaySecret,
+} from "./lib/test-helpers/mesh-headers.js";
 
 describe("App infrastructure behaviors", () => {
   let app;
-  const gatewaySecret = process.env.GATEWAY_SECRET || "change-me";
-  const baseHeaders = {
-    "x-gateway-secret": gatewaySecret,
-    "x-user-ou": "665a3d76b1e5f8b9e6f2b9b1",
-    "x-user-branch": "665a3d76b1e5f8b9e6f2b9c1",
-    "x-user-id": "test_infra_user",
-    "x-user-role": "admin",
-  };
+  const gatewaySecret = testGatewaySecret();
+  const baseHeaders = buildMeshHeaders({
+    userId: "test_infra_user",
+    role: "admin",
+  });
 
   before(async () => {
     app = await buildApp({ logger: false });

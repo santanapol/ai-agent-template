@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`x-user-permissions`**: verify and inject user permissions claim as a comma-separated list of raw strings to upstream services (Phase G). Includes anti-spoofing header stripping and duplicate header guard.
+- **Docs**: update `docs/architecture.md` (metadata, header contract table, and document version bumped to v1.5.0).
+
 ### Changed
 
 - **`loadEnv`:** trim `TZ` before validation (Windows CRLF on `.env.defaults`); set `process.env.TZ` to `UTC` after load.

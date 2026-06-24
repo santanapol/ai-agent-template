@@ -166,7 +166,7 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 403);
-      assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
+      assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
     });
 
     test("branch_admin only sees profiles in own branch", async () => {

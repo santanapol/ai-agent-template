@@ -72,6 +72,22 @@ describe("smart-reports guards", () => {
     await app.close();
   });
 
+  test("rejects requests without reports:smart permission (403 PERMISSION_DENIED)", async () => {
+    const app = await buildApp();
+    const headers = buildMeshHeaders({ permissions: "profiles:list" });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/smart-reports",
+      headers,
+    });
+
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, CODES.PERMISSION_DENIED);
+
+    await app.close();
+  });
+
   test("returns 404 NO_MATCHING_API_PATH for an unknown smart-reports path", async () => {
     const app = await buildApp();
 

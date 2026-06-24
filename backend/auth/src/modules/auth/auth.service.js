@@ -4,7 +4,9 @@ import argon2 from 'argon2'
 import { applyFailure, isLocked } from '../../lib/throttle.js'
 import { generateOpaqueRefresh, hashRefreshToken } from '../../lib/refresh-token.js'
 import { signAccessJwt } from '../../lib/jwt-access.js'
+import { anyPermissionMatches } from '../../lib/permission-match.js'
 import { problemPayload } from '../../lib/problem.js'
+import { codeForProblemType } from '../../lib/auth-problem-codes.js'
 import {
   getAccessTokenGenFromRedis,
   setAccessTokenGenInRedis
@@ -35,12 +37,14 @@ function buildAccessTokenResponseBody(
   access_token,
   expiresInSeconds,
   refreshPlain,
-  omitRefreshToken
+  omitRefreshToken,
+  permissions
 ) {
   return {
     access_token,
     expires_in: expiresInSeconds,
     token_type: 'Bearer',
+    permissions,
     ...(omitRefreshToken ? {} : { refresh_token: refreshPlain })
   }
 }
@@ -55,8 +59,29 @@ function isTransactionUnsupportedOnTopology(err) {
 }
 
 /** Envelope for login/refresh outcomes that surface as HTTP 401 + RFC 7807 type. */
-function unauthorizedServiceOutcome(type) {
-  return { ok: false, status: 401, type, body: null, cookie: null }
+function unauthorizedServiceOutcome(type, types, detail) {
+  const code = codeForProblemType(types, type) || 'AUTH_UNAUTHORIZED'
+  let defaultDetail = 'Unauthorized access.'
+  if (type === types.invalidCredentials) {
+    defaultDetail = 'Invalid username or password.'
+  } else if (type === types.invalidToken) {
+    defaultDetail = 'Access token is no longer valid.'
+  }
+
+  return {
+    ok: false,
+    status: 401,
+    type,
+    body: null,
+    cookie: null,
+    problem: problemPayload({
+      type,
+      title: 'Unauthorized',
+      status: 401,
+      detail: detail || defaultDetail,
+      code
+    })
+  }
 }
 
 export class AuthService {
@@ -133,9 +158,111 @@ export class AuthService {
     await this.repo.deleteThrottleKeys(keys, undefined)
   }
 
+  /**
+   * Resolution Logic ตาม SPEC: (ou_id, role) → fallback (null, role) → [] (deny by default)
+   * คืน menu_keys ดิบ (exact + wildcard ปะปนได้ — ไม่ expand ที่นี่)
+   * DB error ปล่อยไหลออกเป็น 5xx — ห้ามตีความเป็น [] (token ที่ดู valid แต่สิทธิ์หายเงียบ ๆ)
+   * @param {{ ouId: import('mongodb').ObjectId | null, role: string }} p
+   * @returns {Promise<string[]>}
+   */
+  async resolveEffectivePermissions({ ouId, role }) {
+    let doc = await this.repo.findRolePermissions(ouId, role)
+    if (!doc && ouId !== null) {
+      doc = await this.repo.findRolePermissions(null, role)
+    }
+    return Array.isArray(doc?.menu_keys) ? doc.menu_keys : []
+  }
+
+  /**
+   * โครงเมนูเฉพาะที่ผู้ใช้มีสิทธิ์ (GET /auth/me/menus) — resolve สิทธิ์สดจาก DB,
+   * expand wildcard กับ auth_menus แล้วเติมโหนดบรรพบุรุษครบถึง root
+   * ตอบ flat list เรียงตาม (ระดับชั้น, sort_order) ให้ frontend ประกอบ tree เอง
+   * @param {{ user_id_hex: string, access_token_gen_claim: unknown }} p
+   */
+  async getMyMenus({ user_id_hex, access_token_gen_claim }) {
+    const genCheck = await this.assertAccessTokenGenMatches({
+      user_id_hex,
+      token_gen_claim: access_token_gen_claim
+    })
+    if (!genCheck.ok) return genCheck
+    const user = genCheck.user
+
+    const normalizedOuId = user.ou_id ?? null
+    const permissions = await this.resolveEffectivePermissions({
+      ouId: normalizedOuId,
+      role: user.role
+    })
+    const actions = await this.repo.findActionMenusForOu(normalizedOuId)
+    const granted = actions.filter((action) => anyPermissionMatches(permissions, action.key))
+
+    // เติมบรรพบุรุษทีละชั้นจนถึง root (ลึกสุด 3 ระดับ — วนไม่เกิน 2 รอบ)
+    const byKey = new Map(granted.map((m) => [m.key, m]))
+    let pendingKeys = this.collectPendingParentKeys(granted, byKey)
+    while (pendingKeys.length > 0) {
+      const parents = await this.repo.findMenusByKeys(pendingKeys, normalizedOuId)
+      for (const parent of parents) byKey.set(parent.key, parent)
+      pendingKeys = this.collectPendingParentKeys(parents, byKey)
+    }
+
+    // cap ที่ 3 ตามกฎความลึกใน SPEC — detect cycle และขึ้นลึก
+    const depths = new Map()
+    const depthOf = (menu) => {
+      if (depths.has(menu.key)) return depths.get(menu.key)
+
+      const seen = new Set()
+      let depth = 0
+      let current = menu
+      while (current && current.parent_key !== null) {
+        if (seen.has(current.key)) {
+          throw new Error(`Menu hierarchy cycle detected: ${[...seen, current.key].join(' → ')}`)
+        }
+        seen.add(current.key)
+        current = byKey.get(current.parent_key)
+        depth += 1
+        if (depth > 3) {
+          throw new Error(
+            `Menu hierarchy exceeds depth limit at key: ${menu.key} ` +
+              `(traversed: ${[...seen].join(' → ')})`
+          )
+        }
+      }
+      depths.set(menu.key, depth)
+      return depth
+    }
+
+    const menus = [...byKey.values()]
+      .sort((a, b) => depthOf(a) - depthOf(b) || a.sort_order - b.sort_order)
+      .map((m) => ({
+        key: m.key,
+        label: m.label,
+        type: m.type,
+        parent_key: m.parent_key,
+        sort_order: m.sort_order
+      }))
+
+    return { ok: true, status: 200, body: { menus } }
+  }
+
+  collectPendingParentKeys(menus, byKey) {
+    const pending = new Set()
+    for (const menu of menus) {
+      const key = menu.parent_key
+      if (key !== null && !byKey.has(key)) pending.add(key)
+    }
+    return [...pending]
+  }
+
+  /**
+   * ออก access JWT พร้อมเคลม `permissions` (resolve สดจาก DB ทุกครั้งที่ออก token)
+   * @returns {Promise<{ access_token: string, permissions: string[] }>}
+   */
   async issueAccess(user) {
     const sub = user._id.toHexString()
-    return signAccessJwt({
+    const permissions = await this.resolveEffectivePermissions({
+      ouId: user.ou_id ?? null,
+      role: user.role
+    })
+    const access_token = await signAccessJwt({
       privateKey: this.privateKey,
       kid: this.env.JWT_KID,
       sub,
@@ -144,10 +271,25 @@ export class AuthService {
       ouId: user.ou_id?.toHexString?.() ?? String(user.ou_id),
       branchId: user.branch_id?.toHexString?.() ?? String(user.branch_id),
       tokenGen: coerceTokenGen(user),
+      permissions,
       issuer: this.env.JWT_ISSUER,
       audience: this.env.JWT_AUDIENCE,
       ttlSeconds: this.env.ACCESS_TOKEN_TTL_SECONDS
     })
+    this.warnIfAccessJwtOversize(access_token, permissions)
+    return { access_token, permissions }
+  }
+
+  /** Soft size guard — เกิน limit แค่เตือน (การแก้ที่ถูกคือยุบสิทธิ์เป็น wildcard ฝั่งข้อมูล) */
+  warnIfAccessJwtOversize(token, permissions) {
+    const limit = this.env.ACCESS_JWT_SOFT_LIMIT_BYTES ?? 4096
+    const bytes = Buffer.byteLength(token, 'utf8')
+    if (bytes > limit) {
+      this.log?.warn?.(
+        { bytes, limit, permission_entries: permissions.length },
+        'access JWT exceeds soft size limit'
+      )
+    }
   }
 
   async login({ username, password, client_kind, ip, request_id }) {
@@ -175,7 +317,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     let valid = false
@@ -200,7 +342,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_credentials' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     await this.clearThrottleKeys([ipKey, userThrottleKey(user._id)])
@@ -219,7 +361,7 @@ export class AuthService {
       undefined
     )
 
-    const access_token = await this.issueAccess(user)
+    const { access_token, permissions } = await this.issueAccess(user)
     const useCookie = client_kind !== 'native'
 
     await this.audit({
@@ -235,7 +377,8 @@ export class AuthService {
       access_token,
       this.env.ACCESS_TOKEN_TTL_SECONDS,
       refreshPlain,
-      useCookie
+      useCookie,
+      permissions
     )
 
     return {
@@ -286,7 +429,7 @@ export class AuthService {
       ip,
       detail_safe: { reason }
     })
-    return unauthorizedServiceOutcome(type)
+    return unauthorizedServiceOutcome(type, this.types)
   }
 
   async refresh({ rawRefresh, refreshChannel, ip, request_id }) {
@@ -352,7 +495,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'user_not_found' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const newPlain = generateOpaqueRefresh()
@@ -374,7 +517,7 @@ export class AuthService {
       })
     }
 
-    const access_token = await this.issueAccess(u)
+    const { access_token, permissions } = await this.issueAccess(u)
 
     await this.audit({
       event_type: 'auth.refresh',
@@ -389,7 +532,8 @@ export class AuthService {
       access_token,
       this.env.ACCESS_TOKEN_TTL_SECONDS,
       newPlain,
-      useCookieChannel
+      useCookieChannel,
+      permissions
     )
 
     return {
@@ -508,24 +652,24 @@ export class AuthService {
         ? token_gen_claim
         : Number.parseInt(String(token_gen_claim ?? ''), 10)
     if (!Number.isInteger(claim) || claim < 0) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const user = await this.repo.findUserById(new ObjectId(user_id_hex))
     if (!user) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     const expected = coerceTokenGen(user)
     if (claim !== expected) {
-      return unauthorizedServiceOutcome(this.types.invalidToken)
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
     }
 
     if (this.redisClient) {
       try {
         const redisGen = await getAccessTokenGenFromRedis(this.redisClient, user_id_hex)
         if (redisGen !== null && redisGen !== expected) {
-          return unauthorizedServiceOutcome(this.types.invalidToken)
+          return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
         }
       } catch (err) {
         this.log?.error?.({ err, user_id: user_id_hex }, 'redis token_gen read failed')
@@ -701,7 +845,7 @@ export class AuthService {
         ip,
         detail_safe: { reason: 'invalid_current_password' }
       })
-      return unauthorizedServiceOutcome(this.types.invalidCredentials)
+      return unauthorizedServiceOutcome(this.types.invalidCredentials, this.types)
     }
 
     const samePassword = await this.verifyPasswordHash(user.password_hash, new_password)

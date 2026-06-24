@@ -1,10 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import type { DecodedUser, TokenResponse } from '../types/auth';
+import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: DecodedUser | null;
+  permissions: string[];
+  menus: MenuNode[];
+  menuLoading: boolean;
+  menuError: boolean;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,6 +37,10 @@ function decodeJwt(token: string): DecodedUser | null {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<DecodedUser | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [menus, setMenus] = useState<MenuNode[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [menuError, setMenuError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const applyToken = useCallback((data: TokenResponse) => {
@@ -40,11 +48,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!decoded) return;
     setUser(decoded);
     setAccessToken(data.access_token);
+    setPermissions(data.permissions || []);
   }, []);
 
   const clearSession = useCallback(() => {
     setUser(null);
     setAccessToken(null);
+    setPermissions([]);
+    setMenus([]);
+    setMenuLoading(false);
+    setMenuError(false);
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -85,6 +98,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshFn().finally(() => setLoading(false));
   }, [refreshFn]);
 
+  // Dynamic Menu loading based on user authenticated state
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    /* eslint-disable react-hooks/set-state-in-effect --
+     * Intentional: synchronously set loading/error flags before the async
+     * API call so the UI reflects the pending state immediately (not after
+     * the microtask queue drains). Both setState calls are unconditional and
+     * do not depend on component state, so they don't cause cascading renders.
+     */
+    setMenuLoading(true);
+    setMenuError(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    authApi
+      .getMyMenus()
+      .then((data) => {
+        if (cancelled) return;
+        setMenus(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMenuError(true);
+        // Fallback to minimal menus on error
+        setMenus([
+          { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+          { key: 'my_profile', label: 'My Profile', type: 'action', parent_key: null, sort_order: 100 },
+        ]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setMenuLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, permissions]);
+
   const login = useCallback(
     async (username: string, password: string) => {
       const data = await authApi.login(username, password);
@@ -102,7 +156,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearSession();
   }, [clearSession]);
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        permissions,
+        menus,
+        menuLoading,
+        menuError,
+        loading,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -111,3 +180,4 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 }
+

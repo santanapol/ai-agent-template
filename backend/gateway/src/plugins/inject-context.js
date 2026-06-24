@@ -4,7 +4,8 @@ import {
   assertValidUserIdHeader,
   normalizeRoleHeader,
   normalizeUserIdClaim,
-  normalizeTenantClaim
+  normalizeTenantClaim,
+  normalizePermissionsClaim
 } from '../lib/claims.js'
 
 /**
@@ -29,6 +30,7 @@ export default fp(
       let role
       let ouId
       let branchId
+      let permissions
       try {
         userId = normalizeUserIdClaim(payload[env.JWT_CLAIM_USER_ID])
         assertValidUserIdHeader(userId)
@@ -36,7 +38,12 @@ export default fp(
         assertValidRoleHeader(role)
         ouId = normalizeTenantClaim(payload[env.JWT_CLAIM_OU])
         branchId = normalizeTenantClaim(payload[env.JWT_CLAIM_BRANCH])
-      } catch {
+        permissions = normalizePermissionsClaim(payload.permissions)
+      } catch (err) {
+        request.log.debug(
+          { claimRejectReason: err?.message },
+          'claim normalization or validation failed'
+        )
         return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
       }
 
@@ -48,21 +55,20 @@ export default fp(
       }
 
       const requestId = String(request.id)
-      const incomingIfMatch = request.headers['if-match']
-      const ifMatch =
-        typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== ''
-          ? incomingIfMatch.trim()
-          : ''
-
       request.gatewayUpstreamHeaders = {
         'x-gateway-secret': env.GATEWAY_SECRET,
         'x-user-ou': ouId,
         'x-user-branch': branchId,
         'x-user-id': userId,
         'x-user-role': role,
+        'x-user-permissions': permissions,
         'x-request-id': requestId
       }
-      if (ifMatch) request.gatewayUpstreamHeaders['if-match'] = ifMatch
+
+      const incomingIfMatch = request.headers['if-match']
+      if (typeof incomingIfMatch === 'string' && incomingIfMatch.trim() !== '') {
+        request.gatewayUpstreamHeaders['if-match'] = incomingIfMatch.trim()
+      }
     })
   },
   { name: 'gateway-inject-context' }

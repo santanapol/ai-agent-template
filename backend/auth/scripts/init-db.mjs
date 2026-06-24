@@ -66,6 +66,9 @@ await db
 await db
   .collection(AUTH_COLLECTIONS.USERS)
   .createIndex({ ou_id: 1, branch_id: 1 }, { name: 'by_ou_branch' })
+await db
+  .collection(AUTH_COLLECTIONS.USERS)
+  .createIndex({ ou_id: 1, role: 1 }, { name: 'by_ou_role' })
 
 // Collection: auth_refresh_tokens
 await db

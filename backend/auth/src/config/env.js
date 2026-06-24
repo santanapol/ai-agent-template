@@ -22,6 +22,9 @@ export function loadEnv(env = process.env) {
     ACCESS_TOKEN_TTL_SECONDS: env.ACCESS_TOKEN_TTL_SECONDS
       ? parseInt(env.ACCESS_TOKEN_TTL_SECONDS, 10)
       : 900,
+    ACCESS_JWT_SOFT_LIMIT_BYTES: env.ACCESS_JWT_SOFT_LIMIT_BYTES
+      ? parseInt(env.ACCESS_JWT_SOFT_LIMIT_BYTES, 10)
+      : 4096,
     REFRESH_TOKEN_TTL_SECONDS: env.REFRESH_TOKEN_TTL_SECONDS
       ? parseInt(env.REFRESH_TOKEN_TTL_SECONDS, 10)
       : 2592000,

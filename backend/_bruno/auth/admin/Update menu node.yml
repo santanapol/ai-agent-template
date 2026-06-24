@@ -1,0 +1,42 @@
+info:
+  name: Update menu node
+  type: http
+  seq: 3
+  tags:
+    - admin
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/auth/admin/menus/{{admin_test_menu_key}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: If-Match
+      value: "{{menu_upd_date}}"
+  body:
+    type: json
+    data: |-
+      {
+        "label": "Bruno SIT test action (updated)"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 || (typeof res.getStatus === 'function' && res.getStatus() === 200)) {
+          var body = typeof res.getBody === 'function' ? res.getBody() : res.body;
+          if (body && body.upd_date) {
+            bru.setEnvVar('menu_upd_date', body.upd_date);
+          }
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  PATCH menu node with **raw ISO** `If-Match` (`{{menu_upd_date}}`). Run `List menus` or `Create menu node` first. Updates `menu_upd_date` on success.

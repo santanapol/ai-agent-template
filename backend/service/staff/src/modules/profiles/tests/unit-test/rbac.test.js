@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 
 import { HttpError } from "../../../../lib/http-error.js";
@@ -9,7 +9,12 @@ import {
   resolveListScope,
   resolveLookupScope,
   isAdminRole,
+  assertPermission,
 } from "../../profiles.service.js";
+import {
+  setRuntimeEnv,
+  resetRuntimeEnvForTests,
+} from "../../../../config/runtime-env.js";
 
 const ouA = "507f1f77bcf86cd799439011";
 const branchA1 = "507f1f77bcf86cd799439012";
@@ -17,11 +22,32 @@ const branchA2 = "507f1f77bcf86cd799439014";
 const userSelf = "507f1f77bcf86cd799439013";
 const userOther = "507f1f77bcf86cd799439015";
 
+// Mock environment template
+const baseEnv = {
+  appName: "staff-service",
+  nodeEnv: "test",
+  port: 3101,
+  dbName: "auth_login",
+  mongoUri: "",
+  gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
+  authInternalBaseUrl: "http://127.0.0.1:3001",
+  authInternalServiceSecret: "internal-secret",
+  staffProvisionDefaultRole: "staff",
+  shutdownTimeoutMs: 5000,
+  bodyLimit: "1mb",
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  authRevokeMaxRetries: 3,
+  authRevokeBackoffMs: 200,
+  permissionMode: "dual",
+};
+
 const platformAdmin = {
   userId: userSelf,
   ouId: ouA,
   branchId: branchA1,
   role: "platform_admin",
+  permissions: ["profiles:*", "roles:assign"],
 };
 
 const branchAdmin = {
@@ -29,6 +55,7 @@ const branchAdmin = {
   ouId: ouA,
   branchId: branchA1,
   role: "branch_admin",
+  permissions: ["profiles:*"],
 };
 
 const staffUser = {
@@ -36,6 +63,7 @@ const staffUser = {
   ouId: ouA,
   branchId: branchA1,
   role: "staff",
+  permissions: [],
 };
 
 const profileInBranchA1 = {
@@ -57,10 +85,71 @@ const ownProfile = {
 };
 
 describe("profiles RBAC / scope", () => {
+  beforeEach(() => {
+    setRuntimeEnv({ ...baseEnv });
+  });
+
+  afterEach(() => {
+    resetRuntimeEnvForTests();
+  });
+
   test("isAdminRole identifies admin roles", () => {
     assert.strictEqual(isAdminRole("platform_admin"), true);
     assert.strictEqual(isAdminRole("branch_admin"), true);
+    assert.strictEqual(isAdminRole("support_admin"), true);
+    assert.strictEqual(isAdminRole("support"), true);
     assert.strictEqual(isAdminRole("staff"), false);
+  });
+
+  describe("assertPermission", () => {
+    test("passes when exact permission key matches", () => {
+      const context = { ...staffUser, permissions: ["profiles:read"] };
+      assert.doesNotThrow(() => assertPermission(context, "profiles:read"));
+    });
+
+    test("passes when wildcard permission key matches", () => {
+      const context = { ...branchAdmin, permissions: ["profiles:*"] };
+      assert.doesNotThrow(() => assertPermission(context, "profiles:read"));
+    });
+
+    test("throws 403 PERMISSION_DENIED when no permission matches in enforce mode", () => {
+      setRuntimeEnv({ ...baseEnv, permissionMode: "enforce" });
+      const context = { ...staffUser, permissions: ["profiles:read"] };
+
+      assert.throws(
+        () => assertPermission(context, "profiles:create"),
+        (error) => {
+          assert.ok(error instanceof HttpError);
+          assert.strictEqual(error.status, 403);
+          assert.strictEqual(error.code, CODES.PERMISSION_DENIED);
+          return true;
+        },
+      );
+    });
+
+    test("passes when no permission matches but legacy role check passes in dual mode", () => {
+      setRuntimeEnv({ ...baseEnv, permissionMode: "dual" });
+      const context = { ...branchAdmin, permissions: [] }; // ไม่มี permission แต่เป็น branch_admin
+
+      assert.doesNotThrow(() =>
+        assertPermission(context, "profiles:create", {
+          legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+        }),
+      );
+    });
+
+    test("throws 403 when no permission matches and legacy role check fails in dual mode", () => {
+      setRuntimeEnv({ ...baseEnv, permissionMode: "dual" });
+      const context = { ...staffUser, permissions: [] }; // staff ไม่มี permission และ role ไม่ผ่าน
+
+      assert.throws(
+        () =>
+          assertPermission(context, "profiles:create", {
+            legacyRoleCheck: (ctx) => isAdminRole(ctx.role),
+          }),
+        (error) => error instanceof HttpError && error.status === 403,
+      );
+    });
   });
 
   test("resolveListScope — staff receives 403", () => {
@@ -69,7 +158,7 @@ describe("profiles RBAC / scope", () => {
       (error) => {
         assert.ok(error instanceof HttpError);
         assert.strictEqual(error.status, 403);
-        assert.strictEqual(error.code, CODES.INVALID_USER_CONTEXT);
+        assert.strictEqual(error.code, CODES.PERMISSION_DENIED);
         return true;
       },
     );
@@ -100,30 +189,32 @@ describe("profiles RBAC / scope", () => {
 
   test("assertProfileScope — platform_admin may read profile in another branch (same OU)", () => {
     assert.doesNotThrow(() =>
-      assertProfileScope(profileInBranchA2, platformAdmin),
+      assertProfileScope(profileInBranchA2, platformAdmin, "profiles:read"),
     );
   });
 
   test("assertProfileScope — branch_admin cannot read profile in another branch", () => {
     assert.throws(
-      () => assertProfileScope(profileInBranchA2, branchAdmin),
+      () => assertProfileScope(profileInBranchA2, branchAdmin, "profiles:read"),
       (error) => error instanceof HttpError && error.status === 403,
     );
   });
 
   test("assertProfileScope — branch_admin may read profile in own branch", () => {
     assert.doesNotThrow(() =>
-      assertProfileScope(profileInBranchA1, branchAdmin),
+      assertProfileScope(profileInBranchA1, branchAdmin, "profiles:read"),
     );
   });
 
   test("assertProfileScope — self may read own profile", () => {
-    assert.doesNotThrow(() => assertProfileScope(ownProfile, staffUser));
+    assert.doesNotThrow(() =>
+      assertProfileScope(ownProfile, staffUser, "profiles:read"),
+    );
   });
 
   test("assertProfileScope — staff cannot read another user profile", () => {
     assert.throws(
-      () => assertProfileScope(profileInBranchA1, staffUser),
+      () => assertProfileScope(profileInBranchA1, staffUser, "profiles:read"),
       (error) => error instanceof HttpError && error.status === 403,
     );
   });

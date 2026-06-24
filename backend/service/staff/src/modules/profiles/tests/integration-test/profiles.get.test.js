@@ -194,7 +194,7 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 403);
-      assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
+      assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
     });
 
     test("staff GET /profiles/{id} for another profile returns 403", async () => {
@@ -205,7 +205,7 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 403);
-      assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
+      assert.strictEqual(res.json().code, CODES.PERMISSION_DENIED);
     });
 
     test("GET /profiles/{id} unknown returns 404", async () => {

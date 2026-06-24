@@ -69,6 +69,18 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
     upd_prog: 'test/auth.integration.test.js'
   })
 
+  await db.collection(AUTH_COLLECTIONS.ROLE_PERMISSIONS).insertOne({
+    ou_id: null,
+    role: 'admin',
+    menu_keys: ['profiles:*', 'invoice:read'],
+    cr_by: 'test_seed',
+    cr_date: now,
+    cr_prog: 'test/auth.integration.test.js',
+    upd_by: 'test_seed',
+    upd_date: now,
+    upd_prog: 'test/auth.integration.test.js'
+  })
+
   const pem = generateRsaPkcs8Pem()
   const app = await buildApp(loadEnv(testEnv(databaseUri, pem)), { logger: false })
   const addr = await app.listen({ port: 0, host: '127.0.0.1' })
@@ -188,6 +200,60 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
     assert.equal(claims.token_gen, user?.access_token_gen ?? 0)
   })
 
+  await t.test('login returns permissions in body and embeds the raw claim in JWT', async () => {
+    const r = await fetch(`${base}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: TEST_USER,
+        password: TEST_PASS,
+        client_kind: 'native'
+      })
+    })
+    assert.equal(r.status, 200)
+    const body = await r.json()
+    assert.deepEqual(body.permissions, ['profiles:*', 'invoice:read'])
+    // wildcard ต้องไม่ถูก expand ทั้งใน body และเคลม
+    const claims = decodeJwt(body.access_token)
+    assert.deepEqual(claims.permissions, ['profiles:*', 'invoice:read'])
+  })
+
+  await t.test('login user without permission mapping gets empty permissions', async () => {
+    const ghostUser = 'integration_ghost_user'
+    await db.collection(AUTH_COLLECTIONS.USERS).insertOne({
+      ou_id: TEST_OU_ID,
+      branch_id: TEST_BRANCH_ID,
+      username: ghostUser,
+      password_hash: await argon2.hash(TEST_PASS, {
+        type: argon2.argon2id,
+        memoryCost: 65_536,
+        timeCost: 3,
+        parallelism: 4
+      }),
+      role: 'ghost_role',
+      access_token_gen: 0,
+      cr_by: 'test_seed',
+      cr_date: now,
+      cr_prog: 'test/auth.integration.test.js',
+      upd_by: 'test_seed',
+      upd_date: now,
+      upd_prog: 'test/auth.integration.test.js'
+    })
+    const r = await fetch(`${base}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: ghostUser,
+        password: TEST_PASS,
+        client_kind: 'native'
+      })
+    })
+    assert.equal(r.status, 200)
+    const body = await r.json()
+    assert.deepEqual(body.permissions, [])
+    assert.deepEqual(decodeJwt(body.access_token).permissions, [])
+  })
+
   let refresh1
   let refresh2
 
@@ -213,6 +279,8 @@ test('auth + Mongo integration', { timeout: 180_000 }, async (t) => {
     const body = await r.json()
     assert.ok(body.access_token)
     assert.ok(body.refresh_token)
+    assert.deepEqual(body.permissions, ['profiles:*', 'invoice:read'])
+    assert.deepEqual(decodeJwt(body.access_token).permissions, ['profiles:*', 'invoice:read'])
     refresh2 = body.refresh_token
     assert.notEqual(refresh2, refresh1)
   })

@@ -17,7 +17,7 @@ interface StaffTableProps {
   loading: boolean;
   pagination: StaffTablePagination;
   onView: (record: StaffProfile) => void;
-  onEdit: (record: StaffProfile) => void;
+  onEdit?: (record: StaffProfile) => void;
   onArchive: (record: StaffProfile) => void;
   onRestore: (record: StaffProfile) => void;
   onTableChange: (cfg: TablePaginationConfig) => void;
@@ -87,14 +87,16 @@ const StaffTable: React.FC<StaffTableProps> = ({
                 onClick={() => onView(record)}
               />
             </Tooltip>
-            <Tooltip title="Edit profile">
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                aria-label="Edit profile"
-                onClick={() => onEdit(record)}
-              />
-            </Tooltip>
+            {onEdit && (
+              <Tooltip title="Edit profile">
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  aria-label="Edit profile"
+                  onClick={() => onEdit(record)}
+                />
+              </Tooltip>
+            )}
             {record.status === 'active' ? (
               <Tooltip title="Archive profile">
                 <Button

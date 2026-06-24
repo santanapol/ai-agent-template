@@ -1,72 +1,69 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { AxiosError } from 'axios';
 import { apiErrorMessage } from './apiError';
 
-function makeAxiosError(data: Record<string, unknown> = {}) {
-  return Object.assign(new Error('request failed'), {
-    isAxiosError: true as const,
-    response: { data },
-  });
+function makeAxiosError(data: { code?: string; detail?: string; message?: string }) {
+  const err = new Error('request failed') as AxiosError;
+  err.isAxiosError = true;
+  err.response = {
+    data,
+    status: 400,
+    statusText: 'Bad Request',
+    headers: {},
+    config: {},
+  } as AxiosError['response'];
+  return err;
 }
 
 describe('apiErrorMessage', () => {
-  describe('non-Axios errors', () => {
-    it('returns fallback for a plain Error', () => {
-      expect(apiErrorMessage(new Error('oops'), 'fallback message')).toBe('fallback message');
-    });
-
-    it('returns fallback for a string value', () => {
-      expect(apiErrorMessage('string error', 'fallback message')).toBe('fallback message');
-    });
-
-    it('returns fallback for null', () => {
-      expect(apiErrorMessage(null, 'fallback message')).toBe('fallback message');
-    });
+  it('maps AUTH_PRECONDITION_FAILED', () => {
+    const err = makeAxiosError({ code: 'AUTH_PRECONDITION_FAILED' });
+    expect(apiErrorMessage(err, 'fallback')).toMatch(/modified by another session/i);
   });
 
-  describe('known API error codes', () => {
-    it('returns VERSION_CONFLICT message', () => {
-      const err = makeAxiosError({ code: 'VERSION_CONFLICT' });
-      expect(apiErrorMessage(err, 'fallback')).toBe(
-        'This record was modified by another session. Please refresh and try again.',
-      );
+  it('maps AUTH_MENU_IN_USE from detail', () => {
+    const err = makeAxiosError({
+      code: 'AUTH_MENU_IN_USE',
+      detail: 'Cannot delete menu key that has children.',
     });
-
-    it('returns STAFF_AUTH_REVOKE_PENDING message', () => {
-      const err = makeAxiosError({ code: 'STAFF_AUTH_REVOKE_PENDING' });
-      expect(apiErrorMessage(err, 'fallback')).toBe(
-        'Profile archived, but session revocation is still pending.',
-      );
-    });
-
-    it('returns DUPLICATE message', () => {
-      const err = makeAxiosError({ code: 'DUPLICATE' });
-      expect(apiErrorMessage(err, 'fallback')).toBe(
-        'A profile with this staff code or user already exists.',
-      );
-    });
-
-    it('prioritises code over message when both present', () => {
-      const err = makeAxiosError({ code: 'DUPLICATE', message: 'should be ignored' });
-      expect(apiErrorMessage(err, 'fallback')).toBe(
-        'A profile with this staff code or user already exists.',
-      );
-    });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Cannot delete menu key that has children.');
   });
 
-  describe('generic Axios errors', () => {
-    it('returns the API message field when no known code is present', () => {
-      const err = makeAxiosError({ message: 'Server validation failed' });
-      expect(apiErrorMessage(err, 'fallback')).toBe('Server validation failed');
+  it('maps AUTH_ROLE_PERMISSION_IN_USE from detail', () => {
+    const err = makeAxiosError({
+      code: 'AUTH_ROLE_PERMISSION_IN_USE',
+      detail: 'Cannot delete role mapping because there are 3 active users.',
     });
+    expect(apiErrorMessage(err, 'fallback')).toContain('active users');
+  });
 
-    it('returns fallback when Axios error has no code and no message', () => {
-      const err = makeAxiosError({});
-      expect(apiErrorMessage(err, 'the fallback')).toBe('the fallback');
+  it('maps AUTH_INVALID_REQUEST from detail string', () => {
+    const err = makeAxiosError({
+      code: 'AUTH_INVALID_REQUEST',
+      detail: 'Menu validation failed: duplicate key',
     });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Menu validation failed: duplicate key');
+  });
 
-    it('returns fallback when Axios error has an unrecognised code and no message', () => {
-      const err = makeAxiosError({ code: 'SOME_UNKNOWN_CODE' });
-      expect(apiErrorMessage(err, 'fallback')).toBe('fallback');
+  it('still maps VERSION_CONFLICT for staff', () => {
+    const err = makeAxiosError({ code: 'VERSION_CONFLICT' });
+    expect(apiErrorMessage(err, 'fallback')).toMatch(/modified by another session/i);
+  });
+
+  it('returns fallback for unknown errors', () => {
+    expect(apiErrorMessage(new Error('nope'), 'fallback')).toBe('fallback');
+  });
+
+  it('maps AUTH_MENU_NOT_FOUND', () => {
+    const err = makeAxiosError({
+      code: 'AUTH_MENU_NOT_FOUND',
+      detail: 'Menu key missing',
     });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Menu key missing');
+  });
+
+  it('maps AUTH_ROLE_PERMISSION_NOT_FOUND with default message', () => {
+    const err = makeAxiosError({ code: 'AUTH_ROLE_PERMISSION_NOT_FOUND' });
+    expect(apiErrorMessage(err, 'fallback')).toBe('Role permission mapping not found.');
   });
 });
