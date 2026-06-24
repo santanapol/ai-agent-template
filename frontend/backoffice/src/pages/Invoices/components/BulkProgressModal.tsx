@@ -33,6 +33,7 @@ export function BulkProgressModal({
     <Modal
       title={title}
       open={open}
+      width={560}
       onCancel={onClose}
       footer={(
         <Space>
@@ -64,19 +65,31 @@ export function BulkProgressModal({
           dataSource={progress.results}
           locale={{ emptyText: 'Waiting to start…' }}
           renderItem={(item) => (
-            <List.Item>
-              <Space>
-                {item.status === 'success' ? (
-                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                ) : (
-                  <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                )}
-                <span>{item.ivNo}</span>
-                {item.error && <Typography.Text type="danger">{item.error}</Typography.Text>}
-                {item.status === 'cancelled' && !item.error && (
-                  <Typography.Text type="secondary">Cancelled</Typography.Text>
-                )}
-              </Space>
+            <List.Item style={{ display: 'block', paddingInline: 0 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
+                <span style={{ flexShrink: 0, lineHeight: '22px' }}>
+                  {item.status === 'success' ? (
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                  ) : (
+                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                  )}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Typography.Text strong style={{ whiteSpace: 'nowrap' }}>
+                    {item.ivNo}
+                  </Typography.Text>
+                  {item.error && (
+                    <Typography.Text type="danger" style={{ display: 'block', marginTop: 2 }}>
+                      {item.error}
+                    </Typography.Text>
+                  )}
+                  {item.status === 'cancelled' && !item.error && (
+                    <Typography.Text type="secondary" style={{ display: 'block', marginTop: 2 }}>
+                      Cancelled
+                    </Typography.Text>
+                  )}
+                </div>
+              </div>
             </List.Item>
           )}
         />

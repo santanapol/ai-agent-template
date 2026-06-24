@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Backoffice — Invoices:** Bulk progress modal list layout — invoice number no longer breaks mid-string; error messages wrap on a separate line.
 - **Backoffice — Role permissions:** Parent menu group checkboxes were disabled (`type: menu` + `checkStrictly`); enabling cascade select/deselect while persisting action keys only.
 - **Backoffice — Auth session:** Stop `GET /auth/me/menus` fetch storm on token refresh (stable `permissionsKey` deps instead of array reference); skip auto-refresh retry on `/auth/me/menus` 401 to avoid refresh-token rotation loops that surfaced as `TOKEN_REFRESH_REJECTED` on production.
 - **`backend/auth/`:** Sync `user:{sub}:token_gen` in Redis on login and refresh so `GET /auth/me/menus` passes `assertAccessTokenGenMatches` after session revoke; fix Permission Admin `revoke_sessions` to publish the correct Redis key (was `auth:token_gen:{sub}`).
