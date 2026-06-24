@@ -1,0 +1,35 @@
+info:
+  name: List menus
+  type: http
+  seq: 1
+  tags:
+    - admin
+
+http:
+  method: GET
+  url: "{{baseUrl}}/auth/admin/menus"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 || (typeof res.getStatus === 'function' && res.getStatus() === 200)) {
+          var body = typeof res.getBody === 'function' ? res.getBody() : res.body;
+          var menus = body && body.menus ? body.menus : [];
+          var testKey = bru.getEnvVar('admin_test_menu_key') || 'sit:bruno:test';
+          var target = menus.find(function (m) { return m.key === testKey; })
+            || menus.find(function (m) { return m.key === 'permissions:manage'; });
+          if (target && target.upd_date) {
+            bru.setEnvVar('menu_upd_date', target.upd_date);
+          }
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  Returns full menu registry `{ menus: [...] }`. Captures `menu_upd_date` from `sit:bruno:test` or `permissions:manage` for PATCH/DELETE.

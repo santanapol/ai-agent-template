@@ -53,7 +53,14 @@ export function readEnv() {
     authRevokeMaxRetries: Number(process.env.AUTH_REVOKE_MAX_RETRIES || 3),
     authRevokeBackoffMs: Number(process.env.AUTH_REVOKE_BACKOFF_MS || 200),
     metricsEnabled: readBooleanEnv("METRICS_ENABLED", false),
+    permissionMode: process.env.PERMISSION_MODE || "dual",
   };
+
+  if (!["dual", "enforce"].includes(env.permissionMode)) {
+    throw new Error(
+      `Invalid PERMISSION_MODE: ${env.permissionMode}. Must be "dual" or "enforce"`,
+    );
+  }
 
   if (env.nodeEnv === "production") {
     const missing = REQUIRED_IN_PRODUCTION.filter((key) => !process.env[key]);

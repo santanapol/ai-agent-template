@@ -15,6 +15,10 @@ import authRoutePlugin from './modules/auth/auth.route.js'
 import { InternalService } from './modules/internal/internal.service.js'
 import { createInternalController } from './modules/internal/internal.controller.js'
 import internalRoutePlugin from './modules/internal/internal.route.js'
+import { AdminRepository } from './modules/admin/admin.repository.js'
+import { AdminService } from './modules/admin/admin.service.js'
+import { createAdminController } from './modules/admin/admin.controller.js'
+import adminRoutePlugin from './modules/admin/admin.route.js'
 
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
@@ -196,6 +200,23 @@ export async function buildApp(env = loadEnv(), options = {}) {
   })
 
   await fastify.register(authRoutePlugin, { controller, types, env, publicKey })
+
+  const adminRepo = new AdminRepository(fastify.mongo.db)
+  const adminService = new AdminService({
+    repo: adminRepo,
+    env,
+    redisClient,
+    log: serviceLog,
+    types
+  })
+  const adminController = createAdminController({ service: adminService, types })
+  await fastify.register(adminRoutePlugin, {
+    controller: adminController,
+    authService: service,
+    types,
+    env,
+    publicKey
+  })
 
   const internalService = new InternalService({ authService: service })
   const internalController = createInternalController({ service: internalService })

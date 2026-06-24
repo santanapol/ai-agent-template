@@ -1,0 +1,104 @@
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import StaffManagement from './StaffManagement';
+import { usePermission } from '../hooks/usePermission';
+import type { StaffProfile } from '../types/staff';
+import * as staffApi from '../lib/staffApiClient';
+
+// Mock dependencies
+vi.mock('../hooks/usePermission');
+vi.mock('../lib/staffApiClient');
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'u1' } }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+vi.mock('../hooks/useAppFeedback', () => ({
+  useAppFeedback: () => ({
+    message: { success: vi.fn(), error: vi.fn() },
+    modal: { confirm: vi.fn() },
+  }),
+}));
+
+// Mock window.matchMedia for Ant Design UI components
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+const mockProfile: StaffProfile = {
+  id: '1',
+  user_id: 'user-1',
+  ou_id: 'ou-1',
+  branch_id: 'branch-1',
+  status: 'active',
+  code: 'EMP-001',
+  firstname: 'John',
+  lastname: 'Doe',
+  email: 'john@example.com',
+  tel: '1234567890',
+  user: { username: 'jdoe', role: 'staff' },
+};
+
+describe('StaffManagement', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
+      requestId: '123',
+    });
+  });
+
+  test('renders Add New Staff and Edit buttons when permissions are granted', async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === 'profiles:create') return true;
+      if (permission === 'profiles:edit') return true;
+      return false;
+    });
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: '123',
+    });
+
+    render(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Edit profile/i })).toBeInTheDocument();
+    });
+  });
+
+  test('hides Add New Staff button when profiles:create is missing', async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === 'profiles:create') return false;
+      return true;
+    });
+
+    render(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /Add New Staff/i })).not.toBeInTheDocument();
+    });
+  });
+});

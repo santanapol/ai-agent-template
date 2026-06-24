@@ -3,7 +3,13 @@ import { ObjectId } from "mongodb";
 import { HttpError } from "../lib/http-error.js";
 import CODES from "../lib/error-codes.js";
 
-const VALID_ROLES = new Set(["staff", "branch_admin", "platform_admin"]);
+const VALID_ROLES = new Set([
+  "staff",
+  "branch_admin",
+  "platform_admin",
+  "support",
+  "support_admin",
+]);
 
 function readHeader(request, name) {
   const value = request.headers[name];
@@ -30,6 +36,7 @@ export default fp(async function userContextGuard(fastify) {
     const userOu = readHeader(request, "x-user-ou");
     const userBranch = readHeader(request, "x-user-branch");
     const role = readHeader(request, "x-user-role");
+    const rawPermissions = readHeader(request, "x-user-permissions");
 
     if (!userId || !userOu || !userBranch || !role) {
       throw new HttpError(
@@ -53,6 +60,7 @@ export default fp(async function userContextGuard(fastify) {
 
     const ouObjectId = parseHexObjectId(userOu, "x-user-ou");
     const branchObjectId = parseHexObjectId(userBranch, "x-user-branch");
+    const permissions = rawPermissions === "" ? [] : rawPermissions.split(",");
 
     request.userContext = {
       userId,
@@ -61,6 +69,7 @@ export default fp(async function userContextGuard(fastify) {
       role,
       ouObjectId,
       branchObjectId,
+      permissions,
     };
   });
 });

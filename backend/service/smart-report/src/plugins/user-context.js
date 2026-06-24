@@ -41,6 +41,10 @@ export default fp(async function userContextGuard(fastify) {
       ouId: userOu,
       branchId: userBranch,
       role,
+      permissions:
+        readHeader(request, "x-user-permissions") === ""
+          ? []
+          : readHeader(request, "x-user-permissions").split(","),
     };
   });
 });

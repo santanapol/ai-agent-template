@@ -9,6 +9,7 @@ const CRITICAL_HEADERS = new Set([
   "x-user-ou",
   "x-user-branch",
   "x-user-role",
+  "x-user-permissions",
   "content-type",
   "if-match",
 ]);

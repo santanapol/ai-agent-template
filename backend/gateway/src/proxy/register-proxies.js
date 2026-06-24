@@ -4,6 +4,7 @@ const DANGEROUS_HEADERS = new Set([
   'authorization',
   'x-user-id',
   'x-user-role',
+  'x-user-permissions',
   'x-user-ou',
   'x-user-branch',
   'x-user-permissions',

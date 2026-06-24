@@ -72,7 +72,10 @@ backend/auth/
 
 ### Validation = กฎเดียวกับ seed เสมอ
 
-ทุก mutation ตรวจกับ**สถานะรวมหลังแก้** (เอกสารปัจจุบันใน DB + การแก้ที่ขอ) ด้วย `permission-validation.js` — ผิดข้อใด → `400` RFC 7807 พร้อมรายการ error ทั้งหมดใน `detail`
+ทุก mutation ตรวจกับ**สถานะรวมหลังแก้** (เอกสารปัจจุบัน in DB + การแก้ที่ขอ) ด้วย `permission-validation.js` — ผิดข้อใด → `400` RFC 7807 พร้อมรายการ error ทั้งหมดใน `detail`
+
+- **Sanitization:** ใน Controller/Validator ของ `PUT /auth/admin/role-permissions/:ou_id/:role` จะต้องมีกระบวนการแปลงค่าพารามิเตอร์ที่เป็น string `"null"` ให้กลายเป็น JS `null` (Global) อย่างปลอดภัย
+- **Race Condition Prevention:** เพื่อป้องกัน race condition ตอนที่แอดมินสองคนบันทึกแก้ไขผังเมนูย้อนกลับหากันในเวลาใกล้เคียงกัน (เช่น สลับกิ่งเมนูจนเป็น loop) ระบบจะต้องตรวจสอบกฎ 7 ข้อโดยอาศัยข้อมูลที่อ่านแบบสด (Real-time read) และครอบคลุมการตรวจสอบด้วย MongoDB Transaction หรือ application-level mutex lock
 
 ### Concurrency
 
@@ -87,9 +90,9 @@ PATCH/PUT/DELETE ใช้ **optimistic locking ด้วย `upd_date`** ตา
 
 `PUT /auth/admin/role-permissions/...` รับ `revoke_sessions: boolean` (default `false`) — เมื่อ `true` ทำแบบ **bulk synchronous** (ไม่วนรายคน):
 
-1. `updateMany({ ou_id, role }, { $inc: { access_token_gen: 1 } })` บน `auth_users`
-2. revoke refresh tokens ของ user ใน scope ด้วย `user_id: { $in: [...] }` ครั้งเดียว
-3. sync Redis ด้วย pipeline (`multi/exec`) เป็นชุด — ผู้ใช้หลักพันจบใน ms ระดับร้อย ไม่ต้องมี async machinery
+1. `updateMany({ ou_id, role }, { $inc: { access_token_gen: 1 } })` บน `auth_users` (ต้องมั่นใจว่ามี database index บนคู่ฟิลด์ `{ ou_id: 1, role: 1 }` ใน `auth_users` เพื่อการันตี performance)
+2. ค้นหา `user_id` ใน scope เพื่อทำการ revoke refresh tokens ด้วย `user_id: { $in: [...] }` ครั้งเดียว
+3. sync Redis ด้วย pipeline (`multi/exec`) เป็นชุดเพื่อป้องกันการ block เครือข่ายของ Redis โดยมี hard limit/chunking ป้องกันไม่ให้ประมวลผลเกิน 1,000 users ต่อ batch (หากมี user เกิน ให้แบ่งการประมวลผลเป็น chunk เพื่อไม่ให้เกิด timeout)
 
 ## Testing Strategy
 
@@ -110,6 +113,7 @@ PATCH/PUT/DELETE ใช้ **optimistic locking ด้วย `upd_date`** ตา
   - ห้ามแก้ `key`/`type` ของโหนดผ่าน API
   - ห้ามให้ role ที่ไม่มี `permissions:manage` เข้าถึง (รวมถึงห้ามตั้ง default seed ให้ role อื่นนอกจาก `platform_admin`)
   - ห้ามลบ Global Default (`ou_id: null`) ของ role ที่ยังมีผู้ใช้ active โดยไม่มี confirmation flag
+  - **Self-Lockout Prevention:** ห้ามลบโหนดเมนู/action key ของ `permissions:manage` หรือถอนสิทธิ์ mapping `permissions:manage` ออกจากบทบาทหลัก `platform_admin` โดยเด็ดขาด เพื่อป้องกันแอดมินเผลอทำการล็อคตัวเองจนไม่สามารถจัดการสิทธิ์ต่อได้ (ระบบต้องมี hardcoded validation บล็อกที่ API layer)
 
 ## Success Criteria
 

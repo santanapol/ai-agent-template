@@ -5,6 +5,7 @@ export const VALID_ROLES = Object.freeze([
   "branch_admin",
   "staff",
   "support",
+  "support_admin",
 ]);
 
 export const profileIdParamsSchema = {

@@ -64,9 +64,11 @@ export function normalizeTenantClaim(value) {
 }
 
 /**
- * Normalizes permissions claim (array of permission strings) to comma-separated header.
- * Returns empty string if missing/null/empty array.
- * Validates each entry: no commas, ASCII printable, max 256 chars total.
+ * Normalizes permissions claim from JWT to a comma-separated list of strings.
+ * Throws an error if format is invalid (not array, members not string, empty strings,
+ * or members containing commas/whitespace).
+ * Returns empty string if value is missing (undefined/null) or empty array.
+ *
  * @param {unknown} value
  * @returns {string}
  */
@@ -75,40 +77,18 @@ export function normalizePermissionsClaim(value) {
     return ''
   }
   if (!Array.isArray(value)) {
-    throw new Error('permissions_not_array')
+    throw new Error('invalid_permissions_claim_type')
   }
-  if (value.length === 0) {
-    return ''
-  }
-  const parts = []
-  for (const v of value) {
-    const str = String(v).trim()
-    if (!str) continue
-    if (str.includes(',')) {
-      throw new Error('permissions_entry_contains_comma')
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw new Error('invalid_permission_item_type')
     }
-    if (!ASCII_PRINTABLE.test(str)) {
-      throw new Error('permissions_entry_not_ascii_printable')
+    if (item === '') {
+      throw new Error('empty_permission_item')
     }
-    if (str.length > 256) {
-      throw new Error('permissions_entry_too_long')
+    if (item.includes(',') || /\s/u.test(item)) {
+      throw new Error('invalid_permission_characters')
     }
-    parts.push(str)
   }
-  const header = parts.join(',')
-  if (header.length > 4096) {
-    throw new Error('permissions_header_too_long')
-  }
-  return header
-}
-
-/**
- * Validates that a normalized permissions header doesn't exceed limits.
- * (Detailed validation already done in normalizePermissionsClaim.)
- * @param {string} permissionsHeader Comma-separated permissions string
- */
-export function assertValidPermissionsHeader(permissionsHeader) {
-  if (permissionsHeader.length > 4096) {
-    throw new Error('permissions_header_too_long')
-  }
+  return value.join(',')
 }

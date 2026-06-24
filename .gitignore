@@ -21,3 +21,8 @@ Thumbs.db
 # Build / cache
 dist/
 .cache/
+
+# Bruno local environments (copy from *.example.yml; never commit tokens/passwords)
+backend/_bruno/**/environments/Local.yml
+backend/_bruno/**/environments/*.local.yml
+!backend/_bruno/**/environments/*.example.yml
