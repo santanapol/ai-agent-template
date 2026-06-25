@@ -365,4 +365,4 @@ Phase 1 ถือว่าเสร็จเมื่อ:
 | Product / User | ✅ อนุมัติ (Open Questions = Default) | 2026-06-24 |
 | Engineering | ⏳ รออนุมัติ | |
 
-**ขั้นถัดไป:** Plan สร้างแล้ว → อนุมัติ `tasks/plan.md` → `/code-build`
+**ขั้นถัดไป:** ✅ Shipped — ดู `CHANGELOG.md` และ `docs/`

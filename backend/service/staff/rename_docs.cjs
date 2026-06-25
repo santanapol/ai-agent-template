@@ -10,7 +10,6 @@ const filesToUpdate = [
   "openapi.yaml",
   "package.json",
   "_mission-control/SPEC.md",
-  "_mission-control/tasks/plan.md",
 ];
 
 let changedCount = 0;

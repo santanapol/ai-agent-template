@@ -1,8 +1,7 @@
 # Roadmap: Dynamic Permission — ภาพรวมทุก Phase
 
 > เอกสารแม่ของชุดงาน Dynamic Permission ทั้งระบบ — อัปเดตสถานะที่นี่เมื่อแต่ละ phase ขยับ
-> อัปเดตล่าสุด: 2026-06-23 (Phase 1–5 + F2 code complete; SC-3/SC-5/SC-8 verified — รอ merge PR #12–#15)  
-> **E2E / SIT checklist:** [PERMISSION-E2E-CHECKLIST.md](./PERMISSION-E2E-CHECKLIST.md)
+> อัปเดตล่าสุด: 2026-06-25 (Phase 1–5 shipped; E2E checklist ลบหลัง deploy แล้ว)
 
 ## Phases
 
