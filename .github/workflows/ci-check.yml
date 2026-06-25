@@ -15,19 +15,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [auth, gateway, service/demo-service, service/staff, service/agent-invoice]
+        include:
+          - service: auth
+            workspace: true
+          - service: gateway
+            workspace: true
+          - service: service/staff
+            workspace: true
+          - service: service/agent-invoice
+            workspace: true
+          - service: service/demo-service
+            workspace: false
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (monorepo workspace)
+        if: matrix.workspace == true
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
-      - name: Install Dependencies (monorepo workspaces)
+      - name: Setup Node.js (standalone service)
+        if: matrix.workspace != true
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
+
+      - name: Install monorepo workspaces
+        if: matrix.workspace == true
+        run: npm ci
+
+      - name: Install service dependencies
+        if: matrix.workspace != true
+        working-directory: backend/${{ matrix.service }}
         run: npm ci
 
       - name: Run CI Suite (Lint, Test, OpenAPI, Audit)
