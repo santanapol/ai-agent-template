@@ -49,7 +49,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
       const secret = req.headers['x-gateway-secret']
       const ou = req.headers['x-user-ou']
       const branch = req.headers['x-user-branch']
-      const homeBranch = req.headers['x-user-home-branch']
       const uid = req.headers['x-user-id']
       const role = req.headers['x-user-role']
       const permissions = req.headers['x-user-permissions']
@@ -66,7 +65,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
           secret,
           ou,
           branch,
-          homeBranch,
           uid,
           role,
           permissions,
@@ -155,7 +153,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
     const iSecret = names.indexOf('x-gateway-secret')
     const iOu = names.indexOf('x-user-ou')
     const iBranch = names.indexOf('x-user-branch')
-    const iHomeBranch = names.indexOf('x-user-home-branch')
     const iUserId = names.indexOf('x-user-id')
     const iRole = names.indexOf('x-user-role')
     const iPermissions = names.indexOf('x-user-permissions')
@@ -164,7 +161,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.ok(iSecret >= 0)
     assert.ok(iOu > iSecret)
     assert.ok(iBranch > iOu)
-    assert.strictEqual(iHomeBranch, -1)
     assert.ok(iUserId > iBranch)
     assert.ok(iRole > iUserId)
     assert.ok(iPermissions > iRole)
@@ -220,72 +216,6 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(res.status, 401)
     const body = await res.json()
     assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
-  })
-
-  test('forwards home_branch_id claim as x-user-home-branch when present', async () => {
-    const token = await new jose.SignJWT({
-      sub: '507f1f77bcf86cd799439011',
-      role: 'platform_admin',
-      ou_id: 'ou-1',
-      branch_id: 'branch-active',
-      home_branch_id: 'branch-home',
-      token_gen: 0
-    })
-      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
-      .setIssuedAt()
-      .setExpirationTime('2h')
-      .sign(/** @type {import('jose').KeyLike} */ (jwtPrivateKey))
-
-    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    assert.strictEqual(res.status, 200)
-    const body = await res.json()
-    assert.strictEqual(body.branch, 'branch-active')
-    assert.strictEqual(body.homeBranch, 'branch-home')
-
-    const names = /** @type {string[]} */ (body.rawHeaderNames)
-    const iBranch = names.indexOf('x-user-branch')
-    const iHomeBranch = names.indexOf('x-user-home-branch')
-    const iUserId = names.indexOf('x-user-id')
-    assert.ok(iHomeBranch > iBranch)
-    assert.ok(iUserId > iHomeBranch)
-  })
-
-  test('omits x-user-home-branch when JWT has no home_branch_id claim (backward compat)', async () => {
-    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    })
-    assert.strictEqual(res.status, 200)
-    const body = await res.json()
-    assert.strictEqual(body.homeBranch, undefined)
-    const names = /** @type {string[]} */ (body.rawHeaderNames)
-    assert.strictEqual(names.indexOf('x-user-home-branch'), -1)
-  })
-
-  test('strips client-supplied x-user-home-branch header', async () => {
-    const token = await new jose.SignJWT({
-      sub: '507f1f77bcf86cd799439011',
-      role: 'platform_admin',
-      ou_id: 'ou-1',
-      branch_id: 'branch-1',
-      home_branch_id: 'branch-home',
-      token_gen: 0
-    })
-      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
-      .setIssuedAt()
-      .setExpirationTime('2h')
-      .sign(jwtPrivateKey)
-
-    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'x-user-home-branch': 'spoofed-home'
-      }
-    })
-    assert.strictEqual(res.status, 200)
-    const body = await res.json()
-    assert.strictEqual(body.homeBranch, 'branch-home')
   })
 
   test('502 GATEWAY_UPSTREAM_UNAVAILABLE detail does not leak workspace paths', async () => {

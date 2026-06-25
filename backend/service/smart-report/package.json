@@ -22,7 +22,7 @@
     "seed:example": "node --env-file-if-exists=.env scripts/seed-example-data.mjs"
   },
   "dependencies": {
-    "@zero-platform/roles": "*",
+    "@zero-platform/roles": "file:../../shared/platform-roles",
     "exceljs": "^4.4.0",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.1.0",

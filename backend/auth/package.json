@@ -28,7 +28,7 @@
     "create-env": "node scripts/create-dev-env.mjs"
   },
   "dependencies": {
-    "@zero-platform/roles": "*",
+    "@zero-platform/roles": "file:../shared/platform-roles",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.1",
     "@fastify/rate-limit": "^10.2.2",

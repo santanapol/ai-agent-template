@@ -13,6 +13,7 @@ jobs:
     name: Backend CI Checks
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [auth, gateway, service/demo-service, service/staff, service/agent-invoice]
     steps:
@@ -24,10 +25,9 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install Dependencies
-        working-directory: backend/${{ matrix.service }}
+      - name: Install Dependencies (monorepo workspaces)
         run: npm ci
 
       - name: Run CI Suite (Lint, Test, OpenAPI, Audit)
