@@ -24,7 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Backoffice — Invoices:** Shared bulk orchestration module (`bulk/` — concurrency pool, etag helper, progress types); `BulkInvoiceActionBar` and `BulkProgressModal` replace export-only bar/modal duplication.
 - **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save).
 - **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`); `profiles.service` imports `ADMIN_ROLES` / `isAdminRole` from `@zero-platform/roles`.
-- **`backend/auth/`:** `setRoleBodySchema` role enum sourced from `@zero-platform/roles`.
+- **`backend/auth/`:** `setRoleBodySchema` and `createUserBodySchema` role enums sourced from `@zero-platform/roles`; `spec:roles` CI check keeps OpenAPI `InternalSetRoleRequest` in sync.
+- **`backend/gateway/`:** JWT role claim validated with `isValidRole()` before injecting mesh headers (`GATEWAY_CLAIM_REJECTED` for unknown roles).
 - **`backend/service/agent-invoice/`:** Validate `x-user-role` against `@zero-platform/roles` (aligned with staff / smart-report).
 
 ### Fixed

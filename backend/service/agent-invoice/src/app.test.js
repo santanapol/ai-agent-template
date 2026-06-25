@@ -1,9 +1,7 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
 import buildApp from "./app.js";
-import {
-  buildMeshHeaders,
-} from "./lib/test-helpers/mesh-headers.js";
+import { buildMeshHeaders } from "./lib/test-helpers/mesh-headers.js";
 
 describe("App infrastructure behaviors", () => {
   let app;

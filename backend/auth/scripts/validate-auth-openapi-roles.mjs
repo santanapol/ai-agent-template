@@ -29,7 +29,10 @@ const setRoleEnum = extractRoleEnum('InternalSetRoleRequest')
 const canonical = [...VALID_ROLES].sort()
 const fromOpenApi = [...setRoleEnum].sort()
 
-if (canonical.length !== fromOpenApi.length || canonical.some((role, i) => role !== fromOpenApi[i])) {
+if (
+  canonical.length !== fromOpenApi.length ||
+  canonical.some((role, i) => role !== fromOpenApi[i])
+) {
   console.error('OpenAPI InternalSetRoleRequest.role enum drift from @zero-platform/roles')
   console.error('  package:', canonical.join(', '))
   console.error('  openapi:', fromOpenApi.join(', '))

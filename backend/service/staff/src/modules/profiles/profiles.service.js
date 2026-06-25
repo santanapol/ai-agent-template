@@ -14,10 +14,7 @@ import {
 } from "../../lib/utils/normalize.js";
 import * as repository from "./profiles.repository.js";
 import { anyPermissionMatches } from "../../lib/permission-match.js";
-import {
-  isAdminRole,
-  OU_WIDE_STAFF_ROLES,
-} from "@zero-platform/roles";
+import { isAdminRole, OU_WIDE_STAFF_ROLES } from "@zero-platform/roles";
 
 const LIST_QUERY_KEYS = Object.freeze([
   "q",
@@ -206,7 +203,10 @@ export function assertProfileScope(
 ) {
   if (profile.user_id === userContext.userId) {
     const selfBranch = callerSelfBranchId(userContext);
-    if (profile.ou_id !== userContext.ouId || profile.branch_id !== selfBranch) {
+    if (
+      profile.ou_id !== userContext.ouId ||
+      profile.branch_id !== selfBranch
+    ) {
       throw new HttpError(
         403,
         CODES.INVALID_USER_CONTEXT,

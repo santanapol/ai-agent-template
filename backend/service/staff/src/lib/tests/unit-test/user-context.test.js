@@ -119,7 +119,10 @@ describe("user-context & duplicate-header plugins", () => {
     assert.strictEqual(res.statusCode, 200);
     const body = res.json();
     assert.strictEqual(body.userContext.branchId, "507f1f77bcf86cd799439014");
-    assert.strictEqual(body.userContext.homeBranchId, "507f1f77bcf86cd799439012");
+    assert.strictEqual(
+      body.userContext.homeBranchId,
+      "507f1f77bcf86cd799439012",
+    );
     await app.close();
   });
 
