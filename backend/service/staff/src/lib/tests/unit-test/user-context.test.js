@@ -58,7 +58,6 @@ describe("user-context & duplicate-header plugins", () => {
   test("returns empty permissions array if header is missing or empty string", async () => {
     const app = await createTestApp();
     const headers = buildMeshHeaders();
-    // กรณีไม่มี header
     let res = await app.inject({
       method: "GET",
       url: "/test-context",
@@ -67,7 +66,6 @@ describe("user-context & duplicate-header plugins", () => {
     assert.strictEqual(res.statusCode, 200);
     assert.deepStrictEqual(res.json().userContext.permissions, []);
 
-    // กรณีเป็น string ว่าง
     headers["x-user-permissions"] = "";
     res = await app.inject({
       method: "GET",
@@ -76,6 +74,52 @@ describe("user-context & duplicate-header plugins", () => {
     });
     assert.strictEqual(res.statusCode, 200);
     assert.deepStrictEqual(res.json().userContext.permissions, []);
+    await app.close();
+  });
+
+  test("accepts support_admin x-user-role (prod smart-report regression)", async () => {
+    const app = await createTestApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/test-context",
+      headers: buildMeshHeaders({ role: "support_admin" }),
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.json().userContext.role, "support_admin");
+    await app.close();
+  });
+
+  test("rejects invalid x-user-role with INVALID_USER_CONTEXT", async () => {
+    const app = await createTestApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/test-context",
+      headers: buildMeshHeaders({ role: "super_admin" }),
+    });
+
+    assert.strictEqual(res.statusCode, 403);
+    assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
+    await app.close();
+  });
+
+  test("parses optional x-user-home-branch into userContext", async () => {
+    const app = await createTestApp();
+    const headers = buildMeshHeaders({
+      branchId: "507f1f77bcf86cd799439014",
+      homeBranchId: "507f1f77bcf86cd799439012",
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/test-context",
+      headers,
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    const body = res.json();
+    assert.strictEqual(body.userContext.branchId, "507f1f77bcf86cd799439014");
+    assert.strictEqual(body.userContext.homeBranchId, "507f1f77bcf86cd799439012");
     await app.close();
   });
 

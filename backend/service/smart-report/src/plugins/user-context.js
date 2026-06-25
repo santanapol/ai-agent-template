@@ -1,9 +1,8 @@
 import fp from "fastify-plugin";
 
+import { isValidRole } from "@zero-platform/roles";
 import { HttpError } from "../lib/http-error.js";
 import CODES from "../lib/error-codes.js";
-
-const VALID_ROLES = new Set(["staff", "branch_admin", "platform_admin"]);
 
 function readHeader(request, name) {
   const value = request.headers[name];
@@ -16,6 +15,7 @@ export default fp(async function userContextGuard(fastify) {
     const userOu = readHeader(request, "x-user-ou");
     const userBranch = readHeader(request, "x-user-branch");
     const role = readHeader(request, "x-user-role");
+    const rawPermissions = readHeader(request, "x-user-permissions");
 
     if (!userId || !userOu || !userBranch || !role) {
       throw new HttpError(
@@ -25,7 +25,7 @@ export default fp(async function userContextGuard(fastify) {
       );
     }
 
-    if (!VALID_ROLES.has(role)) {
+    if (!isValidRole(role)) {
       throw new HttpError(
         403,
         CODES.INVALID_USER_CONTEXT,
@@ -41,10 +41,7 @@ export default fp(async function userContextGuard(fastify) {
       ouId: userOu,
       branchId: userBranch,
       role,
-      permissions:
-        readHeader(request, "x-user-permissions") === ""
-          ? []
-          : readHeader(request, "x-user-permissions").split(","),
+      permissions: rawPermissions === "" ? [] : rawPermissions.split(","),
     };
   });
 });

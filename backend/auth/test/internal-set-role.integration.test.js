@@ -114,6 +114,39 @@ test('internal set role', { timeout: 180_000 }, async (t) => {
     assert.equal(r.status, 400)
   })
 
+  await t.test('PATCH success updates role to support_admin and bumps token_gen', async () => {
+    const supportAdminUser = await db.collection(AUTH_COLLECTIONS.USERS).insertOne({
+      ou_id: TEST_OU_ID,
+      branch_id: TEST_BRANCH_ID,
+      username: 'set_role_support_admin',
+      password_hash: '$argon2id$v=19$m=65536,t=3,p=4$somehash',
+      role: 'staff',
+      access_token_gen: 0,
+      cr_by: 'test_seed',
+      cr_date: now,
+      cr_prog: 'test/internal-set-role.integration.test.js',
+      upd_by: 'test_seed',
+      upd_date: now,
+      upd_prog: 'test/internal-set-role.integration.test.js'
+    })
+    const supportAdminHex = supportAdminUser.insertedId.toHexString()
+
+    const r = await fetch(setRoleUrl(base, supportAdminHex), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${INTERNAL_SECRET}`
+      },
+      body: JSON.stringify({ role: 'support_admin', revoke_sessions: false })
+    })
+    assert.equal(r.status, 204)
+
+    const user = await db
+      .collection(AUTH_COLLECTIONS.USERS)
+      .findOne({ _id: supportAdminUser.insertedId })
+    assert.equal(user.role, 'support_admin')
+  })
+
   await t.test('PATCH success updates role and bumps token_gen', async () => {
     const r = await fetch(setRoleUrl(base, userHex), {
       method: 'PATCH',

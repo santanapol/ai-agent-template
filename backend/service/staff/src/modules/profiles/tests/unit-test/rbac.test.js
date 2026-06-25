@@ -3,12 +3,12 @@ import assert from "node:assert";
 
 import { HttpError } from "../../../../lib/http-error.js";
 import CODES from "../../../../lib/error-codes.js";
+import { isAdminRole } from "@zero-platform/roles";
 import {
   assertProfileScope,
   assertLookupQueryExclusive,
   resolveListScope,
   resolveLookupScope,
-  isAdminRole,
   assertPermission,
 } from "../../profiles.service.js";
 import {
@@ -164,14 +164,25 @@ describe("profiles RBAC / scope", () => {
     );
   });
 
-  test("resolveListScope — platform_admin may filter optional branch", () => {
+  test("resolveListScope — platform_admin defaults to x-user-branch (AC-7)", () => {
     const scope = resolveListScope(platformAdmin, { branch_id: branchA2 });
     assert.strictEqual(scope.ouId, ouA);
     assert.strictEqual(scope.branchId, branchA2);
 
-    const ouWide = resolveListScope(platformAdmin);
-    assert.strictEqual(ouWide.ouId, ouA);
-    assert.strictEqual(ouWide.branchId, undefined);
+    const defaultScope = resolveListScope(platformAdmin);
+    assert.strictEqual(defaultScope.ouId, ouA);
+    assert.strictEqual(defaultScope.branchId, branchA1);
+  });
+
+  test("resolveListScope — switched active branch scopes list", () => {
+    const switchedAdmin = {
+      ...platformAdmin,
+      branchId: branchA2,
+      homeBranchId: branchA1,
+    };
+    const scope = resolveListScope(switchedAdmin);
+    assert.strictEqual(scope.ouId, ouA);
+    assert.strictEqual(scope.branchId, branchA2);
   });
 
   test("resolveListScope — branch_admin is pinned to caller branch", () => {
@@ -210,6 +221,28 @@ describe("profiles RBAC / scope", () => {
     assert.doesNotThrow(() =>
       assertProfileScope(ownProfile, staffUser, "profiles:read"),
     );
+  });
+
+  test("assertProfileScope — self passes when active branch differs from home branch", () => {
+    const switchedAdmin = {
+      ...platformAdmin,
+      branchId: branchA2,
+      homeBranchId: branchA1,
+    };
+    assert.doesNotThrow(() =>
+      assertProfileScope(ownProfile, switchedAdmin, "profiles:read"),
+    );
+  });
+
+  test("resolveLookupScope — self uses home branch when forwarded", () => {
+    const switchedAdmin = {
+      ...platformAdmin,
+      branchId: branchA2,
+      homeBranchId: branchA1,
+    };
+    const scope = resolveLookupScope(switchedAdmin, userSelf);
+    assert.strictEqual(scope.ouId, ouA);
+    assert.strictEqual(scope.branchId, branchA1);
   });
 
   test("assertProfileScope — staff cannot read another user profile", () => {

@@ -1,3 +1,5 @@
+import { VALID_ROLES } from '@zero-platform/roles'
+
 export const userIdParamSchema = {
   type: 'object',
   properties: {
@@ -27,7 +29,7 @@ export const createUserBodySchema = {
       maxLength: 256,
       pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
     },
-    role: { type: 'string', minLength: 1, maxLength: 64, default: 'staff' }
+    role: { type: 'string', enum: VALID_ROLES, default: 'staff' }
   },
   required: ['ou_id', 'branch_id', 'username', 'password'],
   additionalProperties: false
@@ -57,7 +59,7 @@ export const setRoleBodySchema = {
   properties: {
     role: {
       type: 'string',
-      enum: ['platform_admin', 'branch_admin', 'staff', 'support', 'support_admin']
+      enum: VALID_ROLES
     },
     revoke_sessions: { type: 'boolean', default: true },
     correlation_id: { type: 'string', maxLength: 128 }

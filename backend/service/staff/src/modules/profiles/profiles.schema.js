@@ -1,12 +1,6 @@
-const objectIdPattern = "^[a-fA-F0-9]{24}$";
+import { VALID_ROLES } from "@zero-platform/roles";
 
-export const VALID_ROLES = Object.freeze([
-  "platform_admin",
-  "branch_admin",
-  "staff",
-  "support",
-  "support_admin",
-]);
+const objectIdPattern = "^[a-fA-F0-9]{24}$";
 
 export const profileIdParamsSchema = {
   type: "object",
@@ -75,7 +69,7 @@ export const createProfileBodySchema = {
       maxLength: 256,
       pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$",
     },
-    role: { type: "string", enum: [...VALID_ROLES] },
+    role: { type: "string", enum: VALID_ROLES },
   },
 };
 
@@ -122,7 +116,7 @@ export const changeRoleSchema = {
     required: ["role"],
     additionalProperties: false,
     properties: {
-      role: { type: "string", enum: [...VALID_ROLES] },
+      role: { type: "string", enum: VALID_ROLES },
     },
   },
 };

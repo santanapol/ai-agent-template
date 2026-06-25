@@ -21,6 +21,7 @@
     "init:db": "node --env-file=.env scripts/init-db.mjs"
   },
   "dependencies": {
+    "@zero-platform/roles": "*",
     "dayjs": "^1.11.21",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.1.0",

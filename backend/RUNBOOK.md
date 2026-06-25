@@ -94,3 +94,24 @@ curl -X GET http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_to
 - `[ ]` **Claims Mapping:** `JWT_CLAIM_USER_ID`, `ROLE`, `OU`, `BRANCH` ตั้งชื่อ field ตรงกันหมด
 - `[ ]` **Redis:** `REDIS_URL` ชี้ไปที่เดียวกัน (เพื่อเช็ค `token_gen`)
 - `[ ]` **Gateway Secret:** `GATEWAY_SECRET` ต้องยาวเกิน 32 ตัวอักษร และตรงกับค่าของ Upstream
+
+### Shared package `@zero-platform/roles`
+
+บริการ `staff`, `smart-report`, `agent-invoice`, และ `auth` ใช้ workspace package ที่ `backend/shared/platform-roles/`
+
+**หลัง `git pull` บน Production** (ต้อง checkout repo เต็ม — มี `backend/shared/platform-roles/`):
+
+```bash
+# จาก repo root (แนะนำ)
+cd /path/to/zero-platform && npm install
+
+# หรือต่อ service (PM2 ecosystem ใช้ cwd แยก)
+cd backend/service/smart-report && npm install
+cd backend/service/staff && npm install
+cd backend/service/agent-invoice && npm install
+cd backend/auth && npm install
+```
+
+จากนั้น `pm2 restart` service ที่ deploy (อย่างน้อย `zero-smart-report` สำหรับ fix `support_admin`)
+
+ดูรายละเอียดเพิ่ม: `backend/shared/platform-roles/README.md`

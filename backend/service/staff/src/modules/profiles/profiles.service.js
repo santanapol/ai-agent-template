@@ -14,19 +14,10 @@ import {
 } from "../../lib/utils/normalize.js";
 import * as repository from "./profiles.repository.js";
 import { anyPermissionMatches } from "../../lib/permission-match.js";
-
-export const ADMIN_ROLES = Object.freeze([
-  "platform_admin",
-  "branch_admin",
-  "support_admin",
-  "support",
-]);
-
-const OU_WIDE_STAFF_ROLES = new Set([
-  "platform_admin",
-  "support_admin",
-  "support",
-]);
+import {
+  isAdminRole,
+  OU_WIDE_STAFF_ROLES,
+} from "@zero-platform/roles";
 
 const LIST_QUERY_KEYS = Object.freeze([
   "q",
@@ -36,13 +27,6 @@ const LIST_QUERY_KEYS = Object.freeze([
   "status",
   "branch_id",
 ]);
-
-/**
- * @param {string} role
- */
-export function isAdminRole(role) {
-  return ADMIN_ROLES.includes(role);
-}
 
 /**
  * @param {{ userId: string, ouId: string, branchId: string, role: string, permissions: string[] }} userContext
@@ -164,15 +148,23 @@ export function resolveListScope(userContext, query = {}, { log } = {}) {
     return scope;
   }
 
-  if (query.branch_id) {
-    scope.branchId = query.branch_id;
+  if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
+    scope.branchId = query.branch_id ?? userContext.branchId;
+    return scope;
   }
 
   return scope;
 }
 
 /**
- * Resolve read scope for GET lookup (?user_id=) before profile is loaded.
+ * Branch used for self-profile tenant checks (home branch when gateway forwards it).
+ * @param {{ branchId: string, homeBranchId?: string }} userContext
+ */
+export function callerSelfBranchId(userContext) {
+  return userContext.homeBranchId ?? userContext.branchId;
+}
+
+/**
  * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
  * @param {string} targetUserId
  * @returns {{ ouId: string, branchId?: string }}
@@ -181,7 +173,7 @@ export function resolveLookupScope(userContext, targetUserId, { log } = {}) {
   if (targetUserId === userContext.userId) {
     return {
       ouId: userContext.ouId,
-      branchId: userContext.branchId,
+      branchId: callerSelfBranchId(userContext),
     };
   }
 
@@ -213,10 +205,8 @@ export function assertProfileScope(
   { log } = {},
 ) {
   if (profile.user_id === userContext.userId) {
-    if (
-      profile.ou_id !== userContext.ouId ||
-      profile.branch_id !== userContext.branchId
-    ) {
+    const selfBranch = callerSelfBranchId(userContext);
+    if (profile.ou_id !== userContext.ouId || profile.branch_id !== selfBranch) {
       throw new HttpError(
         403,
         CODES.INVALID_USER_CONTEXT,

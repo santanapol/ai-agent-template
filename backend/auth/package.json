@@ -1,6 +1,6 @@
 {
   "name": "auth",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,10 +16,11 @@
     "format:check": "prettier --check .",
     "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml --fail-severity=error",
     "spec:codes": "node scripts/validate-auth-openapi-problem-codes.mjs",
+    "spec:roles": "node scripts/validate-auth-openapi-roles.mjs",
     "test": "node --enable-source-maps --test --test-timeout=120000 test/*.test.js test/*/*.test.js",
     "test:coverage": "c8 --reporter=text --reporter=html node --test --test-timeout=120000 test/**/*.test.js",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run format:check && npm test && npm run audit:check",
+    "ci": "npm run lint && npm run format:check && npm run spec:roles && npm test && npm run audit:check",
     "ci:with-coverage": "npm run ci && npm run test:coverage",
     "seed:user": "node --env-file=.env scripts/seed-user.mjs",
     "seed:example": "node --env-file=.env scripts/seed-example-data.mjs",
@@ -27,6 +28,7 @@
     "create-env": "node scripts/create-dev-env.mjs"
   },
   "dependencies": {
+    "@zero-platform/roles": "*",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.1",
     "@fastify/rate-limit": "^10.2.2",
