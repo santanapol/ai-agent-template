@@ -16,7 +16,7 @@
 7. **home branch ต้องไม่หาย**: เพิ่ม claim `home_branch_id` (= `auth_users.branch_id` ถาวร), gateway forward เป็น `x-user-home-branch`, และ patch staff self-profile check ให้ใช้ home branch — กัน My Profile 403
 8. `auth_users.branch_id` (home branch ถาวร) **ไม่ถูกแก้** ไม่ว่าจะสลับสาขากี่ครั้ง
 9. การสลับสาขาเป็น **session-bound** (เหมือน GitHub org switch) — logout/login ใหม่จะ reset กลับ home branch เสมอ (ไม่จำข้ามรอบ login)
-10. **อนุญาตเลือกสาขา inactive** ได้ (validate แค่ `ou_id` match) — UI ติด label สถานะ; ความปลอดภัยอยู่ที่ OU boundary
+10. **สาขา inactive ถูกปฏิเสธ** — `POST /auth/me/active-branch` คืน `403 AUTH_BRANCH_FORBIDDEN`; UI ปิดการเลือกสาขา inactive
 
 > → โปรดแก้ไขทันทีหากข้อใดไม่ถูกต้อง มิเช่นนั้นจะดำเนินการตามนี้
 
@@ -61,6 +61,8 @@ role ระดับ OU (`platform_admin`, `support_admin`, `support`) ต้อ
 - **auth / gateway / staff / agent-invoice**: Node.js >=24, Fastify v5, MongoDB 8, `jose` (RS256), Argon2id
 - **frontend/backoffice**: React 19 + TS (strict), Vite 8, Ant Design 6, react-router-dom 7, axios
 - **Test**: `node:test` (backend), vitest + @testing-library/react (frontend)
+
+**Frontend branch list (interim):** dropdown ใช้ `GET /api/v1/invoices/agent` (`listInvoiceAgents`) เป็นแหล่งรายการสาขาใน OU ชั่วคราว — branch master จริงอ่านที่ auth (`MONGODB_URI_READ` / `su_branch`); invoice agent list ให้ `branch_id`, `active`, และชื่อสำหรับ UI
 
 ---
 

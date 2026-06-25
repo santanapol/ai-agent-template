@@ -17,6 +17,7 @@ import { startMongoForTests, resetDatabase } from './helpers/mongo-test-server.m
 const BRANCH_DB = 'branch_integration_test'
 const PLATFORM_USER = 'active_branch_platform'
 const SUPPORT_USER = 'active_branch_support'
+const SUPPORT_ADMIN_USER = 'active_branch_support_admin'
 const STAFF_USER = 'active_branch_staff'
 const BRANCH_ADMIN_USER = 'active_branch_branch_admin'
 const TEST_PASS = 'Correct-Horse-Battery-Staple1!'
@@ -159,6 +160,20 @@ test('POST /auth/me/active-branch', { timeout: 180_000 }, async (t) => {
     {
       ou_id: TEST_OU_ID,
       branch_id: HOME_BRANCH_ID,
+      username: SUPPORT_ADMIN_USER,
+      password_hash: await argon2.hash(TEST_PASS, hashOpts),
+      role: 'support_admin',
+      access_token_gen: 0,
+      cr_by: 'test_seed',
+      cr_date: now,
+      cr_prog: 'test/active-branch.integration.test.js',
+      upd_by: 'test_seed',
+      upd_date: now,
+      upd_prog: 'test/active-branch.integration.test.js'
+    },
+    {
+      ou_id: TEST_OU_ID,
+      branch_id: HOME_BRANCH_ID,
       username: STAFF_USER,
       password_hash: await argon2.hash(TEST_PASS, hashOpts),
       role: 'staff',
@@ -247,6 +262,19 @@ test('POST /auth/me/active-branch', { timeout: 180_000 }, async (t) => {
 
   await t.test('support role switches to target branch in same OU', async () => {
     const login = await loginNative(base, SUPPORT_USER)
+    const r = await switchBranch(base, {
+      accessToken: login.access_token,
+      refreshToken: login.refresh_token,
+      branchId: TARGET_BRANCH_ID.toHexString()
+    })
+    assert.equal(r.status, 200)
+    const claims = decodeJwt((await r.json()).access_token)
+    assert.equal(claims.branch_id, TARGET_BRANCH_ID.toHexString())
+    assert.equal(claims.home_branch_id, HOME_BRANCH_ID.toHexString())
+  })
+
+  await t.test('support_admin role switches to target branch in same OU', async () => {
+    const login = await loginNative(base, SUPPORT_ADMIN_USER)
     const r = await switchBranch(base, {
       accessToken: login.access_token,
       refreshToken: login.refresh_token,

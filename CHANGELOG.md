@@ -18,7 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - **`backend/auth/`:** `assertAccessTokenGenMatches` fail-closed when Redis `token_gen` key is missing (aligned with gateway); branch switch returns `503 AUTH_NOT_READY` when Redis publish fails after DB commit (no false-success token).
-- **Backoffice:** Split `AdminLayout` effects — profile fetch once, branch list once per OU (module cache); menus no longer refetch on `token_gen` bump alone.
+- **Backoffice:** Split `AdminLayout` effects — profile fetch once, branch list once per OU (module cache); menus no longer refetch on `token_gen` bump alone; `switchBranch` auto-refreshes session on `AUTH_NOT_READY`; clear branch list cache on logout.
+- **Coding standards:** Document `home_branch_id` / `x-user-home-branch` header order and Redis fail-closed `token_gen` policy.
 
 ### Fixed
 

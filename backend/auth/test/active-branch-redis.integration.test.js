@@ -5,6 +5,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
+import { decodeJwt } from 'jose'
 import { buildApp } from '../src/app.js'
 import { loadEnv } from '../src/config/env.js'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
@@ -179,5 +180,36 @@ test('active-branch redis integration', { timeout: 180_000 }, async (t) => {
       .collection(AUTH_COLLECTIONS.AUDIT_EVENTS)
       .findOne({ event_type: 'auth.active_branch_changed', outcome: 'success' })
     assert.equal(successAudit, null)
+
+    const userRow = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ username: PLATFORM_USER })
+    assert.equal(userRow?.access_token_gen, 1)
+
+    mockRedis.setFailOnSet(false)
+  })
+
+  await t.test('refresh after redis publish failure recovers active branch token', async () => {
+    mockRedis.setFailOnSet(false)
+    const login = await loginNative(base, PLATFORM_USER)
+    mockRedis.setFailOnSet(true)
+
+    const failed = await switchBranch(base, {
+      accessToken: login.access_token,
+      refreshToken: login.refresh_token,
+      branchId: TARGET_BRANCH_ID.toHexString()
+    })
+    assert.equal(failed.status, 503)
+
+    mockRedis.setFailOnSet(false)
+
+    const refreshRes = await fetch(`${base}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: login.refresh_token })
+    })
+    assert.equal(refreshRes.status, 200)
+    const refreshed = await refreshRes.json()
+    const claims = decodeJwt(refreshed.access_token)
+    assert.equal(claims.branch_id, TARGET_BRANCH_ID.toHexString())
+    assert.equal(claims.home_branch_id, HOME_BRANCH_ID.toHexString())
   })
 })

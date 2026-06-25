@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
 import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
+import { clearCachedInvoiceAgentBranches } from '../lib/branchOptions';
 
 export interface AuthContextValue {
   user: DecodedUser | null;
@@ -65,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenus([]);
     setMenuLoading(false);
     setMenuError(false);
+    clearCachedInvoiceAgentBranches();
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -176,6 +179,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const data = await authApi.switchActiveBranch(branchId);
         applyToken(data);
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.code === 'AUTH_NOT_READY') {
+          const data = await authApi.refresh();
+          applyToken(data);
+          return;
+        }
+        throw err;
       } finally {
         setBranchSwitching(false);
       }

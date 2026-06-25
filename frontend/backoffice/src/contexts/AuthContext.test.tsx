@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import axios from 'axios';
 import { AuthProvider, useAuth } from './AuthContext';
 import * as authApi from '../lib/authApiClient';
 
@@ -254,6 +255,73 @@ describe('AuthContext', () => {
       expect(mockedSwitch).toHaveBeenCalledWith(activeBranch);
       expect(screen.getByTestId('branch-id').textContent).toBe(activeBranch);
       expect(screen.getByTestId('home-branch-id').textContent).toBe(homeBranch);
+    });
+  });
+
+  test('switchBranch refreshes session when active-branch returns AUTH_NOT_READY', async () => {
+    const mockedRefresh = authApi.refresh as Mock;
+    const mockedSwitch = authApi.switchActiveBranch as Mock;
+
+    const homeBranch = '507f1f77bcf86cd799439012';
+    const activeBranch = '507f1f77bcf86cd799439014';
+    const refreshedToken = makeJwt({
+      sub: '123',
+      role: 'platform_admin',
+      ou_id: '507f1f77bcf86cd799439011',
+      branch_id: activeBranch,
+      home_branch_id: homeBranch,
+      token_gen: 1,
+      exp: 1924999999,
+    });
+
+    const notReady = new axios.AxiosError(
+      'Service Unavailable',
+      axios.AxiosError.ERR_BAD_RESPONSE,
+      {},
+      {},
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: {},
+        config: {} as never,
+        data: { code: 'AUTH_NOT_READY' },
+      },
+    );
+    mockedSwitch.mockRejectedValue(notReady);
+    mockedRefresh
+      .mockRejectedValueOnce(new Error('No session'))
+      .mockResolvedValueOnce({
+        access_token: refreshedToken,
+        expires_in: 900,
+        token_type: 'Bearer',
+        permissions: ['profiles:*'],
+      });
+
+    const BranchProbe = () => {
+      const { user, switchBranch } = useAuth();
+      return (
+        <div>
+          <div data-testid="branch-id">{user?.branch_id ?? 'none'}</div>
+          <button type="button" onClick={() => void switchBranch(activeBranch)}>
+            Switch branch
+          </button>
+        </div>
+      );
+    };
+
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <BranchProbe />
+      </AuthProvider>,
+    );
+
+    await user.click(screen.getByText('Switch branch'));
+
+    await waitFor(() => {
+      expect(mockedRefresh).toHaveBeenCalled();
+      expect(screen.getByTestId('branch-id').textContent).toBe(activeBranch);
     });
   });
 });
