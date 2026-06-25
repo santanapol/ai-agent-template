@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
 import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
+import { clearCachedInvoiceAgentBranches } from '../lib/branchOptions';
 
 export interface AuthContextValue {
   user: DecodedUser | null;
@@ -10,8 +12,10 @@ export interface AuthContextValue {
   menuLoading: boolean;
   menuError: boolean;
   loading: boolean;
+  branchSwitching: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  switchBranch: (branchId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [branchSwitching, setBranchSwitching] = useState(false);
 
   const applyToken = useCallback((data: TokenResponse) => {
     const decoded = decodeJwt(data.access_token);
@@ -62,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenus([]);
     setMenuLoading(false);
     setMenuError(false);
+    clearCachedInvoiceAgentBranches();
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -147,8 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-    // permissionsKey captures permission changes without refetching on every refresh identity
-  }, [user?.sub, user?.token_gen, permissionsKey]);
+    // permissionsKey captures permission changes without refetching on branch switch or token refresh.
+  }, [user?.sub, permissionsKey]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -167,6 +173,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearSession();
   }, [clearSession]);
 
+  const switchBranch = useCallback(
+    async (branchId: string) => {
+      setBranchSwitching(true);
+      try {
+        const data = await authApi.switchActiveBranch(branchId);
+        applyToken(data);
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.code === 'AUTH_NOT_READY') {
+          const data = await authApi.refresh();
+          applyToken(data);
+          return;
+        }
+        throw err;
+      } finally {
+        setBranchSwitching(false);
+      }
+    },
+    [applyToken],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -176,8 +202,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         menuLoading,
         menuError,
         loading,
+        branchSwitching,
         login,
         logout,
+        switchBranch,
       }}
     >
       {children}

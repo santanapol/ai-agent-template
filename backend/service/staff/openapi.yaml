@@ -112,6 +112,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
         - $ref: "#/components/parameters/UserIdLookup"
@@ -161,6 +162,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
       requestBody:
@@ -213,6 +215,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
       responses:
@@ -253,6 +256,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
         - $ref: "#/components/parameters/IfMatch"
@@ -311,6 +315,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
       requestBody:
@@ -363,6 +368,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
         - $ref: "#/components/parameters/IfMatch"
@@ -410,6 +416,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
         - $ref: "#/components/parameters/IfMatch"
@@ -458,6 +465,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
         - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XUserRole"
       requestBody:
@@ -529,6 +537,18 @@ components:
       name: x-user-branch
       in: header
       required: true
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+      example: "507f1f77bcf86cd799439012"
+
+    XUserHomeBranch:
+      name: x-user-home-branch
+      in: header
+      required: false
+      description: |
+        User's permanent home branch (JWT `home_branch_id`). Used for OU-wide self-profile
+        lookup when active `x-user-branch` differs from home. Omitted on legacy tokens.
       schema:
         type: string
         pattern: "^[a-fA-F0-9]{24}$"

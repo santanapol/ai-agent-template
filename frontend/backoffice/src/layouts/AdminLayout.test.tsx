@@ -37,8 +37,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: true,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     renderWithProviders(<AdminLayout />);
@@ -78,8 +80,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     renderWithProviders(<AdminLayout />);
@@ -122,8 +126,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -150,8 +156,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     renderWithProviders(<AdminLayout />);
@@ -178,8 +186,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -218,8 +228,10 @@ describe('AdminLayout component', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn(),
+      switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
     renderWithProviders(<AdminLayout />);

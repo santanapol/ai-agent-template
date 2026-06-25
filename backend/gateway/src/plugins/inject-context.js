@@ -54,11 +54,29 @@ export default fp(
         })
       }
 
+      let homeBranchId = ''
+      const rawHomeBranch = payload[env.JWT_CLAIM_HOME_BRANCH]
+      if (rawHomeBranch != null) {
+        try {
+          homeBranchId = normalizeTenantClaim(rawHomeBranch)
+          if (homeBranchId !== '' && !/^[a-fA-F0-9]{24}$/u.test(homeBranchId)) {
+            throw new Error('invalid_home_branch_id')
+          }
+        } catch (err) {
+          request.log.debug(
+            { claimRejectReason: err?.message },
+            'home branch claim normalization failed'
+          )
+          return fastify.gatewayProblem.send(reply, 'GATEWAY_CLAIM_REJECTED')
+        }
+      }
+
       const requestId = String(request.id)
       request.gatewayUpstreamHeaders = {
         'x-gateway-secret': env.GATEWAY_SECRET,
         'x-user-ou': ouId,
         'x-user-branch': branchId,
+        ...(homeBranchId !== '' ? { 'x-user-home-branch': homeBranchId } : {}),
         'x-user-id': userId,
         'x-user-role': role,
         'x-user-permissions': permissions,

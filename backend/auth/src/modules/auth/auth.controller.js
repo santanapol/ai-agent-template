@@ -129,6 +129,29 @@ export function createAuthController({ service, env, types }) {
       }
 
       return reply.code(result.status).send()
+    },
+
+    async switchActiveBranch(request, reply) {
+      const value = request.body ?? {}
+      const { raw } = service.pickRefreshToken({
+        cookies: request.cookies ?? {},
+        cookieName: env.REFRESH_COOKIE_NAME,
+        body: value
+      })
+      const result = await service.switchActiveBranch({
+        user_id_hex: request.accessSub,
+        access_token_gen_claim: request.accessTokenGen,
+        branch_id: value.branch_id,
+        rawRefresh: raw,
+        ip: request.ip,
+        request_id: request.id
+      })
+
+      if (!result.ok) {
+        return sendServiceProblem(reply, result)
+      }
+
+      return reply.send(result.body)
     }
   }
 }

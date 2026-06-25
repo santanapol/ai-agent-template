@@ -10,6 +10,7 @@ export interface DecodedUser {
   role: string;
   ou_id: string;
   branch_id: string;
+  home_branch_id?: string;
   token_gen: number;
   exp: number;
   iat: number;

@@ -115,3 +115,9 @@ cd backend/auth && npm install
 จากนั้น `pm2 restart` service ที่ deploy (อย่างน้อย `zero-smart-report` สำหรับ fix `support_admin`)
 
 ดูรายละเอียดเพิ่ม: `backend/shared/platform-roles/README.md`
+
+### Active Branch Selector (`POST /auth/me/active-branch`)
+
+- **Auth:** ตั้ง `MONGODB_URI_READ` + `MONGODB_DB_BRANCH` (branch master) และ `REDIS_URL` (ต้องตรงกับ gateway)
+- **Recovery เมื่อ switch คืน `503 AUTH_NOT_READY`:** session ใน DB อาจอัปเดต `active_branch_id` แล้วแต่ Redis publish ล้มเหลว — ให้ผู้ใช้ **refresh session** (`POST /auth/refresh`) หรือ logout/login; backoffice เรียก refresh อัตโนมัติเมื่อได้ `AUTH_NOT_READY` จาก switch
+- **Monitor:** log `branch switch: redis publish failed after DB commit` — ตรวจ Redis connectivity ทันที

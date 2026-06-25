@@ -11,6 +11,7 @@ import {
   getAccessTokenGenFromRedis,
   setAccessTokenGenInRedis
 } from '../../lib/redis-access-token-gen.js'
+import { BRANCH_SWITCH_ROLES } from '../../lib/branch-switch-roles.js'
 
 function normalizeUsername(u) {
   return String(u).trim().toLowerCase()
@@ -31,6 +32,21 @@ function ipThrottleKey(ip) {
 function coerceTokenGen(user) {
   const v = user.access_token_gen
   return typeof v === 'number' && Number.isInteger(v) ? v : 0
+}
+
+/** @param {import('mongodb').ObjectId | string | null | undefined} value */
+function activeBranchIdHex(value) {
+  if (value == null) return undefined
+  if (typeof value === 'string') return value
+  if (value instanceof ObjectId) return value.toHexString()
+  if (typeof value.toHexString === 'function') return value.toHexString()
+  return String(value)
+}
+
+function problemTitleForStatus(status) {
+  if (status === 404) return 'Not Found'
+  if (status === 503) return 'Service Unavailable'
+  return 'Forbidden'
 }
 
 function buildAccessTokenResponseBody(
@@ -93,16 +109,27 @@ export class AuthService {
    *  privateKey: import('jose').KeyLike
    *  types: ReturnType<typeof import('../../lib/problem.js').problemTypes>
    *  redisClient?: import('redis').RedisClientType | null
+   *  branchReadRepo?: import('./branch-read.repository.js').BranchReadRepository | null
    *  log?: { warn: (obj: unknown, msg?: string) => void }
    * }} p
    */
-  constructor({ env, repo, mongoClient, privateKey, types, redisClient = null, log = null }) {
+  constructor({
+    env,
+    repo,
+    mongoClient,
+    privateKey,
+    types,
+    redisClient = null,
+    branchReadRepo = null,
+    log = null
+  }) {
     this.env = env
     this.repo = repo
     this.mongoClient = mongoClient
     this.privateKey = privateKey
     this.types = types
     this.redisClient = redisClient
+    this.branchReadRepo = branchReadRepo
     this.log = log
   }
 
@@ -120,6 +147,20 @@ export class AuthService {
       // never block auth on audit failure — but surface the failure for ops visibility
       this.log?.warn?.({ err, event_type }, 'audit insert failed')
     }
+  }
+
+  async auditActiveBranchDenied({ request_id, user_id, ip, reason, branch_id }) {
+    await this.audit({
+      event_type: 'auth.active_branch_denied',
+      outcome: 'fail',
+      request_id,
+      user_id,
+      ip,
+      detail_safe: {
+        reason,
+        ...(branch_id ? { branch_id } : {})
+      }
+    })
   }
 
   async assertNotLocked({ ip, userId, now }) {
@@ -254,14 +295,18 @@ export class AuthService {
 
   /**
    * ออก access JWT พร้อมเคลม `permissions` (resolve สดจาก DB ทุกครั้งที่ออก token)
+   * @param {import('mongodb').Document} user
+   * @param {{ activeBranchId?: string | null }} [opts]
    * @returns {Promise<{ access_token: string, permissions: string[] }>}
    */
-  async issueAccess(user) {
+  async issueAccess(user, opts = {}) {
     const sub = user._id.toHexString()
     const permissions = await this.resolveEffectivePermissions({
       ouId: user.ou_id ?? null,
       role: user.role
     })
+    const homeBranchId = user.branch_id?.toHexString?.() ?? String(user.branch_id)
+    const branchId = opts.activeBranchId ?? homeBranchId
     const access_token = await signAccessJwt({
       privateKey: this.privateKey,
       kid: this.env.JWT_KID,
@@ -269,7 +314,8 @@ export class AuthService {
       role: user.role,
       roleClaim: this.env.JWT_CLAIM_ROLE,
       ouId: user.ou_id?.toHexString?.() ?? String(user.ou_id),
-      branchId: user.branch_id?.toHexString?.() ?? String(user.branch_id),
+      branchId,
+      homeBranchId,
       tokenGen: coerceTokenGen(user),
       permissions,
       issuer: this.env.JWT_ISSUER,
@@ -417,7 +463,8 @@ export class AuthService {
         user_id: row.user_id,
         family_id: row.family_id,
         token_hash: newHash,
-        expires_at
+        expires_at,
+        active_branch_id: current.active_branch_id ?? null
       },
       session
     )
@@ -523,7 +570,9 @@ export class AuthService {
       })
     }
 
-    const { access_token, permissions } = await this.issueAccess(u)
+    const { access_token, permissions } = await this.issueAccess(u, {
+      activeBranchId: activeBranchIdHex(row.active_branch_id)
+    })
 
     const redisResult = await this.publishTokenGenOrNotReady(u._id.toHexString(), coerceTokenGen(u))
     if (!redisResult.ok) return { ...redisResult, body: null, cookie: null }
@@ -677,7 +726,14 @@ export class AuthService {
     if (this.redisClient) {
       try {
         const redisGen = await getAccessTokenGenFromRedis(this.redisClient, user_id_hex)
-        if (redisGen !== null && redisGen !== expected) {
+        if (redisGen === null) {
+          return unauthorizedServiceOutcome(
+            this.types.invalidToken,
+            this.types,
+            'Access token generation is unknown (missing Redis record).'
+          )
+        }
+        if (redisGen !== expected) {
           return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
         }
       } catch (err) {
@@ -731,6 +787,20 @@ export class AuthService {
         status: 404,
         detail: 'User not found.',
         code: 'AUTH_USER_NOT_FOUND'
+      })
+    }
+  }
+
+  serviceProblem(status, type, detail, code) {
+    return {
+      ok: false,
+      status,
+      problem: problemPayload({
+        type,
+        title: problemTitleForStatus(status),
+        status,
+        detail,
+        code
       })
     }
   }
@@ -902,6 +972,204 @@ export class AuthService {
     })
 
     return { ok: true, status: 204 }
+  }
+
+  /**
+   * Switch active/working branch for OU-wide roles — updates refresh row only (no rotate).
+   * @param {{
+   *   user_id_hex: string
+   *   access_token_gen_claim: unknown
+   *   branch_id: string
+   *   rawRefresh: string | null
+   *   ip: string
+   *   request_id: string
+   * }} p
+   */
+  async switchActiveBranch({
+    user_id_hex,
+    access_token_gen_claim,
+    branch_id,
+    rawRefresh,
+    ip,
+    request_id
+  }) {
+    const genCheck = await this.assertAccessTokenGenMatches({
+      user_id_hex,
+      token_gen_claim: access_token_gen_claim
+    })
+    if (!genCheck.ok) return genCheck
+
+    if (!rawRefresh) {
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
+    }
+
+    const user = genCheck.user
+    if (!BRANCH_SWITCH_ROLES.has(user.role)) {
+      await this.auditActiveBranchDenied({
+        request_id,
+        user_id: user._id,
+        ip,
+        reason: 'role_forbidden',
+        branch_id
+      })
+      return this.serviceProblem(
+        403,
+        this.types.branchSwitchForbidden,
+        'Your role cannot switch active branch.',
+        'AUTH_BRANCH_SWITCH_FORBIDDEN'
+      )
+    }
+
+    if (!this.branchReadRepo) {
+      return this.serviceProblem(
+        503,
+        this.types.notReady,
+        'Branch master read is not configured.',
+        'AUTH_NOT_READY'
+      )
+    }
+
+    let branchOid
+    try {
+      branchOid = new ObjectId(branch_id)
+    } catch {
+      return this.serviceProblem(
+        404,
+        this.types.branchNotFound,
+        'Branch not found.',
+        'AUTH_BRANCH_NOT_FOUND'
+      )
+    }
+
+    const branchAccess = await this.branchReadRepo.resolveBranchAccess(branchOid, user.ou_id)
+    if (branchAccess === 'not_found') {
+      await this.auditActiveBranchDenied({
+        request_id,
+        user_id: user._id,
+        ip,
+        reason: 'branch_not_found',
+        branch_id
+      })
+      return this.serviceProblem(
+        404,
+        this.types.branchNotFound,
+        'Branch not found.',
+        'AUTH_BRANCH_NOT_FOUND'
+      )
+    }
+    if (branchAccess === 'forbidden') {
+      await this.auditActiveBranchDenied({
+        request_id,
+        user_id: user._id,
+        ip,
+        reason: 'branch_forbidden',
+        branch_id
+      })
+      return this.serviceProblem(
+        403,
+        this.types.branchForbidden,
+        'Branch is not in your organization.',
+        'AUTH_BRANCH_FORBIDDEN'
+      )
+    }
+    if (branchAccess === 'inactive') {
+      await this.auditActiveBranchDenied({
+        request_id,
+        user_id: user._id,
+        ip,
+        reason: 'branch_inactive',
+        branch_id
+      })
+      return this.serviceProblem(
+        403,
+        this.types.branchForbidden,
+        'Branch is inactive.',
+        'AUTH_BRANCH_FORBIDDEN'
+      )
+    }
+
+    const now = new Date()
+    const hash = hashRefreshToken(rawRefresh)
+    const row = await this.repo.findRefreshByTokenHash(hash)
+    const refreshInvalid =
+      !row || row.revoked_at || row.expires_at <= now || row.user_id.toHexString() !== user_id_hex
+
+    if (refreshInvalid) {
+      return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
+    }
+
+    const activeBranchHex = branchOid.toHexString()
+    const currentActiveOid = row.active_branch_id ?? user.branch_id
+    if (branchOid.equals(currentActiveOid)) {
+      const userForToken = { ...user, access_token_gen: coerceTokenGen(user) }
+      const { access_token, permissions } = await this.issueAccess(userForToken, {
+        activeBranchId: activeBranchHex
+      })
+      return {
+        ok: true,
+        status: 200,
+        body: buildAccessTokenResponseBody(
+          access_token,
+          this.env.ACCESS_TOKEN_TTL_SECONDS,
+          null,
+          true,
+          permissions
+        )
+      }
+    }
+
+    let bumpResult
+    try {
+      bumpResult = await this.runUserTransaction(async (session) => {
+        const bump = await this.repo.bumpAccessTokenGen(user._id, session)
+        if (!bump.found) throw new Error('user_not_found_in_txn')
+        await this.repo.setRefreshActiveBranch(row._id, branchOid, session)
+        return bump
+      })
+    } catch (err) {
+      if (err?.message === 'user_not_found_in_txn') {
+        return unauthorizedServiceOutcome(this.types.invalidToken, this.types)
+      }
+      throw err
+    }
+
+    const redisResult = await this.publishTokenGenOrNotReady(
+      user_id_hex,
+      bumpResult.access_token_gen
+    )
+    if (!redisResult.ok) {
+      this.log?.error?.(
+        { user_id: user_id_hex, branch_id: activeBranchHex },
+        'branch switch: redis publish failed after DB commit'
+      )
+      return redisResult
+    }
+
+    const userForToken = { ...user, access_token_gen: bumpResult.access_token_gen }
+    const { access_token, permissions } = await this.issueAccess(userForToken, {
+      activeBranchId: activeBranchHex
+    })
+
+    await this.audit({
+      event_type: 'auth.active_branch_changed',
+      outcome: 'success',
+      request_id,
+      user_id: user._id,
+      ip,
+      detail_safe: { branch_id: activeBranchHex }
+    })
+
+    return {
+      ok: true,
+      status: 200,
+      body: buildAccessTokenResponseBody(
+        access_token,
+        this.env.ACCESS_TOKEN_TTL_SECONDS,
+        null,
+        true,
+        permissions
+      )
+    }
   }
 
   /**

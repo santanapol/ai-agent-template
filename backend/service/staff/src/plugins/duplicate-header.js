@@ -8,6 +8,7 @@ const CRITICAL_HEADERS = new Set([
   "x-user-id",
   "x-user-ou",
   "x-user-branch",
+  "x-user-home-branch",
   "x-user-role",
   "x-user-permissions",
   "content-type",

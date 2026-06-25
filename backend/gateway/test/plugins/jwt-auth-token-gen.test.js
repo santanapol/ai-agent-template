@@ -155,8 +155,19 @@ describe('jwt-auth token_gen (D3)', () => {
     assert.strictEqual(body.uid, SUB)
   })
 
-  test('allows JWT when Redis key missing (current gen 0)', async () => {
+  test('rejects JWT when Redis key missing (fail-closed)', async () => {
     redisStore.delete(accessTokenGenRedisKey(SUB))
+    const token = await signToken(0)
+    const res = await fetch(`${gatewayBaseUrl}/api/echo`, {
+      headers: { authorization: `Bearer ${token}` }
+    })
+    assert.strictEqual(res.status, 401)
+    const body = await res.json()
+    assert.strictEqual(body.code, 'GATEWAY_JWT_REJECTED')
+  })
+
+  test('allows JWT when Redis key present and token_gen matches', async () => {
+    redisStore.set(accessTokenGenRedisKey(SUB), '0')
     const token = await signToken(0)
     const res = await fetch(`${gatewayBaseUrl}/api/echo`, {
       headers: { authorization: `Bearer ${token}` }

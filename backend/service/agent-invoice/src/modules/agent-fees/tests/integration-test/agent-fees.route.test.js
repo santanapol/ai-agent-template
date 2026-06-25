@@ -17,7 +17,7 @@ describe("Agent Fees API Integration Tests", () => {
     ouId,
     branchId,
     userId: mockUserId,
-    role: "admin",
+    role: "platform_admin",
     permissions: "agents:fees,agents:*",
   });
 

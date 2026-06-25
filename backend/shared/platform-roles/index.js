@@ -29,10 +29,16 @@ export const OU_WIDE_STAFF_ROLES = new Set([
   "support",
 ]);
 
+/** Roles allowed to call POST /auth/me/active-branch. */
+export const BRANCH_SWITCH_ROLES = OU_WIDE_STAFF_ROLES;
+
 /**
  * @param {unknown} role
- * @returns {role is (typeof VALID_ROLES)[number]}
+ * @returns {boolean}
  */
+export function canSwitchActiveBranchRole(role) {
+  return typeof role === "string" && BRANCH_SWITCH_ROLES.has(role);
+}
 export function isValidRole(role) {
   return typeof role === "string" && VALID_ROLES_SET.has(role);
 }

@@ -29,6 +29,7 @@ import {
   listRolePermissions,
   upsertRolePermission,
   deleteRolePermission,
+  switchActiveBranch,
 } from './authApiClient';
 
 const sampleMenu: AdminMenuNode = {
@@ -128,5 +129,20 @@ describe('authApiClient admin methods', () => {
       '/auth/admin/role-permissions/null/branch_admin',
       { params: { confirm: true } },
     );
+  });
+
+  it('switchActiveBranch posts branch_id to /auth/me/active-branch', async () => {
+    const tokenResponse = {
+      access_token: 'new-token',
+      expires_in: 900,
+      token_type: 'Bearer',
+      permissions: ['profiles:*'],
+    };
+    mockPost.mockResolvedValue({ data: tokenResponse });
+    const result = await switchActiveBranch('507f1f77bcf86cd799439011');
+    expect(mockPost).toHaveBeenCalledWith('/auth/me/active-branch', {
+      branch_id: '507f1f77bcf86cd799439011',
+    });
+    expect(result).toEqual(tokenResponse);
   });
 });

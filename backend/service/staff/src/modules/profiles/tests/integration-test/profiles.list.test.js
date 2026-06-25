@@ -142,11 +142,14 @@ if (!RUN) {
       }
     });
 
-    test("platform_admin list returns array and pagination", async () => {
+    test("platform_admin list scopes to x-user-branch by default (AC-7)", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/api/v1/staff/profiles?status=all",
-        headers: buildMeshHeaders({ role: "platform_admin" }),
+        headers: buildMeshHeaders({
+          role: "platform_admin",
+          branchId: branchA1,
+        }),
       });
 
       assert.strictEqual(res.statusCode, 200);
@@ -154,8 +157,25 @@ if (!RUN) {
       assert.strictEqual(body.success, true);
       assert.ok(Array.isArray(body.data));
       assert.ok(body.pagination);
-      assert.ok(body.pagination.total >= 3);
+      assert.ok(body.pagination.total >= 2);
       assert.ok(body.data.some((row) => row.code === `LST-A1-${suffix}`));
+      assert.ok(!body.data.some((row) => row.code === `LST-A2-${suffix}`));
+    });
+
+    test("platform_admin explicit branch_id filter overrides active branch", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles?status=all&branch_id=${branchA2}`,
+        headers: buildMeshHeaders({
+          role: "platform_admin",
+          branchId: branchA1,
+        }),
+      });
+
+      assert.strictEqual(res.statusCode, 200);
+      const codes = res.json().data.map((row) => row.code);
+      assert.ok(codes.includes(`LST-A2-${suffix}`));
+      assert.ok(!codes.includes(`LST-A1-${suffix}`));
     });
 
     test("staff list returns 403", async () => {
@@ -186,7 +206,7 @@ if (!RUN) {
       assert.ok(!codes.includes(`LST-A2-${suffix}`));
     });
 
-    test("platform_admin status=archived lists archived across branches", async () => {
+    test("platform_admin status=archived lists archived in active branch", async () => {
       const res = await app.inject({
         method: "GET",
         url: `/api/v1/staff/profiles?status=archived&q=${suffix}`,
@@ -200,11 +220,15 @@ if (!RUN) {
       assert.ok(body.data.some((row) => row.code === `LST-ARC-${suffix}`));
     });
 
-    test("q search matches username via join", async () => {
+    test("q search matches username via join within active branch", async () => {
       const res = await app.inject({
         method: "GET",
         url: `/api/v1/staff/profiles?status=all&q=lst.a2.active.${suffix}`,
-        headers: buildMeshHeaders({ role: "platform_admin" }),
+        headers: buildMeshHeaders({
+          role: "platform_admin",
+          branchId: branchA2,
+          homeBranchId: branchA1,
+        }),
       });
 
       assert.strictEqual(res.statusCode, 200);

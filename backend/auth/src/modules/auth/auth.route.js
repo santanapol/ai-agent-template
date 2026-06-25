@@ -5,7 +5,8 @@ import {
   loginBodySchema,
   refreshBodySchema,
   logoutBodySchema,
-  changeOwnPasswordBodySchema
+  changeOwnPasswordBodySchema,
+  switchActiveBranchBodySchema
 } from './auth.validator.js'
 /** Per-route caps (per IP) — สอดคล้อง `_coding-standards/auth/api.md` (default แนะนำ) */
 const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
@@ -13,6 +14,7 @@ const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }
 const RATE_LIMIT_LOGOUT = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_CHANGE_PASSWORD = { max: 10, timeWindow: '1 minute' }
 const RATE_LIMIT_ME_MENUS = { max: 60, timeWindow: '1 minute' }
+const RATE_LIMIT_ACTIVE_BRANCH = { max: 30, timeWindow: '1 minute' }
 
 /**
  * @param {import('fastify').FastifyInstance} fastify
@@ -48,6 +50,16 @@ export default async function authRoutePlugin(fastify, opts) {
         preHandler: requireAccessBearer
       },
       (request, reply) => controller.changeOwnPassword(request, reply)
+    )
+
+    scope.post(
+      '/auth/me/active-branch',
+      {
+        schema: { body: switchActiveBranchBodySchema },
+        config: { rateLimit: RATE_LIMIT_ACTIVE_BRANCH },
+        preHandler: requireAccessBearer
+      },
+      (request, reply) => controller.switchActiveBranch(request, reply)
     )
 
     scope.post(

@@ -17,6 +17,7 @@ const TRUSTED_HEADER_KEYS = [
   'x-gateway-secret',
   'x-user-ou',
   'x-user-branch',
+  'x-user-home-branch',
   'x-user-id',
   'x-user-role',
   'x-user-permissions',

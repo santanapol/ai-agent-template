@@ -4,6 +4,7 @@ info:
   version: 0.1.7
   description: |
     Edge identity API (login, refresh, logout), password change (`POST /auth/me/password`),
+    active branch switch (`POST /auth/me/active-branch`),
     internal user provisioning and password reset for trusted services, session revoke, and JWKS.
 
     All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
@@ -617,6 +618,77 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '429':
           description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/me/active-branch:
+    post:
+      tags: [auth]
+      summary: Switch active working branch
+      description: |
+        For **platform_admin**, **support_admin**, and **support** only. Validates the target branch
+        exists in the caller's OU and is **active** (inactive branches are rejected with 403),
+        persists `active_branch_id` on the
+        current refresh session row **without rotating** refresh, and returns a new access JWT where
+        claim `branch_id` is the selected branch and `home_branch_id` remains the user's home branch.
+
+        Requires a valid **Bearer** access token **and** an active refresh channel (HttpOnly cookie
+        or JSON `refresh_token`) to identify the session.
+      operationId: switchActiveBranch
+      security:
+        - BearerAccess: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 30
+      parameters:
+        - $ref: '#/components/parameters/ContentTypeApplicationJson'
+        - $ref: '#/components/parameters/CookieRefresh'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchActiveBranchRequest'
+      responses:
+        '200':
+          description: New access token with updated `branch_id` claim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Request validation failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Missing/invalid Bearer or refresh session.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role cannot switch, branch outside caller OU, or branch is inactive.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Branch not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Branch master read not configured, or Redis token generation publish failed.
           content:
             application/problem+json:
               schema:
@@ -1268,6 +1340,9 @@ components:
             - AUTH_PRECONDITION_FAILED
             - AUTH_ROLE_PERMISSION_NOT_FOUND
             - AUTH_ROLE_PERMISSION_IN_USE
+            - AUTH_BRANCH_SWITCH_FORBIDDEN
+            - AUTH_BRANCH_FORBIDDEN
+            - AUTH_BRANCH_NOT_FOUND
     ChangeOwnPasswordRequest:
       type: object
       additionalProperties: false
@@ -1282,6 +1357,20 @@ components:
           minLength: 8
           maxLength: 256
           pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$'
+    SwitchActiveBranchRequest:
+      type: object
+      additionalProperties: false
+      required: [branch_id]
+      properties:
+        branch_id:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
+          description: Target branch ObjectId (must belong to caller OU).
+        refresh_token:
+          type: string
+          minLength: 10
+          maxLength: 512
+          description: Native refresh token when not using HttpOnly cookie.
     InternalCreateUserRequest:
       type: object
       additionalProperties: false

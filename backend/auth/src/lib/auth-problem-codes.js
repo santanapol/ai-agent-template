@@ -17,5 +17,8 @@ export function codeForProblemType(types, typeUri) {
   if (typeUri === types.userNotFound) return 'AUTH_USER_NOT_FOUND'
   if (typeUri === types.passwordUnchanged) return 'AUTH_PASSWORD_UNCHANGED'
   if (typeUri === types.passwordPolicyViolation) return 'AUTH_PASSWORD_POLICY_VIOLATION'
+  if (typeUri === types.branchSwitchForbidden) return 'AUTH_BRANCH_SWITCH_FORBIDDEN'
+  if (typeUri === types.branchForbidden) return 'AUTH_BRANCH_FORBIDDEN'
+  if (typeUri === types.branchNotFound) return 'AUTH_BRANCH_NOT_FOUND'
   return undefined
 }

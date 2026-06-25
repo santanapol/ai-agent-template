@@ -19,12 +19,15 @@ import { AdminRepository } from './modules/admin/admin.repository.js'
 import { AdminService } from './modules/admin/admin.service.js'
 import { createAdminController } from './modules/admin/admin.controller.js'
 import adminRoutePlugin from './modules/admin/admin.route.js'
+import { BranchReadDb } from './config/branch-read-db.js'
+import { BranchReadRepository } from './modules/auth/branch-read.repository.js'
 
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
  * @param {{
  *   logger?: boolean
  *   redisClient?: import('redis').RedisClientType | { get: (k: string) => Promise<string | null>, set: (k: string, v: string) => Promise<unknown>, ping?: () => Promise<string> } | null
+ *   branchReadRepo?: import('./modules/auth/branch-read.repository.js').BranchReadRepository | null
  * }} [options]
  */
 export async function buildApp(env = loadEnv(), options = {}) {
@@ -48,8 +51,10 @@ export async function buildApp(env = loadEnv(), options = {}) {
       'x-gateway-secret',
       'x-user-ou',
       'x-user-branch',
+      'x-user-home-branch',
       'x-user-id',
       'x-user-role',
+      'x-user-permissions',
       'x-request-id'
     ]
     for (const header of forbiddenDuplicates) {
@@ -143,6 +148,23 @@ export async function buildApp(env = loadEnv(), options = {}) {
     })
   }
 
+  /** @type {import('./modules/auth/branch-read.repository.js').BranchReadRepository | null} */
+  let branchReadRepo = options.branchReadRepo ?? null
+  /** @type {BranchReadDb | null} */
+  let branchReadDb = null
+  const branchReadUri = String(env.MONGODB_URI_READ ?? '').trim()
+  if (!branchReadRepo && branchReadUri) {
+    branchReadDb = new BranchReadDb({
+      uri: branchReadUri,
+      dbName: env.MONGODB_DB_BRANCH
+    })
+    await branchReadDb.connect()
+    branchReadRepo = new BranchReadRepository(branchReadDb.getDb())
+    fastify.addHook('onClose', async () => {
+      await branchReadDb?.close()
+    })
+  }
+
   const startedAtMs = Date.now()
   fastify.get('/healthz', async () => ({
     status: 'ok',
@@ -157,6 +179,10 @@ export async function buildApp(env = loadEnv(), options = {}) {
       if (redisClient) {
         await redisClient.ping()
         dependencies.push({ name: 'redis', status: 'ok' })
+      }
+      if (branchReadDb) {
+        await branchReadDb.ping()
+        dependencies.push({ name: 'branch-read-mongodb', status: 'ok' })
       }
       return {
         status: 'ok',
@@ -183,6 +209,7 @@ export async function buildApp(env = loadEnv(), options = {}) {
   fastify.decorate('jwksDocument', { keys: [jwkPublic] })
 
   const repo = new AuthRepository(fastify.mongo.db)
+
   const service = new AuthService({
     env,
     repo,
@@ -190,6 +217,7 @@ export async function buildApp(env = loadEnv(), options = {}) {
     privateKey,
     types,
     redisClient,
+    branchReadRepo,
     log: serviceLog
   })
   const controller = createAuthController({ service, env, types })

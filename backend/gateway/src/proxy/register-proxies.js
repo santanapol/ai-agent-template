@@ -7,7 +7,7 @@ const DANGEROUS_HEADERS = new Set([
   'x-user-permissions',
   'x-user-ou',
   'x-user-branch',
-  'x-user-permissions',
+  'x-user-home-branch',
   'x-gateway-secret',
   'if-match',
   'x-request-id'
@@ -50,6 +50,7 @@ export async function registerProxies(fastify, opts) {
           'x-gateway-secret': ctx['x-gateway-secret'],
           'x-user-ou': ctx['x-user-ou'],
           'x-user-branch': ctx['x-user-branch'],
+          ...(ctx['x-user-home-branch'] ? { 'x-user-home-branch': ctx['x-user-home-branch'] } : {}),
           'x-user-id': ctx['x-user-id'],
           'x-user-role': ctx['x-user-role'],
           'x-user-permissions': ctx['x-user-permissions'],

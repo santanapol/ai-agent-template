@@ -234,7 +234,7 @@ describe("profiles RBAC / scope", () => {
     );
   });
 
-  test("resolveLookupScope — self uses home branch when forwarded", () => {
+  test("resolveLookupScope — OU-wide self lookup is OU-scoped (active may differ from home)", () => {
     const switchedAdmin = {
       ...platformAdmin,
       branchId: branchA2,
@@ -242,7 +242,17 @@ describe("profiles RBAC / scope", () => {
     };
     const scope = resolveLookupScope(switchedAdmin, userSelf);
     assert.strictEqual(scope.ouId, ouA);
-    assert.strictEqual(scope.branchId, branchA1);
+    assert.strictEqual(scope.branchId, undefined);
+  });
+
+  test("assertProfileScope — OU-wide self passes without home branch when active differs", () => {
+    const switchedAdmin = {
+      ...platformAdmin,
+      branchId: branchA2,
+    };
+    assert.doesNotThrow(() =>
+      assertProfileScope(ownProfile, switchedAdmin, "profiles:read"),
+    );
   });
 
   test("assertProfileScope — staff cannot read another user profile", () => {
