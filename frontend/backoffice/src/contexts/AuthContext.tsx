@@ -10,8 +10,10 @@ export interface AuthContextValue {
   menuLoading: boolean;
   menuError: boolean;
   loading: boolean;
+  branchSwitching: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  switchBranch: (branchId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [branchSwitching, setBranchSwitching] = useState(false);
 
   const applyToken = useCallback((data: TokenResponse) => {
     const decoded = decodeJwt(data.access_token);
@@ -147,8 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-    // permissionsKey captures permission changes without refetching on every refresh identity
-  }, [user?.sub, user?.token_gen, permissionsKey]);
+    // permissionsKey captures permission changes without refetching on branch switch or token refresh.
+  }, [user?.sub, permissionsKey]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -167,6 +170,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearSession();
   }, [clearSession]);
 
+  const switchBranch = useCallback(
+    async (branchId: string) => {
+      setBranchSwitching(true);
+      try {
+        const data = await authApi.switchActiveBranch(branchId);
+        applyToken(data);
+      } finally {
+        setBranchSwitching(false);
+      }
+    },
+    [applyToken],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -176,8 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         menuLoading,
         menuError,
         loading,
+        branchSwitching,
         login,
         logout,
+        switchBranch,
       }}
     >
       {children}

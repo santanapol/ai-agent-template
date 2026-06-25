@@ -130,11 +130,16 @@ export async function postCalculateFee(request, reply) {
 }
 
 export async function getInvoiceList(request, reply) {
-  const { ouId } = request.userContext;
+  const { ouId, branchId } = request.userContext;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
+  const query = {
+    ...(request.query ?? {}),
+    ...(!request.query?.branch_id && branchId ? { branch_id: branchId } : {}),
+  };
+
   try {
     const result = await listInvoices({
-      query: request.query ?? {},
+      query,
       ouId,
     });
     return sendServiceResult(reply, result, requestId);

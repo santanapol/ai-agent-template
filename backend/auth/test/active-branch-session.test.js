@@ -63,9 +63,9 @@ test('insertRefreshToken stores active_branch_id null by default', async () => {
 })
 
 test('rotateRefreshTokenTxnBody copies active_branch_id to new refresh row', async () => {
-  const activeHex = new ObjectId().toHexString()
+  const activeOid = new ObjectId()
   const user = makeUser()
-  const { hash, row } = makeRefreshRow(user, { activeBranchId: activeHex })
+  const { hash, row } = makeRefreshRow(user, { activeBranchId: activeOid })
   const inserted = []
 
   const repo = {
@@ -96,14 +96,14 @@ test('rotateRefreshTokenTxnBody copies active_branch_id to new refresh row', asy
   })
 
   assert.equal(inserted.length, 1)
-  assert.equal(inserted[0].active_branch_id, activeHex)
+  assert.equal(inserted[0].active_branch_id, activeOid)
 })
 
 test('refresh issues access token with active branch from refresh row', async () => {
   const user = makeUser()
   const homeHex = user.branch_id.toHexString()
-  const activeHex = new ObjectId().toHexString()
-  const { plain, hash, row } = makeRefreshRow(user, { activeBranchId: activeHex })
+  const activeOid = new ObjectId()
+  const { plain, hash, row } = makeRefreshRow(user, { activeBranchId: activeOid })
 
   const repo = {
     findRefreshByTokenHash: async (h) => (h === hash ? row : null),
@@ -145,6 +145,33 @@ test('refresh issues access token with active branch from refresh row', async ()
 
   assert.equal(result.ok, true)
   const claims = decodeJwt(result.body.access_token)
-  assert.equal(claims.branch_id, activeHex)
+  assert.equal(claims.branch_id, activeOid.toHexString())
   assert.equal(claims.home_branch_id, homeHex)
+})
+
+test('assertAccessTokenGenMatches rejects when Redis key missing (fail-closed)', async () => {
+  const user = makeUser()
+  const repo = {
+    findUserById: async () => user
+  }
+  const service = new AuthService({
+    env: {},
+    repo,
+    mongoClient: null,
+    privateKey,
+    types: { invalidToken: 'https://example.invalid/problems/invalid-token' },
+    redisClient: {
+      async get() {
+        return null
+      }
+    }
+  })
+
+  const result = await service.assertAccessTokenGenMatches({
+    user_id_hex: user._id.toHexString(),
+    token_gen_claim: 0
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.status, 401)
 })

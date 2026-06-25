@@ -182,6 +182,18 @@ export class AuthRepository {
   }
 
   /**
+   * Persist active branch on the current refresh row (no rotate).
+   * @param {import('mongodb').ObjectId} id
+   * @param {import('mongodb').ObjectId | null} active_branch_id
+   * @param {import('mongodb').ClientSession} [session]
+   */
+  async setRefreshActiveBranch(id, active_branch_id, session) {
+    await this.db
+      .collection(REFRESH)
+      .updateOne({ _id: id }, { $set: { active_branch_id } }, { session })
+  }
+
+  /**
    * Query ดิบต่อหนึ่งคู่ (ou_id, role) — fallback logic อยู่ที่ service layer
    * Tenant scoping ระดับ ou_id เท่านั้น (สิทธิ์เป็นข้อมูลระดับ OU โดยดีไซน์ — ดู SPEC)
    * @param {import('mongodb').ObjectId | null} ouId
@@ -257,6 +269,32 @@ export class AuthRepository {
       { session }
     )
     return result.matchedCount > 0
+  }
+
+  /**
+   * Bump `access_token_gen` without revoking refresh tokens (branch switch).
+   * @param {import('mongodb').ObjectId} userId
+   * @param {import('mongodb').ClientSession} [session]
+   */
+  async bumpAccessTokenGen(userId, session) {
+    const user = await this.db
+      .collection(USERS)
+      .findOneAndUpdate(
+        { _id: userId },
+        { $inc: { access_token_gen: 1 } },
+        { session, returnDocument: 'after' }
+      )
+
+    if (!user) {
+      return { found: false, access_token_gen: 0, user: null }
+    }
+
+    const gen =
+      typeof user.access_token_gen === 'number' && Number.isInteger(user.access_token_gen)
+        ? user.access_token_gen
+        : 0
+
+    return { found: true, access_token_gen: gen, user }
   }
 
   async bumpAccessTokenGenAndRevokeSessions(userId, revokedAt, session) {

@@ -7,7 +7,7 @@ test("Master Data API - Game Companies and Categories", async (t) => {
   const app = await buildApp();
   const validHeaders = buildMeshHeaders({
     userId: "test_master_data_user",
-    role: "admin",
+    role: "platform_admin",
     permissions: "agents:fees",
   });
 

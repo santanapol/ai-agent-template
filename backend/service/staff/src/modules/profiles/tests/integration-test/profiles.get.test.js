@@ -13,6 +13,7 @@ const RUN = Boolean(initialEnv.mongoUri && initialEnv.mongoUri.trim());
 
 const ouId = "507f1f77bcf86cd799439011";
 const branchA1 = "507f1f77bcf86cd799439012";
+const branchA2 = "507f1f77bcf86cd799439014";
 const staffUserId = "507f1f77bcf86cd799439013";
 
 const testEnv = {
@@ -180,6 +181,22 @@ if (!RUN) {
         method: "GET",
         url: `/api/v1/staff/profiles?user_id=${staffUserId}`,
         headers: buildMeshHeaders({ role: "staff", userId: staffUserId }),
+      });
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.json().data.id, staffProfileId);
+    });
+
+    test("platform_admin self lookup uses home branch when active differs (AC-6)", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles?user_id=${staffUserId}`,
+        headers: buildMeshHeaders({
+          role: "platform_admin",
+          userId: staffUserId,
+          branchId: branchA2,
+          homeBranchId: branchA1,
+        }),
       });
 
       assert.strictEqual(res.statusCode, 200);

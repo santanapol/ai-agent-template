@@ -40,7 +40,9 @@ export function loadEnv(env = process.env) {
     LOG_PRETTY: env.LOG_PRETTY === 'true',
     SHUTDOWN_TIMEOUT_MS: env.SHUTDOWN_TIMEOUT_MS ? parseInt(env.SHUTDOWN_TIMEOUT_MS, 10) : 10000,
     AUTH_INTERNAL_SERVICE_SECRET: env.AUTH_INTERNAL_SERVICE_SECRET,
-    REDIS_URL: env.REDIS_URL || ''
+    REDIS_URL: env.REDIS_URL || '',
+    MONGODB_URI_READ: env.MONGODB_URI_READ ? String(env.MONGODB_URI_READ).trim() : '',
+    MONGODB_DB_BRANCH: env.MONGODB_DB_BRANCH ? String(env.MONGODB_DB_BRANCH).trim() : 'gpp_777ww'
   }
 
   const errors = []

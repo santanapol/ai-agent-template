@@ -49,6 +49,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
       const secret = req.headers['x-gateway-secret']
       const ou = req.headers['x-user-ou']
       const branch = req.headers['x-user-branch']
+      const homeBranch = req.headers['x-user-home-branch']
       const uid = req.headers['x-user-id']
       const role = req.headers['x-user-role']
       const permissions = req.headers['x-user-permissions']
@@ -65,6 +66,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
           secret,
           ou,
           branch,
+          homeBranch,
           uid,
           role,
           permissions,
@@ -141,6 +143,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.hasAuthorization, false)
     assert.strictEqual(body.ou, 'ou-1')
     assert.strictEqual(body.branch, 'branch-1')
+    assert.strictEqual(body.homeBranch, undefined)
     assert.strictEqual(body.uid, '507f1f77bcf86cd799439011')
     assert.strictEqual(body.role, 'platform_admin')
     assert.strictEqual(body.permissions, '')
@@ -203,6 +206,62 @@ describe('gateway proxy (JWKS + upstream)', () => {
       sub: '507f1f77bcf86cd799439011',
       role: 'platform_admin',
       ou_id: 'ou-1',
+      token_gen: 0
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
+      .setIssuedAt()
+      .setExpirationTime('2h')
+      .sign(/** @type {import('jose').KeyLike} */ (jwtPrivateKey))
+
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    assert.strictEqual(res.status, 401)
+    const body = await res.json()
+    assert.strictEqual(body.code, 'GATEWAY_CLAIM_REJECTED')
+  })
+
+  test('forwards x-user-home-branch when JWT includes home_branch_id (AC-5)', async () => {
+    const homeBranchId = '507f1f77bcf86cd799439012'
+    const activeBranchId = '507f1f77bcf86cd799439013'
+    const token = await new jose.SignJWT({
+      sub: '507f1f77bcf86cd799439011',
+      role: 'platform_admin',
+      ou_id: 'ou-1',
+      branch_id: activeBranchId,
+      home_branch_id: homeBranchId,
+      token_gen: 0
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: jwtKid })
+      .setIssuedAt()
+      .setExpirationTime('2h')
+      .sign(/** @type {import('jose').KeyLike} */ (jwtPrivateKey))
+
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    assert.strictEqual(res.status, 200)
+    const body = await res.json()
+    assert.strictEqual(body.branch, activeBranchId)
+    assert.strictEqual(body.homeBranch, homeBranchId)
+  })
+
+  test('backward compat: JWT without home_branch_id proxies without x-user-home-branch', async () => {
+    const res = await fetch(`${gatewayBaseUrl}/api/echo/ping`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    })
+    assert.strictEqual(res.status, 200)
+    const body = await res.json()
+    assert.strictEqual(body.homeBranch, undefined)
+  })
+
+  test('401 GATEWAY_CLAIM_REJECTED when home_branch_id is invalid', async () => {
+    const token = await new jose.SignJWT({
+      sub: '507f1f77bcf86cd799439011',
+      role: 'platform_admin',
+      ou_id: 'ou-1',
+      branch_id: '507f1f77bcf86cd799439013',
+      home_branch_id: 'not-a-valid-object-id',
       token_gen: 0
     })
       .setProtectedHeader({ alg: 'RS256', kid: jwtKid })

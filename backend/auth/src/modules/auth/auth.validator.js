@@ -33,3 +33,13 @@ export const changeOwnPasswordBodySchema = {
   required: ['current_password', 'new_password'],
   additionalProperties: false
 }
+
+export const switchActiveBranchBodySchema = {
+  type: 'object',
+  properties: {
+    branch_id: { type: 'string', pattern: '^[a-fA-F0-9]{24}$' },
+    refresh_token: { type: 'string', minLength: 10, maxLength: 512 }
+  },
+  required: ['branch_id'],
+  additionalProperties: false
+}

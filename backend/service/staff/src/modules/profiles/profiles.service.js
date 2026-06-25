@@ -168,6 +168,11 @@ export function callerSelfBranchId(userContext) {
  */
 export function resolveLookupScope(userContext, targetUserId, { log } = {}) {
   if (targetUserId === userContext.userId) {
+    // OU-wide roles: profile lives at home branch; scope by OU only so My Profile
+    // works when active branch differs even if x-user-home-branch is not forwarded.
+    if (OU_WIDE_STAFF_ROLES.has(userContext.role)) {
+      return { ouId: userContext.ouId };
+    }
     return {
       ouId: userContext.ouId,
       branchId: callerSelfBranchId(userContext),
@@ -202,16 +207,22 @@ export function assertProfileScope(
   { log } = {},
 ) {
   if (profile.user_id === userContext.userId) {
-    const selfBranch = callerSelfBranchId(userContext);
-    if (
-      profile.ou_id !== userContext.ouId ||
-      profile.branch_id !== selfBranch
-    ) {
+    if (profile.ou_id !== userContext.ouId) {
       throw new HttpError(
         403,
         CODES.INVALID_USER_CONTEXT,
         "Profile tenant does not match caller context",
       );
+    }
+    if (!OU_WIDE_STAFF_ROLES.has(userContext.role)) {
+      const selfBranch = callerSelfBranchId(userContext);
+      if (profile.branch_id !== selfBranch) {
+        throw new HttpError(
+          403,
+          CODES.INVALID_USER_CONTEXT,
+          "Profile tenant does not match caller context",
+        );
+      }
     }
     return;
   }

@@ -37,6 +37,11 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<vo
   await authClient.post('/auth/me/password', payload);
 }
 
+export async function switchActiveBranch(branch_id: string): Promise<TokenResponse> {
+  const res = await authClient.post<TokenResponse>('/auth/me/active-branch', { branch_id });
+  return res.data;
+}
+
 export async function getMyMenus(): Promise<MenuNode[]> {
   const res = await authClient.get<{ menus: MenuNode[] }>('/auth/me/menus');
   return res.data.menus;

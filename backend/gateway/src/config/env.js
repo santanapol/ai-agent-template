@@ -16,6 +16,7 @@ export function loadEnv(env = process.env) {
     JWT_CLAIM_ROLE: env.JWT_CLAIM_ROLE || 'role',
     JWT_CLAIM_OU: env.JWT_CLAIM_OU || 'ou_id',
     JWT_CLAIM_BRANCH: env.JWT_CLAIM_BRANCH || 'branch_id',
+    JWT_CLAIM_HOME_BRANCH: env.JWT_CLAIM_HOME_BRANCH || 'home_branch_id',
     JWT_LEEWAY_SECONDS: env.JWT_LEEWAY_SECONDS ? parseInt(env.JWT_LEEWAY_SECONDS, 10) : 60,
     GATEWAY_SECRET: env.GATEWAY_SECRET,
     UPSTREAM_TIMEOUT_MS: env.UPSTREAM_TIMEOUT_MS

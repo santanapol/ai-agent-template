@@ -1,7 +1,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { VALID_ROLES, VALID_ROLES_SET, isValidRole, isAdminRole, OU_WIDE_STAFF_ROLES } from "../index.js";
+import { VALID_ROLES, VALID_ROLES_SET, isValidRole, isAdminRole, OU_WIDE_STAFF_ROLES, BRANCH_SWITCH_ROLES, canSwitchActiveBranchRole } from "../index.js";
 
 describe("@zero-platform/roles", () => {
   test("VALID_ROLES_SET matches VALID_ROLES array", () => {
@@ -34,5 +34,11 @@ describe("@zero-platform/roles", () => {
     assert.ok(OU_WIDE_STAFF_ROLES.has("support"));
     assert.ok(OU_WIDE_STAFF_ROLES.has("support_admin"));
     assert.equal(OU_WIDE_STAFF_ROLES.has("branch_admin"), false);
+  });
+
+  test("BRANCH_SWITCH_ROLES matches OU_WIDE_STAFF_ROLES", () => {
+    assert.deepEqual(BRANCH_SWITCH_ROLES, OU_WIDE_STAFF_ROLES);
+    assert.equal(canSwitchActiveBranchRole("support"), true);
+    assert.equal(canSwitchActiveBranchRole("staff"), false);
   });
 });

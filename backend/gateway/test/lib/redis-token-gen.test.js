@@ -28,7 +28,21 @@ describe('redis-token-gen', () => {
     assert.strictEqual(parseTokenGenFromPayload({ token_gen: 'x' }), null)
   })
 
-  test('getCurrentTokenGenFromRedis returns 0 when key missing', async () => {
+  test('getCurrentTokenGenFromRedis returns null when key missing and rejectIfMissing', async () => {
+    const client = {
+      async get() {
+        return null
+      }
+    }
+    assert.strictEqual(
+      await getCurrentTokenGenFromRedis(client, '507f1f77bcf86cd799439011', {
+        rejectIfMissing: true
+      }),
+      null
+    )
+  })
+
+  test('getCurrentTokenGenFromRedis returns 0 when key missing by default', async () => {
     const client = {
       async get() {
         return null

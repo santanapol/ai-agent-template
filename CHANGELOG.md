@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Active Branch Selector (OU-wide roles):** `POST /auth/me/active-branch` in **`backend/auth/`** — switch working branch without refresh rotation; access JWT carries `branch_id` (active) and `home_branch_id` (home); branch master validation via `MONGODB_URI_READ` / `MONGODB_DB_BRANCH`; `/readyz` pings branch-read MongoDB when configured.
+- **`backend/gateway/`:** Forward optional `x-user-home-branch` from JWT `home_branch_id` claim (AC-5); integration tests for forward, backward compat, and invalid claim rejection.
+- **`backend/shared/platform-roles/`:** `BRANCH_SWITCH_ROLES` and `canSwitchActiveBranchRole()` shared by auth and backoffice.
+- **`backend/service/staff/`:** OU-wide self-profile lookup scoped by OU only so My Profile works when active branch ≠ home (`x-user-home-branch` / `homeBranchId`).
+- **Backoffice:** Header branch switcher for `platform_admin`, `support_admin`, and `support` — optimistic selection, `allowClear` to return home, inactive branches disabled in dropdown.
+- **`backend/service/agent-invoice/`:** Invoice list branch filter aligned with active branch for OU-wide roles (AC-7); integration test for branch-scoped list.
+
+### Changed
+
+- **`backend/auth/`:** `assertAccessTokenGenMatches` fail-closed when Redis `token_gen` key is missing (aligned with gateway); branch switch returns `503 AUTH_NOT_READY` when Redis publish fails after DB commit (no false-success token).
+- **Backoffice:** Split `AdminLayout` effects — profile fetch once, branch list once per OU (module cache); menus no longer refetch on `token_gen` bump alone.
+
+### Fixed
+
+- **Backoffice — My Profile:** 404 when active working branch differed from home branch (staff service self-lookup + gateway `x-user-home-branch`).
+- **`backend/auth/openapi.yaml`:** Document that inactive target branches return `403` (not allowed).
+
+### Added
+
 - **Backoffice — Invoices:** Bulk export from `/invoices` list — select up to 50 invoices (across pagination), download PDF or Excel files as a ZIP with progress modal, partial-failure retry, and cancel (`invoices:read`).
 - **Backoffice — Invoices:** Bulk Mark PAID and Cancel from list — confirmation dialog, progress modal, status rules aligned with invoice detail (`invoices:write`; PAID for `READY`, Cancel for `READY` / `PENDING` / `MISSING_FEE` / `ERROR`).
 - **`backend/auth/`:** Expanded permission menu catalog seed to 20 action keys (billing, reports, dashboard, staff profiles, permissions admin) with English labels; flat `staff` hierarchy (`profiles:*` actions directly under `staff`, no `staff:profiles` group).

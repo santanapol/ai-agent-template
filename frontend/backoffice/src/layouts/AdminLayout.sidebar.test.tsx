@@ -40,8 +40,10 @@ function renderLayout(menus: MenuNode[]) {
     menuLoading: false,
     menuError: false,
     loading: false,
+    branchSwitching: false,
     login: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    switchBranch: vi.fn(),
   } as AuthContextValue);
 
   return renderWithProviders(
@@ -85,8 +87,10 @@ describe('AdminLayout sidebar (SC-3)', () => {
       menuLoading: false,
       menuError: false,
       loading: false,
+      branchSwitching: false,
       login: vi.fn(),
       logout: vi.fn().mockResolvedValue(undefined),
+      switchBranch: vi.fn(),
     } as AuthContextValue);
 
     rerender(

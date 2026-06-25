@@ -33,6 +33,9 @@ export function problemTypes(base) {
     userNotFound: `${b}/user-not-found`,
     userAlreadyExists: `${b}/user-already-exists`,
     passwordUnchanged: `${b}/password-unchanged`,
-    passwordPolicyViolation: `${b}/password-policy-violation`
+    passwordPolicyViolation: `${b}/password-policy-violation`,
+    branchSwitchForbidden: `${b}/branch-switch-forbidden`,
+    branchForbidden: `${b}/branch-forbidden`,
+    branchNotFound: `${b}/branch-not-found`
   }
 }

@@ -15,7 +15,7 @@ describe("Agents API Integration Tests", () => {
     ouId,
     branchId: "665a3d76b1e5f8b9e6f2b3c1",
     userId: mockUserId,
-    role: "admin",
+    role: "platform_admin",
   });
 
   const validPayload = {

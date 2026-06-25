@@ -101,4 +101,5 @@ export interface InvoiceAgentBranch {
   branch_id: string;
   branch_name: string | null;
   branch_code: string | null;
+  active?: boolean;
 }

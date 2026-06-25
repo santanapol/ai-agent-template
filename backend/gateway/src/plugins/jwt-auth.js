@@ -49,7 +49,14 @@ export default fp(
             return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED')
           }
           try {
-            const currentGen = await getCurrentTokenGenFromRedis(redisClient, sub)
+            const currentGen = await getCurrentTokenGenFromRedis(redisClient, sub, {
+              rejectIfMissing: true
+            })
+            if (currentGen === null) {
+              return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED', {
+                detail: 'Access token generation is unknown (missing Redis record).'
+              })
+            }
             if (jwtGen < currentGen) {
               return fastify.gatewayProblem.send(reply, 'GATEWAY_JWT_REJECTED', {
                 detail: 'Access token generation is stale.'
