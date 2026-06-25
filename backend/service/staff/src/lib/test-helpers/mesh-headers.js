@@ -5,13 +5,14 @@
  * @param {string} [overrides.userId]
  * @param {string} [overrides.ouId] 24-char hex
  * @param {string} [overrides.branchId] 24-char hex
+ * @param {string} [overrides.homeBranchId] 24-char hex (optional forwarded home branch)
  * @param {string} [overrides.role]
  */
 export function buildMeshHeaders(overrides = {}) {
   const ouId = overrides.ouId ?? "507f1f77bcf86cd799439011";
   const branchId = overrides.branchId ?? "507f1f77bcf86cd799439012";
 
-  return {
+  const headers = {
     "x-gateway-secret":
       overrides.secret ?? "test-gateway-secret-32-chars-minimum!!",
     "x-user-id": overrides.userId ?? "507f1f77bcf86cd799439013",
@@ -22,4 +23,10 @@ export function buildMeshHeaders(overrides = {}) {
     "content-type": "application/json",
     ...overrides.extraHeaders,
   };
+
+  if (overrides.homeBranchId) {
+    headers["x-user-home-branch"] = overrides.homeBranchId;
+  }
+
+  return headers;
 }

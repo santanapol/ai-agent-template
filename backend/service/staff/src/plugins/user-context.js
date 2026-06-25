@@ -1,22 +1,12 @@
 import fp from "fastify-plugin";
 import { ObjectId } from "mongodb";
+import { isValidRole } from "@zero-platform/roles";
 import { HttpError } from "../lib/http-error.js";
 import CODES from "../lib/error-codes.js";
 
-const VALID_ROLES = new Set([
-  "staff",
-  "branch_admin",
-  "platform_admin",
-  "support",
-  "support_admin",
-]);
-
 function readHeader(request, name) {
   const value = request.headers[name];
-  if (typeof value !== "string") {
-    return "";
-  }
-  return value.trim();
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function parseHexObjectId(value, fieldLabel) {
@@ -35,6 +25,7 @@ export default fp(async function userContextGuard(fastify) {
     const userId = readHeader(request, "x-user-id");
     const userOu = readHeader(request, "x-user-ou");
     const userBranch = readHeader(request, "x-user-branch");
+    const rawHomeBranch = readHeader(request, "x-user-home-branch");
     const role = readHeader(request, "x-user-role");
     const rawPermissions = readHeader(request, "x-user-permissions");
 
@@ -46,7 +37,7 @@ export default fp(async function userContextGuard(fastify) {
       );
     }
 
-    if (!VALID_ROLES.has(role)) {
+    if (!isValidRole(role)) {
       throw new HttpError(
         403,
         CODES.INVALID_USER_CONTEXT,
@@ -61,11 +52,22 @@ export default fp(async function userContextGuard(fastify) {
     const ouObjectId = parseHexObjectId(userOu, "x-user-ou");
     const branchObjectId = parseHexObjectId(userBranch, "x-user-branch");
     const permissions = rawPermissions === "" ? [] : rawPermissions.split(",");
+    const homeBranchFields =
+      rawHomeBranch !== ""
+        ? {
+            homeBranchId: rawHomeBranch,
+            homeBranchObjectId: parseHexObjectId(
+              rawHomeBranch,
+              "x-user-home-branch",
+            ),
+          }
+        : {};
 
     request.userContext = {
       userId,
       ouId: userOu,
       branchId: userBranch,
+      ...homeBranchFields,
       role,
       ouObjectId,
       branchObjectId,

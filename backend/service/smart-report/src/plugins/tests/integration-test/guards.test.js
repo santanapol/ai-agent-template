@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
 
 import buildApp from "../../../app.js";
@@ -6,6 +6,10 @@ import { buildMeshHeaders } from "../../../lib/test-helpers/mesh-headers.js";
 import CODES from "../../../lib/error-codes.js";
 
 describe("smart-reports guards", () => {
+  after(async () => {
+    const { closeDatabase } = await import("../../../config/database.js");
+    await closeDatabase();
+  });
   test("rejects requests without x-gateway-secret (401 GATEWAY_SECRET_REJECTED)", async () => {
     const app = await buildApp();
     const headers = buildMeshHeaders();
@@ -68,6 +72,50 @@ describe("smart-reports guards", () => {
 
     assert.equal(response.statusCode, 403);
     assert.equal(response.json().code, CODES.INVALID_USER_CONTEXT);
+
+    await app.close();
+  });
+
+  test("accepts support role with reports:smart permission", async () => {
+    const { connectDatabase } = await import("../../../config/database.js");
+    await connectDatabase();
+
+    const app = await buildApp();
+    const headers = buildMeshHeaders({
+      role: "support",
+      permissions: "reports:smart",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/smart-reports",
+      headers,
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().success, true);
+
+    await app.close();
+  });
+
+  test("accepts support_admin role with reports:smart permission", async () => {
+    const { connectDatabase } = await import("../../../config/database.js");
+    await connectDatabase();
+
+    const app = await buildApp();
+    const headers = buildMeshHeaders({
+      role: "support_admin",
+      permissions: "reports:smart",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/smart-reports",
+      headers,
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().success, true);
 
     await app.close();
   });

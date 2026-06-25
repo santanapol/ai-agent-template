@@ -1,4 +1,5 @@
 import fp from "fastify-plugin";
+import { isValidRole } from "@zero-platform/roles";
 import { isValidObjectId } from "../lib/object-id.js";
 import { resolveRequestId } from "../lib/request-id.js";
 import { sendError } from "../lib/response.js";
@@ -39,6 +40,15 @@ export default fp(async function userContextPlugin(fastify) {
           requestId,
         });
       }
+    }
+
+    if (!isValidRole(userRole)) {
+      return sendError(reply, {
+        statusCode: 403,
+        code: "INVALID_USER_CONTEXT",
+        message: "Invalid x-user-role",
+        requestId,
+      });
     }
 
     request.userContext = {

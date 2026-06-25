@@ -16,12 +16,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`backend/service/smart-report/`:** `assertPermission` guard on report endpoints requiring `reports:smart`.
 - **Backoffice:** `PermissionGuard` on all protected routes (`/invoices`, `/agents`, `/smart-reports`, `/staff`, `/permissions`, etc.) aligned with `sitemap.md`.
 - **Backoffice:** `support` and `support_admin` in Role permissions admin role selector; parent menu checkboxes cascade to all child actions.
+- **`backend/shared/platform-roles/`:** New `@zero-platform/roles` package — canonical `VALID_ROLES`, `ADMIN_ROLES`, `OU_WIDE_STAFF_ROLES`, `isValidRole()` / `isAdminRole()` shared by auth, staff, smart-report, and agent-invoice.
+- **Monorepo:** Root `package.json` npm workspaces for `@zero-platform/roles` and consuming backend services.
 
 ### Changed
 
 - **Backoffice — Invoices:** Shared bulk orchestration module (`bulk/` — concurrency pool, etag helper, progress types); `BulkInvoiceActionBar` and `BulkProgressModal` replace export-only bar/modal duplication.
 - **Backoffice — Role permissions:** Save uses only explicitly checked action keys (wildcards expanded on load, not silently re-merged on save).
-- **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`).
+- **`backend/service/staff/`:** `support_admin` in `VALID_ROLES`, `ADMIN_ROLES`, and OU-wide profile scope (same as `support` / `platform_admin`); `profiles.service` imports `ADMIN_ROLES` / `isAdminRole` from `@zero-platform/roles`.
+- **`backend/auth/`:** `setRoleBodySchema` and `createUserBodySchema` role enums sourced from `@zero-platform/roles`; `spec:roles` CI check keeps OpenAPI `InternalSetRoleRequest` in sync.
+- **`backend/gateway/`:** JWT role claim validated with `isValidRole()` before injecting mesh headers (`GATEWAY_CLAIM_REJECTED` for unknown roles).
+- **`backend/service/agent-invoice/`:** Validate `x-user-role` against `@zero-platform/roles` (aligned with staff / smart-report).
 
 ### Fixed
 
@@ -32,6 +37,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`backend/gateway/`:** Forward client `Authorization` on `isPublic` routes (e.g. `/auth/*`) so auth service bearer endpoints such as `GET /auth/me/menus` work behind the gateway; mesh headers remain stripped until JWT is verified.
 - **Backoffice — Staff:** System Role dropdown and role change on save use `roles:assign` permission (not hardcoded `platform_admin` role).
 - **`backend/service/staff/`:** Provisioning a user with a non-default `role` on create requires `roles:assign`.
+- **`backend/service/smart-report/`:** Accept `support` and `support_admin` in gateway user-context role validation (fixes `INVALID_USER_CONTEXT` on Smart Reports for `support_admin` users).
+- **`backend/service/agent-invoice/`:** Empty-body `DELETE` with `Content-Type: application/json` no longer returns 500 (bodyless JSON parser).
 
 - **Backoffice:** Permission-driven sidebar menu and route guards (Dynamic Permission Phase F) — `AuthContext` fetches `GET /auth/me/menus` on login/refresh and exposes `permissions` / `menus` / `menuLoading` / `menuError`; `AdminLayout` builds the sidebar from the returned menu tree (sorted by `sort_order`, with depth/cycle guarding), falling back to a minimal menu plus a warning banner if menu loading fails. New `usePermission` hook and `PermissionGuard` component gate UI elements (e.g. the Edit button in `StaffManagement`) and routes by permission key.
 - **`backend/auth/`:** Permission Admin API (Dynamic Permission Phase A) — `GET/POST/PATCH/DELETE /auth/admin/menus` and `GET/PUT/DELETE /auth/admin/role-permissions` for managing the menu registry and role→permission mappings at runtime, with optimistic locking (`upd_date`/`If-Match`), audit logging (`auth.permissions_changed`), self-lockout protection (`permissions:manage` cannot be edited via the API), and an urgent `revoke_sessions` option on role-permission updates (revokes Redis sessions for affected users in batches of up to 1,000). New `409 AUTH_MENU_IN_USE` / `409 AUTH_ROLE_PERMISSION_IN_USE` error codes.

@@ -1,17 +1,13 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert";
 import buildApp from "./app.js";
-import {
-  buildMeshHeaders,
-  testGatewaySecret,
-} from "./lib/test-helpers/mesh-headers.js";
+import { buildMeshHeaders } from "./lib/test-helpers/mesh-headers.js";
 
 describe("App infrastructure behaviors", () => {
   let app;
-  const gatewaySecret = testGatewaySecret();
   const baseHeaders = buildMeshHeaders({
     userId: "test_infra_user",
-    role: "admin",
+    role: "platform_admin",
   });
 
   before(async () => {
@@ -98,6 +94,47 @@ describe("App infrastructure behaviors", () => {
     const body = res.json();
     assert.strictEqual(body.success, false);
     assert.strictEqual(body.code, "GATEWAY_SECRET_REJECTED");
+  });
+
+  test("Invalid x-user-role — returns 403 INVALID_USER_CONTEXT", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/agent-invoice/agents",
+      headers: buildMeshHeaders({ role: "super_admin" }),
+    });
+
+    assert.strictEqual(res.statusCode, 403);
+    const body = res.json();
+    assert.strictEqual(body.code, "INVALID_USER_CONTEXT");
+    assert.match(body.message, /x-user-role/i);
+  });
+
+  test("support_admin x-user-role passes mesh guard (agents:list)", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/agent-invoice/agents",
+      headers: buildMeshHeaders({
+        role: "support_admin",
+        permissions: "agents:list",
+      }),
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.json().success, true);
+  });
+
+  test("DELETE with Content-Type application/json and empty body does not return 500", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/agent-invoice/agents/665a3d76b1e5f8b9e6f2b9a1",
+      headers: {
+        ...baseHeaders,
+        "content-type": "application/json",
+      },
+      payload: "",
+    });
+
+    assert.notStrictEqual(res.statusCode, 500);
   });
 
   test("Invalid agentId pattern — Fastify param validation returns 400 INVALID_PARAM", async () => {

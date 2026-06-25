@@ -40,12 +40,29 @@ export function normalizeRoleHeader(value) {
   return String(value).trim()
 }
 
+import { isValidRole } from '@zero-platform/roles'
+
 /**
  * @param {string} roleHeader
  */
 export function assertValidRoleHeader(roleHeader) {
   if (roleHeader.length > 256) {
     throw new Error('role_too_long')
+  }
+  if (roleHeader === '') {
+    throw new Error('missing_role')
+  }
+  const parts = roleHeader
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  if (parts.length === 0) {
+    throw new Error('missing_role')
+  }
+  for (const part of parts) {
+    if (!isValidRole(part)) {
+      throw new Error('invalid_role')
+    }
   }
 }
 

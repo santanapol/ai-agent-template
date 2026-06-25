@@ -88,7 +88,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
 
     accessToken = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: 'ou-1',
       branch_id: 'branch-1',
       token_gen: 0
@@ -142,7 +142,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
     assert.strictEqual(body.ou, 'ou-1')
     assert.strictEqual(body.branch, 'branch-1')
     assert.strictEqual(body.uid, '507f1f77bcf86cd799439011')
-    assert.strictEqual(body.role, 'admin')
+    assert.strictEqual(body.role, 'platform_admin')
     assert.strictEqual(body.permissions, '')
     assert.strictEqual(body.ifMatch, 'W/"etag-123"')
     assert.strictEqual(body.secret, 'gateway-secret-32-chars-minimum-ok!!')
@@ -180,7 +180,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('401 GATEWAY_CLAIM_REJECTED when JWT omits ou_id (tenant claim)', async () => {
     const token = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       branch_id: 'branch-1',
       token_gen: 0
     })
@@ -201,7 +201,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('401 GATEWAY_CLAIM_REJECTED when JWT omits branch_id (tenant claim)', async () => {
     const token = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: 'ou-1',
       token_gen: 0
     })
@@ -266,7 +266,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('proxies with permissions claim formatted to comma-separated x-user-permissions', async () => {
     const permissionsToken = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: 'ou-1',
       branch_id: 'branch-1',
       permissions: ['profiles:*', 'invoice:read'],
@@ -339,7 +339,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('401 GATEWAY_CLAIM_REJECTED on invalid permissions claim format (not array)', async () => {
     const badToken = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: 'ou-1',
       branch_id: 'branch-1',
       permissions: 'profiles:*',
@@ -361,7 +361,7 @@ describe('gateway proxy (JWKS + upstream)', () => {
   test('401 GATEWAY_CLAIM_REJECTED on invalid permissions claim format (contains comma)', async () => {
     const badToken = await new jose.SignJWT({
       sub: '507f1f77bcf86cd799439011',
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: 'ou-1',
       branch_id: 'branch-1',
       permissions: ['profiles:*,invoice:read'],

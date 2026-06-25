@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: auth
-  version: 0.1.6
+  version: 0.1.7
   description: |
     Edge identity API (login, refresh, logout), password change (`POST /auth/me/password`),
     internal user provisioning and password reset for trusted services, session revoke, and JWKS.

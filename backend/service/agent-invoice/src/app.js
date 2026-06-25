@@ -48,6 +48,25 @@ export default async function buildApp(opts = {}) {
     reply.header("x-request-id", requestId);
   });
 
+  // Allow an empty body on `Content-Type: application/json` requests
+  // (clients commonly send this on bodyless DELETE actions).
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      if (body === "") {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body));
+      } catch (error) {
+        error.statusCode = 400;
+        done(error, undefined);
+      }
+    },
+  );
+
   // Gateway secret + duplicate header guard
   app.addHook("onRequest", async (request, reply) => {
     // Skip health probes

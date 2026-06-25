@@ -26,6 +26,15 @@ describe('claims', () => {
     assert.throws(() => assertValidRoleHeader('x'.repeat(257)), /role_too_long/)
   })
 
+  test('assertValidRoleHeader rejects unknown roles', () => {
+    assert.throws(() => assertValidRoleHeader('super_admin'), /invalid_role/)
+  })
+
+  test('assertValidRoleHeader accepts canonical roles', () => {
+    assert.doesNotThrow(() => assertValidRoleHeader('platform_admin'))
+    assert.doesNotThrow(() => assertValidRoleHeader('support_admin'))
+  })
+
   describe('normalizePermissionsClaim', () => {
     test('returns empty string when value is undefined or null', () => {
       assert.strictEqual(normalizePermissionsClaim(undefined), '')

@@ -102,7 +102,7 @@ describe('jwt-auth token_gen (D3)', () => {
   async function signToken(tokenGen) {
     return new jose.SignJWT({
       sub: SUB,
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: '507f1f77bcf86cd799439012',
       branch_id: '507f1f77bcf86cd799439013',
       token_gen: tokenGen
@@ -116,7 +116,7 @@ describe('jwt-auth token_gen (D3)', () => {
   test('rejects JWT without token_gen claim', async () => {
     const token = await new jose.SignJWT({
       sub: SUB,
-      role: 'admin',
+      role: 'platform_admin',
       ou_id: '507f1f77bcf86cd799439012',
       branch_id: '507f1f77bcf86cd799439013'
     })
