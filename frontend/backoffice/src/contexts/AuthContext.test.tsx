@@ -277,13 +277,13 @@ describe('AuthContext', () => {
     const notReady = new axios.AxiosError(
       'Service Unavailable',
       axios.AxiosError.ERR_BAD_RESPONSE,
-      {},
+      undefined,
       {},
       {
         status: 503,
         statusText: 'Service Unavailable',
         headers: {},
-        config: {} as never,
+        config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
         data: { code: 'AUTH_NOT_READY' },
       },
     );
