@@ -23,6 +23,7 @@
     "ci": "npm run lint && npm run format:check && npm run spec:roles && npm test && npm run audit:check",
     "ci:with-coverage": "npm run ci && npm run test:coverage",
     "seed:user": "node --env-file=.env scripts/seed-user.mjs",
+    "seed:zero-hq": "node --env-file=.env scripts/seed-zero-hq.mjs",
     "seed:example": "node --env-file=.env scripts/seed-example-data.mjs",
     "init:db": "node --env-file=.env scripts/init-db.mjs",
     "create-env": "node scripts/create-dev-env.mjs"

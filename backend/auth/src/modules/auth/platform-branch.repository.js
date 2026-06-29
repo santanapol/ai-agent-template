@@ -1,8 +1,9 @@
+import { AUTH_COLLECTIONS } from '../../config/mongo-collections.js'
 import { resolveBranchAccessFromDoc } from './branch-access-resolve.js'
 
-const BRANCH_COLLECTION = 'su_branch'
+const COLLECTION = AUTH_COLLECTIONS.PLATFORM_BRANCHES
 
-export class BranchReadRepository {
+export class PlatformBranchRepository {
   /**
    * @param {import('mongodb').Db} db
    */
@@ -15,7 +16,7 @@ export class BranchReadRepository {
    * @returns {Promise<import('mongodb').Document | null>}
    */
   async findById(branchId) {
-    return this.db.collection(BRANCH_COLLECTION).findOne({ _id: branchId })
+    return this.db.collection(COLLECTION).findOne({ _id: branchId })
   }
 
   /**
@@ -24,11 +25,10 @@ export class BranchReadRepository {
    * @returns {Promise<import('mongodb').Document | null>}
    */
   async findByIdInOu(branchId, ouId) {
-    return this.db.collection(BRANCH_COLLECTION).findOne({ _id: branchId, ou_id: ouId })
+    return this.db.collection(COLLECTION).findOne({ _id: branchId, ou_id: ouId })
   }
 
   /**
-   * Distinguishes missing branch (404) from cross-OU branch (403) for active-branch switch.
    * @returns {Promise<'not_found' | 'forbidden' | 'inactive' | 'ok'>}
    */
   async resolveBranchAccess(branchId, ouId) {

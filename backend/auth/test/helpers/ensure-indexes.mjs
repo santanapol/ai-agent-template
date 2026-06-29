@@ -1,4 +1,5 @@
 import { AUTH_COLLECTIONS } from '../../src/config/mongo-collections.js'
+import { ensurePlatformBranchIndexes } from '../../scripts/seed-data/ensure-zero-hq.mjs'
 
 /**
  * Indexes aligned with `docs/architecture.md` section 8.4 (required for refresh + throttle).
@@ -44,4 +45,5 @@ export async function ensureAuthIndexes(db) {
   await db
     .collection(AUTH_COLLECTIONS.ROLE_PERMISSIONS)
     .createIndex({ ou_id: 1, role: 1 }, { unique: true, name: 'uniq_ou_role' })
+  await ensurePlatformBranchIndexes(db)
 }

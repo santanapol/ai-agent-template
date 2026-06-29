@@ -8,11 +8,14 @@ import argon2 from 'argon2'
 import { decodeJwt } from 'jose'
 import { buildApp } from '../src/app.js'
 import { loadEnv } from '../src/config/env.js'
+import { BranchAccessResolver } from '../src/modules/auth/branch-access.resolver.js'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
 import { ensureAuthIndexes } from './helpers/ensure-indexes.mjs'
 import { hashRefreshToken } from '../src/lib/refresh-token.js'
 import { generateRsaPkcs8Pem } from './helpers/rsa-pem.mjs'
 import { startMongoForTests, resetDatabase } from './helpers/mongo-test-server.mjs'
+import { ensureZeroHqBranch } from '../scripts/seed-data/ensure-zero-hq.mjs'
+import { ZERO_HQ_BRANCH_ID } from '../scripts/seed-data/zero-hq.js'
 
 const BRANCH_DB = 'branch_integration_test'
 const PLATFORM_USER = 'active_branch_platform'
@@ -27,6 +30,8 @@ const HOME_BRANCH_ID = new ObjectId()
 const TARGET_BRANCH_ID = new ObjectId()
 const INACTIVE_BRANCH_ID = new ObjectId()
 const FOREIGN_BRANCH_ID = new ObjectId()
+const ZERO_HQ_ID = new ObjectId(ZERO_HQ_BRANCH_ID)
+const FOREIGN_PLATFORM_BRANCH_ID = new ObjectId()
 
 function testEnv(databaseUri, jwtPrivateKeyPem) {
   return {
@@ -241,6 +246,47 @@ test('POST /auth/me/active-branch', { timeout: 180_000 }, async (t) => {
     const claims = decodeJwt(body.access_token)
     assert.equal(claims.branch_id, TARGET_BRANCH_ID.toHexString())
     assert.equal(claims.home_branch_id, HOME_BRANCH_ID.toHexString())
+  })
+
+  await t.test('switches to Zero HQ platform branch in platform_branches', async () => {
+    await ensureZeroHqBranch(db, { ouId: TEST_OU_ID, branchId: ZERO_HQ_ID })
+    const login = await loginNative(base, PLATFORM_USER)
+    const r = await switchBranch(base, {
+      accessToken: login.access_token,
+      refreshToken: login.refresh_token,
+      branchId: ZERO_HQ_ID.toHexString()
+    })
+    assert.equal(r.status, 200)
+    const claims = decodeJwt((await r.json()).access_token)
+    assert.equal(claims.branch_id, ZERO_HQ_ID.toHexString())
+    assert.equal(claims.home_branch_id, HOME_BRANCH_ID.toHexString())
+  })
+
+  await t.test('platform branch in another OU returns 403', async () => {
+    await db.collection(AUTH_COLLECTIONS.PLATFORM_BRANCHES).insertOne({
+      _id: FOREIGN_PLATFORM_BRANCH_ID,
+      ou_id: OTHER_OU_ID,
+      branch_type: 'HQ',
+      branch_name: 'Foreign HQ',
+      branch_code: 'FHQ',
+      branch_desc: 'Foreign platform branch',
+      active: true,
+      cr_by: 'test_seed',
+      cr_date: new Date(),
+      cr_prog: 'test/active-branch.integration.test.js',
+      upd_by: 'test_seed',
+      upd_date: new Date(),
+      upd_prog: 'test/active-branch.integration.test.js'
+    })
+
+    const login = await loginNative(base, PLATFORM_USER)
+    const r = await switchBranch(base, {
+      accessToken: login.access_token,
+      refreshToken: login.refresh_token,
+      branchId: FOREIGN_PLATFORM_BRANCH_ID.toHexString()
+    })
+    assert.equal(r.status, 403)
+    assert.equal((await r.json()).code, 'AUTH_BRANCH_FORBIDDEN')
   })
 
   await t.test('switches to inactive branch in same OU returns 403', async () => {
@@ -542,7 +588,7 @@ test('POST /auth/me/active-branch', { timeout: 180_000 }, async (t) => {
 })
 
 test(
-  'POST /auth/me/active-branch returns 503 when branch read is not configured',
+  'POST /auth/me/active-branch returns 404 for customer branch when gpp read is not configured',
   {
     timeout: 180_000
   },
@@ -586,6 +632,65 @@ test(
     })
 
     const login = await loginNative(base, PLATFORM_USER)
+    const r = await switchBranch(base, {
+      accessToken: login.access_token,
+      refreshToken: login.refresh_token,
+      branchId: TARGET_BRANCH_ID.toHexString()
+    })
+    assert.equal(r.status, 404)
+    const body = await r.json()
+    assert.equal(body.code, 'AUTH_BRANCH_NOT_FOUND')
+  }
+)
+
+test(
+  'POST /auth/me/active-branch returns 503 when no branch resolver sources are configured',
+  {
+    timeout: 180_000
+  },
+  async (t) => {
+    const { databaseUri, stop } = await startMongoForTests()
+    await resetDatabase(databaseUri)
+
+    const client = new MongoClient(databaseUri)
+    await client.connect()
+    const db = client.db()
+    await ensureAuthIndexes(db)
+    const now = new Date()
+    const hashOpts = { type: argon2.argon2id, memoryCost: 65_536, timeCost: 3, parallelism: 4 }
+
+    await db.collection(AUTH_COLLECTIONS.USERS).insertOne({
+      ou_id: TEST_OU_ID,
+      branch_id: HOME_BRANCH_ID,
+      username: `${PLATFORM_USER}_no_resolver`,
+      password_hash: await argon2.hash(TEST_PASS, hashOpts),
+      role: 'platform_admin',
+      access_token_gen: 0,
+      cr_by: 'test_seed',
+      cr_date: now,
+      cr_prog: 'test/active-branch.integration.test.js',
+      upd_by: 'test_seed',
+      upd_date: now,
+      upd_prog: 'test/active-branch.integration.test.js'
+    })
+
+    const pem = generateRsaPkcs8Pem()
+    const env = testEnv(databaseUri, pem)
+    env.MONGODB_URI_READ = ''
+    const app = await buildApp(loadEnv(env), {
+      logger: false,
+      branchAccessResolver: new BranchAccessResolver({})
+    })
+    const addr = await app.listen({ port: 0, host: '127.0.0.1' })
+    const base = typeof addr === 'string' ? addr : `http://127.0.0.1:${addr.port}`
+
+    t.after(async () => {
+      await app.close()
+      await client.close()
+      await stop()
+    })
+
+    const login = await loginNative(base, `${PLATFORM_USER}_no_resolver`)
     const r = await switchBranch(base, {
       accessToken: login.access_token,
       refreshToken: login.refresh_token,

@@ -7,6 +7,7 @@ import type { AuthContextValue } from '../contexts/AuthContext';
 import type { DecodedUser } from '../types/auth';
 import { renderWithProviders } from '../test/renderWithProviders';
 import * as invoicesApi from '../lib/invoicesApiClient';
+import { ZERO_HQ_BRANCH_ID } from '../lib/branchOptions';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -207,7 +208,7 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(screen.getByText('b-home')).toBeInTheDocument();
+      expect(screen.getByText('H01 - Home Branch')).toBeInTheDocument();
     });
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
@@ -264,6 +265,29 @@ describe('AdminLayout branch switcher', () => {
     await waitFor(() => {
       expect(messageError).toHaveBeenCalled();
       expect(branchSelect()).not.toHaveTextContent('T01 - Target Branch');
+    });
+  });
+
+  it('shows Zero HQ label when home branch is platform HQ (not in gpp list)', async () => {
+    mockAuth({
+      sub: 'user-zero-hq',
+      role: 'platform_admin',
+      ou_id: 'ou-1',
+      branch_id: ZERO_HQ_BRANCH_ID,
+      home_branch_id: ZERO_HQ_BRANCH_ID,
+      token_gen: 0,
+      exp: 9999999999,
+      iat: 0,
+    });
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(branchSelect()).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('ZERO - Zero HQ')).toBeInTheDocument();
     });
   });
 
