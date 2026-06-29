@@ -149,11 +149,14 @@ export async function getInvoiceList(request, reply) {
 }
 
 export async function getInvoiceAgents(request, reply) {
-  const { ouId } = request.userContext;
+  const { ouId, branchId } = request.userContext;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
 
   try {
-    const result = await listInvoiceAgents({ ouId });
+    const result = await listInvoiceAgents({
+      ouId,
+      ensureBranchIds: branchId ? [branchId] : [],
+    });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(
