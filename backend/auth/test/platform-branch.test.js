@@ -136,3 +136,36 @@ test('BranchAccessResolver falls back to BranchReadRepository', async () => {
 
   assert.equal(await resolver.resolveBranchAccess(branchId, ouId), 'ok')
 })
+
+test('BranchAccessResolver.findBranchDisplay returns mapped branch metadata', async () => {
+  const ouId = new ObjectId()
+  const branchId = new ObjectId()
+
+  const platformRepo = {
+    async findByIdInOu(id, expectedOu) {
+      if (id.equals(branchId) && expectedOu.equals(ouId)) {
+        return {
+          _id: branchId,
+          ou_id: ouId,
+          branch_name: 'Zero HQ',
+          branch_code: 'ZERO',
+          active: true
+        }
+      }
+      return null
+    }
+  }
+
+  const resolver = new BranchAccessResolver({
+    platformBranchRepo: platformRepo,
+    branchReadRepo: null
+  })
+
+  const display = await resolver.findBranchDisplay(branchId, ouId)
+  assert.deepEqual(display, {
+    branch_id: branchId.toHexString(),
+    branch_code: 'ZERO',
+    branch_name: 'Zero HQ',
+    active: true
+  })
+})

@@ -25,6 +25,15 @@ vi.mock('../lib/invoicesApiClient', () => ({
   listInvoiceAgents: vi.fn().mockResolvedValue({ data: [] }),
 }));
 
+vi.mock('../lib/authApiClient', () => ({
+  getMyBranch: vi.fn().mockResolvedValue({
+    branch_id: 'b1',
+    branch_name: 'Branch One',
+    branch_code: 'B1',
+    active: true,
+  }),
+}));
+
 describe('AdminLayout component', () => {
   it('renders minimal/fallback menus and Alert banner on menu error', async () => {
     vi.mocked(useAuth).mockReturnValue({
@@ -38,6 +47,7 @@ describe('AdminLayout component', () => {
       menuError: true,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -69,6 +79,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -108,6 +119,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -154,6 +166,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -184,6 +197,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -214,6 +228,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),
@@ -256,6 +271,7 @@ describe('AdminLayout component', () => {
       menuError: false,
       loading: false,
       branchSwitching: false,
+      lastBranchSwitchAt: null,
       login: vi.fn(),
       logout: vi.fn(),
       switchBranch: vi.fn(),

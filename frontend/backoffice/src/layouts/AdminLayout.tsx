@@ -21,6 +21,7 @@ import {
   ShopOutlined,
   CodeOutlined,
   DollarOutlined,
+  FundOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
@@ -28,16 +29,20 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as staffApi from '../lib/staffApiClient';
 import * as invoicesApi from '../lib/invoicesApiClient';
+import * as authApi from '../lib/authApiClient';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import {
   canSwitchActiveBranch,
   findInvoiceAgentBranch,
-  formatBranchDisplayLabel,
+  formatActiveBranchLabel,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
+  getCachedMyBranch,
   mergePlatformBranches,
   setCachedInvoiceAgentBranches,
+  setCachedMyBranch,
+  upsertBranchInList,
 } from '../lib/branchOptions';
 import { subscribeProfileRefresh } from '../lib/profileRefresh';
 import type { InvoiceAgentBranch } from '../types/invoice';
@@ -101,6 +106,12 @@ const MENU_UI: Record<string, MenuItemUI> = {
   'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
   reports: { icon: <CodeOutlined /> },
   'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
+  'branch-report': { icon: <FundOutlined /> },
+  'branch-report:marketing': { icon: <FundOutlined /> },
+  'branch-report:marketing:channel-performance:read': {
+    icon: <FundOutlined />,
+    route: '/branch-report/marketing/channel-performance',
+  },
   my_profile: { icon: <UserOutlined />, route: '/profile' },
   settings: { icon: <SettingOutlined /> },
   'permissions:manage': { icon: <SafetyCertificateOutlined />, route: '/permissions' },
@@ -123,6 +134,10 @@ const AdminLayout: React.FC = () => {
   } | null>(null);
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [activeBranch, setActiveBranch] = useState<InvoiceAgentBranch | null>(() =>
+    getCachedMyBranch(user?.branch_id),
+  );
+  const [activeBranchLoading, setActiveBranchLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
@@ -187,45 +202,94 @@ const AdminLayout: React.FC = () => {
   }, [user?.sub, profileRefreshKey]);
 
   useEffect(() => {
-    if (!user?.sub) return;
-    let cancelled = false;
-
-    const cached = getCachedInvoiceAgentBranches(user.ou_id);
-    if (cached) {
-      /* eslint-disable react-hooks/set-state-in-effect -- hydrate branch list from OU cache */
-      setBranches(mergePlatformBranches(cached));
-      setBranchesLoading(false);
+    if (!user?.sub || !user.branch_id) {
+      /* eslint-disable react-hooks/set-state-in-effect -- reset when user loses branch context */
+      setActiveBranch(null);
+      setActiveBranchLoading(false);
       /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
+    let cancelled = false;
 
-    setBranchesLoading(true);
-    invoicesApi
-      .listInvoiceAgents()
-      .then((res) => {
+    const cached = getCachedMyBranch(user.branch_id);
+    if (cached) {
+      setActiveBranch(cached);
+      setActiveBranchLoading(false);
+    } else {
+      setActiveBranchLoading(true);
+    }
+
+    authApi
+      .getMyBranch()
+      .then((branch) => {
         if (cancelled) return;
-        const sorted = mergePlatformBranches(res.data);
-        if (user.ou_id) {
-          setCachedInvoiceAgentBranches(user.ou_id, sorted);
-        }
-        setBranches(sorted);
+        setCachedMyBranch(branch);
+        setActiveBranch(branch);
       })
       .catch(() => {
-        if (!cancelled) setBranches(mergePlatformBranches([]));
+        if (!cancelled && !cached) setActiveBranch(null);
       })
       .finally(() => {
-        if (!cancelled) setBranchesLoading(false);
+        if (!cancelled) setActiveBranchLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [user?.sub, user?.ou_id]);
+  }, [user?.sub, user?.branch_id]);
 
-  const branchDisplayLabel = formatBranchDisplayLabel(
-    branches,
+  useEffect(() => {
+    if (!user?.sub || !showBranchSwitcher) {
+      /* eslint-disable react-hooks/set-state-in-effect -- reset when switcher is hidden */
+      setBranches([]);
+      setBranchesLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return;
+    }
+    let cancelled = false;
+
+    const cached = getCachedInvoiceAgentBranches(user.ou_id);
+    if (cached) {
+      setBranches(mergePlatformBranches(cached));
+      setBranchesLoading(false);
+    } else {
+      setBranchesLoading(true);
+    }
+
+    const loadSwitcherBranches = async () => {
+      let list: InvoiceAgentBranch[] = cached ?? [];
+
+      try {
+        const res = await invoicesApi.listInvoiceAgents();
+        list = res.data;
+      } catch {
+        // Switcher still works with active branch only when invoice service is down.
+      }
+
+      if (activeBranch) {
+        list = upsertBranchInList(list, activeBranch);
+      }
+
+      if (cancelled) return;
+      const sorted = mergePlatformBranches(list);
+      if (user.ou_id) {
+        setCachedInvoiceAgentBranches(user.ou_id, sorted);
+      }
+      setBranches(sorted);
+      setBranchesLoading(false);
+    };
+
+    void loadSwitcherBranches();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch]);
+
+  const branchDisplayLabel = formatActiveBranchLabel(
+    activeBranch,
     user?.branch_id,
-    branchesLoading,
+    activeBranchLoading,
   );
 
   const branchSelectOptions = useMemo(

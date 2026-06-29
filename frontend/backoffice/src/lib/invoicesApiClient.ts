@@ -15,19 +15,11 @@ export async function listInvoices(params: ListInvoicesParams = {}, signal?: Abo
   return res.data;
 }
 
-let _agentsPromise: Promise<ApiEnvelope<InvoiceAgentBranch[]>> | null = null;
-
-export function listInvoiceAgents(signal?: AbortSignal) {
-  if (!_agentsPromise) {
-    _agentsPromise = client
-      .get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', { signal })
-      .then((res) => res.data)
-      .catch((err) => {
-        _agentsPromise = null;
-        throw err;
-      });
-  }
-  return _agentsPromise;
+export async function listInvoiceAgents(signal?: AbortSignal) {
+  const res = await client.get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', {
+    signal,
+  });
+  return res.data;
 }
 
 export async function getInvoiceById(id: string, signal?: AbortSignal) {

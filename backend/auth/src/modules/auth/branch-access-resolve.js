@@ -1,3 +1,5 @@
+import { isBranchActive } from './branch-display.js'
+
 /**
  * Shared branch access resolution for platform_branches and gpp su_branch.
  * @param {import('mongodb').Document | null | undefined} branch
@@ -10,6 +12,6 @@ export function resolveBranchAccessFromDoc(branch, ouId) {
   const branchOu = branch.ou_id?.toHexString?.() ?? String(branch.ou_id)
   const expectedOu = ouId?.toHexString?.() ?? String(ouId)
   if (branchOu !== expectedOu) return 'forbidden'
-  if (branch.active === false) return 'inactive'
+  if (!isBranchActive(branch.active)) return 'inactive'
   return 'ok'
 }

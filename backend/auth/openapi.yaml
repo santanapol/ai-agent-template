@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: auth
-  version: 0.1.7
+  version: 0.1.8
   description: |
     Edge identity API (login, refresh, logout), password change (`POST /auth/me/password`),
-    active branch switch (`POST /auth/me/active-branch`),
+    active branch metadata (`GET /auth/me/branch`), active branch switch (`POST /auth/me/active-branch`),
     internal user provisioning and password reset for trusted services, session revoke, and JWKS.
 
     All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
@@ -618,6 +618,64 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '429':
           description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/me/branch:
+    get:
+      tags: [auth]
+      summary: Get my active branch metadata
+      description: |
+        Returns display metadata for the caller's **active branch** from JWT claim `branch_id`,
+        validated against the branch master (`platform_branches` or `gpp_777ww.su_branch`).
+        Intended for backoffice header labels — does not require the invoice agent service.
+      operationId: getMyBranch
+      security:
+        - BearerAccess: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      responses:
+        '200':
+          description: Active branch summary for UI labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyBranchSummary'
+              examples:
+                customerBranch:
+                  value:
+                    branch_id: 5f4fb5bb3156af7a2db9e5a0
+                    branch_code: 7W
+                    branch_name: 777WW
+                    active: true
+        '401':
+          description: Missing/invalid Bearer, stale `token_gen`, or token missing branch context.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Branch is outside caller OU.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Branch not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Branch master read not configured.
           content:
             application/problem+json:
               schema:
@@ -1574,6 +1632,24 @@ components:
               sort_order:
                 type: integer
                 description: Ordering within the same level (ascending).
+    MyBranchSummary:
+      type: object
+      description: Active branch metadata for UI labels (header tag / switcher).
+      required: [branch_id, branch_code, branch_name, active]
+      properties:
+        branch_id:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
+          description: Active branch ObjectId hex from JWT `branch_id`.
+        branch_code:
+          type: string
+          nullable: true
+        branch_name:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+          description: Whether the branch is active (`su_branch` `0`/`false` → inactive).
     LogoutRequest:
       type: object
       description: Optional body for logout on native channel.

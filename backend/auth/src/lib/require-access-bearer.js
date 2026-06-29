@@ -35,6 +35,10 @@ export function buildRequireAccessBearer({ publicKey, env, types }) {
       }
       request.accessSub = sub
       request.accessTokenGen = payload.token_gen
+      const ouId = typeof payload.ou_id === 'string' ? payload.ou_id : ''
+      const branchId = typeof payload.branch_id === 'string' ? payload.branch_id : ''
+      if (OBJECT_ID_HEX.test(ouId)) request.accessOuId = ouId
+      if (OBJECT_ID_HEX.test(branchId)) request.accessBranchId = branchId
     } catch {
       return reply
         .code(401)
