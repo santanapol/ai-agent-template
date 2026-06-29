@@ -6,13 +6,17 @@ import {
   canSwitchActiveBranch,
   clearCachedInvoiceAgentBranches,
   findInvoiceAgentBranch,
+  formatActiveBranchLabel,
   formatBranchDisplayLabel,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
+  getCachedMyBranch,
   isZeroHqBranchId,
   mergePlatformBranches,
   setCachedInvoiceAgentBranches,
+  setCachedMyBranch,
   sortInvoiceAgentBranches,
+  upsertBranchInList,
   ZERO_HQ_BRANCH,
   ZERO_HQ_BRANCH_ID,
 } from './branchOptions';
@@ -101,6 +105,33 @@ describe('branchOptions', () => {
     expect(formatBranchDisplayLabel(branches, ZERO_HQ_BRANCH_ID)).toBe('ZERO - Zero HQ');
   });
 
+  it('formatActiveBranchLabel uses auth branch payload as primary label source', () => {
+    const branch: InvoiceAgentBranch = {
+      branch_id: '5f4fb5bb3156af7a2db9e5a0',
+      branch_name: '777WW',
+      branch_code: '7W',
+      active: true,
+    };
+    expect(formatActiveBranchLabel(branch, '5f4fb5bb3156af7a2db9e5a0')).toBe('7W - 777WW');
+    expect(formatActiveBranchLabel(null, '5f4fb5bb3156af7a2db9e5a0', true)).toBe('…');
+    expect(formatActiveBranchLabel(null, '5f4fb5bb3156af7a2db9e5a0')).toBe('5f4fb5bb3156af7a2db9e5a0');
+  });
+
+  it('caches active branch by branch_id', () => {
+    clearCachedInvoiceAgentBranches();
+    const branch: InvoiceAgentBranch = {
+      branch_id: 'a',
+      branch_name: 'Alpha',
+      branch_code: 'A01',
+      active: true,
+    };
+    expect(getCachedMyBranch('a')).toBeNull();
+    setCachedMyBranch(branch);
+    expect(getCachedMyBranch('a')).toEqual(branch);
+    expect(getCachedMyBranch('b')).toBeNull();
+    clearCachedInvoiceAgentBranches();
+  });
+
   it('findInvoiceAgentBranch resolves Zero HQ without gpp lookup', () => {
     expect(findInvoiceAgentBranch([], ZERO_HQ_BRANCH_ID)).toEqual(ZERO_HQ_BRANCH);
     expect(isZeroHqBranchId(ZERO_HQ_BRANCH_ID)).toBe(true);
@@ -138,5 +169,27 @@ describe('branchOptions', () => {
     expect(getCachedInvoiceAgentBranches('ou-1')).toEqual(branches);
     expect(getCachedInvoiceAgentBranches('ou-2')).toBeNull();
     clearCachedInvoiceAgentBranches();
+  });
+
+  it('upsertBranchInList adds or merges branch rows', () => {
+    const initial: InvoiceAgentBranch[] = [
+      { branch_id: 'a', branch_name: 'Old', branch_code: 'A01', active: true },
+    ];
+    const added = upsertBranchInList(initial, {
+      branch_id: 'b',
+      branch_name: 'Beta',
+      branch_code: 'B01',
+      active: true,
+    });
+    expect(added.map((b) => b.branch_id)).toEqual(['a', 'b']);
+
+    const merged = upsertBranchInList(initial, {
+      branch_id: 'a',
+      branch_name: 'Alpha',
+      branch_code: 'A01',
+      active: false,
+    });
+    expect(merged[0]?.branch_name).toBe('Alpha');
+    expect(merged[0]?.active).toBe(false);
   });
 });

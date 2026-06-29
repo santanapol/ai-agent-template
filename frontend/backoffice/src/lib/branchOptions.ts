@@ -66,6 +66,17 @@ export function formatBranchDisplayLabel(
   return loading ? '…' : branchId;
 }
 
+/** Header label from GET /auth/me/branch (primary source). */
+export function formatActiveBranchLabel(
+  branch: InvoiceAgentBranch | null | undefined,
+  branchId: string | undefined,
+  loading = false,
+): string {
+  if (!branchId) return '—';
+  if (branch?.branch_id === branchId) return formatBranchOptionLabel(branch);
+  return loading ? '…' : branchId;
+}
+
 /** Inject Zero HQ — lives in zero-platform only, absent from invoice agent list. */
 export function mergePlatformBranches(branches: InvoiceAgentBranch[]): InvoiceAgentBranch[] {
   const merged = branches.some((branch) => isZeroHqBranchId(branch.branch_id))
@@ -74,7 +85,34 @@ export function mergePlatformBranches(branches: InvoiceAgentBranch[]): InvoiceAg
   return sortInvoiceAgentBranches(merged);
 }
 
+/** Ensure a branch row exists for header labels and switcher options. */
+export function upsertBranchInList(
+  branches: InvoiceAgentBranch[],
+  branch: InvoiceAgentBranch,
+): InvoiceAgentBranch[] {
+  const index = branches.findIndex((item) => item.branch_id === branch.branch_id);
+  if (index === -1) return [...branches, branch];
+  const next = [...branches];
+  next[index] = { ...next[index], ...branch };
+  return next;
+}
+
 let cachedBranchesByOu: { ouId: string; branches: InvoiceAgentBranch[] } | null = null;
+let cachedMyBranch: { branchId: string; branch: InvoiceAgentBranch } | null = null;
+
+/** Returns cached active branch when branch_id matches. */
+export function getCachedMyBranch(branchId: string | undefined): InvoiceAgentBranch | null {
+  if (!branchId || !cachedMyBranch || cachedMyBranch.branchId !== branchId) return null;
+  return cachedMyBranch.branch;
+}
+
+export function setCachedMyBranch(branch: InvoiceAgentBranch): void {
+  cachedMyBranch = { branchId: branch.branch_id, branch };
+}
+
+export function clearCachedMyBranch(): void {
+  cachedMyBranch = null;
+}
 
 /** Returns cached OU branch list when available (avoids refetch on remount). */
 export function getCachedInvoiceAgentBranches(
@@ -91,7 +129,13 @@ export function setCachedInvoiceAgentBranches(
   cachedBranchesByOu = { ouId, branches };
 }
 
+/** @internal test helper — clears module-level branch caches on logout. */
+export function clearBranchCaches(): void {
+  cachedBranchesByOu = null;
+  cachedMyBranch = null;
+}
+
 /** @internal test helper */
 export function clearCachedInvoiceAgentBranches(): void {
-  cachedBranchesByOu = null;
+  clearBranchCaches();
 }

@@ -15,19 +15,16 @@ export async function listInvoices(params: ListInvoicesParams = {}, signal?: Abo
   return res.data;
 }
 
-let _agentsPromise: Promise<ApiEnvelope<InvoiceAgentBranch[]>> | null = null;
+export async function listInvoiceAgents(signal?: AbortSignal) {
+  const res = await client.get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', {
+    signal,
+  });
+  return res.data;
+}
 
-export function listInvoiceAgents(signal?: AbortSignal) {
-  if (!_agentsPromise) {
-    _agentsPromise = client
-      .get<ApiEnvelope<InvoiceAgentBranch[]>>('/api/v1/invoices/agent', { signal })
-      .then((res) => res.data)
-      .catch((err) => {
-        _agentsPromise = null;
-        throw err;
-      });
-  }
-  return _agentsPromise;
+/** Clears in-flight dedupe when used by tests or logout hooks. */
+export function clearListInvoiceAgentsCache(): void {
+  // No-op: listInvoiceAgents no longer caches globally; OU cache lives in branchOptions.
 }
 
 export async function getInvoiceById(id: string, signal?: AbortSignal) {

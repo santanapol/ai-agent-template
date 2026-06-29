@@ -3,7 +3,8 @@ import axios from 'axios';
 import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
-import { clearCachedInvoiceAgentBranches } from '../lib/branchOptions';
+import { clearBranchCaches } from '../lib/branchOptions';
+import { clearListInvoiceAgentsCache } from '../lib/invoicesApiClient';
 
 export interface AuthContextValue {
   user: DecodedUser | null;
@@ -13,6 +14,8 @@ export interface AuthContextValue {
   menuError: boolean;
   loading: boolean;
   branchSwitching: boolean;
+  /** Timestamp of last successful active-branch switch (for page reset UX). */
+  lastBranchSwitchAt: number | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
@@ -51,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [menuError, setMenuError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [branchSwitching, setBranchSwitching] = useState(false);
+  const [lastBranchSwitchAt, setLastBranchSwitchAt] = useState<number | null>(null);
 
   const applyToken = useCallback((data: TokenResponse) => {
     const decoded = decodeJwt(data.access_token);
@@ -67,7 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenus([]);
     setMenuLoading(false);
     setMenuError(false);
-    clearCachedInvoiceAgentBranches();
+    clearBranchCaches();
+    clearListInvoiceAgentsCache();
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -179,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const data = await authApi.switchActiveBranch(branchId);
         applyToken(data);
+        setLastBranchSwitchAt(Date.now());
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.data?.code === 'AUTH_NOT_READY') {
           const data = await authApi.refresh();
@@ -203,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         menuError,
         loading,
         branchSwitching,
+        lastBranchSwitchAt,
         login,
         logout,
         switchBranch,

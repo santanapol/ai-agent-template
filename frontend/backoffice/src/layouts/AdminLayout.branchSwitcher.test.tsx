@@ -7,6 +7,7 @@ import type { AuthContextValue } from '../contexts/AuthContext';
 import type { DecodedUser } from '../types/auth';
 import { renderWithProviders } from '../test/renderWithProviders';
 import * as invoicesApi from '../lib/invoicesApiClient';
+import * as authApi from '../lib/authApiClient';
 import { ZERO_HQ_BRANCH_ID } from '../lib/branchOptions';
 
 vi.mock('../contexts/AuthContext', () => ({
@@ -27,6 +28,10 @@ vi.mock('../lib/invoicesApiClient', () => ({
   listInvoiceAgents: vi.fn(),
 }));
 
+vi.mock('../lib/authApiClient', () => ({
+  getMyBranch: vi.fn(),
+}));
+
 const messageError = vi.fn();
 const messageSuccess = vi.fn();
 
@@ -43,8 +48,15 @@ vi.mock('../hooks/useAppFeedback', () => ({
   }),
 }));
 
+const homeBranch = {
+  branch_id: 'b-home',
+  branch_name: 'Home Branch',
+  branch_code: 'H01',
+  active: true,
+};
+
 const branches = [
-  { branch_id: 'b-home', branch_name: 'Home Branch', branch_code: 'H01', active: true },
+  homeBranch,
   { branch_id: 'b-target', branch_name: 'Target Branch', branch_code: 'T01', active: true },
   { branch_id: 'b-off', branch_name: 'Closed Branch', branch_code: 'X01', active: false },
 ];
@@ -64,6 +76,7 @@ function mockAuth(user: DecodedUser, extra: Partial<AuthContextValue> = {}) {
     menuError: false,
     loading: false,
     branchSwitching: false,
+    lastBranchSwitchAt: null,
     login: vi.fn(),
     logout: vi.fn(),
     switchBranch: vi.fn().mockResolvedValue(undefined),
@@ -77,6 +90,7 @@ describe('AdminLayout branch switcher', () => {
     messageError.mockReset();
     messageSuccess.mockReset();
     vi.mocked(invoicesApi.listInvoiceAgents).mockResolvedValue({ data: branches } as never);
+    vi.mocked(authApi.getMyBranch).mockResolvedValue(homeBranch);
   });
 
   it('shows branch Select for platform_admin and calls switchBranch on change', async () => {
@@ -211,6 +225,8 @@ describe('AdminLayout branch switcher', () => {
       expect(screen.getByText('H01 - Home Branch')).toBeInTheDocument();
     });
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(invoicesApi.listInvoiceAgents).not.toHaveBeenCalled();
+    expect(authApi.getMyBranch).toHaveBeenCalled();
   });
 
   it('lists inactive branches with (Inactive) label but disabled', async () => {
@@ -269,6 +285,13 @@ describe('AdminLayout branch switcher', () => {
   });
 
   it('shows Zero HQ label when home branch is platform HQ (not in gpp list)', async () => {
+    vi.mocked(authApi.getMyBranch).mockResolvedValue({
+      branch_id: ZERO_HQ_BRANCH_ID,
+      branch_name: 'Zero HQ',
+      branch_code: 'ZERO',
+      active: true,
+    });
+
     mockAuth({
       sub: 'user-zero-hq',
       role: 'platform_admin',

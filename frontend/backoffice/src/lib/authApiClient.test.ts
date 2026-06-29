@@ -30,6 +30,7 @@ import {
   upsertRolePermission,
   deleteRolePermission,
   switchActiveBranch,
+  getMyBranch,
 } from './authApiClient';
 
 const sampleMenu: AdminMenuNode = {
@@ -144,5 +145,18 @@ describe('authApiClient admin methods', () => {
       branch_id: '507f1f77bcf86cd799439011',
     });
     expect(result).toEqual(tokenResponse);
+  });
+
+  it('getMyBranch fetches active branch summary', async () => {
+    const branch = {
+      branch_id: '5f4fb5bb3156af7a2db9e5a0',
+      branch_code: '7W',
+      branch_name: '777WW',
+      active: true,
+    };
+    mockGet.mockResolvedValue({ data: branch });
+    const result = await getMyBranch();
+    expect(mockGet).toHaveBeenCalledWith('/auth/me/branch');
+    expect(result).toEqual(branch);
   });
 });

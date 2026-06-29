@@ -1,4 +1,5 @@
 import type { TokenResponse, MenuNode } from '../types/auth';
+import type { InvoiceAgentBranch } from '../types/invoice';
 import type {
   AdminMenuNode,
   CreateMenuPayload,
@@ -45,6 +46,11 @@ export async function switchActiveBranch(branch_id: string): Promise<TokenRespon
 export async function getMyMenus(): Promise<MenuNode[]> {
   const res = await authClient.get<{ menus: MenuNode[] }>('/auth/me/menus');
   return res.data.menus;
+}
+
+export async function getMyBranch(): Promise<InvoiceAgentBranch> {
+  const res = await authClient.get<InvoiceAgentBranch>('/auth/me/branch');
+  return res.data;
 }
 
 export async function listAdminMenus(): Promise<AdminMenuNode[]> {
