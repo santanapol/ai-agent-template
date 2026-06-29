@@ -133,8 +133,7 @@ export class AuthService {
     this.types = types
     this.redisClient = redisClient
     this.branchReadRepo = branchReadRepo
-    this.branchAccessResolver =
-      branchAccessResolver ?? new BranchAccessResolver({ branchReadRepo })
+    this.branchAccessResolver = branchAccessResolver ?? new BranchAccessResolver({ branchReadRepo })
     this.log = log
   }
 

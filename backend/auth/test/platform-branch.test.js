@@ -13,7 +13,13 @@ test('PlatformBranchRepository.resolveBranchAccess returns inactive for deactiva
     collection: () => ({
       findOne: async (filter) =>
         filter._id.equals(branchId)
-          ? { _id: branchId, ou_id: ouId, branch_name: 'Zero HQ', branch_code: 'ZERO', active: false }
+          ? {
+              _id: branchId,
+              ou_id: ouId,
+              branch_name: 'Zero HQ',
+              branch_code: 'ZERO',
+              active: false
+            }
           : null
     })
   }
@@ -36,8 +42,7 @@ test('PlatformBranchRepository.findByIdInOu matches _id and ou_id', async () => 
     collection: () => ({
       findOne: async (filter) =>
         docs.find(
-          (doc) =>
-            doc._id.equals(filter._id) && (!filter.ou_id || doc.ou_id.equals(filter.ou_id))
+          (doc) => doc._id.equals(filter._id) && (!filter.ou_id || doc.ou_id.equals(filter.ou_id))
         ) ?? null
     })
   }
@@ -111,13 +116,21 @@ test('BranchAccessResolver falls back to BranchReadRepository', async () => {
     collection: () => ({
       findOne: async (filter) =>
         filter._id.equals(branchId)
-          ? { _id: branchId, ou_id: ouId, branch_name: 'Customer', branch_code: 'C01', active: true }
+          ? {
+              _id: branchId,
+              ou_id: ouId,
+              branch_name: 'Customer',
+              branch_code: 'C01',
+              active: true
+            }
           : null
     })
   }
 
   const resolver = new BranchAccessResolver({
-    platformBranchRepo: new PlatformBranchRepository({ collection: () => ({ findOne: async () => null }) }),
+    platformBranchRepo: new PlatformBranchRepository({
+      collection: () => ({ findOne: async () => null })
+    }),
     branchReadRepo: new BranchReadRepository(db)
   })
 

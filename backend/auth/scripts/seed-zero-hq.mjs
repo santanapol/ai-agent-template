@@ -8,7 +8,11 @@
  */
 import { MongoClient } from 'mongodb'
 import { ensureZeroHqBranch } from './seed-data/ensure-zero-hq.mjs'
-import { ZERO_HQ_BRANCH_CODE, ZERO_HQ_BRANCH_NAME, ZERO_HQ_BRANCH_TYPE } from './seed-data/zero-hq.js'
+import {
+  ZERO_HQ_BRANCH_CODE,
+  ZERO_HQ_BRANCH_NAME,
+  ZERO_HQ_BRANCH_TYPE
+} from './seed-data/zero-hq.js'
 
 const uri = process.env.DATABASE_URI
 if (!uri) {

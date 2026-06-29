@@ -58,7 +58,9 @@ export async function ensureZeroHqBranch(db, opts = {}) {
     { upsert: true }
   )
 
-  const branchDoc = await db.collection(AUTH_COLLECTIONS.PLATFORM_BRANCHES).findOne({ _id: branchId })
+  const branchDoc = await db
+    .collection(AUTH_COLLECTIONS.PLATFORM_BRANCHES)
+    .findOne({ _id: branchId })
 
   return { ouId, branchId, branchDoc }
 }

@@ -41,7 +41,9 @@ const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME ?? 'platform_
 const adminPassword = process.env.ADMIN_PASSWORD ?? 'ChangeMe!Admin-1'
 const adminRole = process.env.ADMIN_ROLE ?? 'platform_admin'
 
-const ouId = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId(DEV_SEED_OU_ID)
+const ouId = process.env.SEED_OU_ID
+  ? new ObjectId(process.env.SEED_OU_ID)
+  : new ObjectId(DEV_SEED_OU_ID)
 let branchId
 if (process.env.SEED_BRANCH_ID) {
   branchId = new ObjectId(process.env.SEED_BRANCH_ID)
