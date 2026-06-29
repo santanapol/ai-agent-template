@@ -21,7 +21,7 @@ import {
   confirmPasswordRule,
   passwordFieldRules,
 } from '../lib/passwordPolicy';
-import { telephoneRules } from '../lib/telephone';
+import { telephoneRules, formatTelephoneToE164 } from '../lib/telephone';
 import axios from 'axios';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';

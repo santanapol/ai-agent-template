@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Backoffice — profile UX:** My Profile removed from sidebar (avatar dropdown only); header and My Profile show initials avatar; header name/initials refresh after profile save; grapheme-aware initials for Thai names; UX docs updated (`ui-ux-design.md`, `test-plan.md`).
 - **`backend/auth/`:** `assertAccessTokenGenMatches` fail-closed when Redis `token_gen` key is missing (aligned with gateway); branch switch returns `503 AUTH_NOT_READY` when Redis publish fails after DB commit (no false-success token).
 - **Backoffice:** Split `AdminLayout` effects — profile fetch once, branch list once per OU (module cache); menus no longer refetch on `token_gen` bump alone; `switchBranch` auto-refreshes session on `AUTH_NOT_READY`; clear branch list cache on logout.
 - **Coding standards:** Document `home_branch_id` / `x-user-home-branch` header order and Redis fail-closed `token_gen` policy.
