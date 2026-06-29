@@ -3,7 +3,6 @@ import {
   Layout,
   Menu,
   Dropdown,
-  Avatar,
   Space,
   Tag,
   Typography,
@@ -40,7 +39,9 @@ import {
   mergePlatformBranches,
   setCachedInvoiceAgentBranches,
 } from '../lib/branchOptions';
+import { subscribeProfileRefresh } from '../lib/profileRefresh';
 import type { InvoiceAgentBranch } from '../types/invoice';
+import { UserAvatar } from '../components/UserAvatar';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -87,6 +88,9 @@ function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
   }));
 }
 
+/** Account routes — header user menu only, not sidebar navigation. */
+const SIDEBAR_EXCLUDED_MENU_KEYS = new Set(['my_profile']);
+
 const MENU_UI: Record<string, MenuItemUI> = {
   dashboard: { icon: <DashboardOutlined />, route: '/' },
   'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
@@ -112,9 +116,15 @@ const AdminLayout: React.FC = () => {
   const { message } = useAppFeedback();
   const [collapsed, setCollapsed] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [headerProfile, setHeaderProfile] = useState<{
+    firstname: string;
+    lastname: string;
+    username: string;
+  } | null>(null);
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const showBranchSwitcher = canSwitchActiveBranch(user?.role);
 
@@ -143,6 +153,12 @@ const AdminLayout: React.FC = () => {
   );
 
   useEffect(() => {
+    return subscribeProfileRefresh(() => {
+      setProfileRefreshKey((key) => key + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!user?.sub) return;
     let cancelled = false;
 
@@ -151,16 +167,24 @@ const AdminLayout: React.FC = () => {
       .then(({ profile }) => {
         if (cancelled) return;
         const fullName = `${profile.firstname} ${profile.lastname}`.trim();
+        setHeaderProfile({
+          firstname: profile.firstname,
+          lastname: profile.lastname,
+          username: profile.user.username,
+        });
         setDisplayName(fullName || profile.user.username);
       })
       .catch(() => {
-        if (!cancelled) setDisplayName(null);
+        if (!cancelled) {
+          setDisplayName(null);
+          setHeaderProfile(null);
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [user?.sub]);
+  }, [user?.sub, profileRefreshKey]);
 
   useEffect(() => {
     if (!user?.sub) return;
@@ -218,6 +242,7 @@ const AdminLayout: React.FC = () => {
     const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
 
     menus.forEach((node) => {
+      if (SIDEBAR_EXCLUDED_MENU_KEYS.has(node.key)) return;
       const ui = MENU_UI[node.key];
       if (!ui) return;
 
@@ -433,10 +458,13 @@ const AdminLayout: React.FC = () => {
               )}
             </div>
             <Dropdown menu={userMenu} placement="bottomRight">
-              <Avatar
+              <UserAvatar
                 size={40}
+                firstname={headerProfile?.firstname}
+                lastname={headerProfile?.lastname}
+                displayName={displayName}
+                username={headerProfile?.username}
                 style={{ backgroundColor: token.colorPrimary, cursor: 'pointer' }}
-                icon={<UserOutlined />}
               />
             </Dropdown>
           </Space>

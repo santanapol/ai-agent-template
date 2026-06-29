@@ -52,7 +52,34 @@ describe('AdminLayout component', () => {
       
       // Fallback menu items (Dashboard) are rendered
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
+      expect(screen.getByText('JD')).toBeInTheDocument();
     });
+  });
+
+  it('hides my_profile from sidebar (profile via header user menu only)', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { sub: '123', role: 'staff', branch_id: 'b1' } as unknown as DecodedUser,
+      permissions: ['my_profile'],
+      menus: [
+        { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+        { key: 'my_profile', label: 'My Profile', type: 'action', parent_key: null, sort_order: 80 },
+      ],
+      menuLoading: false,
+      menuError: false,
+      loading: false,
+      branchSwitching: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      switchBranch: vi.fn(),
+    } as unknown as AuthContextValue);
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
   });
 
   it('filters and displays menu items in sorted tree structure', async () => {
@@ -119,9 +146,9 @@ describe('AdminLayout component', () => {
         { key: 'staff', label: '2', type: 'menu', parent_key: 'dashboard', sort_order: 1 },
         { key: 'billing', label: '3', type: 'menu', parent_key: 'staff', sort_order: 1 },
         { key: 'reports', label: '4', type: 'menu', parent_key: 'billing', sort_order: 1 },
-        { key: 'my_profile', label: '5', type: 'menu', parent_key: 'reports', sort_order: 1 },
-        { key: 'profiles:list', label: '6', type: 'menu', parent_key: 'my_profile', sort_order: 1 },
-        { key: 'agents:list', label: '7', type: 'menu', parent_key: 'profiles:list', sort_order: 1 },
+        { key: 'settings', label: '5', type: 'menu', parent_key: 'reports', sort_order: 1 },
+        { key: 'permissions:manage', label: '6', type: 'menu', parent_key: 'settings', sort_order: 1 },
+        { key: 'invoices:list', label: '7', type: 'menu', parent_key: 'permissions:manage', sort_order: 1 },
       ],
       menuLoading: false,
       menuError: false,
