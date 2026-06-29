@@ -10,11 +10,18 @@
  *   ADMIN_PASSWORD     default: ChangeMe!Admin-1  (ห้ามใช้ใน production!)
  *   ADMIN_ROLE         default: platform_admin
  *   SEED_OU_ID         default: สร้าง ObjectId ใหม่
- *   SEED_BRANCH_ID     default: สร้าง ObjectId ใหม่
+ *   SEED_BRANCH_ID     default: Zero HQ สำหรับ OU-wide roles, ObjectId ใหม่สำหรับ role อื่น
  */
 import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
+import { ensureZeroHqBranch } from './seed-data/ensure-zero-hq.mjs'
+import {
+  DEV_SEED_CUSTOMER_BRANCH_ID,
+  DEV_SEED_OU_ID,
+  ZERO_HQ_BRANCH_ID,
+  isOuWideHomeBranchRole
+} from './seed-data/zero-hq.js'
 
 // ──────────────────────────── helpers ────────────────────────────
 
@@ -34,10 +41,15 @@ const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME ?? 'platform_
 const adminPassword = process.env.ADMIN_PASSWORD ?? 'ChangeMe!Admin-1'
 const adminRole = process.env.ADMIN_ROLE ?? 'platform_admin'
 
-const ouId = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId()
-const branchId = process.env.SEED_BRANCH_ID
-  ? new ObjectId(process.env.SEED_BRANCH_ID)
-  : new ObjectId()
+const ouId = process.env.SEED_OU_ID ? new ObjectId(process.env.SEED_OU_ID) : new ObjectId(DEV_SEED_OU_ID)
+let branchId
+if (process.env.SEED_BRANCH_ID) {
+  branchId = new ObjectId(process.env.SEED_BRANCH_ID)
+} else if (isOuWideHomeBranchRole(adminRole)) {
+  branchId = new ObjectId(process.env.ZERO_HQ_BRANCH_ID ?? ZERO_HQ_BRANCH_ID)
+} else {
+  branchId = new ObjectId(DEV_SEED_CUSTOMER_BRANCH_ID)
+}
 
 const mem = Number(process.env.ARGON2_MEMORY_KIB ?? 65_536)
 const time = Number(process.env.ARGON2_TIME ?? 3)
@@ -103,6 +115,13 @@ console.log(
 )
 console.log('  ✔ auth_credential_throttle: uniq_throttle_key')
 console.log('  ✔ auth_audit_events: by_request_id, ttl_retention_until')
+
+if (isOuWideHomeBranchRole(adminRole) && !process.env.SEED_BRANCH_ID) {
+  console.log('▶ Zero HQ (platform_branches)...')
+  await ensureZeroHqBranch(db, { ouId, branchId })
+  console.log(`  ✔ Zero HQ branch_id: ${branchId.toHexString()}`)
+}
+
 console.log('')
 
 // ─── 1b. Backfill access_token_gen (O-16) ───────────────────────

@@ -21,6 +21,8 @@ import { createAdminController } from './modules/admin/admin.controller.js'
 import adminRoutePlugin from './modules/admin/admin.route.js'
 import { BranchReadDb } from './config/branch-read-db.js'
 import { BranchReadRepository } from './modules/auth/branch-read.repository.js'
+import { PlatformBranchRepository } from './modules/auth/platform-branch.repository.js'
+import { BranchAccessResolver } from './modules/auth/branch-access.resolver.js'
 
 /**
  * @param {ReturnType<typeof loadEnv>} [env]
@@ -28,6 +30,7 @@ import { BranchReadRepository } from './modules/auth/branch-read.repository.js'
  *   logger?: boolean
  *   redisClient?: import('redis').RedisClientType | { get: (k: string) => Promise<string | null>, set: (k: string, v: string) => Promise<unknown>, ping?: () => Promise<string> } | null
  *   branchReadRepo?: import('./modules/auth/branch-read.repository.js').BranchReadRepository | null
+ *   branchAccessResolver?: import('./modules/auth/branch-access.resolver.js').BranchAccessResolver | null
  * }} [options]
  */
 export async function buildApp(env = loadEnv(), options = {}) {
@@ -209,6 +212,13 @@ export async function buildApp(env = loadEnv(), options = {}) {
   fastify.decorate('jwksDocument', { keys: [jwkPublic] })
 
   const repo = new AuthRepository(fastify.mongo.db)
+  const platformBranchRepo = new PlatformBranchRepository(fastify.mongo.db)
+  const branchAccessResolver =
+    options.branchAccessResolver ??
+    new BranchAccessResolver({
+      platformBranchRepo,
+      branchReadRepo
+    })
 
   const service = new AuthService({
     env,
@@ -218,6 +228,7 @@ export async function buildApp(env = loadEnv(), options = {}) {
     types,
     redisClient,
     branchReadRepo,
+    branchAccessResolver,
     log: serviceLog
   })
   const controller = createAuthController({ service, env, types })

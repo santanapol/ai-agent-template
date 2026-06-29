@@ -12,6 +12,7 @@ import {
   setAccessTokenGenInRedis
 } from '../../lib/redis-access-token-gen.js'
 import { BRANCH_SWITCH_ROLES } from '../../lib/branch-switch-roles.js'
+import { BranchAccessResolver } from './branch-access.resolver.js'
 
 function normalizeUsername(u) {
   return String(u).trim().toLowerCase()
@@ -110,6 +111,7 @@ export class AuthService {
    *  types: ReturnType<typeof import('../../lib/problem.js').problemTypes>
    *  redisClient?: import('redis').RedisClientType | null
    *  branchReadRepo?: import('./branch-read.repository.js').BranchReadRepository | null
+   *  branchAccessResolver?: import('./branch-access.resolver.js').BranchAccessResolver | null
    *  log?: { warn: (obj: unknown, msg?: string) => void }
    * }} p
    */
@@ -121,6 +123,7 @@ export class AuthService {
     types,
     redisClient = null,
     branchReadRepo = null,
+    branchAccessResolver = null,
     log = null
   }) {
     this.env = env
@@ -130,6 +133,8 @@ export class AuthService {
     this.types = types
     this.redisClient = redisClient
     this.branchReadRepo = branchReadRepo
+    this.branchAccessResolver =
+      branchAccessResolver ?? new BranchAccessResolver({ branchReadRepo })
     this.log = log
   }
 
@@ -1020,7 +1025,7 @@ export class AuthService {
       )
     }
 
-    if (!this.branchReadRepo) {
+    if (!this.branchAccessResolver.isConfigured()) {
       return this.serviceProblem(
         503,
         this.types.notReady,
@@ -1041,7 +1046,7 @@ export class AuthService {
       )
     }
 
-    const branchAccess = await this.branchReadRepo.resolveBranchAccess(branchOid, user.ou_id)
+    const branchAccess = await this.branchAccessResolver.resolveBranchAccess(branchOid, user.ou_id)
     if (branchAccess === 'not_found') {
       await this.auditActiveBranchDenied({
         request_id,

@@ -1,6 +1,22 @@
 import { canSwitchActiveBranchRole } from '@zero-platform/roles';
 import type { InvoiceAgentBranch } from '../types/invoice';
 
+/** Sync with auth `scripts/seed-data/zero-hq.js` — platform_branches only, not gpp_777ww. */
+export const ZERO_HQ_BRANCH_ID = '6a3000010000000000000001';
+export const ZERO_HQ_BRANCH_CODE = 'ZERO';
+export const ZERO_HQ_BRANCH_NAME = 'Zero HQ';
+
+export const ZERO_HQ_BRANCH: InvoiceAgentBranch = {
+  branch_id: ZERO_HQ_BRANCH_ID,
+  branch_code: ZERO_HQ_BRANCH_CODE,
+  branch_name: ZERO_HQ_BRANCH_NAME,
+  active: true,
+};
+
+export function isZeroHqBranchId(branchId: string | undefined): boolean {
+  return branchId === ZERO_HQ_BRANCH_ID;
+}
+
 export function canSwitchActiveBranch(role: string | undefined): boolean {
   return canSwitchActiveBranchRole(role);
 }
@@ -10,12 +26,15 @@ function branchLabel(branch: InvoiceAgentBranch): string {
 }
 
 export function sortInvoiceAgentBranches(branches: InvoiceAgentBranch[]): InvoiceAgentBranch[] {
-  return [...branches].sort((a, b) => {
+  const hqEntry = branches.find((branch) => isZeroHqBranchId(branch.branch_id));
+  const withoutHq = branches.filter((branch) => !isZeroHqBranchId(branch.branch_id));
+  const sortedRest = [...withoutHq].sort((a, b) => {
     const aInactive = a.active === false ? 1 : 0;
     const bInactive = b.active === false ? 1 : 0;
     if (aInactive !== bInactive) return aInactive - bInactive;
     return branchLabel(a).localeCompare(branchLabel(b), 'th');
   });
+  return hqEntry ? [hqEntry, ...sortedRest] : sortedRest;
 }
 
 export function formatBranchOptionLabel(branch: InvoiceAgentBranch): string {
@@ -30,7 +49,18 @@ export function findInvoiceAgentBranch(
   branchId: string | undefined,
 ): InvoiceAgentBranch | undefined {
   if (!branchId) return undefined;
-  return branches.find((branch) => branch.branch_id === branchId);
+  const inList = branches.find((branch) => branch.branch_id === branchId);
+  if (inList) return inList;
+  if (isZeroHqBranchId(branchId)) return ZERO_HQ_BRANCH;
+  return undefined;
+}
+
+/** Inject Zero HQ — lives in zero-platform only, absent from invoice agent list. */
+export function mergePlatformBranches(branches: InvoiceAgentBranch[]): InvoiceAgentBranch[] {
+  const merged = branches.some((branch) => isZeroHqBranchId(branch.branch_id))
+    ? branches
+    : [ZERO_HQ_BRANCH, ...branches];
+  return sortInvoiceAgentBranches(merged);
 }
 
 let cachedBranchesByOu: { ouId: string; branches: InvoiceAgentBranch[] } | null = null;

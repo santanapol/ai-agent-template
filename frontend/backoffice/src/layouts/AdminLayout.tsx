@@ -36,8 +36,8 @@ import {
   findInvoiceAgentBranch,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
+  mergePlatformBranches,
   setCachedInvoiceAgentBranches,
-  sortInvoiceAgentBranches,
 } from '../lib/branchOptions';
 import type { InvoiceAgentBranch } from '../types/invoice';
 
@@ -168,7 +168,7 @@ const AdminLayout: React.FC = () => {
     const cached = getCachedInvoiceAgentBranches(user.ou_id);
     if (cached) {
       /* eslint-disable react-hooks/set-state-in-effect -- hydrate branch list from OU cache */
-      setBranches(cached);
+      setBranches(mergePlatformBranches(cached));
       setBranchesLoading(false);
       /* eslint-enable react-hooks/set-state-in-effect */
       return;
@@ -179,14 +179,14 @@ const AdminLayout: React.FC = () => {
       .listInvoiceAgents()
       .then((res) => {
         if (cancelled) return;
-        const sorted = sortInvoiceAgentBranches(res.data);
+        const sorted = mergePlatformBranches(res.data);
         if (user.ou_id) {
           setCachedInvoiceAgentBranches(user.ou_id, sorted);
         }
         setBranches(sorted);
       })
       .catch(() => {
-        if (!cancelled) setBranches([]);
+        if (!cancelled) setBranches(mergePlatformBranches([]));
       })
       .finally(() => {
         if (!cancelled) setBranchesLoading(false);

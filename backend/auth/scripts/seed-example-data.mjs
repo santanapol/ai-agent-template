@@ -2,6 +2,7 @@
 /**
  * สร้างข้อมูลตัวอย่างใน MongoDB (dev เท่านั้น) — users + indexes ตาม `docs/architecture.md` §8.3–8.4
  *
+ *   npm run seed:zero-hq   # สร้าง Zero HQ ใน zero-platform.platform_branches
  *   npm run seed:example
  *
  * รหัส default อยู่ใน repo เพื่อความสะดวก local เท่านั้น — ห้ามใช้ใน production
@@ -13,6 +14,13 @@ import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
 import { ensureAuthIndexes } from '../test/helpers/ensure-indexes.mjs'
+import { ensureZeroHqBranch } from './seed-data/ensure-zero-hq.mjs'
+import {
+  DEV_SEED_CUSTOMER_BRANCH_ID,
+  DEV_SEED_OU_ID,
+  ZERO_HQ_BRANCH_ID,
+  homeBranchIdHexForRole
+} from './seed-data/zero-hq.js'
 
 function normalizeUsername(u) {
   return String(u).trim().toLowerCase()
@@ -37,18 +45,24 @@ const argonOpts = {
   parallelism: parallel
 }
 
-// Dev seed: shared OU + branch for all example users (ซิงค์ให้ตรงกับ demo-service)
-// branch_id ต้องชี้ไปยัง branch จริงใน gpp_777ww.su_branch (ou_id เดียวกัน) มิฉะนั้น
-// `GET /api/v1/invoices/agent` จะ resolve ชื่อ branch ไม่ได้ — ใช้ "777WW" (ou_id 5f4f9d57266ed249e45ecef5)
-const DEV_SEED_OU_ID = '5f4f9d57266ed249e45ecef5'
-const DEV_SEED_BRANCH_ID = '5f4fb5bb3156af7a2db9e5a0'
+// OU-wide roles → home branch Zero HQ (platform_branches ใน zero-platform)
+// branch_admin / staff → home branch ลูกค้า 777WW
 
 const SEED_OU_ID = process.env.SEED_OU_ID
   ? new ObjectId(process.env.SEED_OU_ID)
   : new ObjectId(DEV_SEED_OU_ID)
-const SEED_BRANCH_ID = process.env.SEED_BRANCH_ID
+const SEED_CUSTOMER_BRANCH_ID = process.env.SEED_BRANCH_ID
   ? new ObjectId(process.env.SEED_BRANCH_ID)
-  : new ObjectId(DEV_SEED_BRANCH_ID)
+  : new ObjectId(DEV_SEED_CUSTOMER_BRANCH_ID)
+const SEED_HQ_BRANCH_ID = process.env.ZERO_HQ_BRANCH_ID
+  ? new ObjectId(process.env.ZERO_HQ_BRANCH_ID)
+  : new ObjectId(ZERO_HQ_BRANCH_ID)
+
+function homeBranchIdForRole(role) {
+  if (process.env.SEED_BRANCH_ID) return SEED_CUSTOMER_BRANCH_ID
+  const hex = homeBranchIdHexForRole(role)
+  return hex === ZERO_HQ_BRANCH_ID ? SEED_HQ_BRANCH_ID : SEED_CUSTOMER_BRANCH_ID
+}
 const SEED_PROG = 'scripts/seed-example-data.mjs'
 
 /** @type {{ _id: ObjectId, username: string, password: string, role: string }[]} */
@@ -90,6 +104,7 @@ await client.connect()
 const db = client.db()
 
 await ensureAuthIndexes(db)
+await ensureZeroHqBranch(db, { ouId: SEED_OU_ID, branchId: SEED_HQ_BRANCH_ID })
 
 if (resetSessions) {
   await db.collection(AUTH_COLLECTIONS.REFRESH_TOKENS).deleteMany({})
@@ -103,10 +118,11 @@ for (const row of examples) {
   const username = normalizeUsername(row.username)
   const password_hash = await argon2.hash(row.password, argonOpts)
   const existingUser = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ _id: row._id })
+  const homeBranchId = homeBranchIdForRole(row.role)
   const userDoc = {
     _id: row._id,
     ou_id: existingUser?.ou_id ?? SEED_OU_ID,
-    branch_id: existingUser?.branch_id ?? SEED_BRANCH_ID,
+    branch_id: homeBranchId,
     username,
     password_hash,
     role: row.role,
@@ -129,7 +145,7 @@ for (const row of examples) {
       _id: existingProfile?._id ?? new ObjectId(),
       user_id: userId,
       ou_id: existingProfile?.ou_id ?? SEED_OU_ID,
-      branch_id: existingProfile?.branch_id ?? SEED_BRANCH_ID,
+      branch_id: homeBranchId,
       code: existingProfile?.code ?? `SEED-${username.toUpperCase()}`,
       firstname: existingProfile?.firstname ?? 'Seed',
       lastname: existingProfile?.lastname ?? username,
@@ -162,4 +178,10 @@ for (const row of examples) {
 }
 console.log('')
 console.log('ตัวอย่าง body: ดู examples/login-native.body.json')
-console.log('ou_id:', SEED_OU_ID.toHexString(), '| branch_id:', SEED_BRANCH_ID.toHexString())
+console.log('ou_id:', SEED_OU_ID.toHexString())
+console.log(
+  'home branches: Zero HQ',
+  SEED_HQ_BRANCH_ID.toHexString(),
+  '| customer (branch_admin/staff)',
+  SEED_CUSTOMER_BRANCH_ID.toHexString()
+)

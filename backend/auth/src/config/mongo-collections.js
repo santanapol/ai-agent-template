@@ -8,7 +8,9 @@ export const AUTH_COLLECTIONS = Object.freeze({
   CREDENTIAL_THROTTLE: 'auth_credential_throttle',
   AUDIT_EVENTS: 'auth_audit_events',
   MENUS: 'auth_menus',
-  ROLE_PERMISSIONS: 'auth_role_permissions'
+  ROLE_PERMISSIONS: 'auth_role_permissions',
+  /** Zero Platform internal branches (e.g. Zero HQ) — not in gpp_777ww.su_branch */
+  PLATFORM_BRANCHES: 'platform_branches'
 })
 
 /** Ordered list for test resets (same names as values). */
