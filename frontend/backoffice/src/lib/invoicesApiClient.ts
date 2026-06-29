@@ -22,11 +22,6 @@ export async function listInvoiceAgents(signal?: AbortSignal) {
   return res.data;
 }
 
-/** Clears in-flight dedupe when used by tests or logout hooks. */
-export function clearListInvoiceAgentsCache(): void {
-  // No-op: listInvoiceAgents no longer caches globally; OU cache lives in branchOptions.
-}
-
 export async function getInvoiceById(id: string, signal?: AbortSignal) {
   const res = await client.get<ApiEnvelope<Invoice>>(`/api/v1/invoices/${id}`, { signal });
   return res.data;

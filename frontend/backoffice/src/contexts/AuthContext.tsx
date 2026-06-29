@@ -4,7 +4,6 @@ import type { DecodedUser, TokenResponse, MenuNode } from '../types/auth';
 import * as authApi from '../lib/authApiClient';
 import { setAccessToken, setRefreshCallback } from '../lib/baseApiClient';
 import { clearBranchCaches } from '../lib/branchOptions';
-import { clearListInvoiceAgentsCache } from '../lib/invoicesApiClient';
 
 export interface AuthContextValue {
   user: DecodedUser | null;
@@ -72,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenuLoading(false);
     setMenuError(false);
     clearBranchCaches();
-    clearListInvoiceAgentsCache();
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401

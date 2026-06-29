@@ -203,18 +203,18 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !user.branch_id) {
+      /* eslint-disable react-hooks/set-state-in-effect -- reset when user loses branch context */
       setActiveBranch(null);
       setActiveBranchLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     let cancelled = false;
 
     const cached = getCachedMyBranch(user.branch_id);
     if (cached) {
-      /* eslint-disable react-hooks/set-state-in-effect -- hydrate active branch from cache */
       setActiveBranch(cached);
       setActiveBranchLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
     } else {
       setActiveBranchLoading(true);
     }
@@ -240,18 +240,18 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !showBranchSwitcher) {
+      /* eslint-disable react-hooks/set-state-in-effect -- reset when switcher is hidden */
       setBranches([]);
       setBranchesLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     let cancelled = false;
 
     const cached = getCachedInvoiceAgentBranches(user.ou_id);
     if (cached) {
-      /* eslint-disable react-hooks/set-state-in-effect -- hydrate switcher list from OU cache */
       setBranches(mergePlatformBranches(cached));
       setBranchesLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
     } else {
       setBranchesLoading(true);
     }
@@ -284,7 +284,7 @@ const AdminLayout: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch?.branch_id]);
+  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch]);
 
   const branchDisplayLabel = formatActiveBranchLabel(
     activeBranch,
