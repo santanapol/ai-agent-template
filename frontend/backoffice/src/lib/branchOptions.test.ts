@@ -6,6 +6,7 @@ import {
   canSwitchActiveBranch,
   clearCachedInvoiceAgentBranches,
   findInvoiceAgentBranch,
+  formatBranchDisplayLabel,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
   isZeroHqBranchId,
@@ -88,6 +89,16 @@ describe('branchOptions', () => {
     ];
     expect(findInvoiceAgentBranch(branches, 'a')?.branch_name).toBe('A');
     expect(findInvoiceAgentBranch(branches, 'missing')).toBeUndefined();
+  });
+
+  it('formatBranchDisplayLabel resolves known branch or falls back while loading', () => {
+    const branches: InvoiceAgentBranch[] = [
+      { branch_id: 'a', branch_name: '777WW', branch_code: '7W', active: true },
+    ];
+    expect(formatBranchDisplayLabel(branches, 'a')).toBe('7W - 777WW');
+    expect(formatBranchDisplayLabel(branches, 'missing', true)).toBe('…');
+    expect(formatBranchDisplayLabel(branches, 'missing')).toBe('missing');
+    expect(formatBranchDisplayLabel(branches, ZERO_HQ_BRANCH_ID)).toBe('ZERO - Zero HQ');
   });
 
   it('findInvoiceAgentBranch resolves Zero HQ without gpp lookup', () => {

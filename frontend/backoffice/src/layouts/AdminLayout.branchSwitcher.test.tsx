@@ -208,7 +208,7 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(screen.getByText('b-home')).toBeInTheDocument();
+      expect(screen.getByText('H01 - Home Branch')).toBeInTheDocument();
     });
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });

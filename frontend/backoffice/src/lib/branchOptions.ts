@@ -55,6 +55,17 @@ export function findInvoiceAgentBranch(
   return undefined;
 }
 
+export function formatBranchDisplayLabel(
+  branches: InvoiceAgentBranch[],
+  branchId: string | undefined,
+  loading = false,
+): string {
+  if (!branchId) return '—';
+  const branch = findInvoiceAgentBranch(branches, branchId);
+  if (branch) return formatBranchOptionLabel(branch);
+  return loading ? '…' : branchId;
+}
+
 /** Inject Zero HQ — lives in zero-platform only, absent from invoice agent list. */
 export function mergePlatformBranches(branches: InvoiceAgentBranch[]): InvoiceAgentBranch[] {
   const merged = branches.some((branch) => isZeroHqBranchId(branch.branch_id))

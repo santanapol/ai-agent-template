@@ -34,6 +34,7 @@ import { useAppFeedback } from '../hooks/useAppFeedback';
 import {
   canSwitchActiveBranch,
   findInvoiceAgentBranch,
+  formatBranchDisplayLabel,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
   mergePlatformBranches,
@@ -162,7 +163,7 @@ const AdminLayout: React.FC = () => {
   }, [user?.sub]);
 
   useEffect(() => {
-    if (!user?.sub || !showBranchSwitcher) return;
+    if (!user?.sub) return;
     let cancelled = false;
 
     const cached = getCachedInvoiceAgentBranches(user.ou_id);
@@ -195,20 +196,13 @@ const AdminLayout: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [user?.sub, user?.ou_id, showBranchSwitcher]);
+  }, [user?.sub, user?.ou_id]);
 
-  useEffect(() => {
-    if (!showBranchSwitcher) {
-      /* eslint-disable react-hooks/set-state-in-effect -- clear branch list when switcher hidden */
-      setBranches([]);
-      setBranchesLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [showBranchSwitcher]);
-
-  const branchName = user?.branch_id
-    ? (findInvoiceAgentBranch(branches, user.branch_id)?.branch_name ?? null)
-    : null;
+  const branchDisplayLabel = formatBranchDisplayLabel(
+    branches,
+    user?.branch_id,
+    branchesLoading,
+  );
 
   const branchSelectOptions = useMemo(
     () =>
@@ -388,7 +382,7 @@ const AdminLayout: React.FC = () => {
                 )}
                 {!showBranchSwitcher && (
                   <Tag icon={<ShopOutlined />} style={{ marginInlineEnd: 0 }}>
-                    {branchName ?? user?.branch_id ?? '—'}
+                    {branchDisplayLabel}
                   </Tag>
                 )}
               </div>
