@@ -87,6 +87,9 @@ function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
   }));
 }
 
+/** Account routes — header user menu only, not sidebar navigation. */
+const SIDEBAR_EXCLUDED_MENU_KEYS = new Set(['my_profile']);
+
 const MENU_UI: Record<string, MenuItemUI> = {
   dashboard: { icon: <DashboardOutlined />, route: '/' },
   'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
@@ -218,6 +221,7 @@ const AdminLayout: React.FC = () => {
     const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
 
     menus.forEach((node) => {
+      if (SIDEBAR_EXCLUDED_MENU_KEYS.has(node.key)) return;
       const ui = MENU_UI[node.key];
       if (!ui) return;
 
