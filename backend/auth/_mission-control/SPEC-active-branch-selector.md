@@ -62,7 +62,7 @@ role ระดับ OU (`platform_admin`, `support_admin`, `support`) ต้อ
 - **frontend/backoffice**: React 19 + TS (strict), Vite 8, Ant Design 6, react-router-dom 7, axios
 - **Test**: `node:test` (backend), vitest + @testing-library/react (frontend)
 
-**Frontend branch list (interim):** dropdown ใช้ `GET /api/v1/invoices/agent` (`listInvoiceAgents`) เป็นแหล่งรายการสาขาใน OU ชั่วคราว — branch master จริงอ่านที่ auth (`MONGODB_URI_READ` / `su_branch`); invoice agent list ให้ `branch_id`, `active`, และชื่อสำหรับ UI
+**Frontend branch label:** header tag ใช้ `GET /auth/me/branch` เป็นหลัก (auth อ่าน branch master โดยตรง). **Branch switcher dropdown (interim):** ใช้ `GET /api/v1/invoices/agent` (`listInvoiceAgents`) เป็นรายการสาขาใน OU — merge กับ active branch จาก auth เมื่อ invoice service ไม่มีสาขานั้น
 
 ---
 

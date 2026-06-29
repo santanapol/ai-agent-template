@@ -14,6 +14,7 @@ const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }
 const RATE_LIMIT_LOGOUT = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_CHANGE_PASSWORD = { max: 10, timeWindow: '1 minute' }
 const RATE_LIMIT_ME_MENUS = { max: 60, timeWindow: '1 minute' }
+const RATE_LIMIT_ME_BRANCH = { max: 60, timeWindow: '1 minute' }
 const RATE_LIMIT_ACTIVE_BRANCH = { max: 30, timeWindow: '1 minute' }
 
 /**
@@ -40,6 +41,15 @@ export default async function authRoutePlugin(fastify, opts) {
         preHandler: requireAccessBearer
       },
       (request, reply) => controller.getMyMenus(request, reply)
+    )
+
+    scope.get(
+      '/auth/me/branch',
+      {
+        config: { rateLimit: RATE_LIMIT_ME_BRANCH },
+        preHandler: requireAccessBearer
+      },
+      (request, reply) => controller.getMyBranch(request, reply)
     )
 
     scope.post(

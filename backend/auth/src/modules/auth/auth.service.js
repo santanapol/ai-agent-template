@@ -14,6 +14,8 @@ import {
 import { BRANCH_SWITCH_ROLES } from '../../lib/branch-switch-roles.js'
 import { BranchAccessResolver } from './branch-access.resolver.js'
 
+const OBJECT_ID_HEX = /^[a-fA-F0-9]{24}$/u
+
 function normalizeUsername(u) {
   return String(u).trim().toLowerCase()
 }
@@ -286,6 +288,93 @@ export class AuthService {
       }))
 
     return { ok: true, status: 200, body: { menus } }
+  }
+
+  /**
+   * Active branch metadata for header labels (GET /auth/me/branch).
+   * @param {{
+   *   user_id_hex: string
+   *   access_token_gen_claim: unknown
+   *   branch_id_hex: string
+   *   ou_id_hex: string
+   * }} p
+   */
+  async getMyBranch({ user_id_hex, access_token_gen_claim, branch_id_hex, ou_id_hex }) {
+    const genCheck = await this.assertAccessTokenGenMatches({
+      user_id_hex,
+      token_gen_claim: access_token_gen_claim
+    })
+    if (!genCheck.ok) return genCheck
+
+    if (
+      !branch_id_hex ||
+      !ou_id_hex ||
+      !OBJECT_ID_HEX.test(branch_id_hex) ||
+      !OBJECT_ID_HEX.test(ou_id_hex)
+    ) {
+      return unauthorizedServiceOutcome(
+        this.types.invalidToken,
+        this.types,
+        'Access token is missing required branch context.'
+      )
+    }
+
+    if (!this.branchAccessResolver.isConfigured()) {
+      return this.serviceProblem(
+        503,
+        this.types.notReady,
+        'Branch master read is not configured.',
+        'AUTH_NOT_READY'
+      )
+    }
+
+    let branchOid
+    let ouOid
+    try {
+      branchOid = new ObjectId(branch_id_hex)
+      ouOid = new ObjectId(ou_id_hex)
+    } catch {
+      return this.serviceProblem(
+        404,
+        this.types.branchNotFound,
+        'Branch not found.',
+        'AUTH_BRANCH_NOT_FOUND'
+      )
+    }
+
+    const branchAccess = await this.branchAccessResolver.resolveBranchAccess(branchOid, ouOid)
+    if (branchAccess === 'not_found') {
+      return this.serviceProblem(
+        404,
+        this.types.branchNotFound,
+        'Branch not found.',
+        'AUTH_BRANCH_NOT_FOUND'
+      )
+    }
+    if (branchAccess === 'forbidden') {
+      return this.serviceProblem(
+        403,
+        this.types.branchForbidden,
+        'Branch is not in your organization.',
+        'AUTH_BRANCH_FORBIDDEN'
+      )
+    }
+
+    const branch = await this.branchAccessResolver.findBranchDisplay(branchOid, ouOid)
+    if (!branch) {
+      return this.serviceProblem(
+        404,
+        this.types.branchNotFound,
+        'Branch not found.',
+        'AUTH_BRANCH_NOT_FOUND'
+      )
+    }
+
+    if (branchAccess === 'inactive') {
+      branch.active = false
+    }
+
+    return { ok: true, status: 200, body: branch }
   }
 
   collectPendingParentKeys(menus, byKey) {

@@ -1,6 +1,6 @@
 {
   "name": "auth",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "type": "module",
   "engines": {
@@ -25,6 +25,7 @@
     "seed:user": "node --env-file=.env scripts/seed-user.mjs",
     "seed:zero-hq": "node --env-file=.env scripts/seed-zero-hq.mjs",
     "seed:example": "node --env-file=.env scripts/seed-example-data.mjs",
+    "migrate:ou-wide-home-branch": "node --env-file=.env scripts/migrate-ou-wide-home-branch.mjs",
     "init:db": "node --env-file=.env scripts/init-db.mjs",
     "create-env": "node scripts/create-dev-env.mjs"
   },
