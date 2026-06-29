@@ -26,7 +26,7 @@ import axios from 'axios';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import { UserAvatar } from '../components/UserAvatar';
-import { formatTelephoneToE164 } from '../lib/telephone';
+import { notifyProfileRefresh } from '../lib/profileRefresh';
 
 const { Title, Text } = Typography;
 
@@ -119,6 +119,7 @@ const MyProfile: React.FC = () => {
         tel: updated.tel,
       });
       message.success('Profile updated');
+      notifyProfileRefresh();
     } catch (err) {
       message.error(apiErrorMessage(err, 'Failed to update profile'));
     } finally {

@@ -57,7 +57,7 @@
 
 | # | Steps | Expected |
 |---|---|---|
-| R1 | ตรวจเมนู sidebar ด้วย `branch_admin` | เห็นครบ: Dashboard, Agent Fees, Invoices, My Profile, **Staff Management** (เพราะ `isStaffAdmin` true — `AdminLayout.tsx:17`) |
+| R1 | ตรวจเมนู sidebar ด้วย `branch_admin` | เห็น Dashboard, Billing (Invoices, Agents ฯลฯ), Staff Management — **ไม่มี** My Profile ใน sidebar (เข้าผ่าน Avatar dropdown) |
 | R2 | พิมพ์ URL ตรงไปยังทุก path ใน sitemap (`/`, `/profile`, `/invoices`, `/invoices/:id`, `/agents`, `/agents/:id/fees`, `/staff`) ตอน login แล้ว | ทุกหน้าเปิดได้ ไม่เด้ง 403 |
 | R3 | ลบ session แล้วพิมพ์ path ป้องกันตรงๆ เช่น `/staff` | redirect ไป `/login` (ProtectedRoute) |
 | R4 | พิมพ์ path ที่ไม่มีอยู่ เช่น `/abc123` | redirect ไป `/404` |

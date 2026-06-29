@@ -12,14 +12,15 @@
 
 ### 1.1 Global Layout
 - **Authentication:** หน้า Login (Username + Password) เพื่อยืนยันตัวตนผ่านบริการ `auth` ก่อนเข้าสู่ Dashboard
-- **Sidebar Navigation:** ซ้ายมือ (กว้าง 250px)
+- **Sidebar Navigation:** ซ้ายมือ (กว้าง 250px) — เมนูงานหลักเท่านั้น
   - **Dashboard** — ทุก role
-  - **My Profile** (`/profile`) — ทุก role
-  - **Staff Management** (`/staff`) — เฉพาะ `platform_admin`, `branch_admin`
+  - **Billing / Staff / Reports / Settings** — ตาม role และ permission mapping
+  - *(ไม่แสดง My Profile ใน sidebar — ดู §7.5)*
 - **Top App Bar:** ด้านบนสุด แสดง Context ของผู้ใช้งานปัจจุบัน ได้แก่
-  - ชื่อผู้ใช้งาน (`username`)
+  - ชื่อผู้ใช้งาน (จาก staff profile หรือ username)
   - บทบาท (`role`)
-  - สาขาปัจจุบัน (`branch_id`)
+  - สาขาปัจจุบัน (ชื่อสาขา หรือ branch switcher สำหรับ OU-wide roles)
+  - **Avatar** — initials จากชื่อ (§7.4) + dropdown (§7.5)
 - **Main Content Area:** พื้นที่ตรงกลางและขวาสำหรับแสดงผลหน้าจอการทำงาน
 
 ---
@@ -169,6 +170,7 @@
 #### Layout
 - **Page title:** "My Profile"
 - **Subtitle:** อธิบายว่าแก้ contact details ได้ แต่ Staff Code เปลี่ยนไม่ได้
+- **Avatar:** แสดง initials จากชื่อ (อัปเดต header ทันทีหลัง Save)
 - **Secondary action:** `[ Refresh ]` โหลดข้อมูลใหม่จาก API
 
 #### Read-only context (`Descriptions`)

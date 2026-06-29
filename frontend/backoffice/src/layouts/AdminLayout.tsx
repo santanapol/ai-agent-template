@@ -39,6 +39,7 @@ import {
   mergePlatformBranches,
   setCachedInvoiceAgentBranches,
 } from '../lib/branchOptions';
+import { subscribeProfileRefresh } from '../lib/profileRefresh';
 import type { InvoiceAgentBranch } from '../types/invoice';
 import { UserAvatar } from '../components/UserAvatar';
 
@@ -123,6 +124,7 @@ const AdminLayout: React.FC = () => {
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const showBranchSwitcher = canSwitchActiveBranch(user?.role);
 
@@ -151,6 +153,12 @@ const AdminLayout: React.FC = () => {
   );
 
   useEffect(() => {
+    return subscribeProfileRefresh(() => {
+      setProfileRefreshKey((key) => key + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!user?.sub) return;
     let cancelled = false;
 
@@ -176,7 +184,7 @@ const AdminLayout: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [user?.sub]);
+  }, [user?.sub, profileRefreshKey]);
 
   useEffect(() => {
     if (!user?.sub) return;

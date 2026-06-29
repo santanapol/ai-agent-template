@@ -4,6 +4,7 @@ import { getDisplayInitials } from './displayInitials';
 describe('getDisplayInitials', () => {
   it('uses first and last name when both are present', () => {
     expect(getDisplayInitials({ firstname: 'Santana', lastname: 'Pol' })).toBe('SP');
+    expect(getDisplayInitials({ firstname: 'สมชาย', lastname: 'ใจดี' })).toBe('สใ');
   });
 
   it('uses first two letters of a single first name', () => {
