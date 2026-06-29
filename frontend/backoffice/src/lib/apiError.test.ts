@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AxiosError } from 'axios';
+import { BranchReportApiError } from './branchReportApiClient';
 import { apiErrorMessage } from './apiError';
 
 function makeAxiosError(data: { code?: string; detail?: string; message?: string }) {
@@ -48,6 +49,11 @@ describe('apiErrorMessage', () => {
   it('still maps VERSION_CONFLICT for staff', () => {
     const err = makeAxiosError({ code: 'VERSION_CONFLICT' });
     expect(apiErrorMessage(err, 'fallback')).toMatch(/modified by another session/i);
+  });
+
+  it('returns BranchReportApiError message', () => {
+    const err = new BranchReportApiError('INVALID_PARAM', 'Invalid inviteLinkId');
+    expect(apiErrorMessage(err, 'fallback')).toBe('Invalid inviteLinkId');
   });
 
   it('returns fallback for unknown errors', () => {
