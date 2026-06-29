@@ -5,6 +5,9 @@ import {
   formatRegDateParam,
   getRoyalty21DefaultSearchValues,
   isRegDateRangeValid,
+  isRegDateRangeWithinMaxDays,
+  MAX_REG_DATE_RANGE_DAYS,
+  regDateRangeInclusiveDays,
   toRoyalty21QueryParams,
 } from './royalty21DateRange';
 
@@ -26,11 +29,12 @@ describe('royalty21DateRange', () => {
     expect(formatRegDateParam(dayjs('2024-06-15'))).toBe('2024-06-15');
   });
 
-  it('getRoyalty21DefaultSearchValues includes affiliate default channel', () => {
+  it('getRoyalty21DefaultSearchValues includes affiliate default channel and range', () => {
     const defaults = getRoyalty21DefaultSearchValues();
     expect(defaults.channelType).toBe('affiliate_link');
-    expect(defaults.regDateFrom).toBeDefined();
-    expect(defaults.regDateTo).toBeDefined();
+    expect(defaults.regDateRange).toHaveLength(2);
+    expect(defaults.regDateRange[0].isValid()).toBe(true);
+    expect(defaults.regDateRange[1].isValid()).toBe(true);
   });
 
   it('isRegDateRangeValid rejects inverted range', () => {
@@ -38,13 +42,20 @@ describe('royalty21DateRange', () => {
     expect(isRegDateRangeValid(dayjs('2024-06-01'), dayjs('2024-06-01'))).toBe(true);
   });
 
+  it('isRegDateRangeWithinMaxDays allows inclusive 366-day span', () => {
+    const from = dayjs('2024-01-01');
+    const to = from.add(MAX_REG_DATE_RANGE_DAYS - 1, 'day');
+    expect(regDateRangeInclusiveDays(from, to)).toBe(MAX_REG_DATE_RANGE_DAYS);
+    expect(isRegDateRangeWithinMaxDays(from, to)).toBe(true);
+    expect(isRegDateRangeWithinMaxDays(from, to.add(1, 'day'))).toBe(false);
+  });
+
   it('toRoyalty21QueryParams omits inviteLinkId for non-affiliate channels', () => {
     expect(
       toRoyalty21QueryParams({
         channelType: 'member_referral',
         inviteLinkId: 'ignored',
-        regDateFrom: dayjs('2024-06-01'),
-        regDateTo: dayjs('2024-06-30'),
+        regDateRange: [dayjs('2024-06-01'), dayjs('2024-06-30')],
         page: 1,
         pageSize: 50,
       }),

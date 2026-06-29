@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import Royalty21SearchForm, {
   type Royalty21SearchValues,
 } from './Royalty21SearchForm';
+import { MAX_REG_DATE_RANGE_DAYS } from '../../../lib/branch-report/royalty21DateRange';
 
 function SearchFormHarness({
   onSearch = vi.fn(),
@@ -49,7 +50,7 @@ describe('Royalty21SearchForm', () => {
     expect(onSearch).not.toHaveBeenCalled();
   });
 
-  it('shows validation when Register To is before Register From (AC-10)', async () => {
+  it('shows validation when register range end is before start (AC-10)', async () => {
     const user = userEvent.setup();
     const onSearch = vi.fn();
 
@@ -58,8 +59,7 @@ describe('Royalty21SearchForm', () => {
         onSearch={onSearch}
         initialValues={{
           channelType: 'member_referral',
-          regDateFrom: dayjs('2024-06-01'),
-          regDateTo: dayjs('2024-05-01'),
+          regDateRange: [dayjs('2024-06-01'), dayjs('2024-05-01')],
         }}
       />,
     );
@@ -68,6 +68,31 @@ describe('Royalty21SearchForm', () => {
 
     expect(
       await screen.findByText('Register To must be on or after Register From'),
+    ).toBeInTheDocument();
+    expect(onSearch).not.toHaveBeenCalled();
+  });
+
+  it('shows validation when register range exceeds 366 days', async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+    const from = dayjs('2024-01-01');
+
+    render(
+      <SearchFormHarness
+        onSearch={onSearch}
+        initialValues={{
+          channelType: 'member_referral',
+          regDateRange: [from, from.add(MAX_REG_DATE_RANGE_DAYS, 'day')],
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(
+      await screen.findByText(
+        `Register date range must not exceed ${MAX_REG_DATE_RANGE_DAYS} days`,
+      ),
     ).toBeInTheDocument();
     expect(onSearch).not.toHaveBeenCalled();
   });

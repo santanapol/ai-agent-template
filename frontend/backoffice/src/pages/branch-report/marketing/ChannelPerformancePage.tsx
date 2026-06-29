@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Breadcrumb, Card, Form, Typography, theme } from 'antd';
+import { Alert, Breadcrumb, Card, Divider, Form, Typography, theme } from 'antd';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useAppFeedback } from '../../../hooks/useAppFeedback';
@@ -20,7 +20,6 @@ import Royalty21Table from '../../../components/branch-report/marketing/Royalty2
 
 const { Title } = Typography;
 
-const BRANCH_SWITCH_NOTICE_MS = 2000;
 const DEFAULT_PAGE_SIZE = 50;
 
 function isRequestAborted(err: unknown): boolean {
@@ -32,7 +31,7 @@ function isRequestAborted(err: unknown): boolean {
 
 const ChannelPerformancePage: React.FC = () => {
   const { token } = theme.useToken();
-  const { user, lastBranchSwitchAt } = useAuth();
+  const { user } = useAuth();
   const { message } = useAppFeedback();
   const [form] = Form.useForm<Royalty21SearchValues>();
 
@@ -46,12 +45,14 @@ const ChannelPerformancePage: React.FC = () => {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
   const [searchParams, setSearchParams] = useState<Royalty21QueryParams | null>(null);
+  const [showBranchSwitchNotice, setShowBranchSwitchNotice] = useState(false);
 
   const [inviteLinks, setInviteLinks] = useState<InviteLinkItem[]>([]);
   const [inviteLinksLoading, setInviteLinksLoading] = useState(false);
 
   const reportAbortRef = useRef<AbortController | null>(null);
   const inviteAbortRef = useRef<AbortController | null>(null);
+  const prevBranchIdRef = useRef<string | undefined>(undefined);
 
   const resetReportState = useCallback(() => {
     setHasSearched(false);
@@ -67,22 +68,28 @@ const ChannelPerformancePage: React.FC = () => {
     resetReportState();
   }, [form, resetReportState]);
 
-  useEffect(() => {
-    if (
-      lastBranchSwitchAt &&
-      Date.now() - lastBranchSwitchAt < BRANCH_SWITCH_NOTICE_MS
-    ) {
-      message.info('Branch changed — please search again');
-    }
-  }, [lastBranchSwitchAt, message]);
-
-  useEffect(() => {
+  const resetForBranchChange = useCallback(() => {
     reportAbortRef.current?.abort();
     inviteAbortRef.current?.abort();
-
     resetFormAndReport();
     setInviteLinks([]);
-  }, [user?.branch_id, resetFormAndReport]);
+  }, [resetFormAndReport]);
+
+  useEffect(() => {
+    const prevBranchId = prevBranchIdRef.current;
+    const nextBranchId = user?.branch_id;
+
+    if (prevBranchId !== undefined && prevBranchId !== nextBranchId) {
+      if (nextBranchId) {
+        /* eslint-disable react-hooks/set-state-in-effect -- branch switch resets report state */
+        setShowBranchSwitchNotice(true);
+        /* eslint-enable react-hooks/set-state-in-effect */
+      }
+      resetForBranchChange();
+    }
+
+    prevBranchIdRef.current = nextBranchId;
+  }, [user?.branch_id, resetForBranchChange]);
 
   useEffect(
     () => () => {
@@ -120,7 +127,9 @@ const ChannelPerformancePage: React.FC = () => {
 
   useEffect(() => {
     if (channelType === 'affiliate_link' && hasActiveBranch) {
+      /* eslint-disable react-hooks/set-state-in-effect -- load invite links when channel/branch changes */
       void loadInviteLinks();
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [channelType, hasActiveBranch, user?.branch_id, loadInviteLinks]);
 
@@ -154,6 +163,7 @@ const ChannelPerformancePage: React.FC = () => {
 
   const handleSearch = (values: Royalty21SearchValues) => {
     if (!hasActiveBranch) return;
+    setShowBranchSwitchNotice(false);
     const params = toRoyalty21QueryParams({ ...values, page: 1, pageSize });
     setSearchParams(params);
     setHasSearched(true);
@@ -211,6 +221,17 @@ const ChannelPerformancePage: React.FC = () => {
           />
         )}
 
+        {showBranchSwitchNotice && hasActiveBranch && (
+          <Alert
+            type="info"
+            showIcon
+            closable
+            title="Branch changed — please search again to refresh this report"
+            style={{ marginBottom: token.marginMD }}
+            onClose={() => setShowBranchSwitchNotice(false)}
+          />
+        )}
+
         <Royalty21SearchForm
           form={form}
           inviteLinkOptions={inviteLinkOptions}
@@ -220,6 +241,8 @@ const ChannelPerformancePage: React.FC = () => {
           onSearch={handleSearch}
           onClear={handleClear}
         />
+
+        <Divider style={{ margin: `${token.marginLG}px 0` }} />
 
         <Royalty21Table
           rows={rows}

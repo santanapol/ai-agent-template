@@ -3,6 +3,9 @@ import { Empty, Table } from 'antd';
 import type { Royalty21Row } from '../../../types/branchReport';
 import { royalty21Columns } from './royalty21Columns';
 
+/** AdminLayout header + card chrome — keeps sticky header below the navbar. */
+const STICKY_OFFSET_HEADER = 64;
+
 interface Royalty21TableProps {
   rows: Royalty21Row[];
   loading: boolean;
@@ -38,8 +41,9 @@ const Royalty21Table: React.FC<Royalty21TableProps> = ({
         pageSizeOptions: ['20', '50', '100'],
         showTotal: (count) => `Total ${count} members`,
       }}
-      scroll={{ x: 'max-content', y: 'calc(100vh - 320px)' }}
-      sticky
+      scroll={{ x: 'max-content' }}
+      sticky={{ offsetHeader: STICKY_OFFSET_HEADER }}
+      scrollToFirstRowOnChange
       locale={{
         emptyText: hasSearched ? (
           <Empty description="No members found for selected channel" />
@@ -50,7 +54,6 @@ const Royalty21Table: React.FC<Royalty21TableProps> = ({
       onChange={(pagination) => {
         onTableChange(pagination.current ?? 1, pagination.pageSize ?? pageSize);
       }}
-      style={{ marginTop: 24 }}
     />
   );
 };

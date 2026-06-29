@@ -27,7 +27,6 @@ describe('ChannelPerformancePage', () => {
     });
     mockUseAuth.mockReturnValue({
       user: { branch_id: '507f1f77bcf86cd799439012', ou_id: '507f1f77bcf86cd799439011' },
-      lastBranchSwitchAt: null,
     });
   });
 
@@ -39,11 +38,10 @@ describe('ChannelPerformancePage', () => {
     expect(screen.getByText('Channel Performance')).toBeInTheDocument();
   });
 
-  it('renders register date fields with current month defaults', () => {
+  it('renders register date range field with current month defaults', () => {
     renderWithProviders(<ChannelPerformancePage />);
 
-    expect(screen.getByText('Register From')).toBeInTheDocument();
-    expect(screen.getByText('Register To')).toBeInTheDocument();
+    expect(screen.getByText('Register Date')).toBeInTheDocument();
   });
 
   it('does not fetch royalty report on mount (AC-9)', async () => {
@@ -59,7 +57,6 @@ describe('ChannelPerformancePage', () => {
   it('shows warning when user has no active branch', () => {
     mockUseAuth.mockReturnValue({
       user: { ou_id: '507f1f77bcf86cd799439011', branch_id: undefined },
-      lastBranchSwitchAt: null,
     });
 
     renderWithProviders(<ChannelPerformancePage />);
@@ -68,5 +65,19 @@ describe('ChannelPerformancePage', () => {
       screen.getByText('Please select a branch from the top navigation'),
     ).toBeInTheDocument();
     expect(mockGetInviteLinks).not.toHaveBeenCalled();
+  });
+
+  it('shows persistent notice after branch switch', async () => {
+    const { rerender } = renderWithProviders(<ChannelPerformancePage />);
+
+    mockUseAuth.mockReturnValue({
+      user: { branch_id: '507f1f77bcf86cd799439099', ou_id: '507f1f77bcf86cd799439011' },
+    });
+
+    rerender(<ChannelPerformancePage />);
+
+    expect(
+      await screen.findByText('Branch changed — please search again to refresh this report'),
+    ).toBeInTheDocument();
   });
 });

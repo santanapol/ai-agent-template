@@ -1,3 +1,4 @@
+import { Tooltip, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Royalty21Row } from '../../../types/branchReport';
 import {
@@ -7,7 +8,11 @@ import {
 } from '../../../lib/branch-report/royalty21Formatters';
 
 const depositColumns: ColumnsType<Royalty21Row> = Array.from({ length: 21 }, (_, i) => ({
-  title: String(i + 1),
+  title: (
+    <Tooltip title={`Deposit #${i + 1} since registration`}>
+      <span>{String(i + 1)}</span>
+    </Tooltip>
+  ),
   dataIndex: ['deposits', i],
   key: `deposit_${i + 1}`,
   width: 80,
@@ -22,6 +27,7 @@ export const royalty21Columns: ColumnsType<Royalty21Row> = [
     key: 'username',
     width: 140,
     fixed: 'left',
+    ellipsis: true,
   },
   {
     title: 'Register',
@@ -47,7 +53,11 @@ export const royalty21Columns: ColumnsType<Royalty21Row> = [
     render: (value: number) => formatSummary(value),
   },
   {
-    title: 'Promotion',
+    title: (
+      <Tooltip title="Promotion data coming in phase 2">
+        <span>Promotion</span>
+      </Tooltip>
+    ),
     dataIndex: 'promotion',
     key: 'promotion',
     width: 100,
@@ -60,7 +70,18 @@ export const royalty21Columns: ColumnsType<Royalty21Row> = [
     key: 'revenue',
     width: 110,
     align: 'right',
-    render: (value: number) => formatSummary(value),
+    render: (value: number) => (
+      <Typography.Text type={value < 0 ? 'danger' : undefined}>
+        {formatSummary(value)}
+      </Typography.Text>
+    ),
   },
-  ...depositColumns,
+  {
+    title: (
+      <Tooltip title="Deposit amounts by sequence since member registration">
+        Deposits (1–21)
+      </Tooltip>
+    ),
+    children: depositColumns,
+  },
 ];
