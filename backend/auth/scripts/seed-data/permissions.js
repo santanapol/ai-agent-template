@@ -144,6 +144,30 @@ export const seedMenus = [
     ou_id: null
   },
   {
+    key: 'branch-report',
+    label: 'Branch Report',
+    type: 'menu',
+    parent_key: null,
+    sort_order: 35,
+    ou_id: null
+  },
+  {
+    key: 'branch-report:marketing',
+    label: 'Marketing',
+    type: 'menu',
+    parent_key: 'branch-report',
+    sort_order: 10,
+    ou_id: null
+  },
+  {
+    key: 'branch-report:marketing:channel-performance:read',
+    label: 'Channel Performance',
+    type: 'action',
+    parent_key: 'branch-report:marketing',
+    sort_order: 10,
+    ou_id: null
+  },
+  {
     key: 'my_profile',
     label: 'My Profile',
     type: 'action',
@@ -185,6 +209,7 @@ export const seedRolePermissions = [
       'invoices:*',
       'agents:*',
       'reports:*',
+      'branch-report:*',
       'profiles:*',
       'roles:assign',
       'permissions:manage'
@@ -193,7 +218,14 @@ export const seedRolePermissions = [
   {
     ou_id: null,
     role: 'branch_admin',
-    menu_keys: ['dashboard:view', 'my_profile', 'invoices:*', 'agents:*', 'profiles:*']
+    menu_keys: [
+      'dashboard:view',
+      'my_profile',
+      'invoices:*',
+      'agents:*',
+      'branch-report:marketing:channel-performance:read',
+      'profiles:*'
+    ]
   },
   {
     ou_id: null,
