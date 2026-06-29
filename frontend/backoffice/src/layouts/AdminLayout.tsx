@@ -21,6 +21,7 @@ import {
   ShopOutlined,
   CodeOutlined,
   DollarOutlined,
+  FundOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
@@ -101,6 +102,12 @@ const MENU_UI: Record<string, MenuItemUI> = {
   'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
   reports: { icon: <CodeOutlined /> },
   'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
+  'branch-report': { icon: <FundOutlined /> },
+  'branch-report:marketing': { icon: <FundOutlined /> },
+  'branch-report:marketing:channel-performance:read': {
+    icon: <FundOutlined />,
+    route: '/branch-report/marketing/channel-performance',
+  },
   my_profile: { icon: <UserOutlined />, route: '/profile' },
   settings: { icon: <SettingOutlined /> },
   'permissions:manage': { icon: <SafetyCertificateOutlined />, route: '/permissions' },
