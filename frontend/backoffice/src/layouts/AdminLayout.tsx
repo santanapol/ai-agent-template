@@ -3,7 +3,6 @@ import {
   Layout,
   Menu,
   Dropdown,
-  Avatar,
   Space,
   Tag,
   Typography,
@@ -41,6 +40,7 @@ import {
   setCachedInvoiceAgentBranches,
 } from '../lib/branchOptions';
 import type { InvoiceAgentBranch } from '../types/invoice';
+import { UserAvatar } from '../components/UserAvatar';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -115,6 +115,11 @@ const AdminLayout: React.FC = () => {
   const { message } = useAppFeedback();
   const [collapsed, setCollapsed] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [headerProfile, setHeaderProfile] = useState<{
+    firstname: string;
+    lastname: string;
+    username: string;
+  } | null>(null);
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
@@ -154,10 +159,18 @@ const AdminLayout: React.FC = () => {
       .then(({ profile }) => {
         if (cancelled) return;
         const fullName = `${profile.firstname} ${profile.lastname}`.trim();
+        setHeaderProfile({
+          firstname: profile.firstname,
+          lastname: profile.lastname,
+          username: profile.user.username,
+        });
         setDisplayName(fullName || profile.user.username);
       })
       .catch(() => {
-        if (!cancelled) setDisplayName(null);
+        if (!cancelled) {
+          setDisplayName(null);
+          setHeaderProfile(null);
+        }
       });
 
     return () => {
@@ -437,10 +450,13 @@ const AdminLayout: React.FC = () => {
               )}
             </div>
             <Dropdown menu={userMenu} placement="bottomRight">
-              <Avatar
+              <UserAvatar
                 size={40}
+                firstname={headerProfile?.firstname}
+                lastname={headerProfile?.lastname}
+                displayName={displayName}
+                username={headerProfile?.username}
                 style={{ backgroundColor: token.colorPrimary, cursor: 'pointer' }}
-                icon={<UserOutlined />}
               />
             </Dropdown>
           </Space>

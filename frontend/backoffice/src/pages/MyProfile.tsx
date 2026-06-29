@@ -25,6 +25,7 @@ import { telephoneRules } from '../lib/telephone';
 import axios from 'axios';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
+import { UserAvatar } from '../components/UserAvatar';
 import { formatTelephoneToE164 } from '../lib/telephone';
 
 const { Title, Text } = Typography;
@@ -185,6 +186,22 @@ const MyProfile: React.FC = () => {
           </Card>
         ) : profile ? (
           <Card variant="borderless" style={{ borderRadius: token.borderRadius, maxWidth: 720 }}>
+            <Flex align="center" gap={token.margin} style={{ marginBottom: token.marginLG }}>
+              <UserAvatar
+                size={64}
+                firstname={profile.firstname}
+                lastname={profile.lastname}
+                username={profile.user.username}
+                style={{ backgroundColor: token.colorPrimary, flexShrink: 0 }}
+              />
+              <div>
+                <Title level={4} style={{ margin: 0 }}>
+                  {[profile.firstname, profile.lastname].filter(Boolean).join(' ') || profile.user.username}
+                </Title>
+                <Text type="secondary">{profile.user.username}</Text>
+              </div>
+            </Flex>
+
             <Descriptions
               column={1}
               size="small"

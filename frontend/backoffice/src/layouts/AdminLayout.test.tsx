@@ -53,6 +53,7 @@ describe('AdminLayout component', () => {
       // Fallback menu items (Dashboard) are rendered
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
+      expect(screen.getByText('JD')).toBeInTheDocument();
     });
   });
 
