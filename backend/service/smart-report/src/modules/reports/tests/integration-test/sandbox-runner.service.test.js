@@ -97,6 +97,16 @@ if (!RUN) {
       assert.strictEqual(result, undefined);
     });
 
+    test("blocks sandbox escape via find cursor then.constructor", async () => {
+      const script = `
+        const mainDB = db.getSiblingDB("any");
+        const Fn = mainDB.reports.find({}).then.constructor;
+        Fn ? Fn('return process.version')() : undefined;
+      `;
+      const result = await runReportScript({ script });
+      assert.strictEqual(result, undefined);
+    });
+
     test("supports ObjectId in the sandbox context", async () => {
       const result = await runReportScript({
         script: '({ id: ObjectId("507f1f77bcf86cd799439011").toHexString() })',

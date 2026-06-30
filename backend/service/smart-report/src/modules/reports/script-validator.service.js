@@ -3,6 +3,7 @@ import * as walk from "acorn-walk";
 
 const CURSOR_CHAIN_OPS = new Set(["projection", "project", "sort", "limit", "skip"]);
 const READ_OPS = new Set(["aggregate", "find", "findOne"]);
+const FORBIDDEN_MEMBER_NAMES = new Set(["constructor", "__proto__", "prototype"]);
 
 export const WRITE_OPS = new Set([
   "insert",
@@ -121,6 +122,16 @@ export function validateScriptSource(script) {
 
   walk.simple(ast, {
     MemberExpression(node) {
+      if (
+        node.property?.type === "Identifier" &&
+        FORBIDDEN_MEMBER_NAMES.has(node.property.name)
+      ) {
+        errors.push({
+          line: node.loc?.start.line,
+          message: `Access to .${node.property.name} is not allowed in report scripts.`,
+          code: "VALIDATION_FAILED",
+        });
+      }
       if (isDirectDbCollectionAccess(node)) {
         const collectionName =
           node.property?.type === "Identifier" ? node.property.name : "collection";

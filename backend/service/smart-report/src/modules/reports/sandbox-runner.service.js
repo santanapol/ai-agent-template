@@ -62,8 +62,10 @@ function createFindCursor(collection, query = {}, options = {}) {
   chain.limit = chainOp((current, limit) => current.limit(limit));
   chain.skip = chainOp((current, skip) => current.skip(skip));
   chain.toArray = makeSafeFunction(() => cursor.toArray());
-  chain.then = (resolve, reject) => cursor.toArray().then(resolve, reject);
-  chain.catch = (reject) => cursor.toArray().catch(reject);
+  chain.then = makeSafeFunction((resolve, reject) =>
+    cursor.toArray().then(resolve, reject),
+  );
+  chain.catch = makeSafeFunction((reject) => cursor.toArray().catch(reject));
 
   return chain;
 }

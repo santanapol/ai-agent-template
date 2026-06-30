@@ -95,4 +95,13 @@ describe("script-validator.service", () => {
     assert.equal(result.valid, true);
     assert.deepEqual(result.errors, []);
   });
+
+  test("rejects constructor member access", () => {
+    const result = validateScriptSource(`
+      const targetDB = db.getSiblingDB("demo");
+      targetDB.users.find({}).then.constructor;
+    `);
+    assert.equal(result.valid, false);
+    assert.equal(result.errors[0].code, "VALIDATION_FAILED");
+  });
 });
