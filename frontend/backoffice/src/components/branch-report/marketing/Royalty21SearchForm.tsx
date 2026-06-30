@@ -145,7 +145,7 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
           <Button type="primary" htmlType="submit" loading={tableLoading}>
             Search
           </Button>
-          <Button type="button" onClick={onClear} disabled={tableLoading}>
+          <Button htmlType="button" onClick={onClear} disabled={tableLoading}>
             Clear
           </Button>
         </Flex>
