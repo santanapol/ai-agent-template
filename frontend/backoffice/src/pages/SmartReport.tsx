@@ -193,8 +193,8 @@ const SmartReport: React.FC = () => {
       setLoading(true);
       try {
         const [reportsRes, historyRes] = await Promise.all([
-          listReports({ limit: 100 }),
-          listHistory({ limit: 100 }),
+          listReports({ limit: 200 }),
+          listHistory({ limit: 200 }),
         ]);
         if (cancelled) return;
         setReports(reportsRes.data);
