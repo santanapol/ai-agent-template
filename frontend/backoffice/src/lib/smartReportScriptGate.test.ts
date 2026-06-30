@@ -8,6 +8,7 @@ import {
   getScriptGateStep,
   getTestRunDateTagLabel,
   isEditorDirty,
+  renderPreviewCell,
   scriptRequiresGate,
   scriptUsesRunDateParams,
   normalizeTestRunSample,
@@ -35,6 +36,10 @@ describe('smartReportScriptGate', () => {
     it('shows preview fraction when total exceeds sample', () => {
       expect(formatTestRunPreviewCount(120, 5)).toBe('Preview 5 of 120 record(s)');
     });
+
+    it('handles zero records', () => {
+      expect(formatTestRunPreviewCount(0, 0)).toBe('0 record(s)');
+    });
   });
 
   describe('formatTestRunParamsRange', () => {
@@ -45,6 +50,10 @@ describe('smartReportScriptGate', () => {
           '2026-06-29T23:59:59.999Z',
         ),
       ).toBe('2026-06-29 00:00 – 23:59 UTC');
+    });
+
+    it('returns invalid label for bad dates', () => {
+      expect(formatTestRunParamsRange('not-a-date', 'also-bad')).toBe('invalid date range');
     });
   });
 
@@ -153,6 +162,23 @@ describe('smartReportScriptGate', () => {
         ),
       ).toBe(true);
     });
+
+    it('normalizes dayjs-like scheduleTime when comparing form values', () => {
+      const scheduleTime = { hour: () => 8, minute: () => 30 };
+      const baselineWithTime: EditorSnapshot = {
+        formValues: { name: 'Report A', scheduleTime },
+        script: 'db.col.find({});',
+      };
+      expect(
+        isEditorDirty(
+          {
+            formValues: { name: 'Report A', scheduleTime: { hour: () => 8, minute: () => 30 } },
+            script: 'db.col.find({});',
+          },
+          baselineWithTime,
+        ),
+      ).toBe(false);
+    });
   });
 
   describe('canSaveScript', () => {
@@ -169,6 +195,23 @@ describe('smartReportScriptGate', () => {
       expect(
         canSaveScript(true, 'tested', 'token', 'withReport(async () => { return []; });'),
       ).toBe(true);
+    });
+
+    it('blocks save when tested but token or compiled script is missing', () => {
+      expect(canSaveScript(true, 'tested', null, 'withReport(async () => {});')).toBe(false);
+      expect(canSaveScript(true, 'tested', 'token', null)).toBe(false);
+    });
+  });
+
+  describe('renderPreviewCell', () => {
+    it('renders em dash for nullish values', () => {
+      expect(renderPreviewCell(null)).toBe('—');
+      expect(renderPreviewCell(undefined)).toBe('—');
+    });
+
+    it('stringifies objects and primitives', () => {
+      expect(renderPreviewCell({ a: 1 })).toBe('{"a":1}');
+      expect(renderPreviewCell(42)).toBe('42');
     });
   });
 
