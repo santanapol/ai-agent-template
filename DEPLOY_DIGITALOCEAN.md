@@ -75,11 +75,8 @@ cd /var/www/zero-platform
 npm ci --prefix frontend/backoffice
 npm run build --prefix frontend/backoffice
 
-# 2. ติดตั้งไลบรารีสำหรับ Backend แต่ละ Service
-npm ci --prefix backend/gateway
-npm ci --prefix backend/auth
-npm ci --prefix backend/service/staff
-npm ci --prefix backend/service/agent-invoice
+# 2. ติดตั้งไลบรารี Backend (npm workspaces — รันที่ root)
+npm ci
 npm ci --prefix backend/service/demo-service
 
 # 3. รัน Redis ผ่าน Docker

@@ -35,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Deploy (DigitalOcean):** Run `npm ci` at monorepo root so workspace packages (e.g. `@zero-platform/roles`) link correctly; per-service `npm ci --prefix` broke auth/upstream after deploy (502).
 - **`backend/service/smart-report/`:** Raise report list/history pagination `limit` maximum from 100 to 200 so backoffice `listReports` / `listHistory` requests no longer return `400 INVALID_PARAM`.
 - **Backoffice — My Profile:** 404 when active working branch differed from home branch (staff service self-lookup + gateway `x-user-home-branch`).
 - **`backend/auth/openapi.yaml`:** Document that inactive target branches return `403` (not allowed).

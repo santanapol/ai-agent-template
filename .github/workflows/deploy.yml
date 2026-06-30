@@ -25,13 +25,10 @@ jobs:
             # ---------------------------------------------------------
             # 1. จัดการ Backend
             # ---------------------------------------------------------
-            # อัปเดต dependencies ของทุก Service
-            npm ci --prefix backend/auth
-            npm ci --prefix backend/gateway
+            # Monorepo workspaces (@zero-platform/roles ฯลฯ) — ต้อง npm ci ที่ root
+            # ห้ามใช้ npm ci --prefix ต่อ service ที่อ้าง file:../shared/platform-roles
+            npm ci
             npm ci --prefix backend/service/demo-service
-            npm ci --prefix backend/service/staff
-            npm ci --prefix backend/service/agent-invoice
-            npm ci --prefix backend/service/smart-report
             
             # สั่งรีสตาร์ท Backend ทั้งหมดด้วย PM2
             pm2 reload backend/ecosystem.config.js --update-env
