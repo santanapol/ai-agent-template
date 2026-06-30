@@ -185,10 +185,23 @@ if (!RUN) {
       assert.equal(response.json().code, "INVALID_PARAM");
     });
 
-    test("GET /?limit=101 returns 400 INVALID_PARAM (exceeds max)", async () => {
+    test("GET /?limit=200 accepts backoffice list page size", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/api/v1/smart-reports?limit=101",
+        url: "/api/v1/smart-reports?limit=200",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.equal(body.success, true);
+      assert.equal(body.pagination.limit, 200);
+    });
+
+    test("GET /?limit=201 returns 400 INVALID_PARAM (exceeds max)", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?limit=201",
         headers: buildMeshHeaders(),
       });
 
