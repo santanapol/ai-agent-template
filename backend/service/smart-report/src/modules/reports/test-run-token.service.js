@@ -1,17 +1,34 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const DEFAULT_TOKEN_TTL_MS = 900_000;
+const DEV_FALLBACK_SECRET = "local-dev-test-run-token-secret";
+const TEST_FALLBACK_SECRET = "test-run-token-secret";
+
+let warnedDevFallbackSecret = false;
 
 function getTokenSecret() {
-  const secret =
-    process.env.TEST_RUN_TOKEN_SECRET ??
-    (process.env.NODE_ENV === "test" ? "test-run-token-secret" : "");
-  if (!secret) {
-    throw new Error(
-      "[TestRunToken] TEST_RUN_TOKEN_SECRET is required outside test environment",
-    );
+  const secret = process.env.TEST_RUN_TOKEN_SECRET;
+  if (secret) {
+    return secret;
   }
-  return secret;
+
+  if (process.env.NODE_ENV === "test") {
+    return TEST_FALLBACK_SECRET;
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    if (!warnedDevFallbackSecret) {
+      warnedDevFallbackSecret = true;
+      console.warn(
+        "[TestRunToken] TEST_RUN_TOKEN_SECRET is not set; using a local-dev fallback. Add TEST_RUN_TOKEN_SECRET to .env (see .env.example).",
+      );
+    }
+    return DEV_FALLBACK_SECRET;
+  }
+
+  throw new Error(
+    "[TestRunToken] TEST_RUN_TOKEN_SECRET is required outside test and local development",
+  );
 }
 
 function getTokenTtlMs() {

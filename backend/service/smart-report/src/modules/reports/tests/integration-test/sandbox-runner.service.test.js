@@ -163,16 +163,45 @@ if (!RUN) {
       assert.deepEqual(result, [{ value: 20 }, { value: 10 }]);
     });
 
-    test("rejects raw Booster .toArray() scripts (must use compiledScript)", async () => {
+    test("supports find().toArray() on sandbox cursor", async () => {
       const script = `
         const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
         const rows = mainDB.${FIXTURE_COLLECTION}.find({ category: "alpha" }).toArray();
         rows;
       `;
-      await assert.rejects(
-        runReportScript({ script }),
-        /Script execution failed/,
-      );
+      const result = await runReportScript({ script });
+      assert.equal(result.length, 2);
+    });
+
+    test("find cursor chain via db.getSiblingDB returns filtered rows", async () => {
+      const script = `
+        withReport(async () => {
+          const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
+          return await mainDB.${FIXTURE_COLLECTION}
+            .find({ category: "alpha" })
+            .sort({ value: -1 })
+            .limit(1);
+        });
+      `;
+      const result = await runReportScript({ script });
+      assert.deepEqual(result.map((row) => row.value), [20]);
+    });
+
+    test("compiled find cursor chain from script-compiler runs in sandbox", async () => {
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const source = `
+        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
+        mainDB.${FIXTURE_COLLECTION}
+          .find({ category: "alpha" })
+          .projection({ _id: 0, value: 1 })
+          .sort({ value: -1 })
+          .limit(1);
+      `;
+      const compiled = compileBoosterScript(source);
+      assert.equal(compiled.success, true);
+      const result = await runReportScript({ script: compiled.compiledScript });
+      assert.deepEqual(result, [{ value: 20 }]);
     });
 
     test("findOne via db.getSiblingDB returns a single object", async () => {

@@ -1,6 +1,12 @@
 import { Script, createContext } from "node:vm";
 import { ObjectId } from "mongodb";
 import { getReadClient } from "../../config/database-read.js";
+import {
+  SandboxRunnerError,
+  SANDBOX_ERROR_CODES,
+} from "./sandbox-runner.errors.js";
+
+export { SandboxRunnerError, SANDBOX_ERROR_CODES } from "./sandbox-runner.errors.js";
 
 const DEFAULT_REPORT_SCRIPT_TIMEOUT_MS = 120_000;
 
@@ -39,11 +45,33 @@ const withReport = makeSafeFunction(function withReport(fn) {
   return fn();
 });
 
-/** ครอบ collection — aggregate/find คืน Promise<array>; findOne คืน Promise<object|null> */
+/** ครอบ collection — aggregate คืน Promise<array>; find คืน cursor chain ที่ await ได้ */
+function createFindCursor(collection, query = {}, options = {}) {
+  let cursor = collection.find(query, options);
+  const chain = Object.create(null);
+
+  const chainOp = (mutator) =>
+    makeSafeFunction((arg) => {
+      cursor = mutator(cursor, arg);
+      return chain;
+    });
+
+  chain.projection = chainOp((current, projection) => current.project(projection));
+  chain.project = chain.projection;
+  chain.sort = chainOp((current, sort) => current.sort(sort));
+  chain.limit = chainOp((current, limit) => current.limit(limit));
+  chain.skip = chainOp((current, skip) => current.skip(skip));
+  chain.toArray = makeSafeFunction(() => cursor.toArray());
+  chain.then = (resolve, reject) => cursor.toArray().then(resolve, reject);
+  chain.catch = (reject) => cursor.toArray().catch(reject);
+
+  return chain;
+}
+
 function wrapCollection(collection) {
   const wrapped = Object.create(null);
   wrapped.find = makeSafeFunction((query = {}, options = {}) =>
-    collection.find(query, options).toArray(),
+    createFindCursor(collection, query, options),
   );
   wrapped.aggregate = makeSafeFunction((pipeline = [], options = {}) =>
     collection.aggregate(pipeline, options).toArray(),
@@ -89,7 +117,10 @@ export async function runReportScript({
   timeoutMs,
 }) {
   if (typeof script !== "string" || script.trim() === "") {
-    throw new Error("[SandboxRunner] script must be a non-empty string");
+    throw new SandboxRunnerError(
+      SANDBOX_ERROR_CODES.INVALID_SCRIPT,
+      "script must be a non-empty string",
+    );
   }
 
   const resolvedTimeoutMs = resolveReportScriptTimeoutMs(timeoutMs);
@@ -109,16 +140,18 @@ export async function runReportScript({
     });
     result = compiled.runInContext(context, { timeout: resolvedTimeoutMs });
   } catch (error) {
-    throw new Error(
-      `[SandboxRunner] Script execution failed: ${error.message}`,
+    throw new SandboxRunnerError(
+      SANDBOX_ERROR_CODES.EXECUTION_FAILED,
+      `Script execution failed: ${error.message}`,
     );
   }
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(
-        new Error(
-          `[SandboxRunner] Script execution timed out after ${resolvedTimeoutMs}ms`,
+        new SandboxRunnerError(
+          SANDBOX_ERROR_CODES.TIMEOUT,
+          `Script execution timed out after ${resolvedTimeoutMs}ms`,
         ),
       );
     }, resolvedTimeoutMs);
@@ -132,8 +165,9 @@ export async function runReportScript({
       .catch((error) => {
         clearTimeout(timer);
         reject(
-          new Error(
-            `[SandboxRunner] Script execution failed: ${error.message}`,
+          new SandboxRunnerError(
+            SANDBOX_ERROR_CODES.EXECUTION_FAILED,
+            `Script execution failed: ${error.message}`,
           ),
         );
       });

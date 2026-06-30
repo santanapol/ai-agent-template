@@ -98,7 +98,10 @@ if (!RUN) {
       assert.equal(body.data.success, true);
       assert.equal(body.data.recordCount, 2);
       assert.ok(body.data.testRunToken);
+      assert.ok(body.data.runParams?.startDate);
+      assert.ok(body.data.runParams?.endDate);
       assert.ok(Array.isArray(body.data.sample));
+      assert.ok(Object.keys(body.data.sample[0] ?? {}).length > 0);
     });
 
     test("POST / rejects create without testRunToken", async () => {

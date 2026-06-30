@@ -21,7 +21,11 @@ import {
   buildReportRunParams,
 } from "./scheduler.service.js";
 import { compileBoosterScript } from "./script-compiler.service.js";
-import { runReportScript } from "./sandbox-runner.service.js";
+import {
+  runReportScript,
+  SandboxRunnerError,
+  SANDBOX_ERROR_CODES,
+} from "./sandbox-runner.service.js";
 import {
   issueTestRunToken,
   verifyTestRunToken,
@@ -36,8 +40,29 @@ function toRows(result) {
   return [result];
 }
 
-function normalizeScriptForCompare(script) {
+/** JSON-safe plain objects for API sample preview (ObjectId, Date, etc.). */
+export const TEST_RUN_SAMPLE_LIMIT = 5;
+
+export function normalizeScriptForCompare(script) {
   return String(script ?? "").replace(/\r\n/g, "\n");
+}
+
+export function serializeSampleRows(rows, limit = TEST_RUN_SAMPLE_LIMIT) {
+  return rows.slice(0, limit).map((row) => JSON.parse(JSON.stringify(row)));
+}
+
+export function toTestRunHttpError(error) {
+  if (error instanceof SandboxRunnerError) {
+    if (error.code === SANDBOX_ERROR_CODES.TIMEOUT) {
+      return new HttpError(
+        422,
+        CODES.TEST_RUN_TIMEOUT,
+        "Test run exceeded the configured time limit.",
+      );
+    }
+    return new HttpError(422, CODES.VALIDATION_FAILED, error.message);
+  }
+  return error;
 }
 
 function serializeReportListItem(report) {
@@ -208,24 +233,21 @@ export async function testRunScript({
       success: true,
       recordCount: rows.length,
       durationMs,
-      sample: rows.slice(0, 5),
+      sample: serializeSampleRows(rows),
       testRunToken: issueTestRunToken({
         script,
         compiledScript,
         recordCount: rows.length,
         durationMs,
       }),
+      runParams: {
+        startDate: runParams.startDate,
+        endDate: runParams.endDate,
+      },
       errors: [],
     };
   } catch (error) {
-    if (String(error.message).includes("timed out")) {
-      throw new HttpError(
-        422,
-        CODES.TEST_RUN_TIMEOUT,
-        "Test run exceeded the configured time limit.",
-      );
-    }
-    throw error;
+    throw toTestRunHttpError(error);
   }
 }
 

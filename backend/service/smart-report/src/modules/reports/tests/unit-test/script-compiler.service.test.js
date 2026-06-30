@@ -29,6 +29,17 @@ targetDB.users.aggregate([
     assert.match(result.compiledScript, /return await db\.getSiblingDB\("demo"\)\.items\.find/);
   });
 
+  test("wraps trailing find cursor chain", () => {
+    const input = `db.getSiblingDB("demo").member.find({ active: true }).projection({ _id: 0 }).sort({ _id: -1 }).limit(10);`;
+    const result = compileBoosterScript(input);
+    assert.equal(result.success, true);
+    assert.match(
+      result.compiledScript,
+      /return await db\.getSiblingDB\("demo"\)\.member\.find\(\{ active: true \}\)\.projection/,
+    );
+    assert.match(result.compiledScript, /\.limit\(10\);/);
+  });
+
   test("wraps trailing findOne expression", () => {
     const input = `db.getSiblingDB("demo").items.findOne({ _id: 1 });`;
     const result = compileBoosterScript(input);

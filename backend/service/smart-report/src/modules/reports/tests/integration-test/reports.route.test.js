@@ -280,6 +280,27 @@ if (!RUN) {
       etag = response.headers.etag;
     });
 
+    test("PUT /:id rejects script change without testRunToken (422)", async () => {
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const newScript = `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({ name: "changed" });`;
+      const compiled = compileBoosterScript(newScript);
+      assert.equal(compiled.success, true);
+
+      const response = await app.inject({
+        method: "PUT",
+        url: `/api/v1/smart-reports/${reportId}`,
+        headers: { ...buildMeshHeaders(), "if-match": etag },
+        payload: {
+          script: newScript,
+          compiledScript: compiled.compiledScript,
+        },
+      });
+
+      assert.equal(response.statusCode, 422);
+      assert.equal(response.json().code, "REPORT_NOT_TESTED");
+    });
+
     test("POST /:id/run executes the report and records download history (200)", async () => {
       const response = await app.inject({
         method: "POST",

@@ -50,10 +50,31 @@ describe("script-validator.service", () => {
   });
 
   test("rejects update and delete write operations", () => {
-    const update = validateScriptSource('db.col.updateOne({}, { $set: { a: 1 } });');
-    const del = validateScriptSource('db.col.deleteMany({});');
+    const update = validateScriptSource(
+      'db.getSiblingDB("demo").col.updateOne({}, { $set: { a: 1 } });',
+    );
+    const del = validateScriptSource('db.getSiblingDB("demo").col.deleteMany({});');
     assert.equal(update.valid, false);
     assert.equal(del.valid, false);
+  });
+
+  test("rejects direct db.collection access without getSiblingDB", () => {
+    const result = validateScriptSource(
+      'db.member.find({ branch_id: ObjectId("507f1f77bcf86cd799439011") });',
+    );
+    assert.equal(result.valid, false);
+    assert.equal(result.errors[0].code, "MISSING_GET_SIBLING_DB");
+    assert.match(result.errors[0].message, /targetDB/);
+    assert.match(result.errors[0].message, /getSiblingDB/);
+  });
+
+  test("accepts getSiblingDB before collection access", () => {
+    const result = validateScriptSource(`
+      const targetDB = db.getSiblingDB("gpp_777ww");
+      targetDB.member.find({ branch_id: ObjectId("507f1f77bcf86cd799439011") });
+    `);
+    assert.equal(result.valid, true);
+    assert.deepEqual(result.errors, []);
   });
 
   test("rejects script without a read query path", () => {

@@ -1,6 +1,9 @@
 import { parse } from "acorn";
 import * as walk from "acorn-walk";
 
+const CURSOR_CHAIN_OPS = new Set(["projection", "project", "sort", "limit", "skip"]);
+const READ_OPS = new Set(["aggregate", "find", "findOne"]);
+
 export const WRITE_OPS = new Set([
   "insert",
   "insertOne",
@@ -53,11 +56,35 @@ export function unwrapMongoReadExpression(node) {
     return unwrapMongoReadExpression(node.callee.object);
   }
 
-  if (calleeName && ["aggregate", "find", "findOne"].includes(calleeName)) {
+  if (
+    calleeName &&
+    CURSOR_CHAIN_OPS.has(calleeName) &&
+    node.callee.object?.type === "CallExpression"
+  ) {
+    return unwrapMongoReadExpression(node.callee.object);
+  }
+
+  if (calleeName && READ_OPS.has(calleeName)) {
     return node;
   }
 
   return null;
+}
+
+/**
+ * Detects mongo-shell `db.collection` access without `db.getSiblingDB(...)`.
+ *
+ * @param {import('acorn').Node} node
+ * @returns {boolean}
+ */
+export function isDirectDbCollectionAccess(node) {
+  return (
+    node?.type === "MemberExpression" &&
+    node.object?.type === "Identifier" &&
+    node.object.name === "db" &&
+    (node.computed ||
+      (node.property?.type === "Identifier" && node.property.name !== "getSiblingDB"))
+  );
 }
 
 /**
@@ -93,6 +120,18 @@ export function validateScriptSource(script) {
   let hasReadPath = false;
 
   walk.simple(ast, {
+    MemberExpression(node) {
+      if (isDirectDbCollectionAccess(node)) {
+        const collectionName =
+          node.property?.type === "Identifier" ? node.property.name : "collection";
+        errors.push({
+          line: node.loc?.start.line,
+          message:
+            `Use const targetDB = db.getSiblingDB("your_database_name"); then targetDB.${collectionName} instead of db.${collectionName}.`,
+          code: "MISSING_GET_SIBLING_DB",
+        });
+      }
+    },
     CallExpression(node) {
       const calleeName = getCallExpressionName(node.callee);
       if (calleeName === "withReport") {
