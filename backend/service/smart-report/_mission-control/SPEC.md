@@ -1,5 +1,7 @@
 # Spec: Smart Report Service
 
+> **Feature specs (ย่อย):** [Script Compiler, Validate & Test Run](./SPEC-script-compiler-validation.md) · [Plan](./PLAN-script-compiler-validation.md) *(อนุมัติแล้ว)*
+
 ## Objective
 เราต้องการพัฒนา Backend Service ใหม่ชื่อ **`smart-report`** เพื่อรองรับระบบดึงข้อมูลรายงานอัตโนมัติ ช่วยลดภาระการรัน Query ดึงข้อมูลของ staff ในแต่ละวัน
 - **ผู้ใช้:** Staff ทั่วไปที่มีหน้าที่ดาวน์โหลดรายงาน และ Admin/Developer ที่สามารถเพิ่ม/แก้ไขสคริปต์ Query

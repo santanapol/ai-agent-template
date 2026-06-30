@@ -235,6 +235,16 @@ export async function listReports({ page = 1, limit = 20 } = {}) {
   };
 }
 
+export async function getReportDetail(id) {
+  const db = getDatabase();
+  const objectId = new ObjectId(id);
+  const report = await findReportById(db, objectId);
+  if (!report) {
+    throw new HttpError(404, CODES.RESOURCE_NOT_FOUND, "Report not found");
+  }
+  return serializeReportDetail(report);
+}
+
 export async function createReport(payload, userId) {
   const db = getDatabase();
   const now = new Date();

@@ -141,7 +141,7 @@ describe("smart-reports guards", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/api/v1/smart-reports/unknown-resource",
+      url: "/api/v1/smart-reports/unknown-resource/nested",
       headers: buildMeshHeaders(),
     });
 

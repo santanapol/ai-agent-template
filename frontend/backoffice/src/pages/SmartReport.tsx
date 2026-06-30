@@ -20,6 +20,8 @@ import {
   TimePicker,
   Row,
   Col,
+  Alert,
+  List,
 } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -34,11 +36,14 @@ import {
   ClockCircleOutlined,
   SyncOutlined,
   ArrowLeftOutlined,
+  CheckCircleOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import { apiErrorMessage } from '../lib/apiError';
 import {
   listReports,
+  getReport,
   createReport,
   updateReport,
   deleteReport,
@@ -46,6 +51,8 @@ import {
   listHistory,
   downloadReportFile,
   buildEtagFromUpdDate,
+  validateReport,
+  testRunReport,
 } from '../lib/smartReportApiClient';
 import type {
   Report,
@@ -53,6 +60,8 @@ import type {
   DownloadHistoryRecord,
   ReportPayload,
   CreateReportPayload,
+  ScriptValidationError,
+  ValidationStatus,
 } from '../types/smartReport';
 
 const { Title, Text, Paragraph } = Typography;
@@ -60,6 +69,8 @@ const { TextArea } = Input;
 
 type ScheduleOption = 'manual' | 'daily' | 'weekly' | 'monthly';
 type ReportStatus = 'completed' | 'running' | 'failed' | 'idle';
+type ScriptGateStatus = 'pending' | 'validated' | 'tested';
+type EditorTab = 'script' | 'compiled';
 
 interface ReportRow extends Report {
   derivedStatus: ReportStatus;
@@ -91,6 +102,18 @@ targetDB.your_collection_name.aggregate([
     }
 ]);`;
 
+
+function formatValidationStatusLabel(status: ValidationStatus): string {
+  if (status === 'valid') return 'Validated';
+  if (status === 'invalid') return 'Invalid';
+  return 'Pending';
+}
+
+function validationStatusColor(status: ValidationStatus): string {
+  if (status === 'valid') return 'success';
+  if (status === 'invalid') return 'error';
+  return 'default';
+}
 
 function formatScheduleLabel(schedule: ReportSchedule | null): string {
   if (!schedule) return 'Manual (No schedule)';
@@ -148,8 +171,42 @@ const SmartReport: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [form] = Form.useForm();
   const scheduleValue = Form.useWatch('schedule', form);
+  const queryValue = Form.useWatch('query', form);
+
+  const [scriptGateStatus, setScriptGateStatus] = useState<ScriptGateStatus>('pending');
+  const [baselineScript, setBaselineScript] = useState<string | null>(null);
+  const [compiledScript, setCompiledScript] = useState<string | null>(null);
+  const [testRunToken, setTestRunToken] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ScriptValidationError[]>([]);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isTestRunning, setIsTestRunning] = useState(false);
+  const [testRunPreview, setTestRunPreview] = useState<{
+    recordCount: number;
+    durationMs: number;
+    sample: Record<string, unknown>[];
+  } | null>(null);
+  const [editorTab, setEditorTab] = useState<EditorTab>('script');
+
+  const resetScriptGate = useCallback(() => {
+    setScriptGateStatus('pending');
+    setBaselineScript(null);
+    setCompiledScript(null);
+    setTestRunToken(null);
+    setValidationErrors([]);
+    setTestRunPreview(null);
+    setEditorTab('script');
+  }, []);
+
+  const scriptRequiresGate =
+    editingReport === null ||
+    (baselineScript !== null && (queryValue ?? '') !== baselineScript);
+
+  const canSaveScript =
+    !scriptRequiresGate ||
+    (scriptGateStatus === 'tested' && !!testRunToken && !!compiledScript);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
@@ -177,6 +234,18 @@ const SmartReport: React.FC = () => {
       cancelled = true;
     };
   }, [message, refreshToken]);
+
+  const handleQueryScriptChange = (value: string) => {
+    if (viewMode !== 'edit' || baselineScript === null) return;
+    if (value !== baselineScript) {
+      setScriptGateStatus('pending');
+      setCompiledScript(null);
+      setTestRunToken(null);
+      setTestRunPreview(null);
+      setValidationErrors([]);
+      setEditorTab('script');
+    }
+  };
 
   // Combine report definitions with their latest run (history is sorted newest-first)
   const reportRows: ReportRow[] = useMemo(() => {
@@ -235,6 +304,7 @@ const SmartReport: React.FC = () => {
   // Open editor for creating new report
   const handleCreateNew = () => {
     setEditingReport(null);
+    resetScriptGate();
     form.resetFields();
     form.setFieldsValue({
       schedule: 'manual',
@@ -247,22 +317,92 @@ const SmartReport: React.FC = () => {
     setViewMode('edit');
   };
 
-  // Open editor for editing report
-  const handleEditReport = (report: Report) => {
-    setEditingReport(report);
-    const hour = report.schedule?.hour ?? 0;
-    const minute = report.schedule?.minute ?? 0;
-    form.setFieldsValue({
-      name: report.name,
-      description: report.description ?? '',
-      schedule: scheduleToUiValue(report.schedule),
-      scheduleTime: dayjs().hour(hour).minute(minute),
-      scheduleDayOfWeek: report.schedule?.dayOfWeek ?? 1,
-      scheduleDayOfMonth: report.schedule?.dayOfMonth ?? 1,
-      outputFormat: report.outputFormat,
-      query: report.script,
-    });
-    setViewMode('edit');
+  const handleEditReport = async (report: Report) => {
+    setIsLoadingEdit(true);
+    try {
+      const detail = await getReport(report.id);
+      setEditingReport(detail);
+      resetScriptGate();
+      setBaselineScript(detail.script ?? '');
+      if (detail.compiledScript) {
+        setCompiledScript(detail.compiledScript);
+        if (detail.validationStatus === 'valid') {
+          setScriptGateStatus('validated');
+        }
+      }
+      const hour = detail.schedule?.hour ?? 0;
+      const minute = detail.schedule?.minute ?? 0;
+      form.setFieldsValue({
+        name: detail.name,
+        description: detail.description ?? '',
+        schedule: scheduleToUiValue(detail.schedule),
+        scheduleTime: dayjs().hour(hour).minute(minute),
+        scheduleDayOfWeek: detail.schedule?.dayOfWeek ?? 1,
+        scheduleDayOfMonth: detail.schedule?.dayOfMonth ?? 1,
+        outputFormat: detail.outputFormat,
+        query: detail.script ?? '',
+      });
+      setViewMode('edit');
+    } catch (err) {
+      message.error(apiErrorMessage(err, 'Failed to load report details'));
+    } finally {
+      setIsLoadingEdit(false);
+    }
+  };
+
+  const handleValidateScript = async () => {
+    const script = form.getFieldValue('query') as string | undefined;
+    if (!script?.trim()) {
+      message.warning('Enter a query script before validating');
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const result = await validateReport(script);
+      if (result.valid && result.compiledScript) {
+        setCompiledScript(result.compiledScript);
+        setScriptGateStatus('validated');
+        setValidationErrors([]);
+        setTestRunToken(null);
+        setTestRunPreview(null);
+        message.success('Script validated successfully');
+      } else {
+        setCompiledScript(null);
+        setScriptGateStatus('pending');
+        setValidationErrors(result.errors);
+        message.error('Script validation failed');
+      }
+    } catch (err) {
+      message.error(apiErrorMessage(err, 'Failed to validate script'));
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleTestRunScript = async () => {
+    const script = form.getFieldValue('query') as string | undefined;
+    if (!script?.trim() || !compiledScript || scriptGateStatus === 'pending') {
+      message.warning('Validate the script before running a test');
+      return;
+    }
+
+    setIsTestRunning(true);
+    try {
+      const result = await testRunReport(script, compiledScript);
+      setTestRunPreview({
+        recordCount: result.recordCount,
+        durationMs: result.durationMs,
+        sample: result.sample,
+      });
+      setTestRunToken(result.testRunToken);
+      setScriptGateStatus('tested');
+      message.success(`Test run complete — ${result.recordCount} record(s) in ${result.durationMs}ms`);
+    } catch (err) {
+      message.error(apiErrorMessage(err, 'Test run failed'));
+    } finally {
+      setIsTestRunning(false);
+    }
   };
 
   // Cancel editing
@@ -295,7 +435,6 @@ const SmartReport: React.FC = () => {
     const payload: ReportPayload = {
       name: values.name,
       description: values.description,
-      script: values.query,
       outputFormat: values.outputFormat,
       schedule:
         values.schedule === 'manual'
@@ -309,6 +448,16 @@ const SmartReport: React.FC = () => {
               timezone,
             },
     };
+
+    if (scriptRequiresGate) {
+      if (!compiledScript || !testRunToken) {
+        message.warning('Validate and test-run the script before saving');
+        return;
+      }
+      payload.script = values.query;
+      payload.compiledScript = compiledScript;
+      payload.testRunToken = testRunToken;
+    }
 
     setIsSaving(true);
     try {
@@ -365,6 +514,22 @@ const SmartReport: React.FC = () => {
     }
   };
 
+  const previewColumns = useMemo(() => {
+    if (!testRunPreview?.sample.length) return [];
+    const keys = Object.keys(testRunPreview.sample[0] ?? {});
+    return keys.map((key) => ({
+      title: key,
+      dataIndex: key,
+      key,
+      ellipsis: true,
+      render: (value: unknown) => {
+        if (value === null || value === undefined) return '—';
+        if (typeof value === 'object') return JSON.stringify(value);
+        return String(value);
+      },
+    }));
+  }, [testRunPreview]);
+
   // Report table columns
   const reportColumns = [
     {
@@ -377,6 +542,16 @@ const SmartReport: React.FC = () => {
           </Text>
           <div style={{ marginTop: 4 }}>
             <Text type="secondary">{record.description}</Text>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <Space size={4} wrap>
+              <Tag color={validationStatusColor(record.validationStatus)}>
+                {formatValidationStatusLabel(record.validationStatus)}
+              </Tag>
+              {record.lastTestRunMeta?.recordCount != null && (
+                <Tag color="blue">Last test: {record.lastTestRunMeta.recordCount} rows</Tag>
+              )}
+            </Space>
           </div>
         </div>
       ),
@@ -474,8 +649,9 @@ const SmartReport: React.FC = () => {
           <Tooltip title="Edit query / schedule">
             <Button
               icon={<EditOutlined />}
-              onClick={() => handleEditReport(record)}
-              disabled={record.derivedStatus === 'running'}
+              onClick={() => void handleEditReport(record)}
+              disabled={record.derivedStatus === 'running' || isLoadingEdit}
+              loading={isLoadingEdit}
             />
           </Tooltip>
           <Tooltip title="View download history">
@@ -584,6 +760,7 @@ const SmartReport: React.FC = () => {
               type="primary"
               size="large"
               loading={isSaving}
+              disabled={!canSaveScript}
               onClick={() => void handleSaveReport()}
             >
               Save Report Script
@@ -728,7 +905,6 @@ const SmartReport: React.FC = () => {
                 variant="borderless"
                 style={{ borderRadius: token.borderRadius }}
               >
-                {/* IDE Header Bar */}
                 <div
                   style={{
                     background: token.colorBgLayout,
@@ -740,37 +916,98 @@ const SmartReport: React.FC = () => {
                     alignItems: 'center',
                     border: `1px solid ${token.colorBorder}`,
                     borderBottom: 'none',
+                    flexWrap: 'wrap',
+                    gap: 8,
                   }}
                 >
-                  <Space>
-                    <Badge status="processing" color={token.colorSuccess} />
-                    <Text style={{ color: token.colorTextDescription, fontFamily: 'monospace', fontSize: token.fontSizeSM }}>
-                      query.js (MongoDB Read-Only Connection)
-                    </Text>
+                  <Space wrap>
+                    <Segmented
+                      size="small"
+                      value={editorTab}
+                      onChange={(value) => setEditorTab(value as EditorTab)}
+                      options={[
+                        { label: 'Script', value: 'script' },
+                        {
+                          label: 'Compiled',
+                          value: 'compiled',
+                          disabled: !compiledScript,
+                        },
+                      ]}
+                    />
+                    <Tag color={scriptGateStatus === 'tested' ? 'success' : scriptGateStatus === 'validated' ? 'processing' : 'default'}>
+                      {scriptGateStatus === 'tested'
+                        ? 'Tested'
+                        : scriptGateStatus === 'validated'
+                          ? 'Validated'
+                          : 'Pending validation'}
+                    </Tag>
                   </Space>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => {
-                      const currentQuery = form.getFieldValue('query');
-                      if (!currentQuery || currentQuery === DEFAULT_QUERY_EXAMPLE) {
-                        form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
-                        message.info('Default template loaded successfully');
-                      }
-                    }}
-                  >
-                    Reset to Example
-                  </Button>
+                  <Space wrap>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<PlayCircleOutlined />}
+                      onClick={() => {
+                        const currentQuery = form.getFieldValue('query');
+                        if (!currentQuery || currentQuery === DEFAULT_QUERY_EXAMPLE) {
+                          form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
+                          message.info('Default template loaded successfully');
+                        }
+                      }}
+                    >
+                      Reset to Example
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<CheckCircleOutlined />}
+                      loading={isValidating}
+                      onClick={() => void handleValidateScript()}
+                    >
+                      Validate
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<ExperimentOutlined />}
+                      loading={isTestRunning}
+                      disabled={scriptGateStatus === 'pending' || !compiledScript}
+                      onClick={() => void handleTestRunScript()}
+                    >
+                      Test Run
+                    </Button>
+                  </Space>
                 </div>
 
-                <Form.Item
-                  name="query"
-                  rules={[{ required: true, message: 'Please enter query script' }]}
-                  style={{ marginBottom: 16 }}
-                >
+                {editorTab === 'script' ? (
+                  <Form.Item
+                    name="query"
+                    rules={[{ required: true, message: 'Please enter query script' }]}
+                    style={{ marginBottom: 16 }}
+                  >
+                    <TextArea
+                      rows={18}
+                      onChange={(e) => handleQueryScriptChange(e.target.value)}
+                      style={{
+                        fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+                        fontSize: token.fontSizeSM,
+                        background: token.colorBgContainer,
+                        color: token.colorText,
+                        border: `1px solid ${token.colorBorder}`,
+                        borderTopLeftRadius: 0,
+                        borderTopRightRadius: 0,
+                        borderBottomLeftRadius: token.borderRadius,
+                        borderBottomRightRadius: token.borderRadius,
+                        padding: '16px',
+                        lineHeight: '1.6',
+                      }}
+                      placeholder="// Query example..."
+                    />
+                  </Form.Item>
+                ) : (
                   <TextArea
-                    rows={22}
+                    readOnly
+                    value={compiledScript ?? ''}
+                    rows={18}
                     style={{
                       fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
                       fontSize: token.fontSizeSM,
@@ -783,14 +1020,58 @@ const SmartReport: React.FC = () => {
                       borderBottomRightRadius: token.borderRadius,
                       padding: '16px',
                       lineHeight: '1.6',
+                      marginBottom: 16,
                     }}
-                    placeholder="// Query example..."
                   />
-                </Form.Item>
+                )}
+
+                {validationErrors.length > 0 && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                    message="Validation errors"
+                    description={
+                      <List
+                        size="small"
+                        dataSource={validationErrors}
+                        renderItem={(err) => (
+                          <List.Item style={{ padding: '4px 0' }}>
+                            <Text code={err.line != null}>
+                              {err.line != null ? `Line ${err.line}: ` : ''}
+                              {err.message}
+                            </Text>
+                          </List.Item>
+                        )}
+                      />
+                    }
+                  />
+                )}
+
+                {testRunPreview && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Space style={{ marginBottom: 8 }} wrap>
+                      <Tag color="geekblue">Testing with: yesterday</Tag>
+                      <Tag>{testRunPreview.recordCount} record(s)</Tag>
+                      <Tag>{testRunPreview.durationMs}ms</Tag>
+                    </Space>
+                    {testRunPreview.sample.length > 0 ? (
+                      <Table
+                        size="small"
+                        dataSource={testRunPreview.sample.map((row, index) => ({ ...row, key: index }))}
+                        columns={previewColumns}
+                        pagination={false}
+                        scroll={{ x: true }}
+                      />
+                    ) : (
+                      <Empty description="Query returned no rows for yesterday's date range" />
+                    )}
+                  </div>
+                )}
 
                 <div style={{ padding: '8px', background: token.colorInfoBg, borderRadius: token.borderRadius, border: `1px solid ${token.colorInfoBorder}` }}>
                   <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                    💡 You can access the dynamic start and end dates as ISO strings using variables params.startDate and params.endDate directly in your JavaScript query script.
+                    Validate compiles your script without touching the database. Test Run executes against the read replica using yesterday&apos;s date range (params.startDate / params.endDate). Save is enabled only after a successful test run when the script has changed.
                   </Text>
                 </div>
               </Card>

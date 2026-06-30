@@ -138,26 +138,29 @@ Phase 5: Verify end-to-end + release 2 cleanup
 
 ### 3.1 API client & types
 
-- [ ] **Task:** `validateReport(script)` และ `testRunReport(script, compiledScript, params?)`
+- [x] **Task:** `validateReport(script)` และ `testRunReport(script, compiledScript, params?)`
   - Acceptance: map `testRunToken`; types ครบ
   - Verify: `smartReportApiClient.test.ts`
   - Files: `smartReportApiClient.ts`, `types/smartReport.ts`
 
+- [x] **Task:** `getReport(id)` สำหรับโหลด script ตอน edit (list API ไม่ส่ง script)
+  - Files: `smartReportApiClient.ts`, backend `GET /:id`
+
 ### 3.2 UI — Script editor
 
-- [ ] **Task:** ปุ่ม Validate + errors / tab "Compiled"
+- [x] **Task:** ปุ่ม Validate + errors / tab "Compiled"
   - Acceptance: error แสดงบรรทัด
   - Files: `SmartReport.tsx`
 
-- [ ] **Task:** ปุ่ม Test Run + preview table + badge `Testing with: yesterday`
+- [x] **Task:** ปุ่ม Test Run + preview table + badge `Testing with: yesterday`
   - Acceptance: disabled จน validate ผ่าน; เก็บ `testRunToken` ใน form state
   - Files: `SmartReport.tsx`
 
-- [ ] **Task:** Save gate + ส่ง `testRunToken` + status badges
+- [x] **Task:** Save gate + ส่ง `testRunToken` + status badges
   - Acceptance: Save disabled จน tested; แก้ script → reset pending + ล้าง token
   - Files: `SmartReport.tsx`
 
-- [ ] **Task:** แสดง validation fields ใน list/detail (badges)
+- [x] **Task:** แสดง validation fields ใน list/detail (badges)
   - Acceptance: `validationStatus`, `lastTestRunMeta.recordCount` ใน list
   - Files: `SmartReport.tsx`
 

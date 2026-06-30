@@ -344,6 +344,26 @@ export const validateReportSchema = {
   },
 };
 
+export const getReportSchema = {
+  description: "Get a smart report definition by id",
+  tags: ["smart-reports"],
+  headers: trustedHeaders,
+  params: idParam,
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        code: { type: "string" },
+        message: { type: ["string", "null"] },
+        data: { type: "object", properties: reportDetailProperties },
+      },
+    },
+    "4xx": errorResponse,
+    "5xx": errorResponse,
+  },
+};
+
 export const testRunReportSchema = {
   description: "Execute a compiled report script against the read database",
   tags: ["smart-reports"],

@@ -6,6 +6,8 @@ import type {
   DownloadHistoryRecord,
   ListPageParams,
   PaginationMeta,
+  ValidateReportResult,
+  TestRunReportResult,
 } from '../types/smartReport';
 import { baseClient as client } from './baseApiClient';
 
@@ -20,8 +22,13 @@ export async function listReports(
   return { data: res.data.data, pagination: res.data.pagination };
 }
 
-export async function createReport(payload: CreateReportPayload): Promise<{ id: string }> {
-  const res = await client.post<ApiEnvelope<{ id: string }>>(BASE_PATH, payload);
+export async function getReport(id: string): Promise<Report> {
+  const res = await client.get<ApiEnvelope<Report>>(`${BASE_PATH}/${id}`);
+  return res.data.data;
+}
+
+export async function createReport(payload: CreateReportPayload): Promise<Report> {
+  const res = await client.post<ApiEnvelope<Report>>(BASE_PATH, payload);
   return res.data.data;
 }
 
@@ -35,6 +42,26 @@ export async function updateReport(
 
 export async function deleteReport(id: string, etag: string): Promise<void> {
   await client.delete(`${BASE_PATH}/${id}`, { headers: { 'If-Match': etag } });
+}
+
+export async function validateReport(script: string): Promise<ValidateReportResult> {
+  const res = await client.post<ApiEnvelope<ValidateReportResult>>(`${BASE_PATH}/validate`, {
+    script,
+  });
+  return res.data.data;
+}
+
+export async function testRunReport(
+  script: string,
+  compiledScript: string,
+  params?: Record<string, unknown>,
+): Promise<TestRunReportResult> {
+  const res = await client.post<ApiEnvelope<TestRunReportResult>>(`${BASE_PATH}/test-run`, {
+    script,
+    compiledScript,
+    ...(params ? { params } : {}),
+  });
+  return res.data.data;
 }
 
 export async function runReport(id: string): Promise<DownloadHistoryRecord> {

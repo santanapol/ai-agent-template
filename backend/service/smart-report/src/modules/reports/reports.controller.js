@@ -22,6 +22,12 @@ export async function listReportsHandler(request, reply) {
     .send(successEnvelope(data, null, CODES.SUCCESS, pagination));
 }
 
+export async function getReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
+  const report = await service.getReportDetail(request.params.id);
+  return reply.status(200).send(successEnvelope(report));
+}
+
 export async function createReportHandler(request, reply) {
   assertPermission(request.userContext, "reports:smart");
   const { userId } = request.userContext;
