@@ -36,6 +36,10 @@ function toRows(result) {
   return [result];
 }
 
+function normalizeScriptForCompare(script) {
+  return String(script ?? "").replace(/\r\n/g, "\n");
+}
+
 function serializeReportListItem(report) {
   return {
     id: report._id.toString(),
@@ -292,7 +296,9 @@ export async function updateReportById(id, payload, ifMatch, userId) {
 
   const now = new Date();
   const scriptChanging =
-    payload.script !== undefined && payload.script !== existing.script;
+    payload.script !== undefined &&
+    normalizeScriptForCompare(payload.script) !==
+      normalizeScriptForCompare(existing.script);
 
   let validationFields = {};
   if (scriptChanging) {
