@@ -56,11 +56,14 @@ cp backend/gateway/.env.example backend/gateway/.env.prod
 cp backend/auth/.env.example backend/auth/.env.prod
 cp backend/service/staff/.env.example backend/service/staff/.env.prod
 cp backend/service/agent-invoice/.env.example backend/service/agent-invoice/.env.prod
+cp backend/service/smart-report/.env.example backend/service/smart-report/.env.prod
+cp backend/service/branch-report/.env.example backend/service/branch-report/.env.prod
 cp backend/service/demo-service/.env.example backend/service/demo-service/.env.prod
 
 # 2. เข้าไปแก้ไขรหัสผ่าน/ความลับ ในไฟล์ .env.prod ของแต่ละ Service ให้ถูกต้อง
 nano backend/gateway/.env.prod
 # (เช่น แก้ไขค่า GATEWAY_SECRET ให้ปลอดภัย)
+# branch-report: ตั้ง GATEWAY_SECRET ให้ตรง gateway, MONGODB_URI เป็น read replica (เช่น user เดียวกับ auth MONGODB_URI_READ), MONGODB_DB_BRANCH=gpp_777ww
 
 # ทำแบบเดียวกันกับโฟลเดอร์อื่นๆ...
 ```
@@ -78,6 +81,7 @@ npm run build --prefix frontend/backoffice
 # 2. ติดตั้งไลบรารี Backend (npm workspaces — รันที่ root)
 npm ci
 npm ci --prefix backend/service/demo-service
+npm ci --prefix backend/service/branch-report
 
 # 3. รัน Redis ผ่าน Docker
 docker compose -f backend/docker-compose.prod.yml up -d

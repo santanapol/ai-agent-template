@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Deploy (DigitalOcean):** Add `zero-branch-report` to PM2 ecosystem (port 3015), install via `npm ci --prefix backend/service/branch-report`, and use `pm2 startOrReload` so new services start on deploy without a manual `pm2 start`.
 - **Backoffice — Channel Performance UX:** Register date `RangePicker` with month presets and 366-day max validation; responsive search form; persistent branch-switch alert; table sticky header, scroll-to-top on pagination, column tooltips/ellipsis, negative revenue styling.
 
 ### Added

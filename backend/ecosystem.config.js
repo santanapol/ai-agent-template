@@ -66,6 +66,20 @@ module.exports = {
       env: {
         NODE_ENV: "production"
       }
+    },
+    {
+      name: "zero-branch-report",
+      script: "src/server.js",
+      cwd: __dirname + "/service/branch-report",
+      node_args:
+        "--env-file=" + path.join(__dirname, "service/branch-report", ".env.prod") + " --enable-source-maps",
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "1G",
+      env: {
+        NODE_ENV: "production"
+      }
     }
   ]
 };
