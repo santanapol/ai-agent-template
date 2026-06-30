@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`backend/service/branch-report/`:** New Branch Report service (v0.1.0) — Royalty 21 Times marketing report (`GET /royalty-21-times`, `GET /invite-links`), OpenAPI, gateway route `/api/v1/branch-report`, tenant scope via gateway headers.
+- **`backend/auth/`:** Branch Report menu permissions — `branch-report` → Marketing → Channel Performance; `branch_admin` granted `branch-report:marketing:channel-performance:read`.
+- **Backoffice:** Channel Performance page (`/branch-report/marketing/channel-performance`) — Royalty 21 Times search form, 28-column table (deposits 1–21), invite-link dropdown, permission guard.
+- **Backoffice:** Branch Report sidebar entries in `AdminLayout` (`MENU_UI` for `branch-report` hierarchy).
+
+### Changed
+
+- **Backoffice — Channel Performance UX:** Register date `RangePicker` with month presets and 366-day max validation; responsive search form; persistent branch-switch alert; table sticky header, scroll-to-top on pagination, column tooltips/ellipsis, negative revenue styling.
+
+### Added
+
 - **Active Branch Selector (OU-wide roles):** `POST /auth/me/active-branch` in **`backend/auth/`** — switch working branch without refresh rotation; access JWT carries `branch_id` (active) and `home_branch_id` (home); branch master validation via `MONGODB_URI_READ` / `MONGODB_DB_BRANCH`; `/readyz` pings branch-read MongoDB when configured.
 - **`backend/gateway/`:** Forward optional `x-user-home-branch` from JWT `home_branch_id` claim (AC-5); integration tests for forward, backward compat, and invalid claim rejection.
 - **`backend/shared/platform-roles/`:** `BRANCH_SWITCH_ROLES` and `canSwitchActiveBranchRole()` shared by auth and backoffice.

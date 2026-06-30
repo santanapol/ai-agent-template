@@ -34,5 +34,10 @@
     "prefix": "/api/v1/smart-reports",
     "upstream": "http://127.0.0.1:3103",
     "stripPrefix": false
+  },
+  {
+    "prefix": "/api/v1/branch-report",
+    "upstream": "http://127.0.0.1:3015",
+    "stripPrefix": false
   }
 ]

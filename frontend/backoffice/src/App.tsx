@@ -13,6 +13,7 @@ import AgentsList from './pages/Agents';
 import AgentFeesPage from './pages/AgentFees';
 import Login from './pages/Login';
 import SmartReport from './pages/SmartReport';
+import ChannelPerformancePage from './pages/branch-report/marketing/ChannelPerformancePage';
 import PermissionAdmin from './pages/PermissionAdmin';
 import Error403 from './pages/Error403';
 
@@ -114,6 +115,14 @@ const router = createBrowserRouter([
         element: (
           <PermissionGuard required="reports:smart">
             <SmartReport />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'branch-report/marketing/channel-performance',
+        element: (
+          <PermissionGuard required="branch-report:marketing:channel-performance:read">
+            <ChannelPerformancePage />
           </PermissionGuard>
         ),
       },

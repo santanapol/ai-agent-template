@@ -1,0 +1,32 @@
+{
+  "name": "branch-report",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Branch Report service — marketing channel performance reports",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node --env-file=.env src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test --env-file=.env.test 'src/**/*.test.js' 'test/**/*.test.js'",
+    "lint": "eslint src test",
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml"
+  },
+  "dependencies": {
+    "fastify": "^5.8.5",
+    "fastify-plugin": "^5.1.0",
+    "mongodb": "^7.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@stoplight/spectral-cli": "^6.16.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "prettier": "^3.8.1"
+  }
+}

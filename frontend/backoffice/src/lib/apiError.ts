@@ -1,11 +1,17 @@
 import axios from 'axios';
 
+import { BranchReportApiError } from './branchReportApiClient';
+
 /**
  * Extracts a user-friendly error message from an Axios error response.
  * Checks for known API `code` values first, then falls back to the response
  * `message` field, and finally to the provided `fallback` string.
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof BranchReportApiError) {
+    return err.message || fallback;
+  }
+
   if (axios.isAxiosError(err)) {
     const code = err.response?.data?.code as string | undefined;
     if (code === 'VERSION_CONFLICT') {
