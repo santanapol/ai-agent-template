@@ -46,14 +46,50 @@ describe('smartReportApiClient', () => {
           durationMs: 120,
           sample: [{ a: 1 }],
           testRunToken: 'token-abc',
+          runParams: {
+            startDate: '2026-06-29T00:00:00.000Z',
+            endDate: '2026-06-29T23:59:59.999Z',
+          },
           errors: [],
         },
       },
     });
 
     const result = await testRunReport('src', 'compiled');
+    expect(mockPost).toHaveBeenCalledWith(
+      '/api/v1/smart-reports/test-run',
+      { script: 'src', compiledScript: 'compiled' },
+      { signal: undefined },
+    );
     expect(result.testRunToken).toBe('token-abc');
     expect(result.recordCount).toBe(3);
+  });
+
+  it('testRunReport forwards AbortSignal to axios', async () => {
+    const controller = new AbortController();
+    mockPost.mockResolvedValueOnce({
+      data: {
+        data: {
+          success: true,
+          recordCount: 0,
+          durationMs: 1,
+          sample: [],
+          testRunToken: 'token',
+          runParams: {
+            startDate: '2026-06-29T00:00:00.000Z',
+            endDate: '2026-06-29T23:59:59.999Z',
+          },
+          errors: [],
+        },
+      },
+    });
+
+    await testRunReport('src', 'compiled', undefined, controller.signal);
+    expect(mockPost).toHaveBeenCalledWith(
+      '/api/v1/smart-reports/test-run',
+      { script: 'src', compiledScript: 'compiled' },
+      { signal: controller.signal },
+    );
   });
 
   it('getReport fetches detail by id', async () => {

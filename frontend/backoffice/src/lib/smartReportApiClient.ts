@@ -55,12 +55,17 @@ export async function testRunReport(
   script: string,
   compiledScript: string,
   params?: Record<string, unknown>,
+  signal?: AbortSignal,
 ): Promise<TestRunReportResult> {
-  const res = await client.post<ApiEnvelope<TestRunReportResult>>(`${BASE_PATH}/test-run`, {
-    script,
-    compiledScript,
-    ...(params ? { params } : {}),
-  });
+  const res = await client.post<ApiEnvelope<TestRunReportResult>>(
+    `${BASE_PATH}/test-run`,
+    {
+      script,
+      compiledScript,
+      ...(params ? { params } : {}),
+    },
+    { signal },
+  );
   return res.data.data;
 }
 
