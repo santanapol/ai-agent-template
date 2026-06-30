@@ -91,6 +91,10 @@ export interface TestRunReportResult {
   durationMs: number;
   sample: Record<string, unknown>[];
   testRunToken: string;
+  runParams?: {
+    startDate: string;
+    endDate: string;
+  };
   errors: string[];
 }
 
