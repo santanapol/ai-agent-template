@@ -8,6 +8,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons';
 import { useAgentFees } from '../Agents/hooks/useAgentFees';
+import { DetailContainer } from '../../components/layout';
 import { useAppFeedback } from '../../hooks/useAppFeedback';
 import { getAgentById, listAgents, updateAgent } from '../../lib/agentsApiClient';
 import { listAgentFees, deleteAgentFee } from '../../lib/agentFeesApiClient';
@@ -381,47 +382,47 @@ const AgentFeesPage: React.FC = () => {
     }))
   ];
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <Breadcrumb
-        items={[
-          { title: <a onClick={() => navigate('/agents')}>Agents</a> },
-          { title: agent?.branch_name || 'Manage' },
-        ]}
-      />
-
-      {/* ── Page Header ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space align="center" size="middle">
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/agents')} />
-          <div>
-            <Title level={3} style={{ margin: 0 }}>
-              {agent?.branch_name}
-              <Tag color={agent?.active ? 'success' : 'error'} style={{ marginLeft: 12, fontSize: 13 }}>
-                {agent?.active ? 'Active' : 'Inactive'}
-              </Tag>
-            </Title>
-            <Text type="secondary">{agent?.branch_code} · {agent?.branch_type}</Text>
-          </div>
-        </Space>
-        {!isRefMode && (
-          <Affix offsetTop={20}>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSaveFees}
-              loading={loading}
-              size="large"
-              style={{ borderRadius: 6, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            >
-              Save Fees
-            </Button>
-          </Affix>
-        )}
+  const headerTitle = (
+    <div>
+      <span style={{ fontSize: 24, fontWeight: 'bold' }}>{agent?.branch_name}</span>
+      <div style={{ fontSize: 14, color: token.colorTextSecondary, fontWeight: 'normal', marginTop: 4 }}>
+        {agent?.branch_code} · {agent?.branch_type}
       </div>
+    </div>
+  );
+
+  const headerStatus = (
+    <Tag color={agent?.active ? 'success' : 'error'} style={{ fontSize: 13, margin: 0 }}>
+      {agent?.active ? 'Active' : 'Inactive'}
+    </Tag>
+  );
+
+  const headerActions = !isRefMode && (
+    <Affix offsetTop={20}>
+      <Button
+        type="primary"
+        icon={<SaveOutlined />}
+        onClick={handleSaveFees}
+        loading={loading}
+        size="large"
+        style={{ borderRadius: token.borderRadius, boxShadow: token.boxShadowTertiary }}
+      >
+        Save Fees
+      </Button>
+    </Affix>
+  );
+
+  return (
+    <DetailContainer
+      title={headerTitle}
+      status={headerStatus}
+      backUrl="/agents"
+      extra={headerActions}
+      maxWidth={1200}
+    >
 
       {/* ── Agent Info Card ───────────────────────────────────────────────── */}
-      <Card variant="borderless" className="shadow-sm" style={{ borderRadius: 12 }}>
+      <Card variant="borderless" style={{ borderRadius: token.borderRadiusLG, boxShadow: token.boxShadowSecondary }}>
         <Row gutter={[32, 24]} align="middle">
           {/* Default fee rate */}
           <Col xs={24} sm={12} md={6}>
@@ -519,7 +520,7 @@ const AgentFeesPage: React.FC = () => {
           Hide providers without fees
         </Checkbox>
       </div>
-      <Card variant="borderless" className="shadow-sm" style={{ borderRadius: 12 }} styles={{ body: { padding: 0, overflow: 'hidden' } }}>
+      <Card variant="borderless" style={{ borderRadius: token.borderRadiusLG, boxShadow: token.boxShadowSecondary }} styles={{ body: { padding: 0, overflow: 'hidden' } }}>
         <Table
           columns={tableColumns}
           dataSource={filteredCompanies}
@@ -545,7 +546,7 @@ const AgentFeesPage: React.FC = () => {
           }}
         />
       </Card>
-    </div>
+    </DetailContainer>
   );
 };
 

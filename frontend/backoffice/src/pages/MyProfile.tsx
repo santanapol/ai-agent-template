@@ -9,8 +9,13 @@ import {
   Spin,
   Typography,
   theme,
+  Row,
+  Col,
+  Divider,
 } from 'antd';
 import { KeyOutlined, SaveOutlined } from '@ant-design/icons';
+import { PageContainer, PageContentCard } from '../components/layout';
+import { usePermission } from '../hooks/usePermission';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { PatchProfilePayload, StaffProfile } from '../types/staff';
@@ -167,18 +172,15 @@ const MyProfile: React.FC = () => {
   };
 
   return (
-    <div>
-      <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
-            My Profile
-          </Title>
-          <Text type="secondary">View and update your staff contact details. Staff code cannot be changed.</Text>
-        </div>
+    <PageContainer
+      title="My Profile"
+      description="View and update your staff contact details. Staff code cannot be changed."
+      extra={
         <Button onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
           Refresh
         </Button>
-      </Flex>
+      }
+    >
 
       <Spin spinning={loading}>
         {loadError && !profile ? (
@@ -186,7 +188,7 @@ const MyProfile: React.FC = () => {
             <Text type="danger">{loadError}</Text>
           </Card>
         ) : profile ? (
-          <Card variant="borderless" style={{ borderRadius: token.borderRadius, maxWidth: 720 }}>
+          <PageContentCard style={{ maxWidth: 720 }}>
             <Flex align="center" gap={token.margin} style={{ marginBottom: token.marginLG }}>
               <UserAvatar
                 size={64}
@@ -219,24 +221,26 @@ const MyProfile: React.FC = () => {
                 <Input disabled placeholder="e.g. EMP-001" maxLength={32} />
               </Form.Item>
 
-              <Flex gap={token.margin}>
-                <Form.Item
-                  label="First Name"
-                  name="firstname"
-                  rules={[{ required: true, message: 'Please enter first name' }]}
-                  style={{ flex: 1 }}
-                >
-                  <Input maxLength={128} />
-                </Form.Item>
-                <Form.Item
-                  label="Last Name"
-                  name="lastname"
-                  rules={[{ required: true, message: 'Please enter last name' }]}
-                  style={{ flex: 1 }}
-                >
-                  <Input maxLength={128} />
-                </Form.Item>
-              </Flex>
+              <Row gutter={token.margin}>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label="First Name"
+                    name="firstname"
+                    rules={[{ required: true, message: 'Please enter first name' }]}
+                  >
+                    <Input maxLength={128} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label="Last Name"
+                    name="lastname"
+                    rules={[{ required: true, message: 'Please enter last name' }]}
+                  >
+                    <Input maxLength={128} />
+                  </Form.Item>
+                </Col>
+              </Row>
 
               <Form.Item
                 label="Email"
@@ -258,15 +262,14 @@ const MyProfile: React.FC = () => {
                 Save Changes
               </Button>
             </Form>
-          </Card>
+          </PageContentCard>
         ) : null}
       </Spin>
 
       {profile ? (
-        <Card
-          variant="borderless"
+        <PageContentCard
           title="Change password"
-          style={{ borderRadius: token.borderRadius, maxWidth: 720, marginTop: token.marginLG }}
+          style={{ maxWidth: 720, marginTop: token.marginLG }}
         >
           <Form form={passwordForm} layout="vertical" onFinish={() => void handleChangePassword()}>
             <Form.Item
@@ -299,9 +302,9 @@ const MyProfile: React.FC = () => {
               Change password
             </Button>
           </Form>
-        </Card>
+        </PageContentCard>
       ) : null}
-    </div>
+    </PageContainer>
   );
 };
 

@@ -23,8 +23,9 @@ import {
   Alert,
   List,
   Steps,
-  Breadcrumb,
-  Popconfirm,
+} from 'antd';
+import { PageContainer, PageContentCard } from '../components/layout';
+import { Popconfirm,
   Descriptions,
   Grid,
   Collapse,
@@ -1222,15 +1223,10 @@ const SmartReport: React.FC = () => {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: token.marginLG, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Title level={2} style={{ margin: 0 }}>Smart Report</Title>
-          <Text type="secondary">
-            Automated reporting and scheduling system. Fetches data directly via a read-only database replica.
-          </Text>
-        </div>
+    <PageContainer
+      title="Smart Report"
+      description="Automated reporting and scheduling system. Fetches data directly via a read-only database replica."
+      extra={
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -1239,7 +1235,8 @@ const SmartReport: React.FC = () => {
         >
           Create New Report
         </Button>
-      </div>
+      }
+    >
 
       {/* Database Warning Banner */}
       <Card
@@ -1274,7 +1271,7 @@ const SmartReport: React.FC = () => {
               </span>
             ),
             children: (
-              <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
+              <PageContentCard>
                 <Table
                   dataSource={reportRows}
                   columns={reportColumns}
@@ -1284,7 +1281,7 @@ const SmartReport: React.FC = () => {
                   pagination={{ pageSize: 10 }}
                   scroll={{ x: 'max-content' }}
                 />
-              </Card>
+              </PageContentCard>
             ),
           },
           {
@@ -1295,7 +1292,7 @@ const SmartReport: React.FC = () => {
               </span>
             ),
             children: (
-              <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
+              <PageContentCard>
                 <Table
                   dataSource={history}
                   columns={downloadColumns}
@@ -1304,7 +1301,7 @@ const SmartReport: React.FC = () => {
                   pagination={{ pageSize: 10 }}
                   scroll={{ x: 'max-content' }}
                 />
-              </Card>
+              </PageContentCard>
             ),
           },
         ]}
@@ -1321,6 +1318,7 @@ const SmartReport: React.FC = () => {
         {selectedReportDownloads.length > 0 ? (
           <Table
             dataSource={selectedReportDownloads}
+            scroll={{ x: 'max-content' }}
             columns={[
               {
                 title: 'Run Date',
@@ -1366,7 +1364,7 @@ const SmartReport: React.FC = () => {
           <Empty description="No execution history or saved files for this script." />
         )}
       </Drawer>
-    </div>
+    </PageContainer>
   );
 };
 

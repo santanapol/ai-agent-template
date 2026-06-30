@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Breadcrumb, Card, Divider, Form, Typography, theme } from 'antd';
+import { Alert, Card, Divider, Form, Typography, theme } from 'antd';
+import { PageContainer, PageContentCard } from '../../../components/layout';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useAppFeedback } from '../../../hooks/useAppFeedback';
@@ -195,21 +196,20 @@ const ChannelPerformancePage: React.FC = () => {
   );
 
   return (
-    <>
-      <Breadcrumb
-        style={{ marginBottom: token.marginMD }}
-        items={[
-          { title: 'Branch Report' },
-          { title: 'Marketing' },
-          { title: 'Channel Performance' },
-        ]}
-      />
-      <Card
-        bordered={false}
+    <PageContainer
+      title="Channel Performance"
+      description="Analyze and query Royalty 21 performance marketing statistics by channels."
+      breadcrumbItems={[
+        { title: 'Branch Report' },
+        { title: 'Marketing' },
+        { title: 'Channel Performance' },
+      ]}
+    >
+      <PageContentCard
         title={
-          <Title level={4} style={{ margin: 0 }}>
+          <Typography.Title level={4} style={{ margin: 0 }}>
             Royalty 21 Times
-          </Title>
+          </Typography.Title>
         }
       >
         {!hasActiveBranch && (
@@ -253,8 +253,8 @@ const ChannelPerformancePage: React.FC = () => {
           total={total}
           onTableChange={handleTableChange}
         />
-      </Card>
-    </>
+      </PageContentCard>
+    </PageContainer>
   );
 };
 

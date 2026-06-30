@@ -21,19 +21,8 @@ import Error404 from './pages/Error404';
 import Error500 from './pages/Error500';
 import RouteErrorPage from './components/RouteErrorPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-
-const appTheme = {
-  token: {
-    colorPrimary: '#2563EB',
-    colorSuccess: '#10B981',
-    colorError: '#EF4444',
-    colorWarning: '#F59E0B',
-    colorInfo: '#3B82F6',
-    fontFamily: "'Inter', 'Sarabun', sans-serif",
-    borderRadius: 6,
-    colorBgLayout: '#F9FAFB',
-  },
-};
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { getAppTheme } from './theme/themeConfig';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -41,7 +30,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
-
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -143,7 +131,10 @@ const router = createBrowserRouter([
   { path: '*', element: <Navigate to="/404" replace /> },
 ]);
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { theme } = useTheme();
+  const appTheme = getAppTheme(theme);
+
   return (
     <ConfigProvider locale={enUS} theme={appTheme}>
       <AntApp>
@@ -152,6 +143,14 @@ const App: React.FC = () => {
         </AuthProvider>
       </AntApp>
     </ConfigProvider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 

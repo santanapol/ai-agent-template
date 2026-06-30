@@ -28,6 +28,7 @@ import { BulkInvoiceActionBar } from './components/BulkInvoiceActionBar';
 import { BulkExportModal } from './components/BulkExportModal';
 import { BulkStatusModal } from './components/BulkStatusModal';
 import { MAX_BULK_INVOICE_SELECTION } from './bulk/constants';
+import { PageContainer, PageContentCard, FiltersContainer } from '../../components/layout';
 import type { BulkExportFormat } from './export/types';
 import type { BulkStatusAction } from './status/types';
 
@@ -273,29 +274,23 @@ const InvoiceList: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
-            Invoice Management
-          </Title>
-          <Typography.Text type="secondary">
-            Manage invoices, search, and view historical billing details.
-          </Typography.Text>
-        </div>
+    <PageContainer
+      title="Invoice Management"
+      description="Manage invoices, search, and view historical billing details."
+      extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
           Create Invoice
         </Button>
-      </div>
+      }
+    >
 
-      <Card>
-        <Space size="middle" style={{ marginBottom: 16 }} wrap>
+      <PageContentCard>
+        <FiltersContainer>
           <Input.Search
             placeholder="Search Invoice No"
-            prefix={<SearchOutlined />}
             defaultValue={searchText}
             onSearch={onSearch}
-            style={{ width: 250 }}
+            style={{ width: 300 }}
             allowClear
           />
           <Select
@@ -343,7 +338,7 @@ const InvoiceList: React.FC = () => {
               setPage(1);
             }}
           />
-        </Space>
+        </FiltersContainer>
 
         <Table
           columns={columns}
@@ -351,10 +346,11 @@ const InvoiceList: React.FC = () => {
           rowKey="_id"
           rowSelection={rowSelection}
           loading={loading}
+          scroll={{ x: 'max-content' }}
           pagination={{ current: page, pageSize, total, showSizeChanger: true }}
           onChange={handleTableChange}
         />
-      </Card>
+      </PageContentCard>
 
       <BulkInvoiceActionBar
         selectedCount={selectedRowKeys.length}
@@ -439,7 +435,7 @@ const InvoiceList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 };
 

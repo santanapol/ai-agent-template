@@ -11,7 +11,7 @@ const Error403: React.FC = () => {
         status="403"
         title="403 Forbidden"
         subTitle="You don't have permission to access this page."
-        extra={<Button type="primary" onClick={() => navigate(-1)}>Go Back</Button>}
+        extra={<Button type="primary" onClick={() => navigate('/')}>Go to Dashboard</Button>}
       />
     </div>
   );

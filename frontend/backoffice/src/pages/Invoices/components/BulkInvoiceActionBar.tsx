@@ -4,7 +4,7 @@ import {
   FileExcelOutlined,
   FilePdfOutlined,
 } from '@ant-design/icons';
-import { Button, Space } from 'antd';
+import { Button, Space, theme } from 'antd';
 
 interface BulkInvoiceActionBarProps {
   selectedCount: number;
@@ -29,6 +29,8 @@ export function BulkInvoiceActionBar({
   onCancelInvoices,
   onClear,
 }: BulkInvoiceActionBarProps) {
+  const { token } = theme.useToken();
+
   if (selectedCount === 0) {
     return null;
   }
@@ -42,9 +44,9 @@ export function BulkInvoiceActionBar({
         transform: 'translateX(-50%)',
         zIndex: 1000,
         padding: '12px 20px',
-        background: '#fff',
-        borderRadius: 8,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        background: token.colorBgElevated,
+        borderRadius: token.borderRadiusLG,
+        boxShadow: token.boxShadowSecondary,
       }}
     >
       <Space wrap>

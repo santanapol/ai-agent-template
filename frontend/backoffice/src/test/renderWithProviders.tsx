@@ -1,24 +1,19 @@
 import { type ReactElement } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { App as AntApp, ConfigProvider } from 'antd';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { getAppTheme } from '../theme/themeConfig';
 
-const testTheme = {
-  token: {
-    colorPrimary: '#2563EB',
-    colorSuccess: '#10B981',
-    colorError: '#EF4444',
-    fontFamily: "'Inter', 'Sarabun', sans-serif",
-    borderRadius: 6,
-    colorBgLayout: '#F9FAFB',
-  },
-};
+const testTheme = getAppTheme('light');
 
 export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
   return render(ui, {
     wrapper: ({ children }) => (
-      <ConfigProvider theme={testTheme}>
-        <AntApp>{children}</AntApp>
-      </ConfigProvider>
+      <ThemeProvider>
+        <ConfigProvider theme={testTheme}>
+          <AntApp>{children}</AntApp>
+        </ConfigProvider>
+      </ThemeProvider>
     ),
     ...options,
   });

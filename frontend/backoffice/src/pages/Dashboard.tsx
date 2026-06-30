@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, Row, Col, Statistic, theme } from 'antd';
+import { Typography, Card, Row, Col, Statistic, theme, Skeleton, Empty, Space } from 'antd';
+import { PageContainer } from '../components/layout';
 import { TeamOutlined, UsergroupAddOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import * as staffApi from '../lib/staffApiClient';
 import { apiErrorMessage } from '../lib/apiError';
@@ -48,21 +49,24 @@ const Dashboard: React.FC = () => {
   }, [message, user?.role]);
 
   return (
-    <div>
-      <div style={{ marginBottom: token.marginLG }}>
-        <Title level={2} style={{ margin: 0 }}>Dashboard</Title>
-        <Text type="secondary">Welcome to Zero Platform Admin. Here is an overview of your system.</Text>
-      </div>
+    <PageContainer
+      title="Dashboard"
+      description="Welcome to Zero Platform Admin. Here is an overview of your system."
+    >
 
       {(user?.role === 'platform_admin' || user?.role === 'branch_admin') && (
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={12} md={8}>
-            <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
-              <Statistic
-                title="Total Active Staff"
-                value={activeCount}
-                prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
-              />
+            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
+              {loading ? (
+                <Skeleton active paragraph={{ rows: 1 }} title={{ width: 100 }} />
+              ) : (
+                <Statistic
+                  title="Total Active Staff"
+                  value={activeCount}
+                  prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
+                />
+              )}
             </Card>
           </Col>
           <Col xs={24} sm={12} md={8}>
@@ -78,31 +82,43 @@ const Dashboard: React.FC = () => {
             </Card>
           </Col>
           <Col xs={24} sm={12} md={8}>
-            <Card variant="borderless" loading={loading} style={{ borderRadius: token.borderRadius }}>
-              <Statistic
-                title="Archived Profiles"
-                value={archivedCount}
-                prefix={<AppstoreAddOutlined style={{ color: token.colorError }} />}
-              />
+            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
+              {loading ? (
+                <Skeleton active paragraph={{ rows: 1 }} title={{ width: 100 }} />
+              ) : (
+                <Statistic
+                  title="Archived Profiles"
+                  value={archivedCount}
+                  prefix={<AppstoreAddOutlined style={{ color: token.colorError }} />}
+                />
+              )}
             </Card>
           </Col>
         </Row>
       )}
 
-      <div
+      <Card
+        variant="borderless"
         style={{
           marginTop: token.marginXXL,
-          textAlign: 'center',
-          paddingBlock: token.paddingXL,
-          background: token.colorBgContainer,
           borderRadius: token.borderRadius,
           border: `1px dashed ${token.colorBorderSecondary}`,
         }}
       >
-        <Title level={4} style={{ color: token.colorTextSecondary }}>More dashboard widgets coming soon</Title>
-        <Text type="secondary">Select Staff Management from the sidebar to manage profiles.</Text>
-      </div>
-    </div>
+        <Empty
+          description={
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Title level={4} style={{ color: token.colorTextSecondary, margin: 0 }}>
+                More dashboard widgets coming soon
+              </Title>
+              <Text type="secondary">
+                Select Staff Management from the sidebar to manage profiles.
+              </Text>
+            </Space>
+          }
+        />
+      </Card>
+    </PageContainer>
   );
 };
 

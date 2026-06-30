@@ -35,7 +35,7 @@ describe('ChannelPerformancePage', () => {
 
     expect(screen.getByText('Royalty 21 Times')).toBeInTheDocument();
     expect(screen.getByText('Branch Report')).toBeInTheDocument();
-    expect(screen.getByText('Channel Performance')).toBeInTheDocument();
+    expect(screen.getAllByText('Channel Performance')[0]).toBeInTheDocument();
   });
 
   it('renders register date range field with current month defaults', () => {

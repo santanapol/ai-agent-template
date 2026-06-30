@@ -131,6 +131,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
       dataSource={profiles}
       rowKey="id"
       loading={loading}
+      scroll={{ x: 'max-content' }}
       pagination={{
         current: pagination.current,
         pageSize: pagination.pageSize,

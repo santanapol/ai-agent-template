@@ -13,6 +13,7 @@ import {
   Tooltip,
   Row,
   Col,
+  theme,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -22,6 +23,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
+import { DetailContainer } from '../../components/layout';
 import type { ColumnsType } from 'antd/es/table';
 import { useInvoices } from './hooks/useInvoices';
 import { formatDate, formatFee, formatMoney, statusTagColor, formatCategoryName, sortInvoiceTransactions } from './utils';
@@ -34,6 +36,7 @@ const { Title, Text } = Typography;
 
 const InvoiceDetail: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
+  const { token } = theme.useToken();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
@@ -109,7 +112,7 @@ const InvoiceDetail: React.FC = () => {
         <Space>
           Fee (%)
           <Tooltip title="Fee is calculated based on Net Win">
-            <InfoCircleOutlined style={{ color: '#1677ff' }} />
+            <InfoCircleOutlined style={{ color: token.colorPrimary }} />
           </Tooltip>
         </Space>
       ),
@@ -158,63 +161,58 @@ const InvoiceDetail: React.FC = () => {
   const isReady = invoice.status === 'READY';
   const amount = invoice.amount ?? 0;
 
+  const headerActions = (
+    <Space className="no-print">
+      <Button icon={<FilePdfOutlined />} onClick={handleExportPDF}>
+        Export PDF
+      </Button>
+      <Button icon={<FileExcelOutlined />} onClick={handleExportExcel}>
+        Export Excel
+      </Button>
+      {isReady && (
+        <Button
+          className="no-print"
+          type="primary"
+          icon={<CheckCircleOutlined />}
+          onClick={handleUpdateStatus}
+          loading={updatingStatus}
+        >
+          Mark as PAID
+        </Button>
+      )}
+      {['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status) && (
+        <Button
+          className="no-print"
+          danger
+          icon={<CloseCircleOutlined />}
+          onClick={handleCancelInvoice}
+          loading={updatingStatus}
+        >
+          Cancel Invoice
+        </Button>
+      )}
+    </Space>
+  );
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <DetailContainer
+      title="Invoice Details"
+      backUrl="/invoices"
+      extra={headerActions}
+      maxWidth={900}
+    >
       {contextHolder}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Space align="start" size="middle">
-          <Button className="no-print" icon={<ArrowLeftOutlined />} onClick={() => navigate('/invoices')} style={{ marginTop: 4 }} />
-          <div>
-            <Title level={2} style={{ margin: 0 }}>
-              Invoice Details
-            </Title>
-            <Text type="secondary" className="no-print">
-              Detailed breakdown, transaction records, and billing actions for this invoice.
-            </Text>
-          </div>
-        </Space>
-        <Space className="no-print">
-          <Button icon={<FilePdfOutlined />} onClick={handleExportPDF}>
-            Export PDF
-          </Button>
-          <Button icon={<FileExcelOutlined />} onClick={handleExportExcel}>
-            Export Excel
-          </Button>
-          {isReady && (
-            <Button
-              className="no-print"
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handleUpdateStatus}
-              loading={updatingStatus}
-            >
-              Mark as PAID
-            </Button>
-          )}
-          {['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status) && (
-            <Button
-              className="no-print"
-              danger
-              icon={<CloseCircleOutlined />}
-              onClick={handleCancelInvoice}
-              loading={updatingStatus}
-            >
-              Cancel Invoice
-            </Button>
-          )}
-        </Space>
-      </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-        <Card style={{ width: '100%', maxWidth: 900, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} styles={{ body: { padding: '40px 48px' } }}>
+        <Card style={{ width: '100%', maxWidth: 900, boxShadow: token.boxShadow, borderRadius: token.borderRadiusLG }} styles={{ body: { padding: '40px 48px' } }}>
           {/* Header */}
           <Row justify="space-between" align="top" style={{ marginBottom: 40 }}>
             <Col>
-              <Title level={2} style={{ margin: 0, color: '#1677ff', letterSpacing: 2 }}>INVOICE</Title>
+              <Title level={2} style={{ margin: 0, color: token.colorPrimary, letterSpacing: 2 }}>INVOICE</Title>
               <Text type="secondary">Zero Platform</Text>
             </Col>
             <Col style={{ textAlign: 'right' }}>
-              <Title level={4} style={{ margin: 0, color: '#595959' }}>#{invoice.iv_no}</Title>
+              <Title level={4} style={{ margin: 0, color: token.colorTextSecondary }}>#{invoice.iv_no}</Title>
               <Tag color={statusTagColor(invoice.status)} style={{ marginTop: 8, fontSize: 14, padding: '2px 10px' }}>
                 {invoice.status}
               </Tag>
@@ -278,7 +276,7 @@ const InvoiceDetail: React.FC = () => {
               });
 
               return (
-                <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 'bold' }}>
+                <Table.Summary.Row style={{ background: token.colorFillAlter, fontWeight: 'bold' }}>
                   <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">{formatMoney(totalBet)}</Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="right">{formatMoney(totalNetWin)}</Table.Summary.Cell>
@@ -294,7 +292,7 @@ const InvoiceDetail: React.FC = () => {
             <Col xs={24} sm={12} md={8}>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12 }}>
                 <Text strong style={{ fontSize: 16 }}>Total Amount</Text>
-                <Title level={4} style={{ margin: 0, color: amount < 0 ? '#cf1322' : '#3f8600' }}>
+                <Title level={4} style={{ margin: 0, color: amount < 0 ? token.colorError : token.colorSuccess }}>
                   {formatMoney(amount)}
                 </Title>
               </div>
@@ -302,7 +300,7 @@ const InvoiceDetail: React.FC = () => {
           </Row>
         </Card>
       </div>
-    </div>
+    </DetailContainer>
   );
 };
 

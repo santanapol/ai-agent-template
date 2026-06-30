@@ -1,31 +1,29 @@
 import React, { useMemo, useState } from 'react';
-import { Card, Tabs, Typography } from 'antd';
+import { Card, Tabs } from 'antd';
 import MenuCatalogTab from './MenuCatalogTab';
 import RolePermissionsTab from './RolePermissionsTab';
-
-const { Title } = Typography;
+import { PageContainer } from '../../components/layout';
 
 const PermissionAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState('menus');
 
   const tabItems = useMemo(
     () => [
-      { key: 'menus', label: 'Menu catalog' },
-      { key: 'roles', label: 'Role permissions' },
+      { key: 'menus', label: 'Menu catalog', children: <MenuCatalogTab /> },
+      { key: 'roles', label: 'Role permissions', children: <RolePermissionsTab /> },
     ],
     [],
   );
 
   return (
-    <div>
-      <Title level={2} style={{ marginBottom: 16 }}>
-        Permissions
-      </Title>
+    <PageContainer
+      title="Permissions"
+      description="Manage system menu catalog and role permissions mapping."
+    >
       <Card>
         <Tabs activeKey={activeTab} items={tabItems} onChange={setActiveTab} />
-        {activeTab === 'menus' ? <MenuCatalogTab /> : <RolePermissionsTab />}
       </Card>
-    </div>
+    </PageContainer>
   );
 };
 

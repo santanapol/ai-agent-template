@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox } from 'antd';
+import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox, theme } from 'antd';
+import { PageContainer, PageContentCard, FiltersContainer } from '../../components/layout';
 import { SearchOutlined, SyncOutlined, SettingOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgents } from './hooks/useAgents';
@@ -9,6 +10,7 @@ import type { Agent } from '../../types/agents';
 const { Title } = Typography;
 
 const AgentsList: React.FC = () => {
+  const { token } = theme.useToken();
   const { agents, unsyncedBranches, total, loading, loadingUnsynced, fetchAgents, fetchUnsyncedBranches, syncData, deleteData } = useAgents();
   const [searchText, setSearchText] = useState('');
   const [page, setPage] = useState(1);
@@ -141,41 +143,37 @@ const AgentsList: React.FC = () => {
   ];
 
   return (
-    <Space orientation="vertical" size="large" style={{ display: 'flex' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Title level={3} style={{ margin: 0 }}>Agent Fee Management</Title>
-          <Typography.Text type="secondary">
-            View and configure specific game fee overrides or reference fees across agent branches.
-          </Typography.Text>
-        </div>
+    <PageContainer
+      title="Agent Fee Management"
+      description="View and configure specific game fee overrides or reference fees across agent branches."
+      extra={
         <Button
           type="primary"
           icon={<SyncOutlined />}
           onClick={handleOpenSyncModal}
-          style={{ borderRadius: 6 }}
+          style={{ borderRadius: token.borderRadius }}
         >
           Sync Branch
         </Button>
-      </div>
+      }
+    >
 
-      <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
-        <div style={{ marginBottom: 16 }}>
+      <PageContentCard>
+        <FiltersContainer>
           <Input.Search
             placeholder="Search by branch code or name..."
             allowClear
             onSearch={onSearch}
-            style={{ maxWidth: 400 }}
-            size="large"
-            enterButton={<Button type="primary" icon={<SearchOutlined />}>Search</Button>}
+            style={{ width: 320 }}
           />
-        </div>
+        </FiltersContainer>
 
         <Table
           columns={columns}
           dataSource={agents}
           rowKey="_id"
           loading={loading}
+          scroll={{ x: 'max-content' }}
           pagination={{
             current: page,
             pageSize: pageSize,
@@ -184,7 +182,7 @@ const AgentsList: React.FC = () => {
           }}
           onChange={handleTableChange}
         />
-      </Card>
+      </PageContentCard>
 
       {/* Sync Modal */}
       <Modal
@@ -229,7 +227,7 @@ const AgentsList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </Space>
+    </PageContainer>
   );
 };
 

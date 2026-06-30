@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiErrorMessage } from '../lib/apiError';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import StaffTable from '../components/staff/StaffTable';
+import { PageContainer, PageContentCard, FiltersContainer } from '../components/layout';
 import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../components/staff/StaffDrawer';
 import { formatTelephoneToE164 } from '../lib/telephone';
 import { usePermission } from '../hooks/usePermission';
@@ -316,25 +317,20 @@ const StaffManagement: React.FC = () => {
   );
 
   return (
-    <div>
-      <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
-            Staff Management
-          </Title>
-          <Typography.Text type="secondary">
-            Manage staff profiles, system roles, and authentication credentials.
-          </Typography.Text>
-        </div>
-        {canCreate && (
+    <PageContainer
+      title="Staff Management"
+      description="Manage staff profiles, system roles, and authentication credentials."
+      extra={
+        canCreate && (
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDrawer('create')}>
             Add New Staff
           </Button>
-        )}
-      </Flex>
+        )
+      }
+    >
 
-      <Card styles={{ body: { padding: token.paddingLG } }}>
-        <Flex gap={token.margin} style={{ marginBottom: token.marginLG }}>
+      <PageContentCard>
+        <FiltersContainer>
           <Search
             placeholder="Search code, name..."
             style={{ width: 300 }}
@@ -345,13 +341,13 @@ const StaffManagement: React.FC = () => {
           <Select
             value={statusFilter}
             options={STATUS_OPTIONS}
-            style={{ width: 150 }}
+            style={{ width: '100%', maxWidth: 150 }}
             onChange={(val: ProfileStatus) => {
               setStatusFilter(val);
               setPaginationConfig((prev) => ({ ...prev, current: 1 }));
             }}
           />
-        </Flex>
+        </FiltersContainer>
 
         <StaffTable
           profiles={profiles}
@@ -363,7 +359,7 @@ const StaffManagement: React.FC = () => {
           onRestore={handleRestore}
           onTableChange={handleTableChange}
         />
-      </Card>
+      </PageContentCard>
 
       <StaffDrawer
         open={isDrawerOpen}
@@ -383,7 +379,7 @@ const StaffManagement: React.FC = () => {
         }}
         onUpdatePassword={() => void handleUpdatePassword()}
       />
-    </div>
+    </PageContainer>
   );
 };
 

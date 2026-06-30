@@ -1,10 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import StaffManagement from './StaffManagement';
 import { usePermission } from '../hooks/usePermission';
 import type { StaffProfile } from '../types/staff';
 import * as staffApi from '../lib/staffApiClient';
+import { renderWithProviders } from '../test/renderWithProviders';
 
 // Mock dependencies
 vi.mock('../hooks/usePermission');
@@ -78,7 +79,7 @@ describe('StaffManagement', () => {
       requestId: '123',
     });
 
-    render(<StaffManagement />);
+    renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
@@ -95,7 +96,7 @@ describe('StaffManagement', () => {
       return true;
     });
 
-    render(<StaffManagement />);
+    renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /Add New Staff/i })).not.toBeInTheDocument();
@@ -109,7 +110,7 @@ describe('StaffManagement', () => {
       return false;
     });
 
-    render(<StaffManagement />);
+    renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
@@ -119,6 +120,47 @@ describe('StaffManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByText('System Role')).toBeInTheDocument();
+    });
+  });
+
+  test('hides Edit profile button when profiles:edit is missing', async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === 'profiles:edit') return false;
+      return true;
+    });
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: '123',
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /Edit profile/i })).not.toBeInTheDocument();
+  });
+
+  test('renders view profile button even when permissions are missing', async () => {
+    vi.mocked(usePermission).mockReturnValue(false);
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: '123',
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /View profile/i })).toBeInTheDocument();
     });
   });
 });

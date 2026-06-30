@@ -52,7 +52,7 @@ const Login: React.FC = () => {
         background: token.colorBgLayout,
       }}
     >
-      <Card style={{ width: 400, boxShadow: token.boxShadowSecondary, borderRadius: token.borderRadiusLG }}>
+      <Card style={{ width: '100%', maxWidth: 400, margin: token.margin, boxShadow: token.boxShadowSecondary, borderRadius: token.borderRadiusLG }}>
         <div style={{ textAlign: 'center', marginBottom: token.marginLG }}>
           <Title level={3} style={{ color: token.colorPrimary, margin: 0 }}>
             Zero Platform

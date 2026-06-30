@@ -10,6 +10,9 @@ import {
   Alert,
   Select,
   Grid,
+  Button,
+  Breadcrumb,
+  Drawer,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -24,9 +27,14 @@ import {
   FundOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
+  SunOutlined,
+  MoonOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import * as staffApi from '../lib/staffApiClient';
 import * as invoicesApi from '../lib/invoicesApiClient';
 import * as authApi from '../lib/authApiClient';
@@ -71,29 +79,6 @@ function formatRoleLabel(role: string | undefined): string {
   );
 }
 
-interface MenuItemUI {
-  icon: React.ReactNode;
-  route?: string;
-}
-
-interface MenuItemType {
-  key: string;
-  label: React.ReactNode;
-  icon?: React.ReactNode;
-  children?: MenuItemType[];
-  sort_order: number;
-}
-
-function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
-  return items.map((item) => ({
-    key: item.key,
-    label: item.label,
-    icon: item.icon,
-    children: item.children?.length ? toAntdMenuItems(item.children) : undefined,
-  }));
-}
-
-/** Account routes — header user menu only, not sidebar navigation. */
 const SIDEBAR_EXCLUDED_MENU_KEYS = new Set(['my_profile']);
 
 const MENU_UI: Record<string, MenuItemUI> = {
@@ -117,15 +102,39 @@ const MENU_UI: Record<string, MenuItemUI> = {
   'permissions:manage': { icon: <SafetyCertificateOutlined />, route: '/permissions' },
 };
 
+interface MenuItemUI {
+  icon: React.ReactNode;
+  route?: string;
+}
+
+interface MenuItemType {
+  key: string;
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  children?: MenuItemType[];
+  sort_order: number;
+}
+
+function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
+  return items.map((item) => ({
+    key: item.key,
+    label: item.label,
+    icon: item.icon,
+    children: item.children?.length ? toAntdMenuItems(item.children) : undefined,
+  }));
+}
+
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
   const screens = useBreakpoint();
-  const isCompactHeader = !screens.md;
+  const { theme: currentTheme, toggleTheme } = useTheme();
   const { user, logout, switchBranch, branchSwitching, menus, menuError } = useAuth();
   const { message } = useAppFeedback();
-  const [collapsed, setCollapsed] = useState(false);
+  
+  const isMobile = !screens.md;
+  const [collapsed, setCollapsed] = useState(true);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [headerProfile, setHeaderProfile] = useState<{
     firstname: string;
@@ -142,11 +151,20 @@ const AdminLayout: React.FC = () => {
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const showBranchSwitcher = canSwitchActiveBranch(user?.role);
+  const isCompactHeader = !screens.md;
 
   const homeBranchId = user?.home_branch_id ?? user?.branch_id;
   const activeBranchId = optimisticBranchId ?? user?.branch_id;
   const viewingOtherBranch =
     Boolean(user?.home_branch_id) && activeBranchId !== user?.home_branch_id;
+
+  useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    } else {
+      setCollapsed(false);
+    }
+  }, [isMobile]);
 
   const handleBranchSwitch = useCallback(
     async (branchId: string) => {
@@ -203,10 +221,8 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !user.branch_id) {
-      /* eslint-disable react-hooks/set-state-in-effect -- reset when user loses branch context */
       setActiveBranch(null);
       setActiveBranchLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     let cancelled = false;
@@ -240,10 +256,8 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !showBranchSwitcher) {
-      /* eslint-disable react-hooks/set-state-in-effect -- reset when switcher is hidden */
       setBranches([]);
       setBranchesLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     let cancelled = false;
@@ -366,9 +380,7 @@ const AdminLayout: React.FC = () => {
   const [openKeys, setOpenKeys] = useState<string[]>(defaultOpenKeys);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     setOpenKeys((prev) => [...new Set([...prev, ...defaultOpenKeys])]);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [defaultOpenKeys]);
 
   const userMenu = {
@@ -394,48 +406,95 @@ const AdminLayout: React.FC = () => {
   const branchSelectLoading =
     branchSwitching || (showBranchSwitcher && branchesLoading && branches.length === 0);
 
+  const breadcrumbItems = useMemo(() => {
+    const paths = location.pathname.split('/').filter(Boolean);
+    if (paths.length === 0) return [{ title: 'Home' }];
+
+    const items = [{ title: <a onClick={() => navigate('/')}>Home</a> }];
+    let currentPath = '';
+    paths.forEach((path, index) => {
+      currentPath += `/${path}`;
+      const name = path
+        .replace(/-/g, ' ')
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      const isLast = index === paths.length - 1;
+      items.push({
+        title: isLast ? <span>{name}</span> : <a onClick={() => navigate(currentPath)}>{name}</a>,
+      });
+    });
+    return items;
+  }, [location.pathname, navigate]);
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        breakpoint="lg"
-        width={250}
-        theme="light"
-        style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
-      >
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            overflow: 'hidden',
-          }}
+      {!isMobile ? (
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          width={250}
+          theme="light"
+          style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
         >
-          <Typography.Title
-            level={4}
-            style={{ margin: 0, color: token.colorPrimary, whiteSpace: 'nowrap' }}
+          <div
+            style={{
+              height: 64,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+              overflow: 'hidden',
+            }}
           >
-            {collapsed ? 'ZP' : 'Zero Platform'}
-          </Typography.Title>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          openKeys={openKeys}
-          onOpenChange={setOpenKeys}
-          style={{ borderRight: 0, marginTop: token.margin }}
-          items={menuItems}
-          onClick={({ key }) => {
-            if (key.startsWith('/')) {
-              navigate(key);
-            }
-          }}
-        />
-      </Sider>
+            <Typography.Title
+              level={4}
+              style={{ margin: 0, color: token.colorPrimary, whiteSpace: 'nowrap' }}
+            >
+              {collapsed ? 'ZP' : 'Zero Platform'}
+            </Typography.Title>
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            openKeys={openKeys}
+            onOpenChange={setOpenKeys}
+            style={{ borderRight: 0, marginTop: token.margin }}
+            items={menuItems}
+            onClick={({ key }) => {
+              if (key.startsWith('/')) {
+                navigate(key);
+              }
+            }}
+          />
+        </Sider>
+      ) : (
+        <Drawer
+          title="Zero Platform"
+          placement="left"
+          onClose={() => setCollapsed(true)}
+          open={!collapsed}
+          styles={{ body: { padding: 0 } }}
+          width={250}
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            openKeys={openKeys}
+            onOpenChange={setOpenKeys}
+            style={{ borderRight: 0 }}
+            items={menuItems}
+            onClick={({ key }) => {
+              if (key.startsWith('/')) {
+                navigate(key);
+                setCollapsed(true);
+              }
+            }}
+          />
+        </Drawer>
+      )}
       <Layout>
         <Header
           style={{
@@ -446,10 +505,18 @@ const AdminLayout: React.FC = () => {
             paddingBlock: 0,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: isMobile ? 'space-between' : 'flex-end',
             alignItems: 'center',
           }}
         >
+          {isMobile && (
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: '16px', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          )}
           <Space size="middle" align="center">
             <div style={{ textAlign: 'right', lineHeight: 1.25, maxWidth: 340 }}>
               <div
@@ -521,6 +588,12 @@ const AdminLayout: React.FC = () => {
                 </div>
               )}
             </div>
+            <Button
+              type="text"
+              icon={currentTheme === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            />
             <Dropdown menu={userMenu} placement="bottomRight">
               <UserAvatar
                 size={40}
@@ -534,6 +607,7 @@ const AdminLayout: React.FC = () => {
           </Space>
         </Header>
         <Content style={{ padding: token.paddingLG, background: token.colorBgLayout }}>
+          <Breadcrumb style={{ marginBottom: token.marginMD }} items={breadcrumbItems} />
           {menuError && (
             <Alert
               title="System warning"
