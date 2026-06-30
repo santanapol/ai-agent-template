@@ -36,11 +36,22 @@ export function loadRoutes(env) {
       )
     }
 
+    let timeoutMs
+    if (r.timeoutMs !== undefined && r.timeoutMs !== null) {
+      timeoutMs = Number(r.timeoutMs)
+      if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+        throw new Error(
+          `Invalid routes config: item at index ${i} timeoutMs must be a positive number`
+        )
+      }
+    }
+
     normalized.push({
       prefix: r.prefix.replace(/\/+$/u, '') || '/',
       upstream: r.upstream.replace(/\/+$/u, ''),
       stripPrefix: typeof r.stripPrefix === 'boolean' ? r.stripPrefix : true,
-      isPublic: typeof r.isPublic === 'boolean' ? r.isPublic : false
+      isPublic: typeof r.isPublic === 'boolean' ? r.isPublic : false,
+      ...(timeoutMs !== undefined ? { timeoutMs } : {})
     })
   }
 

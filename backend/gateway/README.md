@@ -38,7 +38,9 @@ SoT: [`routes.json`](./routes.json), [`.env.example`](./.env.example) (`ROUTES_J
 | `/api/v1/items` | `:3002` | [demo-service](../services/.demo/demo-service/) |
 | `/api/v1/me` | `:3002` | Same **demo-service** |
 | `/api/v1/staff` | `:3101` | [staff](../service/staff/) |
-| `/api/v1/smart-reports` | `:3103` | [smart-report](../service/smart-report/) |
+| `/api/v1/smart-reports/validate` | `:3103` | [smart-report](../service/smart-report/) — `timeoutMs` 10s |
+| `/api/v1/smart-reports/test-run` | `:3103` | Same — `timeoutMs` 130s |
+| `/api/v1/smart-reports` | `:3103` | Same — `timeoutMs` 130s (manual `/:id/run` ใช้ script timeout 120s) |
 | `/api/v1/branch-report` | `:3015` | [branch-report](../service/branch-report/) |
 
 Host เต็มใน `routes.json` (`http://127.0.0.1:…`). Prefix ที่เฉพาะกว่า **ก่อน** prefix สั้นกว่า.

@@ -126,9 +126,9 @@ Phase 5: Verify end-to-end + release 2 cleanup
 
 ### 2.7 Gateway
 
-- [ ] **Task:** ลงทะเบียน/override timeout สำหรับ route ใหม่
-  - Acceptance: `validate` 10s; `test-run` 130s
-  - Files: gateway route config
+- [x] **Task:** ลงทะเบียน/override timeout สำหรับ route ใหม่
+  - Acceptance: `validate` 10s; `test-run` + manual run 130s
+  - Files: `backend/gateway/routes.json`, `register-proxies.js`, `routes.js`
 
 **Checkpoint 2:** validate + test-run ผ่าน `app.inject` กับ Staff Login History; token verify บน mock save
 

@@ -31,9 +31,22 @@
     "stripPrefix": false
   },
   {
+    "prefix": "/api/v1/smart-reports/test-run",
+    "upstream": "http://127.0.0.1:3103",
+    "stripPrefix": false,
+    "timeoutMs": 130000
+  },
+  {
+    "prefix": "/api/v1/smart-reports/validate",
+    "upstream": "http://127.0.0.1:3103",
+    "stripPrefix": false,
+    "timeoutMs": 10000
+  },
+  {
     "prefix": "/api/v1/smart-reports",
     "upstream": "http://127.0.0.1:3103",
-    "stripPrefix": false
+    "stripPrefix": false,
+    "timeoutMs": 130000
   },
   {
     "prefix": "/api/v1/branch-report",

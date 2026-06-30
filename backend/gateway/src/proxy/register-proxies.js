@@ -39,7 +39,7 @@ export async function registerProxies(fastify, opts) {
   for (const route of routes) {
     const preserveAuthorization = route.isPublic === true
     const replyOptions = {
-      timeout: env.UPSTREAM_TIMEOUT_MS,
+      timeout: route.timeoutMs ?? env.UPSTREAM_TIMEOUT_MS,
       rewriteRequestHeaders: (originalReq, headers) => {
         const base = stripDangerousInboundHeaders(headers, { preserveAuthorization })
         const ctx = originalReq.gatewayUpstreamHeaders

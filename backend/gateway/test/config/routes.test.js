@@ -76,3 +76,26 @@ test('loadRoutes throws on duplicate prefix', () => {
   }
   assert.throws(() => loadRoutes(env), /Duplicate route prefix: \/api/)
 })
+
+test('loadRoutes parses optional timeoutMs per route', () => {
+  const env = {
+    ROUTES_JSON: JSON.stringify([
+      {
+        prefix: '/api/v1/smart-reports/validate',
+        upstream: 'http://localhost:3103',
+        timeoutMs: 10000
+      }
+    ])
+  }
+  const routes = loadRoutes(env)
+  assert.equal(routes[0].timeoutMs, 10000)
+})
+
+test('loadRoutes throws on invalid timeoutMs', () => {
+  const env = {
+    ROUTES_JSON: JSON.stringify([
+      { prefix: '/api', upstream: 'http://localhost:3000', timeoutMs: 0 }
+    ])
+  }
+  assert.throws(() => loadRoutes(env), /timeoutMs must be a positive number/)
+})
