@@ -63,13 +63,17 @@ import type {
   ScriptValidationError,
   ValidationStatus,
 } from '../types/smartReport';
+import {
+  canSaveScript as evaluateCanSaveScript,
+  scriptRequiresGate as evaluateScriptRequiresGate,
+  type ScriptGateStatus,
+} from '../lib/smartReportScriptGate';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 type ScheduleOption = 'manual' | 'daily' | 'weekly' | 'monthly';
 type ReportStatus = 'completed' | 'running' | 'failed' | 'idle';
-type ScriptGateStatus = 'pending' | 'validated' | 'tested';
 type EditorTab = 'script' | 'compiled';
 
 interface ReportRow extends Report {
@@ -200,13 +204,18 @@ const SmartReport: React.FC = () => {
     setEditorTab('script');
   }, []);
 
-  const scriptRequiresGate =
-    editingReport === null ||
-    (baselineScript !== null && (queryValue ?? '') !== baselineScript);
+  const scriptRequiresGate = evaluateScriptRequiresGate(
+    editingReport,
+    baselineScript,
+    queryValue,
+  );
 
-  const canSaveScript =
-    !scriptRequiresGate ||
-    (scriptGateStatus === 'tested' && !!testRunToken && !!compiledScript);
+  const canSaveScript = evaluateCanSaveScript(
+    scriptRequiresGate,
+    scriptGateStatus,
+    testRunToken,
+    compiledScript,
+  );
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 

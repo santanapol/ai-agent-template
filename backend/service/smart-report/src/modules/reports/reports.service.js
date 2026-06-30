@@ -36,6 +36,10 @@ function toRows(result) {
   return [result];
 }
 
+function normalizeScriptForCompare(script) {
+  return String(script ?? "").replace(/\r\n/g, "\n");
+}
+
 function serializeReportListItem(report) {
   return {
     id: report._id.toString(),
@@ -292,7 +296,9 @@ export async function updateReportById(id, payload, ifMatch, userId) {
 
   const now = new Date();
   const scriptChanging =
-    payload.script !== undefined && payload.script !== existing.script;
+    payload.script !== undefined &&
+    normalizeScriptForCompare(payload.script) !==
+      normalizeScriptForCompare(existing.script);
 
   let validationFields = {};
   if (scriptChanging) {
@@ -323,6 +329,20 @@ export async function updateReportById(id, payload, ifMatch, userId) {
     upd_prog: ROUTE_PROG_ITEM,
   };
   delete updates.testRunToken;
+
+  if (!scriptChanging) {
+    for (const field of [
+      "script",
+      "compiledScript",
+      "validationStatus",
+      "validatedAt",
+      "lastTestRunAt",
+      "lastTestRunMeta",
+      "validationErrors",
+    ]) {
+      delete updates[field];
+    }
+  }
 
   const result = await updateReport(db, objectId, updates, expectedUpdDate);
   if (result.matchedCount === 0) {

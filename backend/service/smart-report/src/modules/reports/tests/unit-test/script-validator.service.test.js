@@ -56,6 +56,15 @@ describe("script-validator.service", () => {
     assert.equal(del.valid, false);
   });
 
+  test("rejects script without a read query path", () => {
+    const result = validateScriptSource(`
+      const targetDB = db.getSiblingDB("demo");
+      const startDate = ISODate(params.startDate);
+    `);
+    assert.equal(result.valid, false);
+    assert.equal(result.errors[0].code, "NO_READ_PATH");
+  });
+
   test("accepts read-only Booster-style script", () => {
     const result = validateScriptSource(`
       const targetDB = db.getSiblingDB("demo");

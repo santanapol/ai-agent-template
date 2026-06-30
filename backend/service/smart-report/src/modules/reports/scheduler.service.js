@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { runReportScript } from "./sandbox-runner.service.js";
 import { exportReport } from "./file-exporter.service.js";
-import { findReports } from "./reports.repository.js";
+import { findReports, findReportById } from "./reports.repository.js";
 import { insertDownloadHistory } from "./download-history.repository.js";
 import {
   hasRunnableCompiledScript,
@@ -200,12 +200,17 @@ export async function startScheduler(db) {
         : undefined;
       const task = cron.schedule(
         expression,
-        () => {
-          if (!hasRunnableCompiledScript(report)) {
+        async () => {
+          const fresh = await findReportById(db, report._id);
+          if (!fresh?.enabled) {
+            return;
+          }
+
+          if (!hasRunnableCompiledScript(fresh)) {
             return insertDownloadHistory(db, {
-              reportId: report._id,
-              reportName: report.name,
-              format: report.outputFormat,
+              reportId: fresh._id,
+              reportName: fresh.name,
+              format: fresh.outputFormat,
               triggeredBy: "scheduler",
               startedAt: new Date(),
               fileName: null,
@@ -220,14 +225,14 @@ export async function startScheduler(db) {
             });
           }
           if (
-            report.schedule.frequency === "monthly" &&
-            report.schedule.dayOfMonth === "last" &&
-            !isLastDayOfMonth(new Date(), report.schedule.timezone)
+            fresh.schedule?.frequency === "monthly" &&
+            fresh.schedule.dayOfMonth === "last" &&
+            !isLastDayOfMonth(new Date(), fresh.schedule.timezone)
           ) {
             // ยังไม่ใช่วันสุดท้ายของเดือนใน timezone ของ report นี้ ข้ามการรัน
             return;
           }
-          return runReport(db, report, { triggeredBy: "scheduler" });
+          return runReport(db, fresh, { triggeredBy: "scheduler" });
         },
         options,
       );
