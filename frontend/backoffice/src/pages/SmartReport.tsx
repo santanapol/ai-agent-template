@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import type { ColumnsType } from 'antd/es/table';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Typography,
   Card,
@@ -16,14 +17,20 @@ import {
   Drawer,
   Empty,
   Segmented,
-  Divider,
   TimePicker,
   Row,
   Col,
   Alert,
   List,
+  Steps,
+  Breadcrumb,
+  Popconfirm,
+  Descriptions,
+  Grid,
+  Collapse,
 } from 'antd';
 import dayjs from 'dayjs';
+import axios from 'axios';
 import {
   FileTextOutlined,
   PlusOutlined,
@@ -35,9 +42,9 @@ import {
   CodeOutlined,
   ClockCircleOutlined,
   SyncOutlined,
-  ArrowLeftOutlined,
   CheckCircleOutlined,
   ExperimentOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { useAppFeedback } from '../hooks/useAppFeedback';
 import { apiErrorMessage } from '../lib/apiError';
@@ -56,110 +63,44 @@ import {
 } from '../lib/smartReportApiClient';
 import type {
   Report,
-  ReportSchedule,
   DownloadHistoryRecord,
   ReportPayload,
   CreateReportPayload,
   ScriptValidationError,
-  ValidationStatus,
 } from '../types/smartReport';
 import {
+  buildPreviewTable,
   canSaveScript as evaluateCanSaveScript,
+  formatTestRunPreviewCount,
+  getSaveGateHint,
+  getScriptGateStep,
+  getTestRunDateTagLabel,
+  isEditorDirty,
   scriptRequiresGate as evaluateScriptRequiresGate,
+  type EditorSnapshot,
   type ScriptGateStatus,
 } from '../lib/smartReportScriptGate';
+import {
+  DEFAULT_QUERY_EXAMPLE,
+  formatDateTime,
+  formatScheduleLabel,
+  formatValidationStatusLabel,
+  scheduleToUiValue,
+  validationStatusColor,
+  type ReportRow,
+  type ReportStatus,
+  type ScheduleOption,
+} from './smartReport/formatters';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-type ScheduleOption = 'manual' | 'daily' | 'weekly' | 'monthly';
-type ReportStatus = 'completed' | 'running' | 'failed' | 'idle';
 type EditorTab = 'script' | 'compiled';
-
-interface ReportRow extends Report {
-  derivedStatus: ReportStatus;
-  lastRun: string;
-}
-
-const DEFAULT_QUERY_EXAMPLE = `// --- 0. Define Time Range (Dynamic Parameters) ---
-const startDate = ISODate(params.startDate);
-const endDate = ISODate(params.endDate);
-
-// --- 1. Connect to Target Database ---
-const targetDB = db.getSiblingDB("your_database_name");
-
-// --- 2. Write Aggregate Query to Fetch Report Data ---
-targetDB.your_collection_name.aggregate([
-    {
-        $match: {
-            // Filter data by date range
-            created_at: { $gte: startDate, $lte: endDate }
-        }
-    },
-    {
-        $project: {
-            _id: 0, // 0 = hide this column, 1 = show this column
-            column_name_1: "$field_name_1",
-            column_name_2: "$field_name_2",
-            created_at: 1
-        }
-    }
-]);`;
-
-
-function formatValidationStatusLabel(status: ValidationStatus): string {
-  if (status === 'valid') return 'Validated';
-  if (status === 'invalid') return 'Invalid';
-  return 'Pending';
-}
-
-function validationStatusColor(status: ValidationStatus): string {
-  if (status === 'valid') return 'success';
-  if (status === 'invalid') return 'error';
-  return 'default';
-}
-
-function formatScheduleLabel(schedule: ReportSchedule | null): string {
-  if (!schedule) return 'Manual (No schedule)';
-  const hourStr = String(schedule.hour ?? 0).padStart(2, '0');
-  const minStr = String(schedule.minute ?? 0).padStart(2, '0');
-  const timeStr = `${hourStr}:${minStr}`;
-
-  if (schedule.frequency === 'daily') {
-    return `Daily (Every day at ${timeStr})`;
-  }
-  if (schedule.frequency === 'weekly') {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = days[schedule.dayOfWeek ?? 1];
-    return `Weekly (Every ${dayName} at ${timeStr})`;
-  }
-  if (schedule.frequency === 'monthly') {
-    if (schedule.dayOfMonth === 'last') {
-      return `Monthly (Last day of the month at ${timeStr})`;
-    }
-    return `Monthly (Day ${schedule.dayOfMonth ?? 1} of the month at ${timeStr})`;
-  }
-  return 'Manual (No schedule)';
-}
-
-function scheduleToUiValue(schedule: ReportSchedule | null): ScheduleOption {
-  if (!schedule) return 'manual';
-  if (schedule.frequency === 'daily' || schedule.frequency === 'weekly' || schedule.frequency === 'monthly') {
-    return schedule.frequency;
-  }
-  return 'manual';
-}
-
-function formatDateTime(iso: string | null): string {
-  if (!iso) return '—';
-  const d = dayjs(iso);
-  if (!d.isValid()) return '—';
-  return d.format('YYYY-MM-DD HH:mm:ss');
-}
 
 const SmartReport: React.FC = () => {
   const { token } = theme.useToken();
-  const { message, modal } = useAppFeedback();
+  const screens = Grid.useBreakpoint();
+  const { message, modal, notification } = useAppFeedback();
   const [activeTab, setActiveTab] = useState('reports');
 
   // Data State
@@ -175,13 +116,14 @@ const SmartReport: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [form] = Form.useForm();
   const scheduleValue = Form.useWatch('schedule', form);
   const queryValue = Form.useWatch('query', form);
 
   const [scriptGateStatus, setScriptGateStatus] = useState<ScriptGateStatus>('pending');
   const [baselineScript, setBaselineScript] = useState<string | null>(null);
+  const [baselineFormValues, setBaselineFormValues] = useState<EditorSnapshot | null>(null);
   const [compiledScript, setCompiledScript] = useState<string | null>(null);
   const [testRunToken, setTestRunToken] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ScriptValidationError[]>([]);
@@ -191,12 +133,20 @@ const SmartReport: React.FC = () => {
     recordCount: number;
     durationMs: number;
     sample: Record<string, unknown>[];
+    runParams?: { startDate: string; endDate: string };
   } | null>(null);
   const [editorTab, setEditorTab] = useState<EditorTab>('script');
+  const testRunAbortRef = useRef<AbortController | null>(null);
+  const scriptEditorScrollRef = useRef<HTMLDivElement | null>(null);
+  const scriptScrollTopRef = useRef(0);
+  const validationAlertRef = useRef<HTMLDivElement | null>(null);
 
   const resetScriptGate = useCallback(() => {
+    testRunAbortRef.current?.abort();
+    testRunAbortRef.current = null;
     setScriptGateStatus('pending');
     setBaselineScript(null);
+    setBaselineFormValues(null);
     setCompiledScript(null);
     setTestRunToken(null);
     setValidationErrors([]);
@@ -216,6 +166,23 @@ const SmartReport: React.FC = () => {
     testRunToken,
     compiledScript,
   );
+
+  const saveGateHint = getSaveGateHint(scriptRequiresGate, scriptGateStatus);
+  const scriptGateStep = getScriptGateStep(
+    scriptGateStatus,
+    validationErrors.length > 0,
+    scriptRequiresGate,
+  );
+  const showGateAlert = !canSaveScript && scriptRequiresGate && Boolean(saveGateHint);
+  const saveButtonTooltip =
+    !canSaveScript && saveGateHint && !showGateAlert ? saveGateHint : undefined;
+
+  const captureEditorSnapshot = useCallback((): EditorSnapshot => {
+    return {
+      formValues: form.getFieldsValue(),
+      script: (form.getFieldValue('query') as string | undefined) ?? '',
+    };
+  }, [form]);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
@@ -256,6 +223,21 @@ const SmartReport: React.FC = () => {
     }
   };
 
+  const handleResetToExample = () => {
+    form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
+    setScriptGateStatus('pending');
+    setCompiledScript(null);
+    setTestRunToken(null);
+    setTestRunPreview(null);
+    setValidationErrors([]);
+    setEditorTab('script');
+    notification.info({
+      message: 'Template loaded',
+      placement: 'bottomRight',
+      duration: 2,
+    });
+  };
+
   // Combine report definitions with their latest run (history is sorted newest-first)
   const reportRows: ReportRow[] = useMemo(() => {
     return reports.map((report) => {
@@ -270,7 +252,13 @@ const SmartReport: React.FC = () => {
     });
   }, [reports, history]);
 
-  // Run report immediately and persist the resulting CSV/Excel file on the server
+  useEffect(() => {
+    if (validationErrors.length > 0) {
+      validationAlertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [validationErrors]);
+
+  // Run report immediately
   const handleRunReport = async (report: Report) => {
     setRunningId(report.id);
     message.open({
@@ -315,24 +303,31 @@ const SmartReport: React.FC = () => {
     setEditingReport(null);
     resetScriptGate();
     form.resetFields();
-    form.setFieldsValue({
-      schedule: 'manual',
+    const initialValues = {
+      schedule: 'manual' as ScheduleOption,
       scheduleTime: dayjs().hour(0).minute(0),
       scheduleDayOfWeek: 1,
       scheduleDayOfMonth: 1,
-      outputFormat: 'csv',
+      outputFormat: 'csv' as const,
       query: DEFAULT_QUERY_EXAMPLE,
+    };
+    form.setFieldsValue(initialValues);
+    setBaselineScript(DEFAULT_QUERY_EXAMPLE);
+    setBaselineFormValues({
+      formValues: initialValues,
+      script: DEFAULT_QUERY_EXAMPLE,
     });
     setViewMode('edit');
   };
 
   const handleEditReport = async (report: Report) => {
-    setIsLoadingEdit(true);
+    setLoadingEditId(report.id);
     try {
       const detail = await getReport(report.id);
       setEditingReport(detail);
       resetScriptGate();
-      setBaselineScript(detail.script ?? '');
+      const script = detail.script ?? '';
+      setBaselineScript(script);
       if (detail.compiledScript) {
         setCompiledScript(detail.compiledScript);
         if (detail.validationStatus === 'valid') {
@@ -341,7 +336,7 @@ const SmartReport: React.FC = () => {
       }
       const hour = detail.schedule?.hour ?? 0;
       const minute = detail.schedule?.minute ?? 0;
-      form.setFieldsValue({
+      const formValues = {
         name: detail.name,
         description: detail.description ?? '',
         schedule: scheduleToUiValue(detail.schedule),
@@ -349,13 +344,15 @@ const SmartReport: React.FC = () => {
         scheduleDayOfWeek: detail.schedule?.dayOfWeek ?? 1,
         scheduleDayOfMonth: detail.schedule?.dayOfMonth ?? 1,
         outputFormat: detail.outputFormat,
-        query: detail.script ?? '',
-      });
+        query: script,
+      };
+      form.setFieldsValue(formValues);
+      setBaselineFormValues({ formValues, script });
       setViewMode('edit');
     } catch (err) {
       message.error(apiErrorMessage(err, 'Failed to load report details'));
     } finally {
-      setIsLoadingEdit(false);
+      setLoadingEditId(null);
     }
   };
 
@@ -396,30 +393,92 @@ const SmartReport: React.FC = () => {
       return;
     }
 
+    testRunAbortRef.current?.abort();
+    const controller = new AbortController();
+    testRunAbortRef.current = controller;
     setIsTestRunning(true);
     try {
-      const result = await testRunReport(script, compiledScript);
+      const reportParams = editingReport?.params ?? {};
+      const result = await testRunReport(script, compiledScript, reportParams, controller.signal);
       setTestRunPreview({
         recordCount: result.recordCount,
         durationMs: result.durationMs,
         sample: result.sample,
+        runParams: result.runParams,
       });
       setTestRunToken(result.testRunToken);
       setScriptGateStatus('tested');
       message.success(`Test run complete — ${result.recordCount} record(s) in ${result.durationMs}ms`);
     } catch (err) {
+      if (axios.isCancel(err)) {
+        message.info(
+          'Test run cancelled. The server may still finish the query until its timeout.',
+        );
+        return;
+      }
       message.error(apiErrorMessage(err, 'Test run failed'));
     } finally {
       setIsTestRunning(false);
+      if (testRunAbortRef.current === controller) {
+        testRunAbortRef.current = null;
+      }
     }
   };
 
-  // Cancel editing
-  const handleCancelEdit = () => {
-    setViewMode('list');
+  const handleCancelTestRun = () => {
+    testRunAbortRef.current?.abort();
   };
 
-  // Save report (create or edit)
+  const testRunPreviewTable = useMemo(
+    () => buildPreviewTable(testRunPreview?.sample),
+    [testRunPreview?.sample],
+  );
+
+  const testRunDateTagLabel = useMemo(
+    () => getTestRunDateTagLabel(queryValue as string | undefined, testRunPreview?.runParams),
+    [queryValue, testRunPreview?.runParams],
+  );
+
+  const performCancelEdit = useCallback(() => {
+    testRunAbortRef.current?.abort();
+    testRunAbortRef.current = null;
+    setViewMode('list');
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    const dirty = isEditorDirty(captureEditorSnapshot(), baselineFormValues);
+    if (dirty) {
+      modal.confirm({
+        title: 'Discard unsaved changes?',
+        content: 'You have unsaved changes that will be lost if you leave the editor.',
+        okText: 'Discard',
+        okType: 'danger',
+        cancelText: 'Keep editing',
+        onOk: performCancelEdit,
+      });
+      return;
+    }
+    performCancelEdit();
+  }, [baselineFormValues, captureEditorSnapshot, modal, performCancelEdit]);
+
+  const handleEditorTabChange = (value: EditorTab) => {
+    if (editorTab === 'script' && scriptEditorScrollRef.current) {
+      const textarea = scriptEditorScrollRef.current.querySelector('textarea');
+      if (textarea) {
+        scriptScrollTopRef.current = textarea.scrollTop;
+      }
+    }
+    setEditorTab(value);
+    if (value === 'script') {
+      requestAnimationFrame(() => {
+        const textarea = scriptEditorScrollRef.current?.querySelector('textarea');
+        if (textarea) {
+          textarea.scrollTop = scriptScrollTopRef.current;
+        }
+      });
+    }
+  };
+
   const handleSaveReport = async () => {
     let values: {
       name: string;
@@ -523,45 +582,45 @@ const SmartReport: React.FC = () => {
     }
   };
 
-  const previewColumns = useMemo(() => {
-    if (!testRunPreview?.sample.length) return [];
-    const keys = Object.keys(testRunPreview.sample[0] ?? {});
-    return keys.map((key) => ({
-      title: key,
-      dataIndex: key,
-      key,
-      ellipsis: true,
-      render: (value: unknown) => {
-        if (value === null || value === undefined) return '—';
-        if (typeof value === 'object') return JSON.stringify(value);
-        return String(value);
-      },
-    }));
-  }, [testRunPreview]);
-
-  // Report table columns
-  const reportColumns = [
+  // Report table columns — keep cells compact (one primary line + optional ellipsis)
+  const reportColumns: ColumnsType<ReportRow> = [
     {
-      title: 'Report Name / Description',
+      title: 'Report',
       key: 'name',
+      ellipsis: true,
       render: (_: unknown, record: ReportRow) => (
         <div>
-          <Text strong style={{ fontSize: token.fontSizeLG }}>
-            {record.name}
-          </Text>
-          <div style={{ marginTop: 4 }}>
-            <Text type="secondary">{record.description}</Text>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <Space size={4} wrap>
-              <Tag color={validationStatusColor(record.validationStatus)}>
-                {formatValidationStatusLabel(record.validationStatus)}
-              </Tag>
-              {record.lastTestRunMeta?.recordCount != null && (
-                <Tag color="blue">Last test: {record.lastTestRunMeta.recordCount} rows</Tag>
-              )}
-            </Space>
-          </div>
+          <Space size={4} wrap>
+            <Text strong ellipsis={{ tooltip: record.name }}>
+              {record.name}
+            </Text>
+            {record.enabled === false && <Tag color="warning">Disabled</Tag>}
+            <Tag color={validationStatusColor(record.validationStatus)}>
+              {formatValidationStatusLabel(record.validationStatus)}
+            </Tag>
+            {record.lastTestRunMeta?.recordCount != null && (
+              <Tag color="blue">Test: {record.lastTestRunMeta.recordCount}</Tag>
+            )}
+          </Space>
+          {record.description ? (
+            <Text
+              type="secondary"
+              ellipsis={{ tooltip: record.description }}
+              style={{ fontSize: token.fontSizeSM, display: 'block', maxWidth: '100%' }}
+            >
+              {record.description}
+            </Text>
+          ) : null}
+          {!screens.md ? (
+            <Text
+              type="secondary"
+              ellipsis={{ tooltip: formatScheduleLabel(record.schedule) }}
+              style={{ fontSize: token.fontSizeSM, display: 'block', maxWidth: '100%' }}
+            >
+              <ClockCircleOutlined style={{ marginRight: 4 }} />
+              {formatScheduleLabel(record.schedule)}
+            </Text>
+          ) : null}
         </div>
       ),
     },
@@ -569,6 +628,7 @@ const SmartReport: React.FC = () => {
       title: 'Schedule',
       key: 'schedule',
       width: 240,
+      responsive: ['md'] as const,
       render: (_: unknown, record: ReportRow) => (
         <Space>
           <ClockCircleOutlined style={{ color: token.colorTextDescription }} />
@@ -584,96 +644,84 @@ const SmartReport: React.FC = () => {
       render: (fmt: 'csv' | 'excel') => <Tag color={fmt === 'csv' ? 'gold' : 'green'}>{fmt.toUpperCase()}</Tag>,
     },
     {
-      title: 'Database Connection',
-      key: 'db',
-      width: 180,
-      render: () => (
-        <Space>
-          <Tag color="cyan">Secondary</Tag>
-          <Tag color="blue">Read-only</Tag>
-        </Space>
-      ),
-    },
-    {
-      title: 'Status / Last Run',
+      title: 'Status',
       key: 'status',
-      width: 200,
+      width: 110,
       render: (_: unknown, record: ReportRow) => {
         if (record.derivedStatus === 'running') {
-          return (
-            <Space orientation="vertical" size={2}>
-              <Badge status="processing" text="Running..." />
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                <SyncOutlined spin /> Processing
-              </Text>
-            </Space>
-          );
+          return <Badge status="processing" text="Running" />;
         }
         if (record.derivedStatus === 'completed') {
-          return (
-            <Space orientation="vertical" size={2}>
-              <Badge status="success" text="Completed" />
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                Last Run: {record.lastRun}
-              </Text>
-            </Space>
-          );
+          return <Badge status="success" text="Completed" />;
         }
         if (record.derivedStatus === 'failed') {
-          return (
-            <Space orientation="vertical" size={2}>
-              <Badge status="error" text="Failed" />
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                Last Run: {record.lastRun}
-              </Text>
-            </Space>
-          );
+          return <Badge status="error" text="Failed" />;
         }
-        return (
-          <Space orientation="vertical" size={2}>
-            <Badge status="default" text="Idle" />
-            <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-              Never run
-            </Text>
-          </Space>
-        );
+        return <Badge status="default" text="Idle" />;
       },
+    },
+    {
+      title: 'Last Run',
+      key: 'lastRun',
+      width: 160,
+      ellipsis: true,
+      render: (_: unknown, record: ReportRow) => (
+        <Text
+          type="secondary"
+          ellipsis={{ tooltip: record.lastRun }}
+          style={{ fontSize: token.fontSizeSM }}
+        >
+          {record.lastRun}
+        </Text>
+      ),
     },
     {
       title: 'Actions',
       key: 'actions',
       width: 250,
       render: (_: unknown, record: ReportRow) => (
-        <Space size="middle">
-          <Tooltip title="Run query and export file immediately">
-            <Button
-              type="primary"
-              variant="dashed"
-              color="default"
-              icon={<PlayCircleOutlined />}
-              onClick={() => void handleRunReport(record)}
-              disabled={record.derivedStatus === 'running' || runningId === record.id}
-            />
-          </Tooltip>
-          <Tooltip title="Edit query / schedule">
+        <Space size="small" wrap>
+          <Popconfirm
+            title="Run this report now?"
+            description="Heavy queries may take several minutes."
+            onConfirm={() => void handleRunReport(record)}
+            okText="Run"
+          >
+            <Tooltip title="Run report">
+              <Button
+                type="default"
+                icon={<PlayCircleOutlined />}
+                aria-label="Run report"
+                disabled={record.derivedStatus === 'running' || runningId === record.id}
+                loading={runningId === record.id}
+              />
+            </Tooltip>
+          </Popconfirm>
+          <Tooltip title="Edit report">
             <Button
               icon={<EditOutlined />}
+              aria-label="Edit report"
               onClick={() => void handleEditReport(record)}
-              disabled={record.derivedStatus === 'running' || isLoadingEdit}
-              loading={isLoadingEdit}
+              disabled={
+                record.derivedStatus === 'running' ||
+                (loadingEditId !== null && loadingEditId !== record.id)
+              }
+              loading={loadingEditId === record.id}
             />
           </Tooltip>
           <Tooltip title="View download history">
-            <Button icon={<HistoryOutlined />} onClick={() => handleViewFiles(record.id)}>
-              Downloads
-            </Button>
-          </Tooltip>
-          <Tooltip title="Delete this report">
             <Button
-              type="primary"
+              icon={<HistoryOutlined />}
+              aria-label="View download history"
+              onClick={() => handleViewFiles(record.id)}
+            />
+          </Tooltip>
+          <Tooltip title="Delete report">
+            <Button
               danger
-              variant="solid"
+              variant="outlined"
               icon={<DeleteOutlined />}
+              aria-label="Delete report"
               onClick={() => handleDeleteReport(record)}
               disabled={record.derivedStatus === 'running'}
             />
@@ -744,43 +792,67 @@ const SmartReport: React.FC = () => {
   if (viewMode === 'edit') {
     return (
       <div>
-        {/* Editor Page Header */}
-        <div style={{ marginBottom: token.marginLG, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space size="middle">
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={handleCancelEdit}
-              size="large"
-            />
-            <div>
-              <Title level={2} style={{ margin: 0 }}>
-                {editingReport ? 'Edit Report Script' : 'Create New Report Script'}
-              </Title>
-              <Text type="secondary">
-                {editingReport ? `Editing: ${editingReport.name}` : 'Specify data query script and processing schedule'}
-              </Text>
-            </div>
-          </Space>
+        <div
+          style={{
+            marginBottom: token.marginMD,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: token.marginMD,
+          }}
+        >
+          <Breadcrumb
+            items={[
+              {
+                title: 'Smart Report',
+                onClick: handleCancelEdit,
+              },
+              { title: editingReport ? editingReport.name : 'New report' },
+            ]}
+          />
           <Space>
-            <Button size="large" onClick={handleCancelEdit}>
-              Cancel
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              loading={isSaving}
-              disabled={!canSaveScript}
-              onClick={() => void handleSaveReport()}
-            >
-              Save Report Script
-            </Button>
+            <Button onClick={handleCancelEdit}>Cancel</Button>
+            <Tooltip title={saveButtonTooltip}>
+              <span>
+                <Button
+                  type="primary"
+                  loading={isSaving}
+                  disabled={!canSaveScript}
+                  onClick={() => void handleSaveReport()}
+                >
+                  Save Report Script
+                </Button>
+              </span>
+            </Tooltip>
           </Space>
         </div>
 
-        <Form form={form} layout="vertical">
-          <Row gutter={[24, 24]}>
+        {showGateAlert && (
+          <Alert
+            type="warning"
+            showIcon
+            message={saveGateHint}
+            style={{ marginBottom: token.marginLG }}
+          />
+        )}
+
+        <Steps
+          size="small"
+          current={scriptGateStep.current}
+          style={{ marginBottom: token.marginLG }}
+          items={[
+            { title: 'Edit script' },
+            { title: 'Validate', status: scriptGateStep.validateStatus },
+            { title: 'Test run' },
+            { title: 'Save' },
+          ]}
+        />
+
+        <Form form={form} layout="vertical" size="middle" scrollToFirstError>
+          <Row gutter={[24, 24]} align="stretch">
             {/* Left Column: Settings */}
-            <Col xs={24} lg={10}>
+            <Col xs={24} lg={10} order={screens.lg ? 1 : 2} style={screens.lg ? { display: 'flex' } : undefined}>
               <Card
                 title={
                   <Space>
@@ -789,35 +861,30 @@ const SmartReport: React.FC = () => {
                   </Space>
                 }
                 variant="borderless"
-                style={{ borderRadius: token.borderRadius }}
+                style={{
+                  borderRadius: token.borderRadius,
+                  width: '100%',
+                  ...(screens.lg ? { flex: 1 } : {}),
+                }}
               >
-                {/* Name & Description */}
                 <Form.Item
                   name="name"
-                  label={<Text strong>Report Name</Text>}
+                  label="Report Name"
                   rules={[{ required: true, message: 'Please enter report name' }]}
                 >
-                  <Input placeholder="e.g. Active Staff Login Analytics Report" size="large" />
+                  <Input placeholder="e.g. Active Staff Login Analytics Report" />
                 </Form.Item>
 
-                <Form.Item
-                  name="description"
-                  label={<Text strong>Description</Text>}
-                >
-                  <Input placeholder="Specify report purpose and data schema" size="large" />
+                <Form.Item name="description" label="Description">
+                  <Input placeholder="Specify report purpose and data schema" />
                 </Form.Item>
-
-                <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
-                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>Output Format</Text>
-                </Divider>
 
                 <Form.Item
                   name="outputFormat"
-                  label={<Text strong>Output Format</Text>}
+                  label="Output Format"
                   rules={[{ required: true }]}
                 >
                   <Segmented
-                    size="large"
                     block
                     options={[
                       { label: 'CSV (.csv)', value: 'csv' },
@@ -826,84 +893,82 @@ const SmartReport: React.FC = () => {
                   />
                 </Form.Item>
 
-                <Divider titlePlacement="left" style={{ margin: '24px 0 16px 0' }}>
-                  <Text type="secondary" strong style={{ fontSize: token.fontSizeSM }}>Auto Scheduler</Text>
-                </Divider>
+                <div style={{ marginTop: token.marginSM }}>
+                  <Row gutter={[16, 16]}>
+                    <Col span={24}>
+                      <Form.Item
+                        name="schedule"
+                        label="Schedule Frequency"
+                        rules={[{ required: true }]}
+                      >
+                        <Select>
+                          <Select.Option value="manual">Manual</Select.Option>
+                          <Select.Option value="daily">Daily</Select.Option>
+                          <Select.Option value="weekly">Weekly</Select.Option>
+                          <Select.Option value="monthly">Monthly</Select.Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
 
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <Form.Item
-                      name="schedule"
-                      label={<Text strong>Schedule Frequency</Text>}
-                      rules={[{ required: true }]}
-                    >
-                      <Select size="large">
-                        <Select.Option value="manual">Manual</Select.Option>
-                        <Select.Option value="daily">Daily</Select.Option>
-                        <Select.Option value="weekly">Weekly</Select.Option>
-                        <Select.Option value="monthly">Monthly</Select.Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
+                    {scheduleValue && scheduleValue !== 'manual' && (
+                      <>
+                        {scheduleValue === 'weekly' && (
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              name="scheduleDayOfWeek"
+                              label="Run Day"
+                              rules={[{ required: true }]}
+                            >
+                              <Select style={{ width: '100%' }}>
+                                <Select.Option value={1}>Monday</Select.Option>
+                                <Select.Option value={2}>Tuesday</Select.Option>
+                                <Select.Option value={3}>Wednesday</Select.Option>
+                                <Select.Option value={4}>Thursday</Select.Option>
+                                <Select.Option value={5}>Friday</Select.Option>
+                                <Select.Option value={6}>Saturday</Select.Option>
+                                <Select.Option value={0}>Sunday</Select.Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                        )}
 
-                  {scheduleValue && scheduleValue !== 'manual' && (
-                    <>
-                      {scheduleValue === 'weekly' && (
-                        <Col xs={24} sm={12}>
+                        {scheduleValue === 'monthly' && (
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              name="scheduleDayOfMonth"
+                              label="Run Day"
+                              rules={[{ required: true }]}
+                            >
+                              <Select style={{ width: '100%' }}>
+                                <Select.Option value="last">Last day of month</Select.Option>
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                  <Select.Option key={day} value={day}>
+                                    Day {day}
+                                  </Select.Option>
+                                ))}
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                        )}
+
+                        <Col xs={24} sm={scheduleValue === 'daily' ? 24 : 12}>
                           <Form.Item
-                            name="scheduleDayOfWeek"
-                            label={<Text strong>Run Day</Text>}
-                            rules={[{ required: true }]}
+                            name="scheduleTime"
+                            label="Run Time"
+                            rules={[{ required: true, message: 'Please select run time' }]}
                           >
-                            <Select size="large" style={{ width: '100%' }}>
-                              <Select.Option value={1}>Monday</Select.Option>
-                              <Select.Option value={2}>Tuesday</Select.Option>
-                              <Select.Option value={3}>Wednesday</Select.Option>
-                              <Select.Option value={4}>Thursday</Select.Option>
-                              <Select.Option value={5}>Friday</Select.Option>
-                              <Select.Option value={6}>Saturday</Select.Option>
-                              <Select.Option value={0}>Sunday</Select.Option>
-                            </Select>
+                            <TimePicker format="HH:mm" style={{ width: '100%' }} needConfirm={false} />
                           </Form.Item>
                         </Col>
-                      )}
-
-                      {scheduleValue === 'monthly' && (
-                        <Col xs={24} sm={12}>
-                          <Form.Item
-                            name="scheduleDayOfMonth"
-                            label={<Text strong>Run Day</Text>}
-                            rules={[{ required: true }]}
-                          >
-                            <Select size="large" style={{ width: '100%' }}>
-                              <Select.Option value="last">Last day of month</Select.Option>
-                              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                                <Select.Option key={day} value={day}>
-                                  Day {day}
-                                </Select.Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                        </Col>
-                      )}
-
-                      <Col xs={24} sm={scheduleValue === 'daily' ? 24 : 12}>
-                        <Form.Item
-                          name="scheduleTime"
-                          label={<Text strong>Run Time</Text>}
-                          rules={[{ required: true, message: 'Please select run time' }]}
-                        >
-                          <TimePicker format="HH:mm" size="large" style={{ width: '100%' }} needConfirm={false} />
-                        </Form.Item>
-                      </Col>
-                    </>
-                  )}
-                </Row>
+                      </>
+                    )}
+                  </Row>
+                </div>
               </Card>
             </Col>
 
             {/* Right Column: Query Editor */}
-            <Col xs={24} lg={14}>
+            <Col xs={24} lg={14} order={screens.lg ? 2 : 1} style={screens.lg ? { display: 'flex' } : undefined}>
               <Card
                 title={
                   <Space>
@@ -912,7 +977,11 @@ const SmartReport: React.FC = () => {
                   </Space>
                 }
                 variant="borderless"
-                style={{ borderRadius: token.borderRadius }}
+                style={{
+                  borderRadius: token.borderRadius,
+                  width: '100%',
+                  ...(screens.lg ? { flex: 1 } : {}),
+                }}
               >
                 <div
                   style={{
@@ -933,7 +1002,7 @@ const SmartReport: React.FC = () => {
                     <Segmented
                       size="small"
                       value={editorTab}
-                      onChange={(value) => setEditorTab(value as EditorTab)}
+                      onChange={(value) => handleEditorTabChange(value as EditorTab)}
                       options={[
                         { label: 'Script', value: 'script' },
                         {
@@ -943,29 +1012,23 @@ const SmartReport: React.FC = () => {
                         },
                       ]}
                     />
-                    <Tag color={scriptGateStatus === 'tested' ? 'success' : scriptGateStatus === 'validated' ? 'processing' : 'default'}>
-                      {scriptGateStatus === 'tested'
-                        ? 'Tested'
-                        : scriptGateStatus === 'validated'
-                          ? 'Validated'
-                          : 'Pending validation'}
-                    </Tag>
                   </Space>
                   <Space wrap>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<PlayCircleOutlined />}
-                      onClick={() => {
-                        const currentQuery = form.getFieldValue('query');
-                        if (!currentQuery || currentQuery === DEFAULT_QUERY_EXAMPLE) {
-                          form.setFieldsValue({ query: DEFAULT_QUERY_EXAMPLE });
-                          message.info('Default template loaded successfully');
-                        }
-                      }}
+                    <Popconfirm
+                      title="Reset to example template?"
+                      description="Your current script will be replaced with the default example."
+                      onConfirm={handleResetToExample}
+                      okText="Reset"
+                      okType="danger"
                     >
-                      Reset to Example
-                    </Button>
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<SyncOutlined />}
+                      >
+                        Reset to Example
+                      </Button>
+                    </Popconfirm>
                     <Button
                       size="small"
                       icon={<CheckCircleOutlined />}
@@ -976,47 +1039,58 @@ const SmartReport: React.FC = () => {
                     </Button>
                     <Button
                       size="small"
-                      type="primary"
                       icon={<ExperimentOutlined />}
                       loading={isTestRunning}
-                      disabled={scriptGateStatus === 'pending' || !compiledScript}
+                      disabled={scriptGateStatus === 'pending' || !compiledScript || isTestRunning}
                       onClick={() => void handleTestRunScript()}
                     >
                       Test Run
                     </Button>
+                    {isTestRunning && (
+                      <Button
+                        size="small"
+                        danger
+                        icon={<StopOutlined />}
+                        onClick={handleCancelTestRun}
+                      >
+                        Cancel
+                      </Button>
+                    )}
                   </Space>
                 </div>
 
                 {editorTab === 'script' ? (
-                  <Form.Item
-                    name="query"
-                    rules={[{ required: true, message: 'Please enter query script' }]}
-                    style={{ marginBottom: 16 }}
-                  >
-                    <TextArea
-                      rows={18}
-                      onChange={(e) => handleQueryScriptChange(e.target.value)}
-                      style={{
-                        fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-                        fontSize: token.fontSizeSM,
-                        background: token.colorBgContainer,
-                        color: token.colorText,
-                        border: `1px solid ${token.colorBorder}`,
-                        borderTopLeftRadius: 0,
-                        borderTopRightRadius: 0,
-                        borderBottomLeftRadius: token.borderRadius,
-                        borderBottomRightRadius: token.borderRadius,
-                        padding: '16px',
-                        lineHeight: '1.6',
-                      }}
-                      placeholder="// Query example..."
-                    />
-                  </Form.Item>
+                  <div ref={scriptEditorScrollRef}>
+                    <Form.Item
+                      name="query"
+                      rules={[{ required: true, message: 'Please enter query script' }]}
+                      style={{ marginBottom: 16 }}
+                    >
+                      <TextArea
+                        autoSize={{ minRows: 10, maxRows: 18 }}
+                        onChange={(e) => handleQueryScriptChange(e.target.value)}
+                        style={{
+                          fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+                          fontSize: token.fontSizeSM,
+                          background: token.colorBgContainer,
+                          color: token.colorText,
+                          border: `1px solid ${token.colorBorder}`,
+                          borderTopLeftRadius: 0,
+                          borderTopRightRadius: 0,
+                          borderBottomLeftRadius: token.borderRadius,
+                          borderBottomRightRadius: token.borderRadius,
+                          padding: '16px',
+                          lineHeight: '1.6',
+                        }}
+                        placeholder="// Query example..."
+                      />
+                    </Form.Item>
+                  </div>
                 ) : (
                   <TextArea
                     readOnly
                     value={compiledScript ?? ''}
-                    rows={18}
+                    autoSize={{ minRows: 10, maxRows: 18 }}
                     style={{
                       fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
                       fontSize: token.fontSizeSM,
@@ -1035,56 +1109,112 @@ const SmartReport: React.FC = () => {
                 )}
 
                 {validationErrors.length > 0 && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                    message="Validation errors"
-                    description={
-                      <List
-                        size="small"
-                        dataSource={validationErrors}
-                        renderItem={(err) => (
-                          <List.Item style={{ padding: '4px 0' }}>
-                            <Text code={err.line != null}>
-                              {err.line != null ? `Line ${err.line}: ` : ''}
-                              {err.message}
-                            </Text>
-                          </List.Item>
-                        )}
-                      />
-                    }
-                  />
-                )}
-
-                {testRunPreview && (
-                  <div style={{ marginBottom: 16 }}>
-                    <Space style={{ marginBottom: 8 }} wrap>
-                      <Tag color="geekblue">Testing with: yesterday</Tag>
-                      <Tag>{testRunPreview.recordCount} record(s)</Tag>
-                      <Tag>{testRunPreview.durationMs}ms</Tag>
-                    </Space>
-                    {testRunPreview.sample.length > 0 ? (
-                      <Table
-                        size="small"
-                        dataSource={testRunPreview.sample.map((row, index) => ({ ...row, key: index }))}
-                        columns={previewColumns}
-                        pagination={false}
-                        scroll={{ x: true }}
-                      />
-                    ) : (
-                      <Empty description="Query returned no rows for yesterday's date range" />
-                    )}
+                  <div ref={validationAlertRef}>
+                    <Alert
+                      type="error"
+                      showIcon
+                      style={{ marginBottom: 16 }}
+                      message="Validation errors"
+                      description={
+                        <List
+                          size="small"
+                          dataSource={validationErrors}
+                          renderItem={(err) => (
+                            <List.Item style={{ padding: '4px 0' }}>
+                              <Text code={err.line != null}>
+                                {err.line != null ? `Line ${err.line}: ` : ''}
+                                {err.message}
+                              </Text>
+                            </List.Item>
+                          )}
+                        />
+                      }
+                    />
                   </div>
                 )}
 
-                <div style={{ padding: '8px', background: token.colorInfoBg, borderRadius: token.borderRadius, border: `1px solid ${token.colorInfoBorder}` }}>
-                  <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                    Validate compiles your script without touching the database. Test Run executes against the read replica using yesterday&apos;s date range (params.startDate / params.endDate). Save is enabled only after a successful test run when the script has changed.
-                  </Text>
-                </div>
+                <Collapse
+                  size="small"
+                  items={[
+                    {
+                      key: 'workflow',
+                      label: 'Script workflow',
+                      children: (
+                        <ul style={{ margin: 0, paddingLeft: 20 }}>
+                          <li>Validate compiles without querying the database.</li>
+                          <li>Test run uses yesterday&apos;s params.startDate / params.endDate when referenced.</li>
+                          <li>Save unlocks after a successful test run when the script changed.</li>
+                        </ul>
+                      ),
+                    },
+                  ]}
+                />
               </Card>
             </Col>
+
+            {testRunPreview && (
+              <Col span={24}>
+                <Card
+                  title={
+                    <Space>
+                      <ExperimentOutlined style={{ color: token.colorPrimary }} />
+                      <Text strong>Test run preview</Text>
+                    </Space>
+                  }
+                  variant="borderless"
+                  style={{ borderRadius: token.borderRadius }}
+                >
+                  {scriptGateStatus === 'tested' && (
+                    <Alert
+                      type="success"
+                      showIcon
+                      message="Test run succeeded"
+                      style={{ marginBottom: token.marginSM }}
+                    />
+                  )}
+                  <Descriptions
+                    size="small"
+                    bordered
+                    column={{ xs: 1, sm: 2, lg: 3 }}
+                    style={{ marginBottom: token.marginMD }}
+                  >
+                    {testRunDateTagLabel && (
+                      <Descriptions.Item label="Date range">{testRunDateTagLabel}</Descriptions.Item>
+                    )}
+                    <Descriptions.Item label="Records">
+                      {formatTestRunPreviewCount(
+                        testRunPreview.recordCount,
+                        testRunPreview.sample.length,
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Duration">
+                      {testRunPreview.durationMs}ms
+                    </Descriptions.Item>
+                  </Descriptions>
+                  {testRunPreviewTable.rows.length > 0 ? (
+                    <Table
+                      size="small"
+                      dataSource={testRunPreviewTable.rows}
+                      columns={testRunPreviewTable.columns}
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                    />
+                  ) : testRunPreview.recordCount > 0 ? (
+                    <Text type="secondary">
+                      {testRunPreview.recordCount} record(s) returned — preview rows could not be displayed.
+                    </Text>
+                  ) : (
+                    <Empty
+                      description={
+                        testRunDateTagLabel
+                          ? `Query returned no rows for ${testRunDateTagLabel}`
+                          : 'Query returned no rows'
+                      }
+                    />
+                  )}
+                </Card>
+              </Col>
+            )}
           </Row>
         </Form>
       </div>
@@ -1150,7 +1280,9 @@ const SmartReport: React.FC = () => {
                   columns={reportColumns}
                   rowKey="id"
                   loading={loading}
+                  size="small"
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 'max-content' }}
                 />
               </Card>
             ),
@@ -1170,6 +1302,7 @@ const SmartReport: React.FC = () => {
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 'max-content' }}
                 />
               </Card>
             ),
@@ -1181,7 +1314,7 @@ const SmartReport: React.FC = () => {
       <Drawer
         title={`Download History: ${selectedReportName}`}
         placement="right"
-        size={650}
+        width={screens.md ? 650 : '100%'}
         onClose={() => setIsDrawerOpen(false)}
         open={isDrawerOpen}
       >
