@@ -14,6 +14,7 @@ export default [
       sourceType: 'module',
       globals: {
         process: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
     plugins: {
