@@ -35,6 +35,18 @@ export async function createReportHandler(request, reply) {
     );
 }
 
+export async function validateReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
+  const result = service.validateScript(request.body.script);
+  return reply.status(200).send(successEnvelope(result));
+}
+
+export async function testRunReportHandler(request, reply) {
+  assertPermission(request.userContext, "reports:smart");
+  const result = await service.testRunScript(request.body);
+  return reply.status(200).send(successEnvelope(result));
+}
+
 export async function updateReportHandler(request, reply) {
   assertPermission(request.userContext, "reports:smart");
   const { userId } = request.userContext;

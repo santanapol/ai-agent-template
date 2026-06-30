@@ -30,6 +30,8 @@ if (!RUN) {
   const { buildEtag } = await import("../../../../lib/etag.js");
   const { buildMeshHeaders } =
     await import("../../../../lib/test-helpers/mesh-headers.js");
+  const { createGatedReport } =
+    await import("../../../../lib/test-helpers/gated-report.js");
 
   const dbName = process.env.DB_NAME;
 
@@ -63,15 +65,11 @@ if (!RUN) {
     });
 
     test("POST / creates a report (201 CREATED + ETag)", async () => {
-      const response = await app.inject({
-        method: "POST",
-        url: "/api/v1/smart-reports",
-        headers: buildMeshHeaders(),
-        payload: {
-          name: `Integration Report ${Date.now()}`,
-          script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
-          outputFormat: "csv",
-        },
+      const headers = buildMeshHeaders();
+      const response = await createGatedReport(app, headers, {
+        name: `Integration Report ${Date.now()}`,
+        script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+        outputFormat: "csv",
       });
 
       assert.equal(response.statusCode, 201);
@@ -79,6 +77,8 @@ if (!RUN) {
       assert.equal(body.success, true);
       assert.equal(body.code, "CREATED");
       assert.ok(body.data.id);
+      assert.equal(body.data.validationStatus, "valid");
+      assert.ok(body.data.compiledScript);
       assert.ok(response.headers.etag);
 
       reportId = body.data.id;
@@ -90,15 +90,10 @@ if (!RUN) {
         .collection(REPORTS_COLLECTION)
         .findOne({ _id: new ObjectId(reportId) });
 
-      const response = await app.inject({
-        method: "POST",
-        url: "/api/v1/smart-reports",
-        headers: buildMeshHeaders(),
-        payload: {
-          name: report.name,
-          script: report.script,
-          outputFormat: "csv",
-        },
+      const response = await createGatedReport(app, buildMeshHeaders(), {
+        name: report.name,
+        script: report.script,
+        outputFormat: "csv",
       });
 
       assert.equal(response.statusCode, 409);
@@ -125,15 +120,10 @@ if (!RUN) {
     test("GET /?limit=1 paginates the report list", async () => {
       const extraNames = [`Extra A ${Date.now()}`, `Extra B ${Date.now()}`];
       for (const name of extraNames) {
-        const created = await app.inject({
-          method: "POST",
-          url: "/api/v1/smart-reports",
-          headers: buildMeshHeaders(),
-          payload: {
-            name,
-            script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
-            outputFormat: "csv",
-          },
+        const created = await createGatedReport(app, buildMeshHeaders(), {
+          name,
+          script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+          outputFormat: "csv",
         });
         assert.equal(created.statusCode, 201);
       }

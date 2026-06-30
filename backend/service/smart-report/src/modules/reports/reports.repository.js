@@ -6,6 +6,12 @@ export const REPORTS_COLLECTION = "reports";
  * @property {string} name - ชื่อรายงาน (unique)
  * @property {string} [description]
  * @property {string} script - MongoDB JS query script (mongo shell style)
+ * @property {string|null} [compiledScript] - AST-compiled runnable script
+ * @property {"pending"|"valid"|"invalid"} [validationStatus]
+ * @property {string[]} [validationErrors]
+ * @property {Date|null} [validatedAt]
+ * @property {Date|null} [lastTestRunAt]
+ * @property {{ recordCount?: number, durationMs?: number }|null} [lastTestRunMeta]
  * @property {Record<string, unknown>} [params] - ค่าเริ่มต้นของ dynamic parameters เช่น startDate, endDate, ou_id, branch_id
  * @property {"csv"|"excel"} outputFormat
  * @property {object|null} schedule - cron schedule config จาก UI dropdown, null = manual only

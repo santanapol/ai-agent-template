@@ -98,6 +98,7 @@ if (!RUN) {
         _id: new ObjectId(),
         name: "Scheduler Broken Report",
         script: "const x = ;",
+        compiledScript: "withReport(async () => { const x = ; });",
         params: {},
         outputFormat: "csv",
         schedule: null,
@@ -123,11 +124,18 @@ if (!RUN) {
     test("startScheduler registers a cron task per enabled scheduled report; execute() runs it and stopScheduler stops it", async () => {
       const db = await connectDatabase();
       const { insertReport } = await import("../../reports.repository.js");
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+
+      const script = `db.getSiblingDB(${JSON.stringify(dbName)}).${FIXTURE_COLLECTION}.find({});`;
+      const compiled = compileBoosterScript(script);
 
       const report = {
         _id: new ObjectId(),
         name: `Scheduler All Rows Report ${Date.now()}`,
-        script: `db.getSiblingDB(${JSON.stringify(dbName)}).${FIXTURE_COLLECTION}.find({});`,
+        script,
+        compiledScript: compiled.compiledScript,
+        validationStatus: "valid",
         params: {},
         outputFormat: "csv",
         schedule: { frequency: "daily", hour: 1, minute: 0 },

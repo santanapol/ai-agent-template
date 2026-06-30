@@ -1,0 +1,13 @@
+# Smart Report Service Error Codes Registry
+VALIDATION_FAILED:
+  httpStatus: 422
+REPORT_NOT_VALIDATED:
+  httpStatus: 422
+REPORT_NOT_TESTED:
+  httpStatus: 422
+TEST_RUN_TIMEOUT:
+  httpStatus: 422
+TEST_RUN_TOKEN_INVALID:
+  httpStatus: 422
+ALREADY_COMPILED:
+  httpStatus: 422

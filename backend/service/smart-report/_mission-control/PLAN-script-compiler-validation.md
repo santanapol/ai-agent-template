@@ -45,9 +45,9 @@ Phase 5: Verify end-to-end + release 2 cleanup
   - Acceptance: env ปรับได้; ค่าเดียวกันทุก caller
   - Files: `sandbox-runner.service.js`, `.env.example`
 
-- [ ] **Task:** Transitional `compileOnRead(script)` fallback เมื่อ `compiledScript` ว่าง
+- [x] **Task:** Transitional `compileOnRead(script)` fallback เมื่อ `compiledScript` ว่าง
   - Acceptance: log WARN + metric; ใช้ AST compiler ไม่ใช่ regex
-  - Files: `reports.service.js` หรือ `scheduler.service.js`
+  - Files: `report-script-resolution.service.js`
 
 - [x] **Task:** ยังคง `prepareBoosterStyleScript` ชั่วคราวจน Phase 4 (หรือลบทันทีถ้ามี compile-on-read)
   - Acceptance: ไม่มี regression ระหว่าง Phase 1–3
@@ -77,50 +77,50 @@ Phase 5: Verify end-to-end + release 2 cleanup
 
 ### 2.1 Error codes
 
-- [ ] **Task:** เพิ่ม 6 codes ใน `codes.yaml` + `error-codes.js`
+- [x] **Task:** เพิ่ม 6 codes ใน `codes.yaml` + `error-codes.js`
   - Codes: `VALIDATION_FAILED`, `REPORT_NOT_VALIDATED`, `REPORT_NOT_TESTED`, `TEST_RUN_TIMEOUT`, `TEST_RUN_TOKEN_INVALID`, `ALREADY_COMPILED`
   - Files: `codes.yaml`, `src/lib/error-codes.js`
 
 ### 2.2 Schema & repository
 
-- [ ] **Task:** ขยาย `reports` document + repository + `serializeReport`
+- [x] **Task:** ขยาย `reports` document + repository + `serializeReport`
   - Acceptance: ฟิลด์ validation ครบ; GET list/detail ตามตารางใน spec
   - Files: `reports.repository.js`, `reports.schema.js`, `reports.service.js`
 
 ### 2.3 testRunToken service
 
-- [ ] **Task:** สร้าง `test-run-token.service.js`
+- [x] **Task:** สร้าง `test-run-token.service.js`
   - Acceptance: issue หลัง test run สำเร็จ; verify hash + expiry; TTL 15m
   - Verify: unit tests (valid, expired, hash mismatch)
   - Files: `test-run-token.service.js`, tests
 
 ### 2.4 Validate API
 
-- [ ] **Task:** `POST /api/v1/smart-reports/validate`
+- [x] **Task:** `POST /api/v1/smart-reports/validate`
   - Acceptance: คืน `valid`, `compiledScript`, `errors[]`; ไม่เชื่อม read DB
   - Verify: `integration-test/validate-test-run.route.test.js`
   - Files: `reports.route.js`, `reports.controller.js`, `reports.service.js`, `reports.schema.js`
 
 ### 2.5 Test Run API
 
-- [ ] **Task:** `POST /api/v1/smart-reports/test-run`
+- [x] **Task:** `POST /api/v1/smart-reports/test-run`
   - Acceptance: รัน `compiledScript` + params (yesterday เหมือน manual); คืน `recordCount`, `sample` (≤5), `durationMs`, `testRunToken`
   - Verify: integration test + timeout case
   - Files: เดียวกับด้านบน
 
 ### 2.6 Save gate
 
-- [ ] **Task:** บังคับ `testRunToken` + validate state ก่อน create/update เมื่อ `script` เปลี่ยน
+- [x] **Task:** บังคับ `testRunToken` + validate state ก่อน create/update เมื่อ `script` เปลี่ยน
   - Acceptance: 422 `TEST_RUN_TOKEN_INVALID` / `REPORT_NOT_VALIDATED` / `REPORT_NOT_TESTED`
   - Verify: integration test `reports.route.test.js`
   - Files: `reports.service.js`
 
-- [ ] **Task:** Manual run + scheduler ใช้ `compiledScript` (fallback compile-on-read)
+- [x] **Task:** Manual run + scheduler ใช้ `compiledScript` (fallback compile-on-read)
   - Acceptance: ไม่เรียก regex ตอน runtime
   - Verify: scheduler integration test
   - Files: `scheduler.service.js`, `reports.service.js`
 
-- [ ] **Task:** Scheduler skip เมื่อไม่มี `compiledScript`
+- [x] **Task:** Scheduler skip เมื่อไม่มี `compiledScript`
   - Acceptance: `download_history` status `failed`, error `MISSING_COMPILED_SCRIPT`; ไม่ auto-disable
   - Files: `scheduler.service.js`
 

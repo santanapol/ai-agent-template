@@ -3,6 +3,10 @@ import { runReportScript } from "./sandbox-runner.service.js";
 import { exportReport } from "./file-exporter.service.js";
 import { findReports } from "./reports.repository.js";
 import { insertDownloadHistory } from "./download-history.repository.js";
+import {
+  hasRunnableCompiledScript,
+  resolveRunnableScript,
+} from "./report-script-resolution.service.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -101,6 +105,19 @@ function buildFileName(report, format, now) {
   return `${slug}-${timestamp}.${ext}`;
 }
 
+/** @returns {Record<string, unknown>} */
+export function buildReportRunParams(reportParams = {}, now = new Date()) {
+  const { startDate, endDate } = computePreviousDayRange(
+    now,
+    reportParams.timezoneOffsetMinutes ?? 0,
+  );
+  return {
+    ...reportParams,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+  };
+}
+
 /**
  * รันสคริปต์รายงานหนึ่งฉบับ: แทนที่ placeholder วันที่, รันใน sandbox, ส่งออกไฟล์,
  * แล้วบันทึกผลลงใน download_history (ทั้งกรณีสำเร็จและล้มเหลว)
@@ -118,16 +135,8 @@ export async function runReport(
   { now = new Date(), triggeredBy = "manual" } = {},
 ) {
   const startedAt = now;
-  const { startDate, endDate } = computePreviousDayRange(
-    now,
-    report.params?.timezoneOffsetMinutes ?? 0,
-  );
-  const params = {
-    ...report.params,
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-  };
-  const script = report.script;
+  const params = buildReportRunParams(report.params ?? {}, now);
+  const script = resolveRunnableScript(report);
 
   const baseRecord = {
     reportId: report._id,
@@ -192,6 +201,24 @@ export async function startScheduler(db) {
       const task = cron.schedule(
         expression,
         () => {
+          if (!hasRunnableCompiledScript(report)) {
+            return insertDownloadHistory(db, {
+              reportId: report._id,
+              reportName: report.name,
+              format: report.outputFormat,
+              triggeredBy: "scheduler",
+              startedAt: new Date(),
+              fileName: null,
+              filePath: null,
+              status: "failed",
+              recordCount: null,
+              error: "MISSING_COMPILED_SCRIPT",
+              finishedAt: new Date(),
+              cr_by: "system",
+              cr_date: new Date(),
+              cr_prog: "/scheduler",
+            });
+          }
           if (
             report.schedule.frequency === "monthly" &&
             report.schedule.dayOfMonth === "last" &&

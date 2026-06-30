@@ -15,27 +15,60 @@ import {
   findDownloadHistoryPage,
   findDownloadHistoryById,
 } from "./download-history.repository.js";
-import { runReport, reloadScheduler } from "./scheduler.service.js";
+import {
+  runReport,
+  reloadScheduler,
+  buildReportRunParams,
+} from "./scheduler.service.js";
+import { compileBoosterScript } from "./script-compiler.service.js";
+import { runReportScript } from "./sandbox-runner.service.js";
+import {
+  issueTestRunToken,
+  verifyTestRunToken,
+} from "./test-run-token.service.js";
 
 const ROUTE_PROG = "/api/v1/smart-reports";
 const ROUTE_PROG_ITEM = "/api/v1/smart-reports/:id";
 
-function serializeReport(report) {
+function toRows(result) {
+  if (Array.isArray(result)) return result;
+  if (result === null || result === undefined) return [];
+  return [result];
+}
+
+function serializeReportListItem(report) {
   return {
     id: report._id.toString(),
     name: report.name,
     description: report.description ?? null,
-    script: report.script,
     params: report.params ?? {},
     outputFormat: report.outputFormat,
     schedule: report.schedule ?? null,
     enabled: report.enabled,
+    validationStatus: report.validationStatus ?? "pending",
+    validatedAt: report.validatedAt ? report.validatedAt.toISOString() : null,
+    lastTestRunAt: report.lastTestRunAt
+      ? report.lastTestRunAt.toISOString()
+      : null,
+    lastTestRunMeta: report.lastTestRunMeta
+      ? { recordCount: report.lastTestRunMeta.recordCount ?? null }
+      : null,
     cr_by: report.cr_by,
     cr_date: report.cr_date.toISOString(),
     cr_prog: report.cr_prog,
     upd_by: report.upd_by,
     upd_date: report.upd_date.toISOString(),
     upd_prog: report.upd_prog,
+  };
+}
+
+function serializeReportDetail(report) {
+  return {
+    ...serializeReportListItem(report),
+    script: report.script,
+    compiledScript: report.compiledScript ?? null,
+    validationErrors: report.validationErrors ?? [],
+    lastTestRunMeta: report.lastTestRunMeta ?? null,
   };
 }
 
@@ -77,6 +110,58 @@ function requireIfMatchDate(ifMatch) {
   return new Date(decoded);
 }
 
+function assertCompiledScriptMatches(script, compiledScript) {
+  const compiled = compileBoosterScript(script);
+  if (!compiled.success) {
+    throw new HttpError(
+      422,
+      CODES.REPORT_NOT_VALIDATED,
+      compiled.errors[0]?.message ?? "Script validation failed.",
+    );
+  }
+  if (compiled.compiledScript !== compiledScript) {
+    throw new HttpError(
+      422,
+      CODES.VALIDATION_FAILED,
+      "compiledScript does not match the provided script.",
+    );
+  }
+}
+
+function requireVerifiedTestRunToken({ script, compiledScript, testRunToken }) {
+  if (!testRunToken) {
+    throw new HttpError(
+      422,
+      CODES.REPORT_NOT_TESTED,
+      "testRunToken is required when saving a script.",
+    );
+  }
+
+  const verified = verifyTestRunToken(testRunToken, { script, compiledScript });
+  if (!verified.valid) {
+    throw new HttpError(
+      422,
+      CODES.TEST_RUN_TOKEN_INVALID,
+      "Test run token is missing, expired, or invalid.",
+    );
+  }
+
+  return verified;
+}
+
+function assertScriptSaveGate({ script, compiledScript, testRunToken }) {
+  if (!compiledScript) {
+    throw new HttpError(
+      422,
+      CODES.REPORT_NOT_VALIDATED,
+      "compiledScript is required when saving a script.",
+    );
+  }
+
+  assertCompiledScriptMatches(script, compiledScript);
+  return requireVerifiedTestRunToken({ script, compiledScript, testRunToken });
+}
+
 /** สร้าง pagination metadata จากค่า page/limit ที่ขอ และ total จำนวนเอกสารทั้งหมด */
 export function buildPagination({ page, limit }, total) {
   return {
@@ -87,12 +172,65 @@ export function buildPagination({ page, limit }, total) {
   };
 }
 
+export function validateScript(script) {
+  const result = compileBoosterScript(script);
+  return {
+    valid: result.success,
+    compiledScript: result.compiledScript,
+    errors: result.errors,
+  };
+}
+
+export async function testRunScript({
+  script,
+  compiledScript,
+  params = {},
+  now = new Date(),
+}) {
+  assertCompiledScriptMatches(script, compiledScript);
+
+  const runParams = buildReportRunParams(params, now);
+  const startedAt = Date.now();
+
+  try {
+    const result = await runReportScript({
+      script: compiledScript,
+      params: runParams,
+    });
+    const rows = toRows(result);
+    const durationMs = Date.now() - startedAt;
+
+    return {
+      success: true,
+      recordCount: rows.length,
+      durationMs,
+      sample: rows.slice(0, 5),
+      testRunToken: issueTestRunToken({
+        script,
+        compiledScript,
+        recordCount: rows.length,
+        durationMs,
+      }),
+      errors: [],
+    };
+  } catch (error) {
+    if (String(error.message).includes("timed out")) {
+      throw new HttpError(
+        422,
+        CODES.TEST_RUN_TIMEOUT,
+        "Test run exceeded the configured time limit.",
+      );
+    }
+    throw error;
+  }
+}
+
 export async function listReports({ page = 1, limit = 20 } = {}) {
   const db = getDatabase();
   const { items, total } = await findReportsPage(db, { page, limit });
 
   return {
-    data: items.map(serializeReport),
+    data: items.map(serializeReportListItem),
     pagination: buildPagination({ page, limit }, total),
   };
 }
@@ -100,11 +238,21 @@ export async function listReports({ page = 1, limit = 20 } = {}) {
 export async function createReport(payload, userId) {
   const db = getDatabase();
   const now = new Date();
+  const verified = assertScriptSaveGate(payload);
 
   const report = {
     name: payload.name,
     description: payload.description ?? null,
     script: payload.script,
+    compiledScript: payload.compiledScript,
+    validationStatus: "valid",
+    validationErrors: [],
+    validatedAt: now,
+    lastTestRunAt: verified.testedAt ?? now,
+    lastTestRunMeta: {
+      recordCount: verified.recordCount ?? 0,
+      durationMs: verified.durationMs ?? 0,
+    },
     params: payload.params ?? {},
     outputFormat: payload.outputFormat,
     schedule: payload.schedule ?? null,
@@ -119,7 +267,7 @@ export async function createReport(payload, userId) {
 
   const inserted = await insertReport(db, report);
   await reloadScheduler(db);
-  return serializeReport(inserted);
+  return serializeReportDetail(inserted);
 }
 
 export async function updateReportById(id, payload, ifMatch, userId) {
@@ -133,12 +281,38 @@ export async function updateReportById(id, payload, ifMatch, userId) {
   }
 
   const now = new Date();
+  const scriptChanging =
+    payload.script !== undefined && payload.script !== existing.script;
+
+  let validationFields = {};
+  if (scriptChanging) {
+    const verified = assertScriptSaveGate({
+      script: payload.script,
+      compiledScript: payload.compiledScript,
+      testRunToken: payload.testRunToken,
+    });
+    validationFields = {
+      script: payload.script,
+      compiledScript: payload.compiledScript,
+      validationStatus: "valid",
+      validationErrors: [],
+      validatedAt: now,
+      lastTestRunAt: verified.testedAt ?? now,
+      lastTestRunMeta: {
+        recordCount: verified.recordCount ?? 0,
+        durationMs: verified.durationMs ?? 0,
+      },
+    };
+  }
+
   const updates = {
     ...payload,
+    ...validationFields,
     upd_by: userId,
     upd_date: now,
     upd_prog: ROUTE_PROG_ITEM,
   };
+  delete updates.testRunToken;
 
   const result = await updateReport(db, objectId, updates, expectedUpdDate);
   if (result.matchedCount === 0) {
@@ -151,7 +325,7 @@ export async function updateReportById(id, payload, ifMatch, userId) {
 
   await reloadScheduler(db);
 
-  return serializeReport({ ...existing, ...updates, _id: objectId });
+  return serializeReportDetail({ ...existing, ...updates, _id: objectId });
 }
 
 export async function deleteReportById(id, ifMatch) {

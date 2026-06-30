@@ -51,21 +51,46 @@ const scheduleSchema = {
   },
 };
 
-const reportProperties = {
+const reportListProperties = {
   id: { type: "string" },
   name: { type: "string" },
   description: { type: ["string", "null"] },
-  script: { type: "string" },
   params: { type: "object" },
   outputFormat: { type: "string", enum: ["csv", "excel"] },
   schedule: scheduleSchema,
   enabled: { type: "boolean" },
+  validationStatus: { type: "string", enum: ["pending", "valid", "invalid"] },
+  validatedAt: { type: ["string", "null"] },
+  lastTestRunAt: { type: ["string", "null"] },
+  lastTestRunMeta: {
+    type: ["object", "null"],
+    properties: {
+      recordCount: { type: ["number", "null"] },
+    },
+  },
   cr_by: { type: "string" },
   cr_date: { type: "string" },
   cr_prog: { type: "string" },
   upd_by: { type: "string" },
   upd_date: { type: "string" },
   upd_prog: { type: "string" },
+};
+
+const reportDetailProperties = {
+  ...reportListProperties,
+  script: { type: "string" },
+  compiledScript: { type: ["string", "null"] },
+  validationErrors: {
+    type: "array",
+    items: { type: "string" },
+  },
+  lastTestRunMeta: {
+    type: ["object", "null"],
+    properties: {
+      recordCount: { type: ["number", "null"] },
+      durationMs: { type: ["number", "null"] },
+    },
+  },
 };
 
 const historyProperties = {
@@ -86,6 +111,8 @@ const reportBodyProperties = {
   name: { type: "string", minLength: 1 },
   description: { type: ["string", "null"] },
   script: { type: "string", minLength: 1 },
+  compiledScript: { type: "string", minLength: 1 },
+  testRunToken: { type: "string", minLength: 1 },
   params: { type: "object" },
   outputFormat: { type: "string", enum: ["csv", "excel"] },
   schedule: scheduleSchema,
@@ -129,7 +156,7 @@ export const listReportsSchema = {
         message: { type: ["string", "null"] },
         data: {
           type: "array",
-          items: { type: "object", properties: reportProperties },
+          items: { type: "object", properties: reportListProperties },
         },
         pagination: { type: "object", properties: paginationProperties },
       },
@@ -145,7 +172,7 @@ export const createReportSchema = {
   headers: trustedHeaders,
   body: {
     type: "object",
-    required: ["name", "script", "outputFormat"],
+    required: ["name", "script", "compiledScript", "outputFormat"],
     additionalProperties: false,
     properties: reportBodyProperties,
   },
@@ -158,7 +185,7 @@ export const createReportSchema = {
         message: { type: ["string", "null"] },
         data: {
           type: "object",
-          properties: { id: { type: "string" } },
+          properties: reportDetailProperties,
         },
       },
     },
@@ -269,6 +296,88 @@ export const downloadFileSchema = {
     },
   },
   response: {
+    "4xx": errorResponse,
+    "5xx": errorResponse,
+  },
+};
+
+const validationErrorProperties = {
+  line: { type: ["integer", "null"] },
+  message: { type: "string" },
+  code: { type: ["string", "null"] },
+};
+
+export const validateReportSchema = {
+  description: "Validate and compile a Booster-style report script",
+  tags: ["smart-reports"],
+  headers: trustedHeaders,
+  body: {
+    type: "object",
+    required: ["script"],
+    additionalProperties: false,
+    properties: {
+      script: { type: "string", minLength: 1 },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        code: { type: "string" },
+        message: { type: ["string", "null"] },
+        data: {
+          type: "object",
+          properties: {
+            valid: { type: "boolean" },
+            compiledScript: { type: ["string", "null"] },
+            errors: {
+              type: "array",
+              items: { type: "object", properties: validationErrorProperties },
+            },
+          },
+        },
+      },
+    },
+    "4xx": errorResponse,
+    "5xx": errorResponse,
+  },
+};
+
+export const testRunReportSchema = {
+  description: "Execute a compiled report script against the read database",
+  tags: ["smart-reports"],
+  headers: trustedHeaders,
+  body: {
+    type: "object",
+    required: ["script", "compiledScript"],
+    additionalProperties: false,
+    properties: {
+      script: { type: "string", minLength: 1 },
+      compiledScript: { type: "string", minLength: 1 },
+      params: { type: "object" },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        code: { type: "string" },
+        message: { type: ["string", "null"] },
+        data: {
+          type: "object",
+          properties: {
+            success: { type: "boolean" },
+            recordCount: { type: "number" },
+            durationMs: { type: "number" },
+            sample: { type: "array", items: { type: "object" } },
+            testRunToken: { type: "string" },
+            errors: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
     "4xx": errorResponse,
     "5xx": errorResponse,
   },
