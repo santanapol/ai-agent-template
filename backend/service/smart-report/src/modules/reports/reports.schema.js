@@ -391,8 +391,21 @@ export const testRunReportSchema = {
             success: { type: "boolean" },
             recordCount: { type: "number" },
             durationMs: { type: "number" },
-            sample: { type: "array", items: { type: "object" } },
+            sample: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: true,
+              },
+            },
             testRunToken: { type: "string" },
+            runParams: {
+              type: "object",
+              properties: {
+                startDate: { type: "string" },
+                endDate: { type: "string" },
+              },
+            },
             errors: { type: "array", items: { type: "string" } },
           },
         },

@@ -280,6 +280,70 @@ if (!RUN) {
       etag = response.headers.etag;
     });
 
+    test("PUT /:id rejects script change without testRunToken (422)", async () => {
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const newScript = `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({ name: "changed" });`;
+      const compiled = compileBoosterScript(newScript);
+      assert.equal(compiled.success, true);
+
+      const response = await app.inject({
+        method: "PUT",
+        url: `/api/v1/smart-reports/${reportId}`,
+        headers: { ...buildMeshHeaders(), "if-match": etag },
+        payload: {
+          script: newScript,
+          compiledScript: compiled.compiledScript,
+        },
+      });
+
+      assert.equal(response.statusCode, 422);
+      assert.equal(response.json().code, "REPORT_NOT_TESTED");
+    });
+
+    test("PUT /:id accepts script change with valid testRunToken (200)", async () => {
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const newScript = `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({ description: "gate-updated" });`;
+      const compiled = compileBoosterScript(newScript);
+      assert.equal(compiled.success, true);
+
+      const validateResponse = await app.inject({
+        method: "POST",
+        url: "/api/v1/smart-reports/validate",
+        headers: buildMeshHeaders(),
+        payload: { script: newScript },
+      });
+      assert.equal(validateResponse.statusCode, 200);
+      const compiledScript = validateResponse.json().data.compiledScript;
+
+      const testRunResponse = await app.inject({
+        method: "POST",
+        url: "/api/v1/smart-reports/test-run",
+        headers: buildMeshHeaders(),
+        payload: { script: newScript, compiledScript },
+      });
+      assert.equal(testRunResponse.statusCode, 200);
+      const testRunToken = testRunResponse.json().data.testRunToken;
+
+      const response = await app.inject({
+        method: "PUT",
+        url: `/api/v1/smart-reports/${reportId}`,
+        headers: { ...buildMeshHeaders(), "if-match": etag },
+        payload: { script: newScript, compiledScript, testRunToken },
+      });
+
+      assert.equal(response.statusCode, 200);
+      const after = await db
+        .collection(REPORTS_COLLECTION)
+        .findOne({ _id: new ObjectId(reportId) });
+      assert.equal(after.script, newScript);
+      assert.equal(after.compiledScript, compiledScript);
+      assert.equal(after.validationStatus, "valid");
+
+      etag = response.headers.etag;
+    });
+
     test("POST /:id/run executes the report and records download history (200)", async () => {
       const response = await app.inject({
         method: "POST",

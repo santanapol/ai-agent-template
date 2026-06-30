@@ -86,4 +86,55 @@ describe("test-run-token.service", () => {
     assert.equal(digestScriptValue("abc"), digestScriptValue("abc"));
     assert.notEqual(digestScriptValue("abc"), digestScriptValue("def"));
   });
+
+  test("uses a local-dev fallback secret when unset in development", () => {
+    delete process.env.TEST_RUN_TOKEN_SECRET;
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "development";
+
+    try {
+      const token = issueTestRunToken({
+        script: "a",
+        compiledScript: "withReport(async () => {});",
+        recordCount: 1,
+        durationMs: 1,
+      });
+      const result = verifyTestRunToken(token, {
+        script: "a",
+        compiledScript: "withReport(async () => {});",
+      });
+      assert.equal(result.valid, true);
+    } finally {
+      if (previousNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = previousNodeEnv;
+      }
+    }
+  });
+
+  test("requires TEST_RUN_TOKEN_SECRET in staging-like environments", () => {
+    delete process.env.TEST_RUN_TOKEN_SECRET;
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "staging";
+
+    try {
+      assert.throws(
+        () =>
+          issueTestRunToken({
+            script: "a",
+            compiledScript: "withReport(async () => {});",
+            recordCount: 1,
+            durationMs: 1,
+          }),
+        /TEST_RUN_TOKEN_SECRET is required/,
+      );
+    } finally {
+      if (previousNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = previousNodeEnv;
+      }
+    }
+  });
 });
