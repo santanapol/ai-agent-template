@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Removed
+
+- **Docs:** Shipped `_mission-control` specs (Dynamic Permission, branch-report task checklists, smart-report script-compiler deploy/verify plans) — archived under `docs/archive/mission-control/` or deleted; active specs remain in `smart-report` and `branch-report` `_mission-control/`.
+
 ### Added
 
 - **`backend/service/branch-report/`:** New Branch Report service (v0.1.0) — Royalty 21 Times marketing report (`GET /royalty-21-times`, `GET /invite-links`), OpenAPI, gateway route `/api/v1/branch-report`, tenant scope via gateway headers.

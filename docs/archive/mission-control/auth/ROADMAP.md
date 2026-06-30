@@ -1,7 +1,7 @@
 # Roadmap: Dynamic Permission — ภาพรวมทุก Phase
 
 > เอกสารแม่ของชุดงาน Dynamic Permission ทั้งระบบ — อัปเดตสถานะที่นี่เมื่อแต่ละ phase ขยับ
-> อัปเดตล่าสุด: 2026-06-25 (Phase 1–5 shipped; E2E checklist ลบหลัง deploy แล้ว)
+> อัปเดตล่าสุด: 2026-06-30 — **ทุก phase shipped**; เอกสารย้ายไป `docs/archive/mission-control/auth/`
 
 ## Phases
 

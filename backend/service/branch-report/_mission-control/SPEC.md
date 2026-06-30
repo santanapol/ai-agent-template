@@ -1,6 +1,6 @@
 # Spec: Royalty 21 Times (Branch Report — Channel Performance)
 
-> Phase: **SPECIFY** ✓ · **PLAN** ✓ (see [tasks/plan.md](./tasks/plan.md))  
+> Phase: **SPECIFY** ✓ · **PLAN** ✓ · **SHIPPED** (2026-06-29)  
 > Date: 2026-06-29 · **Amended 2026-06-29** — registration date range filter  
 > Related docs:
 > - [docs/royalty-21-times.md](../docs/royalty-21-times.md)

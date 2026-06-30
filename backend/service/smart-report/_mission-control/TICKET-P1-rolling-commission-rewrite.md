@@ -17,5 +17,4 @@ Report กลุ่ม C ใช้ `insert()` / write operations ใน Booster 
 
 ## References
 
-- [SPEC-script-compiler-validation.md](./SPEC-script-compiler-validation.md) §13 — group C
-- [PLAN-script-compiler-validation.md](./PLAN-script-compiler-validation.md) — P1 disable task
+- Script compiler release (group C / P1 disable) — shipped PRs #27–#33; historical specs removed from `_mission-control/` (see git history).
