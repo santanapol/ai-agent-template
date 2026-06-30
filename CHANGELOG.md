@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
-- **Docs:** Shipped `_mission-control` specs (Dynamic Permission, branch-report task checklists, smart-report script-compiler deploy/verify plans) — archived under `docs/archive/mission-control/` or deleted; active specs remain in `smart-report` and `branch-report` `_mission-control/`.
+- **Docs:** Shipped `_mission-control` specs removed (no `docs/archive/` copy); git history retains moved files. Active specs remain in `smart-report` and `branch-report` `_mission-control/`.
 
 ### Added
 
