@@ -73,16 +73,28 @@ backend/service/smart-report/
 - **Sandbox Context Variables:**
   - `ObjectId`: แผนผังจำลอง MongoDB `ObjectId`
   - `ISODate`: แผนผังจำลองและแปลงวันที่เป็น `Date` object
+  - `withReport(fn)`: helper สำหรับรัน compiled script แบบ async (`withReport(async () => { return await ... })`)
   - `db`: ออบเจกต์ที่ครอบ DB Connection ซึ่งถูกจำกัดสิทธิ์เฉพาะ Read-only โดยมี `getSiblingDB(dbName)`
-  - `params`: ออบเจกต์ที่เก็บ Dynamic parameters ที่ถูก replace แล้ว
-- **Auto Capture Wrapper:**
-   Backend จะจำลอง method ต่างๆ บนคอลเลกชัน เช่น `aggregate()`, `find()`, `findOne()` ให้ดึงข้อมูลมาแปลงเป็น Array หรือ Object โดยอัตโนมัติ เพื่อส่งคืนให้ระบบประมวลผลเป็นไฟล์ต่อ
+  - `params`: ออบเจกต์ที่เก็บ Dynamic parameters (`startDate`, `endDate`, `ou_id`, `branch_id`, ฯลฯ)
+- **Runnable script:** ทุก production path รัน **`compiledScript`** ที่ AST compiler สร้างไว้เท่านั้น (ไม่มี regex transform ตอน runtime)
+- **Collection wrappers:** `aggregate()` / `find()` คืน `Promise<array>`; `findOne()` คืน `Promise<object|null>`
+- **Timeout:** `REPORT_SCRIPT_TIMEOUT_MS` (default **120s**) ใช้กับ manual run, test run, และ scheduler เท่ากัน
 
-### 3. API Endpoints
-- `GET /api/v1/smart-reports` - ดึงรายการสคริปต์รายงานทั้งหมด
-- `POST /api/v1/smart-reports` - เพิ่มรายงานใหม่
-- `PUT /api/v1/smart-reports/:id` - แก้ไขรายงาน
+### 3. Script validation flow (UI + API)
+1. **Validate** (`POST /api/v1/smart-reports/validate`) — parse + compile Booster script → `compiledScript` (ไม่เชื่อมต่อ read DB)
+2. **Test Run** (`POST /api/v1/smart-reports/test-run`) — รัน `compiledScript` กับ read DB ช่วง **เมื่อวาน** → `recordCount`, `sample`, `testRunToken` (TTL 15 นาที)
+3. **Save** — ต้องส่ง `compiledScript` + `testRunToken` เมื่อ `script` เปลี่ยน; update อื่นไม่ต้อง test ใหม่
+
+Migration สำหรับ report เก่า: `npm run migrate:scripts -- --test-run --fail-on-error` (ดู `scripts/README.md`)
+
+### 4. API Endpoints
+- `GET /api/v1/smart-reports` - ดึงรายการสคริปต์รายงาน (ไม่รวม `script` / `compiledScript`)
+- `GET /api/v1/smart-reports/:id` - ดึงรายละเอียดรายงาน (รวม `script`, `compiledScript`, validation fields)
+- `POST /api/v1/smart-reports` - เพิ่มรายงานใหม่ (ต้อง `compiledScript` + `testRunToken`)
+- `PUT /api/v1/smart-reports/:id` - แก้ไขรายงาน (gate เมื่อ `script` เปลี่ยน)
 - `DELETE /api/v1/smart-reports/:id` - ลบรายงาน
+- `POST /api/v1/smart-reports/validate` - compile script (no DB)
+- `POST /api/v1/smart-reports/test-run` - test run compiled script (read DB)
 - `POST /api/v1/smart-reports/:id/run` - สั่งรันสคริปต์รายงานทันที (Manual Trigger)
 - `GET /api/v1/smart-reports/history` - ดูประวัติการรันและบันทึกไฟล์ทั้งหมด
 - `GET /api/v1/smart-reports/download/:fileId` - ดาวน์โหลดไฟล์รายงาน (CSV หรือ Excel) จาก Local Storage
@@ -99,8 +111,9 @@ backend/service/smart-report/
 ## Boundaries
 - **Always:**
   - บังคับการรัน Query สคริปต์ผ่าน Connection Read-only (`MONGODB_URI_READ`) เท่านั้น
-  - ตั้งเวลา Timeout ใน VM Sandbox (เช่น ไม่เกิน 30 วินาที) เพื่อป้องกัน Query ค้างหรือทำงานไม่มีสิ้นสุด
-  - ตรวจเช็ค JWT token สิทธิ์ความเป็นแอดมิน/staff ในทุกๆ Endpoint
+  - รัน **`compiledScript`** เท่านั้นบน production path (manual / test-run / scheduler)
+  - ตั้งเวลา Timeout ใน VM Sandbox ด้วย `REPORT_SCRIPT_TIMEOUT_MS` (default 120s)
+  - Save ต้อง verify `testRunToken` เมื่อ `script` เปลี่ยน
 - **Ask first:**
   - การลงทะเบียนพอร์ตระบบภายนอกเพิ่มเติมใน Gateway
 - **Never:**

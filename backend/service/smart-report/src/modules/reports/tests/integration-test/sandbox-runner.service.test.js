@@ -119,16 +119,6 @@ if (!RUN) {
       assert.equal(result, 42);
     });
 
-    test("find via db.getSiblingDB returns an array", async () => {
-      const script = `
-        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
-        mainDB.${FIXTURE_COLLECTION}.find({ category: "alpha" });
-      `;
-      const result = await runReportScript({ script });
-      assert.ok(Array.isArray(result));
-      assert.equal(result.length, 2);
-    });
-
     test("withReport(async () => return await aggregate) returns an array", async () => {
       const script = `
         withReport(async () => {
@@ -173,61 +163,16 @@ if (!RUN) {
       assert.deepEqual(result, [{ value: 20 }, { value: 10 }]);
     });
 
-    test("aggregate via db.getSiblingDB returns an array", async () => {
-      const script = `
-        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
-        mainDB.${FIXTURE_COLLECTION}.aggregate([
-          { $match: { category: "alpha" } },
-          { $sort: { value: -1 } },
-          { $project: { _id: 0, value: 1 } },
-        ]);
-      `;
-      const result = await runReportScript({ script });
-      assert.deepEqual(result, [{ value: 20 }, { value: 10 }]);
-    });
-
-    test("aggregate().toArray() returns an array (Booster / mongo shell style)", async () => {
-      const script = `
-        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
-        const rows = mainDB.${FIXTURE_COLLECTION}.aggregate([
-          { $match: { category: "alpha" } },
-          { $sort: { value: -1 } },
-          { $project: { _id: 0, value: 1 } },
-        ]).toArray();
-        rows;
-      `;
-      const result = await runReportScript({ script });
-      assert.deepEqual(result, [{ value: 20 }, { value: 10 }]);
-    });
-
-    test("find().toArray() returns an array (Booster / mongo shell style)", async () => {
+    test("rejects raw Booster .toArray() scripts (must use compiledScript)", async () => {
       const script = `
         const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
         const rows = mainDB.${FIXTURE_COLLECTION}.find({ category: "alpha" }).toArray();
         rows;
       `;
-      const result = await runReportScript({ script });
-      assert.ok(Array.isArray(result));
-      assert.equal(result.length, 2);
-    });
-
-    test("multi-step Booster-style script with sequential .toArray() calls", async () => {
-      const script = `
-        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
-        const rows = mainDB.${FIXTURE_COLLECTION}.aggregate([
-          { $match: { category: "alpha" } },
-          { $group: { _id: "$category", total: { $sum: "$value" } } },
-        ]).toArray();
-        let result = [];
-        if (rows.length > 0) {
-          const docs = mainDB.${FIXTURE_COLLECTION}.find({ category: "alpha" }).toArray();
-          result = docs.map((doc) => ({ category: doc.category, value: doc.value }));
-        }
-        result;
-      `;
-      const result = await runReportScript({ script });
-      assert.equal(result.length, 2);
-      assert.ok(result.every((row) => row.category === "alpha"));
+      await assert.rejects(
+        runReportScript({ script }),
+        /Script execution failed/,
+      );
     });
 
     test("findOne via db.getSiblingDB returns a single object", async () => {

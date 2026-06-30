@@ -74,50 +74,11 @@ function createSandboxDb(client) {
 }
 
 /**
- * แปลงสคริปต์สไตล์ Booster (หลายบรรทัด + `.toArray()` แบบ sync) ให้รันใน Node sandbox ได้
- * โดย inject `await` ก่อน `.toArray()` และห่อด้วย async IIFE
- * @deprecated จะลบใน release 2 — ใช้ AST compiler + compiledScript แทน
- */
-export function prepareBoosterStyleScript(script) {
-  const trimmed = script.trim();
-  if (/^\(\s*async\s+function/m.test(trimmed)) {
-    return script;
-  }
-
-  const needsBoosterWrap =
-    /\.\s*toArray\s*\(\s*\)/.test(script) || /\bresult\s*;\s*$/.test(trimmed);
-
-  if (!needsBoosterWrap) {
-    return script;
-  }
-
-  let transformed = script.replace(
-    /(\b(?:const|let|var)\s+\w+\s*=\s*)([^;]*\.(?:aggregate|find)\([\s\S]*?\))\.toArray\(\)/g,
-    (match, prefix, rhs) => {
-      if (/\bawait\s+$/.test(prefix)) return match;
-      return `${prefix}await ${rhs}`;
-    },
-  );
-
-  transformed = transformed.replace(/(\bresult)\s*;\s*$/, "return $1;");
-
-  const lines = transformed.split("\n");
-  let lastIdx = lines.length - 1;
-  while (lastIdx >= 0 && lines[lastIdx].trim() === "") lastIdx -= 1;
-  if (lastIdx >= 0 && /^\s*(\w+)\s*;\s*$/.test(lines[lastIdx])) {
-    lines[lastIdx] = lines[lastIdx].replace(/^\s*(\w+)\s*;\s*$/, "return $1;");
-    transformed = lines.join("\n");
-  }
-
-  return `(async function () {\n${transformed}\n})()`;
-}
-
-/**
- * รันสคริปต์ MongoDB shell-style (aggregate/find/findOne) ภายใต้ Node `vm` sandbox
+ * รันสคริปต์ MongoDB shell-style ภายใต้ Node `vm` sandbox
  * โดยบังคับให้ query ทั้งหมดผ่าน Read-only connection (`MONGODB_URI_READ`)
  *
  * @param {object} options
- * @param {string} options.script - สคริปต์ JavaScript สไตล์ mongo shell
+ * @param {string} options.script - compiled script (`withReport(async () => { ... })`)
  * @param {Record<string, unknown>} [options.params] - dynamic parameters ที่ inject เข้า sandbox context โดยตรง (เข้าถึงได้ผ่าน `params.*` ในสคริปต์)
  * @param {number} [options.timeoutMs] - timeout สูงสุดของการรันสคริปต์ (ค่าเริ่มต้นจาก REPORT_SCRIPT_TIMEOUT_MS หรือ 120s)
  * @returns {Promise<unknown>} ผลลัพธ์จาก expression สุดท้ายของสคริปต์ (Array/Object/primitive)
@@ -141,11 +102,9 @@ export async function runReportScript({
     params,
   });
 
-  const runnableScript = prepareBoosterStyleScript(script);
-
   let result;
   try {
-    const compiled = new Script(runnableScript, {
+    const compiled = new Script(script, {
       filename: "report-script.js",
     });
     result = compiled.runInContext(context, { timeout: resolvedTimeoutMs });

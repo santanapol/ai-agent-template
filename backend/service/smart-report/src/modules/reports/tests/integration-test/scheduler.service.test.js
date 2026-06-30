@@ -49,15 +49,22 @@ if (!RUN) {
 
     test("runReport executes the script with date placeholders, exports a file, and records download history", async () => {
       const db = await connectDatabase();
-      const report = {
-        _id: new ObjectId(),
-        name: "Scheduler Range Report",
-        script: `
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const script = `
           const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
           mainDB.${FIXTURE_COLLECTION}.find({
             date: { $gte: ISODate(params.startDate), $lte: ISODate(params.endDate) },
           });
-        `,
+        `;
+      const compiled = compileBoosterScript(script);
+      assert.equal(compiled.success, true);
+
+      const report = {
+        _id: new ObjectId(),
+        name: "Scheduler Range Report",
+        script,
+        compiledScript: compiled.compiledScript,
         params: {},
         outputFormat: "csv",
         schedule: null,
@@ -85,6 +92,33 @@ if (!RUN) {
 
         const history = await findDownloadHistory(db);
         assert.ok(history.some((entry) => entry._id.equals(record._id)));
+      } finally {
+        await db
+          .collection("download_history")
+          .deleteMany({ reportId: report._id });
+      }
+    });
+
+    test("runReport records a failed entry when compiledScript is missing", async () => {
+      const db = await connectDatabase();
+      const report = {
+        _id: new ObjectId(),
+        name: "Scheduler Missing Compiled",
+        script: `db.getSiblingDB(${JSON.stringify(dbName)}).${FIXTURE_COLLECTION}.find({});`,
+        params: {},
+        outputFormat: "csv",
+        schedule: null,
+        enabled: true,
+      };
+
+      try {
+        const record = await runReport(db, report, {
+          now: new Date("2026-03-02T03:00:00.000Z"),
+          triggeredBy: "manual",
+        });
+
+        assert.equal(record.status, "failed");
+        assert.match(record.error, /compiledScript is required/);
       } finally {
         await db
           .collection("download_history")

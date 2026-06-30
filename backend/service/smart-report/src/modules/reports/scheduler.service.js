@@ -136,7 +136,6 @@ export async function runReport(
 ) {
   const startedAt = now;
   const params = buildReportRunParams(report.params ?? {}, now);
-  const script = resolveRunnableScript(report);
 
   const baseRecord = {
     reportId: report._id,
@@ -153,6 +152,7 @@ export async function runReport(
   };
 
   try {
+    const script = resolveRunnableScript(report);
     const result = await runReportScript({ script, params });
     const rows = toRows(result);
     const fileName = buildFileName(report, report.outputFormat, now);

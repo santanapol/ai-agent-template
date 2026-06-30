@@ -197,14 +197,15 @@ Phase 5: Verify end-to-end + release 2 cleanup
 
 ## Phase 5 — E2E verify + cleanup (release 2)
 
-- [ ] **Task:** Manual run Staff Login History + WWL Monthly — `recordCount > 0`, ไฟล์ไม่ว่าง
-- [ ] **Task:** Scheduler smoke ด้วย `compiledScript`
-- [ ] **Task:** ลบ `prepareBoosterStyleScript`, `wrapShellCursor`, `sandbox-runner.prepare.test.js`
-- [ ] **Task:** ลบ transitional compile-on-read fallback
-- [ ] **Task:** อัปเดต `SPEC.md` baseline — sandbox API (`withReport`), timeout, validation flow
-- [ ] **Task:** สร้าง ticket P1 rewrite (out of scope รอบนี้)
+- [x] **Task:** ลบ `prepareBoosterStyleScript`, `sandbox-runner.prepare.test.js`
+- [x] **Task:** ลบ transitional compile-on-read fallback (`compileOnRead`)
+- [x] **Task:** อัปเดต `SPEC.md` baseline — sandbox API (`withReport`), timeout, validation flow
+- [x] **Task:** สร้าง ticket P1 rewrite — `TICKET-P1-rolling-commission-rewrite.md`
+- [x] **Task:** เพิ่ม verify checklist — `VERIFY-phase5.md`
+- [ ] **Task:** Manual run Staff Login History + WWL Monthly — `recordCount > 0` *(รันบน prod/staging หลัง migrate)*
+- [ ] **Task:** Scheduler smoke ด้วย `compiledScript` *(รันบน environment จริง)*
 
-**Checkpoint 5:** `rg prepareBooster` ว่าง; manual run ตรงกับ test run
+**Checkpoint 5:** `rg prepareBooster` ว่างใน `src/`; manual verify ตาม `VERIFY-phase5.md`
 
 ---
 
@@ -246,6 +247,6 @@ Phase 5: Verify end-to-end + release 2 cleanup
 - [x] Spec + Plan อนุมัติแล้ว
 - [ ] ทุก task ด้านบนเสร็จ
 - [ ] `npm test` + `npm run lint` ผ่าน (backend + frontend ที่แตะ)
-- [ ] ≥12 prod scripts migrate สำเร็จ; P1 disabled
-- [ ] ไม่มี `prepareBoosterStyleScript` หลัง release 2 cleanup
+- [ ] ≥12 prod scripts migrate สำเร็จ; P1 disabled *(at deploy)*
+- [x] ไม่มี `prepareBoosterStyleScript` / `compileOnRead` ใน `src/` หลัง Phase 5 cleanup
 - [ ] Test Run timeout = Manual run timeout = 120s (default)

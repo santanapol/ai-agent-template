@@ -31,7 +31,7 @@ npm run migrate:scripts -- --test-run --fail-on-error
 3. Verify ≥12/13 reports pass; P1 is disabled.
 4. Restart the service (or reload scheduler) so cron tasks pick up `compiledScript`.
 
-Release 2 cleanup (Phase 5): remove `prepareBoosterStyleScript`, compile-on-read fallback, and transitional regex paths.
+Release 2 cleanup (Phase 5) complete: `prepareBoosterStyleScript` and compile-on-read fallback removed from `src/`.
 
 ## Other scripts
 
