@@ -16,6 +16,7 @@ import SmartReport from './pages/SmartReport';
 import ChannelPerformancePage from './pages/branch-report/marketing/ChannelPerformancePage';
 import PermissionAdmin from './pages/PermissionAdmin';
 import Error403 from './pages/Error403';
+import LayoutDemo from './pages/LayoutDemo';
 
 import Error404 from './pages/Error404';
 import Error500 from './pages/Error500';
@@ -122,6 +123,7 @@ const router = createBrowserRouter([
           </PermissionGuard>
         ),
       },
+      { path: 'layout-demo', element: <LayoutDemo /> },
       { path: '403', element: <Error403 /> },
 
       { path: '500', element: <Error500 /> },
