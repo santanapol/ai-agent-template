@@ -55,16 +55,16 @@ Phase 5: Verify end-to-end + release 2 cleanup
 
 ### 1.2 Script compiler (AST)
 
-- [ ] **Task:** เพิ่ม dependency `acorn` + `acorn-walk`
+- [x] **Task:** เพิ่ม dependency `acorn` + `acorn-walk`
   - Acceptance: `package.json` + lockfile อัปเดต; `ecmaVersion: 2022`
   - Files: `package.json`
 
-- [ ] **Task:** สร้าง `script-compiler.service.js`
+- [x] **Task:** สร้าง `script-compiler.service.js`
   - Acceptance: แปลงครบตาม spec (trailing aggregate/find/findOne, assignment ไม่มี toArray, batch toArray, result;)
   - Verify: `unit-test/script-compiler.service.test.js` + `fixtures/prod-scripts/`
   - Files: `script-compiler.service.js`, tests
 
-- [ ] **Task:** สร้าง `script-validator.service.js` (acorn-walk CallExpression)
+- [x] **Task:** สร้าง `script-validator.service.js` (acorn-walk CallExpression)
   - Acceptance: reject WRITE_OPS; reject `withReport(` input (`ALREADY_COMPILED`); ต้องมี return path
   - Verify: unit tests
   - Files: `script-validator.service.js`, tests

@@ -13,6 +13,7 @@ export default [
       "coverage/**",
       "_mission-control/**",
       "docs/**",
+      "**/tests/**/fixtures/**",
     ],
   },
   js.configs.recommended,

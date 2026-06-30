@@ -156,6 +156,23 @@ if (!RUN) {
       assert.equal(result.length, 2);
     });
 
+    test("compiled Booster script from script-compiler runs in sandbox", async () => {
+      const { compileBoosterScript } =
+        await import("../../script-compiler.service.js");
+      const source = `
+        const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
+        mainDB.${FIXTURE_COLLECTION}.aggregate([
+          { $match: { category: "alpha" } },
+          { $sort: { value: -1 } },
+          { $project: { _id: 0, value: 1 } },
+        ]);
+      `;
+      const compiled = compileBoosterScript(source);
+      assert.equal(compiled.success, true);
+      const result = await runReportScript({ script: compiled.compiledScript });
+      assert.deepEqual(result, [{ value: 20 }, { value: 10 }]);
+    });
+
     test("aggregate via db.getSiblingDB returns an array", async () => {
       const script = `
         const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
