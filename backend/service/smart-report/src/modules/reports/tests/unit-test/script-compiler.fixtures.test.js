@@ -15,6 +15,7 @@ describe("script-compiler prod fixtures", () => {
   for (const fixture of [
     "group-a-single-aggregate.js",
     "group-b-batch-toarray.js",
+    "group-c-find.js",
   ]) {
     test(`compiles ${fixture}`, () => {
       const source = readFileSync(join(fixturesDir, fixture), "utf8");

@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const DEFAULT_TOKEN_TTL_MS = 900_000;
 
@@ -27,7 +27,7 @@ function getTokenTtlMs() {
  * @returns {string}
  */
 export function digestScriptValue(value) {
-  return createHmac("sha256", getTokenSecret()).update(value, "utf8").digest("hex");
+  return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
 /**

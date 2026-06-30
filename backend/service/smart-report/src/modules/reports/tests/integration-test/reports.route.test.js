@@ -251,6 +251,35 @@ if (!RUN) {
       etag = response.headers.etag;
     });
 
+    test("PUT /:id ignores compiledScript when script is not changing", async () => {
+      const before = await db
+        .collection(REPORTS_COLLECTION)
+        .findOne({ _id: new ObjectId(reportId) });
+      const maliciousCompiled =
+        "withReport(async () => { return [{ hacked: true }]; });";
+
+      const response = await app.inject({
+        method: "PUT",
+        url: `/api/v1/smart-reports/${reportId}`,
+        headers: { ...buildMeshHeaders(), "if-match": etag },
+        payload: {
+          description: "save-gate bypass attempt",
+          compiledScript: maliciousCompiled,
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+
+      const after = await db
+        .collection(REPORTS_COLLECTION)
+        .findOne({ _id: new ObjectId(reportId) });
+      assert.equal(after.compiledScript, before.compiledScript);
+      assert.notEqual(after.compiledScript, maliciousCompiled);
+      assert.equal(after.description, "save-gate bypass attempt");
+
+      etag = response.headers.etag;
+    });
+
     test("POST /:id/run executes the report and records download history (200)", async () => {
       const response = await app.inject({
         method: "POST",

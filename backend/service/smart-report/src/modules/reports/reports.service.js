@@ -324,6 +324,20 @@ export async function updateReportById(id, payload, ifMatch, userId) {
   };
   delete updates.testRunToken;
 
+  if (!scriptChanging) {
+    for (const field of [
+      "script",
+      "compiledScript",
+      "validationStatus",
+      "validatedAt",
+      "lastTestRunAt",
+      "lastTestRunMeta",
+      "validationErrors",
+    ]) {
+      delete updates[field];
+    }
+  }
+
   const result = await updateReport(db, objectId, updates, expectedUpdDate);
   if (result.matchedCount === 0) {
     throw new HttpError(

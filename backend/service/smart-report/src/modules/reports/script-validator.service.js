@@ -90,6 +90,8 @@ export function validateScriptSource(script) {
     };
   }
 
+  let hasReadPath = false;
+
   walk.simple(ast, {
     CallExpression(node) {
       const calleeName = getCallExpressionName(node.callee);
@@ -109,8 +111,19 @@ export function validateScriptSource(script) {
           code: "VALIDATION_FAILED",
         });
       }
+      if (unwrapMongoReadExpression(node)) {
+        hasReadPath = true;
+      }
     },
   });
+
+  if (!hasReadPath) {
+    errors.push({
+      message:
+        "Script must include at least one read query (aggregate, find, or findOne).",
+      code: "NO_READ_PATH",
+    });
+  }
 
   return { valid: errors.length === 0, errors };
 }
