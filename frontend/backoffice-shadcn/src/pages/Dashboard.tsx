@@ -20,6 +20,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+    const isAdmin = user?.role === 'platform_admin' || user?.role === 'branch_admin';
+
     const load = async () => {
       setLoading(true);
       if (!isAdmin) {
@@ -44,7 +46,7 @@ const Dashboard: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [message, isAdmin]);
+  }, [user?.role]);
 
   return (
     <PageContainer
