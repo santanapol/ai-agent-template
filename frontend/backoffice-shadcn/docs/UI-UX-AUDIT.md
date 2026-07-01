@@ -305,6 +305,15 @@ Copy alignment (Create vs Add); icon `data-icon` sizing; dashboard empty CTA; te
 
 ---
 
+## 13. Resolution log
+
+| Wave | Scope | Status |
+|------|-------|--------|
+| 3 | P2 consistency & craft | Fixed |
+| 4 | P3 polish and copy | Fixed |
+
+---
+
 ## Appendix A — Template drift (Step 2H, optional)
 
 | Area | Template (`live-demo-shadcn`) | Production | Drift |

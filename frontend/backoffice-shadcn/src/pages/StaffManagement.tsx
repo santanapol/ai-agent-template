@@ -355,7 +355,7 @@ const StaffManagement: React.FC = () => {
           canCreate ? (
             <Button onClick={() => void handleOpenDrawer('create')}>
               <Plus data-icon="inline-start" />
-              Add New Staff
+              Create staff
             </Button>
           ) : undefined
         }

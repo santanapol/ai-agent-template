@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import axios from 'axios';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { LoadingButton } from '@/components/loading-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,10 +32,11 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );
@@ -69,8 +71,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md shadow-md">
+    <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-primary">Zero Platform</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
@@ -108,8 +110,8 @@ const Login: React.FC = () => {
                   <Lock aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
-                    className="pl-9"
+                    type={showPassword ? 'text' : 'password'}
+                    className="pr-12 pl-9"
                     placeholder="Password"
                     autoComplete="current-password"
                     value={password}
@@ -120,6 +122,21 @@ const Login: React.FC = () => {
                     aria-invalid={!!formErrors.password}
                     aria-describedby={formErrors.password ? fieldErrorIds('password').describedBy : undefined}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="absolute inset-y-1 right-1"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? (
+                      <EyeOff data-icon="inline-start" aria-hidden="true" />
+                    ) : (
+                      <Eye data-icon="inline-start" aria-hidden="true" />
+                    )}
+                  </Button>
                 </div>
                 {formErrors.password ? (
                   <FieldDescription id={fieldErrorIds('password').errorId} className="text-destructive" role="alert">

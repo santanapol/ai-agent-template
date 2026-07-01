@@ -63,7 +63,7 @@ describe('StaffManagement', () => {
     });
   });
 
-  test('renders Add New Staff and Edit buttons when permissions are granted', async () => {
+  test('renders Create staff and Edit buttons when permissions are granted', async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === 'profiles:create') return true;
       if (permission === 'profiles:edit') return true;
@@ -82,7 +82,7 @@ describe('StaffManagement', () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Create staff/i })).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -90,7 +90,7 @@ describe('StaffManagement', () => {
     });
   });
 
-  test('hides Add New Staff button when profiles:create is missing', async () => {
+  test('hides Create staff button when profiles:create is missing', async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === 'profiles:create') return false;
       return true;
@@ -99,7 +99,7 @@ describe('StaffManagement', () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /Add New Staff/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Create staff/i })).not.toBeInTheDocument();
     });
   });
 
@@ -113,10 +113,10 @@ describe('StaffManagement', () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Create staff/i })).toBeInTheDocument();
     });
 
-    screen.getByRole('button', { name: /Add New Staff/i }).click();
+    screen.getByRole('button', { name: /Create staff/i }).click();
 
     await waitFor(() => {
       expect(screen.getByText('System Role')).toBeInTheDocument();
