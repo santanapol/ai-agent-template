@@ -6,8 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Backoffice — layout standards:** Shared layout components (`PageContainer`, `DetailContainer`, `FiltersContainer`, `PageContentCard`) and centralized theme tokens (`themeConfig.ts`, `ThemeContext`) for consistent page composition and dark/light mode.
+- **Backoffice — layout demo:** Interactive `/layout-demo` showcase page (later removed from main app; reference lives in agent-skills `live-demo`).
+
+### Changed
+
+- **Backoffice — page layouts:** Refactored Dashboard, Invoices, Staff, Agents, Agent Fees, Smart Reports, Channel Performance, Permission Admin, and My Profile to use standardized layout wrappers, filter bars, and design tokens.
+- **Backoffice — AdminLayout:** Updated shell integration for layout spacing and theme provider wiring.
+- **Backoffice — tests:** `StaffManagement` and Channel Performance tests aligned with new layout structure; `renderWithProviders` includes theme context.
+
 ### Removed
 
+- **Backoffice:** In-app `/layout-demo` route and page file (standards moved to central coding-standard directory).
 - **Docs:** Shipped `_mission-control` specs removed (no `docs/archive/` copy); git history retains moved files. Active specs remain in `smart-report` and `branch-report` `_mission-control/`.
 
 ### Added
