@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`frontend/backoffice-shadcn/`:** New shadcn/ui + Tailwind v4 backoffice frontend — feature parity with Ant Design `frontend/backoffice` (auth, routing, permissions, invoices bulk/export, Smart Reports, Permission Admin, Agent Fees, Channel Performance); 275 vitest cases.
 - **Backoffice — layout standards:** Shared layout components (`PageContainer`, `DetailContainer`, `FiltersContainer`, `PageContentCard`) and centralized theme tokens (`themeConfig.ts`, `ThemeContext`) for consistent page composition and dark/light mode.
 - **Backoffice — layout demo:** Interactive `/layout-demo` showcase page (later removed from main app; reference lives in agent-skills `live-demo`).
 
