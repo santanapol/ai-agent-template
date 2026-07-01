@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useInvoices } from './hooks/useInvoices';
 import {
   formatCategoryName,
@@ -38,6 +39,7 @@ import { triggerBlobDownload } from './export/downloadBlob';
 
 const InvoiceDetail: React.FC = () => {
   const { message } = useAppFeedback();
+  const { confirm } = useConfirmDialog();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
@@ -101,6 +103,27 @@ const InvoiceDetail: React.FC = () => {
     if (!id) return;
     const success = await cancelInvoice(id);
     if (success) fetchInvoiceDetail(id);
+  };
+
+  const promptUpdateStatus = () => {
+    if (!invoice || !id) return;
+    void confirm({
+      title: 'Mark as PAID',
+      content: `Mark invoice #${invoice.iv_no} as PAID?`,
+      okText: 'Mark as PAID',
+      onOk: handleUpdateStatus,
+    });
+  };
+
+  const promptCancelInvoice = () => {
+    if (!invoice || !id) return;
+    void confirm({
+      title: 'Cancel Invoice',
+      content: `Cancel invoice #${invoice.iv_no}?`,
+      okText: 'Cancel Invoice',
+      danger: true,
+      onOk: handleCancelInvoice,
+    });
   };
 
   const handleExportPDF = () => {
@@ -179,6 +202,10 @@ const InvoiceDetail: React.FC = () => {
     <DetailContainer
       title="Invoice Details"
       backUrl="/invoices"
+      breadcrumbItems={[
+        { title: 'Invoices', onClick: () => navigate('/invoices') },
+        { title: invoice.iv_no },
+      ]}
       extra={
         <div className="no-print flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={handleExportPDF}>
@@ -190,7 +217,7 @@ const InvoiceDetail: React.FC = () => {
             Export Excel
           </Button>
           {isReady ? (
-            <LoadingButton onClick={() => void handleUpdateStatus()} loading={updatingStatus}>
+            <LoadingButton onClick={promptUpdateStatus} loading={updatingStatus}>
               <CheckCircle data-icon="inline-start" />
               Mark as PAID
             </LoadingButton>
@@ -198,7 +225,7 @@ const InvoiceDetail: React.FC = () => {
           {['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status) ? (
             <LoadingButton
               variant="destructive"
-              onClick={() => void handleCancelInvoice()}
+              onClick={promptCancelInvoice}
               loading={updatingStatus}
             >
               <XCircle data-icon="inline-start" />

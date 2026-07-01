@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { fieldErrorIds } from '@/lib/fieldA11y';
 import { PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
 import type { CreateProfilePayload, PatchProfilePayload } from '@/types/staff';
 
@@ -77,6 +78,17 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   const disabled = mode === 'view';
   const title =
     mode === 'create' ? 'Create Staff Profile' : mode === 'edit' ? 'Edit Staff Profile' : 'View Staff Profile';
+  const getFieldA11y = (name: string, error?: string) => (error ? fieldErrorIds(name) : undefined);
+  const codeA11y = getFieldA11y('staff-code', errors.code);
+  const firstnameA11y = getFieldA11y('staff-firstname', errors.firstname);
+  const lastnameA11y = getFieldA11y('staff-lastname', errors.lastname);
+  const emailA11y = getFieldA11y('staff-email', errors.email);
+  const telA11y = getFieldA11y('staff-tel', errors.tel);
+  const usernameA11y = getFieldA11y('staff-username', errors.username);
+  const passwordA11y = getFieldA11y('staff-password', errors.password);
+  const confirmPasswordA11y = getFieldA11y('staff-confirm-password', errors.confirmPassword);
+  const newPasswordA11y = getFieldA11y('staff-new-password', errors.newPassword);
+  const confirmNewPasswordA11y = getFieldA11y('staff-confirm-new-password', errors.confirmNewPassword);
 
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
@@ -100,8 +112,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                   onChange={(e) => onChange('code', e.target.value)}
                   maxLength={32}
                   placeholder="e.g. EMP-001"
+                  aria-invalid={codeA11y?.ariaInvalid}
+                  aria-describedby={codeA11y?.describedBy}
                 />
-                {errors.code ? <FieldDescription className="text-destructive">{errors.code}</FieldDescription> : null}
+                {errors.code ? (
+                  <FieldDescription id={codeA11y?.errorId} className="text-destructive">
+                    {errors.code}
+                  </FieldDescription>
+                ) : null}
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field data-invalid={!!errors.firstname}>
@@ -112,7 +130,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                     disabled={disabled}
                     onChange={(e) => onChange('firstname', e.target.value)}
                     maxLength={128}
+                    aria-invalid={firstnameA11y?.ariaInvalid}
+                    aria-describedby={firstnameA11y?.describedBy}
                   />
+                  {errors.firstname ? (
+                    <FieldDescription id={firstnameA11y?.errorId} className="text-destructive">
+                      {errors.firstname}
+                    </FieldDescription>
+                  ) : null}
                 </Field>
                 <Field data-invalid={!!errors.lastname}>
                   <FieldLabel htmlFor="staff-lastname">Last Name</FieldLabel>
@@ -122,7 +147,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                     disabled={disabled}
                     onChange={(e) => onChange('lastname', e.target.value)}
                     maxLength={128}
+                    aria-invalid={lastnameA11y?.ariaInvalid}
+                    aria-describedby={lastnameA11y?.describedBy}
                   />
+                  {errors.lastname ? (
+                    <FieldDescription id={lastnameA11y?.errorId} className="text-destructive">
+                      {errors.lastname}
+                    </FieldDescription>
+                  ) : null}
                 </Field>
               </div>
               <Field data-invalid={!!errors.email}>
@@ -134,7 +166,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                   disabled={disabled}
                   onChange={(e) => onChange('email', e.target.value)}
                   maxLength={254}
+                  aria-invalid={emailA11y?.ariaInvalid}
+                  aria-describedby={emailA11y?.describedBy}
                 />
+                {errors.email ? (
+                  <FieldDescription id={emailA11y?.errorId} className="text-destructive">
+                    {errors.email}
+                  </FieldDescription>
+                ) : null}
               </Field>
               <Field data-invalid={!!errors.tel}>
                 <FieldLabel htmlFor="staff-tel">Telephone</FieldLabel>
@@ -145,7 +184,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                   onChange={(e) => onChange('tel', e.target.value)}
                   placeholder="e.g. 0812345678 or +66812345678"
                   maxLength={20}
+                  aria-invalid={telA11y?.ariaInvalid}
+                  aria-describedby={telA11y?.describedBy}
                 />
+                {errors.tel ? (
+                  <FieldDescription id={telA11y?.errorId} className="text-destructive">
+                    {errors.tel}
+                  </FieldDescription>
+                ) : null}
               </Field>
               {canAssignRole ? (
                 <Field>
@@ -180,7 +226,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       disabled={disabled}
                       onChange={(e) => onChange('username', e.target.value)}
                       autoComplete="off"
+                    aria-invalid={usernameA11y?.ariaInvalid}
+                    aria-describedby={usernameA11y?.describedBy}
                     />
+                  {errors.username ? (
+                    <FieldDescription id={usernameA11y?.errorId} className="text-destructive">
+                      {errors.username}
+                    </FieldDescription>
+                  ) : null}
                   </Field>
                   <Field data-invalid={!!errors.password}>
                     <FieldLabel htmlFor="staff-password">Password</FieldLabel>
@@ -191,7 +244,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       disabled={disabled}
                       onChange={(e) => onChange('password', e.target.value)}
                       autoComplete="new-password"
+                    aria-invalid={passwordA11y?.ariaInvalid}
+                    aria-describedby={passwordA11y?.describedBy}
                     />
+                  {errors.password ? (
+                    <FieldDescription id={passwordA11y?.errorId} className="text-destructive">
+                      {errors.password}
+                    </FieldDescription>
+                  ) : null}
                   </Field>
                   <Field data-invalid={!!errors.confirmPassword}>
                     <FieldLabel htmlFor="staff-confirm-password">Confirm password</FieldLabel>
@@ -202,7 +262,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       disabled={disabled}
                       onChange={(e) => onChange('confirmPassword', e.target.value)}
                       autoComplete="new-password"
+                    aria-invalid={confirmPasswordA11y?.ariaInvalid}
+                    aria-describedby={confirmPasswordA11y?.describedBy}
                     />
+                  {errors.confirmPassword ? (
+                    <FieldDescription id={confirmPasswordA11y?.errorId} className="text-destructive">
+                      {errors.confirmPassword}
+                    </FieldDescription>
+                  ) : null}
                   </Field>
                 </>
               ) : null}
@@ -219,7 +286,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       disabled={disabled}
                       onChange={(e) => onChange('newPassword', e.target.value)}
                       autoComplete="new-password"
+                    aria-invalid={newPasswordA11y?.ariaInvalid}
+                    aria-describedby={newPasswordA11y?.describedBy}
                     />
+                  {errors.newPassword ? (
+                    <FieldDescription id={newPasswordA11y?.errorId} className="text-destructive">
+                      {errors.newPassword}
+                    </FieldDescription>
+                  ) : null}
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="staff-confirm-new-password">Confirm password</FieldLabel>
@@ -230,7 +304,14 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       disabled={disabled}
                       onChange={(e) => onChange('confirmNewPassword', e.target.value)}
                       autoComplete="new-password"
+                    aria-invalid={confirmNewPasswordA11y?.ariaInvalid}
+                    aria-describedby={confirmNewPasswordA11y?.describedBy}
                     />
+                  {errors.confirmNewPassword ? (
+                    <FieldDescription id={confirmNewPasswordA11y?.errorId} className="text-destructive">
+                      {errors.confirmNewPassword}
+                    </FieldDescription>
+                  ) : null}
                   </Field>
                   <LoadingButton loading={updatingPassword} onClick={onUpdatePassword}>
                     Update password

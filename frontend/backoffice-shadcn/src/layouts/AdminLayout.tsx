@@ -19,14 +19,6 @@ import {
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import {
   Collapsible,
@@ -321,7 +313,6 @@ function MobileNav({
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useIsMobile();
   const { theme: currentTheme, toggleTheme } = useTheme();
   const { user, logout, switchBranch, branchSwitching, menus, menuError } = useAuth();
@@ -506,28 +497,6 @@ const AdminLayout: React.FC = () => {
     return rootItems;
   }, [menus]);
 
-  const breadcrumbItems = useMemo(() => {
-    type Crumb = { title: string; onClick?: () => void };
-    const paths = location.pathname.split('/').filter(Boolean);
-    if (paths.length === 0) return [{ title: 'Home' }] as Crumb[];
-    const items: Crumb[] = [{ title: 'Home', onClick: () => navigate('/') }];
-    let currentPath = '';
-    paths.forEach((path, index) => {
-      currentPath += `/${path}`;
-      const name = path
-        .replace(/-/g, ' ')
-        .split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      const isLast = index === paths.length - 1;
-      items.push({
-        title: name,
-        ...(isLast ? {} : { onClick: () => navigate(currentPath) }),
-      });
-    });
-    return items;
-  }, [location.pathname, navigate]);
-
   const branchSelectLoading =
     branchSwitching || (showBranchSwitcher && branchesLoading && branches.length === 0);
 
@@ -578,8 +547,13 @@ const AdminLayout: React.FC = () => {
         <header className="flex h-16 items-center justify-between gap-4 border-b bg-background px-4">
           <div className="flex items-center gap-2">
             {isMobile ? (
-              <Button variant="ghost" size="icon" onClick={() => setMobileNavOpen(true)}>
-                <Menu className="size-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open navigation menu"
+              >
+                <Menu aria-hidden="true" />
               </Button>
             ) : (
               <SidebarTrigger />
@@ -638,7 +612,11 @@ const AdminLayout: React.FC = () => {
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <button type="button" className="rounded-full">
+                  <button
+                    type="button"
+                    className="rounded-full"
+                    aria-label={`Account menu for ${displayName ?? user?.sub ?? 'current user'}`}
+                  >
                     <UserAvatar
                       firstname={headerProfile?.firstname}
                       lastname={headerProfile?.lastname}
@@ -668,34 +646,6 @@ const AdminLayout: React.FC = () => {
         </header>
 
         <main className="flex flex-1 flex-col gap-4 bg-muted/30 p-4 md:p-6">
-          <Breadcrumb>
-            <BreadcrumbList>
-              {breadcrumbItems.map((item, index) => {
-                const isLast = index === breadcrumbItems.length - 1;
-                return (
-                  <span key={index} className="contents">
-                    {index > 0 ? <BreadcrumbSeparator /> : null}
-                    <BreadcrumbItem>
-                      {isLast || !item.onClick ? (
-                        <BreadcrumbPage>{item.title}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            item.onClick?.();
-                          }}
-                        >
-                          {item.title}
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                  </span>
-                );
-              })}
-            </BreadcrumbList>
-          </Breadcrumb>
-
           {menuError ? (
             <Alert variant="destructive">
               <AlertTitle>System warning</AlertTitle>

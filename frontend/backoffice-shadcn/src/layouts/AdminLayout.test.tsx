@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import AdminLayout from './AdminLayout';
 import { useAuth } from '../contexts/AuthContext';
 import type { AuthContextValue } from '../contexts/AuthContext';
 import { renderWithProviders } from '../test/renderWithProviders';
 import type { DecodedUser } from '../types/auth';
+import { useIsMobile } from '../hooks/use-mobile';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -34,7 +35,15 @@ vi.mock('../lib/authApiClient', () => ({
   }),
 }));
 
+vi.mock('../hooks/use-mobile', () => ({
+  useIsMobile: vi.fn(),
+}));
+
 describe('AdminLayout component', () => {
+  beforeEach(() => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+  });
+
   it('renders minimal/fallback menus and Alert banner on menu error', async () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { sub: '123', role: 'staff', branch_id: 'b1' } as unknown as DecodedUser,
@@ -64,6 +73,34 @@ describe('AdminLayout component', () => {
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
       expect(screen.getByText('JD')).toBeInTheDocument();
+      expect(screen.getByLabelText(/account menu for john doe/i)).toBeInTheDocument();
+    });
+  });
+
+  it('labels the mobile menu trigger', async () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    vi.mocked(useAuth).mockReturnValue({
+      user: { sub: '123', role: 'staff', branch_id: 'b1' } as unknown as DecodedUser,
+      permissions: [],
+      menus: [
+        { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
+      ],
+      menuLoading: false,
+      menuError: false,
+      loading: false,
+      branchSwitching: false,
+      lastBranchSwitchAt: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      switchBranch: vi.fn(),
+    } as unknown as AuthContextValue);
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/open navigation menu/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/account menu for john doe/i)).toBeInTheDocument();
     });
   });
 
