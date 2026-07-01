@@ -10,6 +10,7 @@ import { SearchFilterField } from '@/components/search-filter-field';
 import { StatusBadge } from '@/components/status-badge';
 import { LoadingButton } from '@/components/loading-button';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -238,10 +239,21 @@ const InvoiceList: React.FC = () => {
       key: 'action',
       title: 'Action',
       render: (row) => (
-        <Button size="sm" onClick={() => navigate(`/invoices/${row._id}`)}>
-          <Eye data-icon="inline-start" aria-hidden="true" />
-          View Details
-        </Button>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`View invoice ${row.iv_no}`}
+                onClick={() => navigate(`/invoices/${row._id}`)}
+              >
+                <Eye />
+              </Button>
+            }
+          />
+          <TooltipContent>View details</TooltipContent>
+        </Tooltip>
       ),
     },
   ];

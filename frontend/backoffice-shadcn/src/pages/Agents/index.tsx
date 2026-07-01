@@ -138,31 +138,31 @@ const AgentsList: React.FC = () => {
             <TooltipTrigger
               render={
                 <Button
+                  variant="ghost"
                   size="icon-sm"
-                  variant="outline"
                   aria-label={`Manage fees for ${record.branch_name}`}
                   onClick={() => navigate(`/agents/${record._id}/fees`)}
-                />
+                >
+                  <Settings />
+                </Button>
               }
-            >
-              <Settings data-icon="inline-start" aria-hidden="true" />
-            </TooltipTrigger>
+            />
             <TooltipContent>Manage fees</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
-                  size="icon-sm"
                   variant="ghost"
+                  size="icon-sm"
                   className="text-destructive"
                   aria-label={`Delete ${record.branch_name}`}
                   onClick={() => setDeleteTarget(record)}
-                />
+                >
+                  <Trash2 />
+                </Button>
               }
-            >
-              <Trash2 data-icon="inline-start" aria-hidden="true" />
-            </TooltipTrigger>
+            />
             <TooltipContent>Delete agent</TooltipContent>
           </Tooltip>
         </div>
