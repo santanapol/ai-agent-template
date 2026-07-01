@@ -1,0 +1,172 @@
+import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import type { MenuTreeNode } from '@/pages/PermissionAdmin/permissionAdminUtils';
+
+interface MenuTreeProps {
+  nodes: MenuTreeNode[];
+  defaultExpanded?: boolean;
+  checkable?: boolean;
+  checkedKeys?: string[];
+  onCheckedChange?: (keys: string[]) => void;
+  isCheckboxDisabled?: (key: string) => boolean;
+  getCheckboxTooltip?: (key: string) => string | undefined;
+  renderActions?: (node: MenuTreeNode) => React.ReactNode;
+}
+
+function collectDescendantKeys(node: MenuTreeNode): string[] {
+  const keys = [node.key];
+  node.children?.forEach((child) => {
+    keys.push(...collectDescendantKeys(child));
+  });
+  return keys;
+}
+
+function applyCascadeToggle(
+  node: MenuTreeNode,
+  checked: boolean,
+  checkedKeys: string[],
+  isCheckboxDisabled?: (key: string) => boolean,
+): string[] {
+  const affected = collectDescendantKeys(node).filter((key) => !isCheckboxDisabled?.(key));
+  const set = new Set(checkedKeys);
+  affected.forEach((key) => {
+    if (checked) set.add(key);
+    else set.delete(key);
+  });
+  return [...set];
+}
+
+function MenuTreeNodeRow({
+  node,
+  depth,
+  defaultExpanded,
+  checkable,
+  checkedKeys,
+  onCheckedChange,
+  isCheckboxDisabled,
+  getCheckboxTooltip,
+  renderActions,
+}: {
+  node: MenuTreeNode;
+  depth: number;
+  defaultExpanded?: boolean;
+  checkable?: boolean;
+  checkedKeys?: string[];
+  onCheckedChange?: (keys: string[]) => void;
+  isCheckboxDisabled?: (key: string) => boolean;
+  getCheckboxTooltip?: (key: string) => string | undefined;
+  renderActions?: (node: MenuTreeNode) => React.ReactNode;
+}) {
+  const hasChildren = Boolean(node.children?.length);
+  const [open, setOpen] = useState(defaultExpanded ?? true);
+  const checked = checkedKeys?.includes(node.key) ?? false;
+  const disabled = isCheckboxDisabled?.(node.key) ?? false;
+  const tooltip = getCheckboxTooltip?.(node.key);
+
+  const toggleChecked = (next: boolean) => {
+    if (!onCheckedChange || !checkedKeys) return;
+    onCheckedChange(
+      applyCascadeToggle(node, next, checkedKeys, isCheckboxDisabled),
+    );
+  };
+
+  const label = (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      {checkable ? (
+        <Checkbox
+          checked={checked}
+          disabled={disabled}
+          onCheckedChange={(value) => toggleChecked(value === true)}
+          aria-label={node.label}
+          title={tooltip}
+        />
+      ) : null}
+      <span className="truncate font-medium">{node.label}</span>
+      <span className="truncate text-muted-foreground">({node.key})</span>
+    </div>
+  );
+
+  if (!hasChildren) {
+    return (
+      <div
+        className="flex items-center justify-between gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
+        style={{ paddingLeft: depth * 16 + 8 }}
+      >
+        {label}
+        {renderActions?.(node)}
+      </div>
+    );
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div
+        className="flex items-center justify-between gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
+        style={{ paddingLeft: depth * 16 + 8 }}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <CollapsibleTrigger
+            className={cn(
+              'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted'
+            )}
+            aria-label={open ? 'Collapse' : 'Expand'}
+          >
+            <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} />
+          </CollapsibleTrigger>
+          {label}
+        </div>
+        {renderActions?.(node)}
+      </div>
+      <CollapsibleContent>
+        <MenuTree
+          nodes={node.children ?? []}
+          depth={depth + 1}
+          defaultExpanded={defaultExpanded}
+          checkable={checkable}
+          checkedKeys={checkedKeys}
+          onCheckedChange={onCheckedChange}
+          isCheckboxDisabled={isCheckboxDisabled}
+          getCheckboxTooltip={getCheckboxTooltip}
+          renderActions={renderActions}
+        />
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function MenuTree({
+  nodes,
+  depth = 0,
+  defaultExpanded,
+  checkable,
+  checkedKeys,
+  onCheckedChange,
+  isCheckboxDisabled,
+  getCheckboxTooltip,
+  renderActions,
+}: MenuTreeProps & { depth?: number }) {
+  return (
+    <div role={depth === 0 ? 'tree' : undefined} className={depth === 0 ? 'space-y-0.5' : undefined}>
+      {nodes.map((node) => (
+        <div key={node.key} role="treeitem" aria-expanded={node.children?.length ? true : undefined}>
+          <MenuTreeNodeRow
+            node={node}
+            depth={depth}
+            defaultExpanded={defaultExpanded}
+            checkable={checkable}
+            checkedKeys={checkedKeys}
+            onCheckedChange={onCheckedChange}
+            isCheckboxDisabled={isCheckboxDisabled}
+            getCheckboxTooltip={getCheckboxTooltip}
+            renderActions={renderActions}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export { MenuTree };

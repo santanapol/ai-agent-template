@@ -1,0 +1,394 @@
+import React, { useEffect, useState } from 'react';
+import { Eye, Plus } from 'lucide-react';
+import dayjs from 'dayjs';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PageContainer, PageContentCard, FiltersContainer } from '@/components/layout';
+import { DataTable, type DataTableColumn } from '@/components/data-table';
+import { FilterSelectField } from '@/components/filter-select-field';
+import { MonthFilterField } from '@/components/month-filter-field';
+import { SearchFilterField } from '@/components/search-filter-field';
+import { StatusBadge } from '@/components/status-badge';
+import { LoadingButton } from '@/components/loading-button';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { usePermission } from '@/hooks/usePermission';
+import { canSwitchActiveBranch } from '@/lib/branchOptions';
+import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '@/types/invoice';
+import { MAX_BULK_INVOICE_SELECTION } from './bulk/constants';
+import { BulkExportModal } from './components/BulkExportModal';
+import { BulkInvoiceActionBar } from './components/BulkInvoiceActionBar';
+import { BulkStatusModal } from './components/BulkStatusModal';
+import type { BulkExportFormat } from './export/types';
+import { useInvoices } from './hooks/useInvoices';
+import type { BulkStatusAction } from './status/types';
+import { formatDate, formatMoney, statusTagColor } from './utils';
+
+interface ExportJobState {
+  ids: string[];
+  format: BulkExportFormat;
+}
+
+interface StatusJobState {
+  ids: string[];
+  action: BulkStatusAction;
+}
+
+const InvoiceList: React.FC = () => {
+  const { message } = useAppFeedback();
+  const { confirm } = useConfirmDialog();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const canExport = usePermission('invoices:read');
+  const canWrite = usePermission('invoices:write');
+  const {
+    invoices,
+    total,
+    loading,
+    generating,
+    branches,
+    loadingBranches,
+    fetchInvoices,
+    fetchInvoiceAgents,
+    generateInvoices,
+  } = useInvoices();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchText, setSearchText] = useState(searchParams.get('search') ?? '');
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
+    searchParams.get('branch_id') ?? undefined,
+  );
+  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>(
+    (searchParams.get('status') as InvoiceStatus | null) ?? undefined,
+  );
+  const [billingMonth, setBillingMonth] = useState(searchParams.get('billing_month') ?? '');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [pageSize, setPageSize] = useState(Number(searchParams.get('page_size')) || 10);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [createMonth, setCreateMonth] = useState(dayjs().format('YYYY-MM'));
+  const [createBranchId, setCreateBranchId] = useState<string | undefined>();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [exportJob, setExportJob] = useState<ExportJobState | null>(null);
+  const [exportRunning, setExportRunning] = useState(false);
+  const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
+  const [statusRunning, setStatusRunning] = useState(false);
+
+  useEffect(() => {
+    if (!canSwitchActiveBranch(user?.role) || !user?.branch_id) return;
+    setSelectedBranchId(user.branch_id);
+    setPage(1);
+  }, [user?.branch_id, user?.role]);
+
+  const bulkBusy = exportRunning || statusRunning;
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (searchText) params.search = searchText;
+    if (selectedBranchId) params.branch_id = selectedBranchId;
+    if (selectedStatus) params.status = selectedStatus;
+    if (billingMonth) params.billing_month = billingMonth;
+    if (page !== 1) params.page = String(page);
+    if (pageSize !== 10) params.page_size = String(pageSize);
+    setSearchParams(params, { replace: true });
+  }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, setSearchParams]);
+
+  useEffect(() => {
+    void fetchInvoices({
+      page,
+      limit: pageSize,
+      iv_no: searchText || undefined,
+      branch_id: selectedBranchId,
+      billing_month: billingMonth || undefined,
+      status: selectedStatus,
+    });
+  }, [fetchInvoices, page, pageSize, searchText, selectedBranchId, billingMonth, selectedStatus]);
+
+  useEffect(() => {
+    void fetchInvoiceAgents();
+  }, [fetchInvoiceAgents]);
+
+  const handleSelectionChange = (keys: string[]) => {
+    if (keys.length > MAX_BULK_INVOICE_SELECTION) {
+      message.warning(`You can select up to ${MAX_BULK_INVOICE_SELECTION} invoices per bulk action.`);
+      setSelectedRowKeys(keys.slice(0, MAX_BULK_INVOICE_SELECTION));
+      return;
+    }
+    setSelectedRowKeys(keys);
+  };
+
+  const refreshInvoiceList = () => {
+    void fetchInvoices({
+      page,
+      limit: pageSize,
+      iv_no: searchText || undefined,
+      branch_id: selectedBranchId,
+      billing_month: billingMonth || undefined,
+      status: selectedStatus,
+    });
+  };
+
+  const openExport = (format: BulkExportFormat) => {
+    setExportJob({ ids: selectedRowKeys, format });
+  };
+
+  const openStatusAction = (action: BulkStatusAction) => {
+    if (statusJob !== null || bulkBusy) return;
+    const count = selectedRowKeys.length;
+    const isPaid = action === 'PAID';
+    void confirm({
+      title: isPaid ? 'Mark as PAID' : 'Cancel Invoices',
+      content: isPaid
+        ? `Mark ${count} selected invoice(s) as PAID? Only invoices with status READY will be updated.`
+        : `Cancel ${count} selected invoice(s)? Only READY, PENDING, MISSING_FEE, or ERROR invoices will be updated.`,
+      okText: isPaid ? 'Mark as PAID' : 'Cancel Invoices',
+      danger: !isPaid,
+      onOk: () => {
+        setStatusJob({ ids: selectedRowKeys, action });
+      },
+    });
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!createMonth) {
+      message.error('Please select a month');
+      return;
+    }
+    const success = await generateInvoices({
+      month: createMonth,
+      branch_id: createBranchId,
+    });
+    if (success) {
+      setIsModalVisible(false);
+      setCreateBranchId(undefined);
+      refreshInvoiceList();
+    }
+  };
+
+  const branchOptions = branches.map((b) => ({
+    value: b.branch_id,
+    label: b.branch_code ? `${b.branch_code} - ${b.branch_name || b.branch_id}` : b.branch_name || b.branch_id,
+  }));
+
+  const columns: DataTableColumn<Invoice>[] = [
+    { key: 'iv_no', title: 'Invoice No', accessor: 'iv_no' },
+    {
+      key: 'branch_name',
+      title: 'Branch Name',
+      render: (row) => row.branch_name || '-',
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      render: (row) => <StatusBadge status={row.status} variant={statusTagColor(row.status)} />,
+    },
+    {
+      key: 'billing_month',
+      title: 'Billing Month',
+      render: (row) => row.billing_month || '-',
+    },
+    {
+      key: 'due_date',
+      title: 'Due Date',
+      render: (row) => formatDate(row.due_date),
+    },
+    {
+      key: 'amount',
+      title: 'Amount',
+      align: 'right',
+      render: (row) => formatMoney(row.amount),
+    },
+    {
+      key: 'action',
+      title: 'Action',
+      render: (row) => (
+        <Button size="sm" onClick={() => navigate(`/invoices/${row._id}`)}>
+          <Eye data-icon="inline-start" />
+          View Details
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <PageContainer
+        title="Invoice Management"
+        description="Manage invoices, search, and view historical billing details."
+        extra={
+          <Button onClick={() => setIsModalVisible(true)}>
+            <Plus data-icon="inline-start" />
+            Create Invoice
+          </Button>
+        }
+      >
+        <PageContentCard>
+          <FiltersContainer>
+            <SearchFilterField
+              id="invoice-search"
+              label="Search"
+              placeholder="Search Invoice No"
+              value={searchText}
+              onChange={(v) => {
+                setSearchText(v);
+                setPage(1);
+              }}
+            />
+            <FilterSelectField
+              id="invoice-branch"
+              label="Branch"
+              placeholder="Filter by Branch"
+              value={selectedBranchId}
+              onChange={(v) => {
+                setSelectedBranchId(v);
+                setPage(1);
+              }}
+              options={branchOptions}
+              width="w-[220px]"
+            />
+            <FilterSelectField
+              id="invoice-status"
+              label="Status"
+              placeholder="Filter by Status"
+              value={selectedStatus}
+              onChange={(v) => {
+                setSelectedStatus(v as InvoiceStatus | undefined);
+                setPage(1);
+              }}
+              options={INVOICE_STATUSES.map((s) => ({ value: s, label: s }))}
+              width="w-[180px]"
+            />
+            <MonthFilterField
+              id="invoice-billing-month"
+              label="Billing Month"
+              value={billingMonth}
+              onChange={(v) => {
+                setBillingMonth(v);
+                setPage(1);
+              }}
+            />
+          </FiltersContainer>
+
+          <DataTable
+            columns={columns}
+            data={invoices}
+            loading={loading}
+            rowKey="_id"
+            pagination={{
+              page,
+              pageSize,
+              total,
+              onChange: (nextPage, nextSize) => {
+                setPage(nextPage);
+                setPageSize(nextSize);
+              },
+            }}
+            rowSelection={{
+              selectedKeys: selectedRowKeys,
+              onChange: handleSelectionChange,
+              getRowDisabled: (row) =>
+                selectedRowKeys.length >= MAX_BULK_INVOICE_SELECTION &&
+                !selectedRowKeys.includes(row._id),
+            }}
+          />
+        </PageContentCard>
+      </PageContainer>
+
+      <BulkInvoiceActionBar
+        selectedCount={selectedRowKeys.length}
+        canExport={canExport}
+        canWrite={canWrite}
+        busy={bulkBusy}
+        onExportPdf={() => openExport('pdf')}
+        onExportExcel={() => openExport('xlsx')}
+        onMarkPaid={() => openStatusAction('PAID')}
+        onCancelInvoices={() => openStatusAction('VOID')}
+        onClear={() => setSelectedRowKeys([])}
+      />
+
+      <BulkExportModal
+        open={exportJob !== null}
+        invoiceIds={exportJob?.ids ?? []}
+        format={exportJob?.format ?? 'pdf'}
+        onRunningChange={setExportRunning}
+        onClose={(shouldClearSelection) => {
+          setExportJob(null);
+          setExportRunning(false);
+          if (shouldClearSelection) setSelectedRowKeys([]);
+        }}
+      />
+
+      <BulkStatusModal
+        open={statusJob !== null}
+        invoiceIds={statusJob?.ids ?? []}
+        action={statusJob?.action ?? 'PAID'}
+        onRunningChange={setStatusRunning}
+        onClose={(shouldClearSelection, hadSuccess) => {
+          setStatusJob(null);
+          setStatusRunning(false);
+          if (hadSuccess) refreshInvoiceList();
+          if (shouldClearSelection) setSelectedRowKeys([]);
+        }}
+      />
+
+      <Dialog open={isModalVisible} onOpenChange={setIsModalVisible}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Invoice</DialogTitle>
+          </DialogHeader>
+          <Field>
+            <FieldLabel>Billing month</FieldLabel>
+            <MonthFilterField
+              id="create-invoice-month"
+              label=""
+              value={createMonth}
+              onChange={setCreateMonth}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Select Branch (Optional)</FieldLabel>
+            <FieldDescription>If not selected, invoices will be generated for all branches.</FieldDescription>
+            <Select value={createBranchId ?? ''} onValueChange={(val) => setCreateBranchId(val || undefined)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Branches" />
+              </SelectTrigger>
+              <SelectContent>
+                {branchOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsModalVisible(false)}>
+              Cancel
+            </Button>
+            <LoadingButton loading={generating || loadingBranches} onClick={() => void handleCreateInvoice()}>
+              Generate
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default InvoiceList;
