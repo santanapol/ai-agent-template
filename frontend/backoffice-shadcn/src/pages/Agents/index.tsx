@@ -29,6 +29,7 @@ import { LoadingButton } from '@/components/loading-button';
 import { SearchFilterField } from '@/components/search-filter-field';
 import { PageContainer, PageContentCard, FiltersContainer } from '@/components/layout';
 import { ActiveBadge } from '@/components/status-badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgents } from './hooks/useAgents';
 import type { Agent } from '@/types/agents';
 
@@ -132,15 +133,38 @@ const AgentsList: React.FC = () => {
       key: 'action',
       title: 'Action',
       render: (record) => (
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => navigate(`/agents/${record._id}/fees`)}>
-            <Settings data-icon="inline-start" />
-            Manage
-          </Button>
-          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(record)}>
-            <Trash2 data-icon="inline-start" />
-            Delete
-          </Button>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={`Manage fees for ${record.branch_name}`}
+                  onClick={() => navigate(`/agents/${record._id}/fees`)}
+                />
+              }
+            >
+              <Settings data-icon="inline-start" aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent>Manage fees</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-destructive"
+                  aria-label={`Delete ${record.branch_name}`}
+                  onClick={() => setDeleteTarget(record)}
+                />
+              }
+            >
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent>Delete agent</TooltipContent>
+          </Tooltip>
         </div>
       ),
     },
@@ -153,8 +177,8 @@ const AgentsList: React.FC = () => {
 
   return (
     <PageContainer
-      title="Agent Fee Management"
-      description="View and configure specific game fee overrides or reference fees across agent branches."
+      title="Agents"
+      description="View and configure agent branches, fee overrides, and reference fees."
       extra={
         <Button onClick={handleOpenSyncModal}>
           <RefreshCw data-icon="inline-start" />

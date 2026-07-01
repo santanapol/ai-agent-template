@@ -52,7 +52,7 @@ const ResultTemplate: React.FC<ResultTemplateProps> = ({
   );
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center bg-muted/30 p-6">
+    <div className="flex min-h-[80dvh] items-center justify-center bg-muted/30 p-6">
       <Card className="w-full max-w-xl shadow-sm">
         <CardHeader className="items-center text-center">
           <Icon className={cn(config.iconClassName)} aria-hidden="true" />

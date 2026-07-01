@@ -37,10 +37,10 @@ const STATUS_VARIANTS: Record<InvoiceStatus, BadgeVariant> = {
   PENDING: 'secondary',
   VOID: 'secondary',
   CAL: 'outline',
-  MISSING_FEE: 'secondary',
-  READY: 'outline',
+  MISSING_FEE: 'warning',
+  READY: 'warning',
   ERROR: 'destructive',
-  PAID: 'default',
+  PAID: 'success',
 };
 
 export function statusTagColor(status: string): BadgeVariant {

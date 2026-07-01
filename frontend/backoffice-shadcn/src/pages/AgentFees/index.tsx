@@ -51,6 +51,7 @@ const AgentFeesPage: React.FC = () => {
   const [editingRate, setEditingRate] = useState(false);
   const [draftRate, setDraftRate] = useState<number>(0);
   const [savingAgent, setSavingAgent] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
   const [refFees, setRefFees] = useState<AgentFee[]>([]);
@@ -327,9 +328,10 @@ const AgentFeesPage: React.FC = () => {
     const { creates, updates, deletes, errors } = collectChanges();
 
     if (errors.length > 0) {
-      message.error(`Invalid values:\n${errors.join('\n')}`);
+      setValidationErrors(errors);
       return;
     }
+    setValidationErrors([]);
     if (!creates.length && !updates.length && !deletes.length) {
       message.info('No changes to save');
       return;
@@ -436,7 +438,7 @@ const AgentFeesPage: React.FC = () => {
                     step={0.01}
                     value={draftRate}
                     onChange={(e) => setDraftRate(Number(e.target.value) || 0)}
-                    className="w-24"
+                    className="w-24 tabular-nums"
                     autoFocus
                   />
                   <span className="text-sm text-muted-foreground">%</span>
@@ -446,7 +448,7 @@ const AgentFeesPage: React.FC = () => {
                     onClick={() => void handleSaveAgentInfo()}
                     aria-label="Save rate"
                   >
-                    <Check className="size-4" />
+                    <Check data-icon="inline-start" aria-hidden="true" />
                   </LoadingButton>
                   <Button
                     size="icon-sm"
@@ -457,7 +459,7 @@ const AgentFeesPage: React.FC = () => {
                     }}
                     aria-label="Cancel edit"
                   >
-                    <X className="size-4" />
+                    <X data-icon="inline-start" aria-hidden="true" />
                   </Button>
                 </>
               ) : (
@@ -474,7 +476,7 @@ const AgentFeesPage: React.FC = () => {
                     }}
                     aria-label="Edit default fee rate"
                   >
-                    <Pencil className="size-4" />
+                    <Pencil data-icon="inline-start" aria-hidden="true" />
                   </Button>
                 </>
               )}
@@ -495,7 +497,7 @@ const AgentFeesPage: React.FC = () => {
 
           <Field>
             <FieldLabel htmlFor="reference-fees" className="mb-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <Link2 className="size-4" />
+              <Link2 data-icon="inline-start" aria-hidden="true" />
               Reference Fees
             </FieldLabel>
             <Select
@@ -529,6 +531,19 @@ const AgentFeesPage: React.FC = () => {
           <AlertDescription>
             Fee configuration is referenced from <strong>{refAgentName}</strong>. To edit fees
             independently, clear the reference above.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {validationErrors.length > 0 ? (
+        <Alert variant="destructive">
+          <AlertTitle>Fix invalid fee values</AlertTitle>
+          <AlertDescription>
+            <ul className="mt-2 flex flex-col gap-1">
+              {validationErrors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
           </AlertDescription>
         </Alert>
       ) : null}

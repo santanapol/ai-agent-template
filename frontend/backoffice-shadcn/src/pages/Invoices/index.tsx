@@ -15,13 +15,16 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -79,6 +82,7 @@ const InvoiceList: React.FC = () => {
     (searchParams.get('status') as InvoiceStatus | null) ?? undefined,
   );
   const [billingMonth, setBillingMonth] = useState(searchParams.get('billing_month') ?? '');
+  const [debouncedSearchText, setDebouncedSearchText] = useState(searchParams.get('search') ?? '');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [pageSize, setPageSize] = useState(Number(searchParams.get('page_size')) || 10);
 
@@ -101,6 +105,11 @@ const InvoiceList: React.FC = () => {
   const bulkBusy = exportRunning || statusRunning;
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedSearchText(searchText), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchText]);
+
+  useEffect(() => {
     const params: Record<string, string> = {};
     if (searchText) params.search = searchText;
     if (selectedBranchId) params.branch_id = selectedBranchId;
@@ -115,12 +124,12 @@ const InvoiceList: React.FC = () => {
     void fetchInvoices({
       page,
       limit: pageSize,
-      iv_no: searchText || undefined,
+      iv_no: debouncedSearchText || undefined,
       branch_id: selectedBranchId,
       billing_month: billingMonth || undefined,
       status: selectedStatus,
     });
-  }, [fetchInvoices, page, pageSize, searchText, selectedBranchId, billingMonth, selectedStatus]);
+  }, [fetchInvoices, page, pageSize, debouncedSearchText, selectedBranchId, billingMonth, selectedStatus]);
 
   useEffect(() => {
     void fetchInvoiceAgents();
@@ -139,7 +148,7 @@ const InvoiceList: React.FC = () => {
     void fetchInvoices({
       page,
       limit: pageSize,
-      iv_no: searchText || undefined,
+      iv_no: debouncedSearchText || undefined,
       branch_id: selectedBranchId,
       billing_month: billingMonth || undefined,
       status: selectedStatus,
@@ -147,7 +156,14 @@ const InvoiceList: React.FC = () => {
   };
 
   const openExport = (format: BulkExportFormat) => {
-    setExportJob({ ids: selectedRowKeys, format });
+    void confirm({
+      title: `Export ${format.toUpperCase()}`,
+      content: `Export ${selectedRowKeys.length} selected invoice(s) as ${format.toUpperCase()}?`,
+      okText: 'Export',
+      onOk: () => {
+        setExportJob({ ids: selectedRowKeys, format });
+      },
+    });
   };
 
   const openStatusAction = (action: BulkStatusAction) => {
@@ -223,7 +239,7 @@ const InvoiceList: React.FC = () => {
       title: 'Action',
       render: (row) => (
         <Button size="sm" onClick={() => navigate(`/invoices/${row._id}`)}>
-          <Eye data-icon="inline-start" />
+          <Eye data-icon="inline-start" aria-hidden="true" />
           View Details
         </Button>
       ),
@@ -238,7 +254,7 @@ const InvoiceList: React.FC = () => {
         extra={
           canWrite ? (
             <Button onClick={() => setIsModalVisible(true)}>
-              <Plus data-icon="inline-start" />
+              <Plus data-icon="inline-start" aria-hidden="true" />
               Create Invoice
             </Button>
           ) : null
@@ -299,6 +315,7 @@ const InvoiceList: React.FC = () => {
             pagination={{
               page,
               pageSize,
+            pageSizeOptions: [10, 20, 50],
               total,
               onChange: (nextPage, nextSize) => {
                 setPage(nextPage);
@@ -353,10 +370,19 @@ const InvoiceList: React.FC = () => {
         }}
       />
 
-      <Dialog open={isModalVisible} onOpenChange={setIsModalVisible}>
-        <DialogContent>
+      <Dialog
+        open={isModalVisible}
+        onOpenChange={(open) => {
+          if (!open && generating) return;
+          setIsModalVisible(open);
+        }}
+      >
+        <DialogContent showCloseButton={!generating}>
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
+            <DialogDescription>
+              Generate invoices for the selected billing month and optional branch.
+            </DialogDescription>
           </DialogHeader>
           <Field data-invalid={!!createMonthError}>
             <FieldLabel htmlFor="create-invoice-month">Billing month</FieldLabel>
@@ -385,16 +411,19 @@ const InvoiceList: React.FC = () => {
                 <SelectValue placeholder="All Branches" />
               </SelectTrigger>
               <SelectContent>
-                {branchOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>Branches</SelectLabel>
+                  {branchOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </Field>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalVisible(false)}>
+            <Button variant="outline" onClick={() => setIsModalVisible(false)} disabled={generating}>
               Cancel
             </Button>
             <LoadingButton loading={generating || loadingBranches} onClick={() => void handleCreateInvoice()}>

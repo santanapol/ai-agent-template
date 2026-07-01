@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Archive, UserPlus, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageContainer, PageContentCard } from '@/components/layout';
 import { StatCard } from '@/components/stat-card';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Button } from '@/components/ui/button';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
@@ -11,6 +13,7 @@ import * as staffApi from '@/lib/staffApiClient';
 
 const Dashboard: React.FC = () => {
   const { message } = useAppFeedback();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
@@ -64,7 +67,13 @@ const Dashboard: React.FC = () => {
           ) : (
             <>
               <StatCard title="Total Active Staff" value={activeCount} icon={Users} />
-              <StatCard title="New Profiles (This Week)" value="—" icon={UserPlus} iconTone="success" />
+              <StatCard
+                title="New Profiles (This Week)"
+                value="—"
+                suffix="no new profiles this week"
+                icon={UserPlus}
+                iconTone="success"
+              />
               <StatCard title="Archived Profiles" value={archivedCount} icon={Archive} iconTone="warning" />
             </>
           )}
@@ -79,6 +88,11 @@ const Dashboard: React.FC = () => {
               Select Staff Management from the sidebar to manage profiles.
             </EmptyDescription>
           </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={() => navigate('/staff')}>
+              Open Staff Management
+            </Button>
+          </EmptyContent>
         </Empty>
       </PageContentCard>
     </PageContainer>

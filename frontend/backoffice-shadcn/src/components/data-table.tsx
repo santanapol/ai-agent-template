@@ -158,9 +158,49 @@ export function DataTable<T>({
       rowSelection.onChange([...merged]);
     }
   };
+  const skeletonColumns = Math.max(columnDefs.length + (rowSelection ? 1 : 0), 3);
 
   if (loading) {
-    return <Skeleton className={cn('h-48 w-full', className)} aria-busy="true" />;
+    return (
+      <div className={cn('flex flex-col gap-4', className)} aria-busy="true">
+        <div className="overflow-hidden rounded-lg border">
+          <div
+            className="grid gap-3 border-b bg-muted/40 px-4 py-3"
+            style={{ gridTemplateColumns: `repeat(${skeletonColumns}, minmax(0, 1fr))` }}
+          >
+            {Array.from({ length: skeletonColumns }).map((_, index) => (
+              <Skeleton
+                key={index}
+                className={cn('h-4', index === 0 ? 'max-w-24' : index === skeletonColumns - 1 ? 'max-w-20' : 'w-full')}
+              />
+            ))}
+          </div>
+          <div className="flex flex-col">
+            {Array.from({ length: 4 }).map((_, rowIndex) => (
+              <div
+                key={rowIndex}
+                className="grid gap-3 border-b px-4 py-3 last:border-0"
+                style={{ gridTemplateColumns: `repeat(${skeletonColumns}, minmax(0, 1fr))` }}
+              >
+                {Array.from({ length: skeletonColumns }).map((__, cellIndex) => (
+                  <Skeleton
+                    key={cellIndex}
+                    className={cn(
+                      'h-4',
+                      rowSelection && cellIndex === 0
+                        ? 'size-4 rounded-full'
+                        : cellIndex === 0
+                          ? 'max-w-28'
+                          : 'w-full',
+                    )}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!data.length) {

@@ -43,4 +43,13 @@ describe('RouteErrorPage', () => {
 
     expect(screen.getByText('Mock 500')).toBeInTheDocument();
   });
+
+  it('renders a reload action for chunk loading errors', () => {
+    useRouteError.mockReturnValue(new Error('Loading chunk 12 failed'));
+    isRouteErrorResponse.mockReturnValue(false);
+
+    renderWithProviders(<RouteErrorPage />);
+
+    expect(screen.getByRole('button', { name: /reload page/i })).toBeInTheDocument();
+  });
 });

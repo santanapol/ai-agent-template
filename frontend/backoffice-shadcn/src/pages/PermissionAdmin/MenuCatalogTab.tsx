@@ -8,7 +8,7 @@ import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { MenuTree } from '@/components/menu-tree';
 import { Button } from '@/components/ui/button';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
@@ -118,7 +118,7 @@ const MenuCatalogTab: React.FC = () => {
       <div className="mb-4 flex justify-end">
         <Button onClick={openCreate}>
           <Plus data-icon="inline-start" />
-          Add node
+          Create menu node
         </Button>
       </div>
 
@@ -130,6 +130,12 @@ const MenuCatalogTab: React.FC = () => {
             <EmptyTitle>No menu nodes in registry</EmptyTitle>
             <EmptyDescription>Add a node to build the menu catalog.</EmptyDescription>
           </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={openCreate}>
+              <Plus data-icon="inline-start" />
+              Create menu node
+            </Button>
+          </EmptyContent>
         </Empty>
       ) : (
         <MenuTree
@@ -155,7 +161,7 @@ const MenuCatalogTab: React.FC = () => {
                       />
                     }
                   >
-                    <Pencil className="size-4" />
+                    <Pencil data-icon="inline-start" aria-hidden="true" />
                   </TooltipTrigger>
                   {protectedNode ? (
                     <TooltipContent>This node is protected and cannot be modified.</TooltipContent>
@@ -173,7 +179,7 @@ const MenuCatalogTab: React.FC = () => {
                       />
                     }
                   >
-                    <Trash2 className="size-4 text-destructive" />
+                    <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
                   </TooltipTrigger>
                   {protectedNode ? (
                     <TooltipContent>This node is protected and cannot be deleted.</TooltipContent>

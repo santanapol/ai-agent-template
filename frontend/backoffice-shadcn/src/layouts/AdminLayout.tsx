@@ -3,7 +3,6 @@ import {
   BarChart3,
   ChevronDown,
   Code2,
-  DollarSign,
   LayoutDashboard,
   LineChart,
   LogOut,
@@ -15,6 +14,7 @@ import {
   Sun,
   User,
   Users,
+  WalletCards,
 } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -111,7 +111,7 @@ const MENU_ICONS: Record<string, React.ReactNode> = {
   'dashboard:view': <LayoutDashboard className="size-4" />,
   staff: <Users className="size-4" />,
   'profiles:list': <Users className="size-4" />,
-  billing: <DollarSign className="size-4" />,
+  billing: <WalletCards className="size-4" />,
   'agents:list': <Store className="size-4" />,
   'invoices:list': <DollarSign className="size-4" />,
   reports: <Code2 className="size-4" />,
@@ -548,7 +548,9 @@ const AdminLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="hidden text-right md:block">
               <div className="flex items-center justify-end gap-2">
-                <span className="text-sm font-medium">{displayName ?? user?.sub ?? '—'}</span>
+                <span className="text-sm font-medium">
+                  {displayName ?? headerProfile?.username ?? user?.username ?? user?.sub ?? '—'}
+                </span>
                 <Badge variant="secondary">{formatRoleLabel(user?.role)}</Badge>
                 {!showBranchSwitcher && (
                   <Badge variant="outline">{branchDisplayLabel}</Badge>
@@ -601,7 +603,9 @@ const AdminLayout: React.FC = () => {
                   <button
                     type="button"
                     className="rounded-full"
-                    aria-label={`Account menu for ${displayName ?? user?.sub ?? 'current user'}`}
+                    aria-label={`Account menu for ${
+                      displayName ?? headerProfile?.username ?? user?.username ?? user?.sub ?? 'current user'
+                    }`}
                   >
                     <UserAvatar
                       firstname={headerProfile?.firstname}

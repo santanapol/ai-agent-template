@@ -7,6 +7,7 @@ export interface TokenResponse {
 
 export interface DecodedUser {
   sub: string;
+  username?: string;
   role: string;
   ou_id: string;
   branch_id: string;

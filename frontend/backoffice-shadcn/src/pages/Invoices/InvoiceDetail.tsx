@@ -171,7 +171,7 @@ const InvoiceDetail: React.FC = () => {
           Fee (%)
           <Tooltip>
             <TooltipTrigger render={<button type="button" className="inline-flex" aria-label="Fee info" />}>
-              <Info className="size-3.5 text-primary" />
+              <Info data-icon="inline-start" className="text-primary" aria-hidden="true" />
             </TooltipTrigger>
             <TooltipContent>Fee is calculated based on Net Win</TooltipContent>
           </Tooltip>
@@ -209,16 +209,16 @@ const InvoiceDetail: React.FC = () => {
       extra={
         <div className="no-print flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={handleExportPDF}>
-            <FileText data-icon="inline-start" />
+            <FileText data-icon="inline-start" aria-hidden="true" />
             Export PDF
           </Button>
           <Button variant="outline" onClick={handleExportExcel}>
-            <FileSpreadsheet data-icon="inline-start" />
+            <FileSpreadsheet data-icon="inline-start" aria-hidden="true" />
             Export Excel
           </Button>
           {isReady ? (
             <LoadingButton onClick={promptUpdateStatus} loading={updatingStatus}>
-              <CheckCircle data-icon="inline-start" />
+              <CheckCircle data-icon="inline-start" aria-hidden="true" />
               Mark as PAID
             </LoadingButton>
           ) : null}
@@ -228,7 +228,7 @@ const InvoiceDetail: React.FC = () => {
               onClick={promptCancelInvoice}
               loading={updatingStatus}
             >
-              <XCircle data-icon="inline-start" />
+              <XCircle data-icon="inline-start" aria-hidden="true" />
               Cancel Invoice
             </LoadingButton>
           ) : null}
@@ -254,7 +254,7 @@ const InvoiceDetail: React.FC = () => {
             </div>
 
             <div className="mb-8 grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <p>
                   <span className="text-muted-foreground">Billing Month: </span>
                   <span className="font-medium">{invoice.billing_month || '-'}</span>
@@ -264,7 +264,7 @@ const InvoiceDetail: React.FC = () => {
                   <span className="font-medium">{formatDate(invoice.cr_date)}</span>
                 </p>
               </div>
-              <div className="space-y-2 text-right text-sm sm:text-right">
+              <div className="flex flex-col gap-2 text-right text-sm sm:text-right">
                 <p>
                   <span className="text-xs font-semibold tracking-wide text-muted-foreground">BILL TO </span>
                   <span className="text-base font-semibold">{invoice.branch_name || '-'}</span>
@@ -278,7 +278,7 @@ const InvoiceDetail: React.FC = () => {
                 {invoice.status === 'PAID' && invoice.upd_date ? (
                   <p>
                     <span className="text-muted-foreground">Paid Date: </span>
-                    <span className="font-semibold text-green-600">{formatDate(invoice.upd_date)}</span>
+                    <span className="font-semibold text-success">{formatDate(invoice.upd_date)}</span>
                   </p>
                 ) : null}
               </div>
@@ -299,7 +299,7 @@ const InvoiceDetail: React.FC = () => {
               <div className="w-full max-w-xs">
                 <div className="flex items-center justify-between border-t pt-3">
                   <span className="font-semibold">Total Amount</span>
-                  <span className={`text-xl font-bold ${amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                  <span className={`text-xl font-bold ${amount < 0 ? 'text-destructive' : 'text-success'}`}>
                     {formatMoney(amount)}
                   </span>
                 </div>

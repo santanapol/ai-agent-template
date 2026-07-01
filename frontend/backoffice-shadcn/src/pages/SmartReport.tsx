@@ -48,6 +48,14 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -915,7 +923,7 @@ const SmartReport: React.FC = () => {
                   <Alert variant="destructive">
                     <AlertTitle>Validation errors</AlertTitle>
                     <AlertDescription>
-                      <ul className="mt-2 space-y-1">
+                      <ul className="mt-2 flex flex-col gap-1">
                         {validationErrors.map((err, index) => (
                           <li key={index} className="font-mono text-xs">
                             {err.line != null ? `Line ${err.line}: ` : ''}
@@ -933,7 +941,7 @@ const SmartReport: React.FC = () => {
                   Script workflow
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-muted-foreground">
                     <li>Validate compiles without querying the database.</li>
                     <li>
                       Test run uses yesterday&apos;s params.startDate / params.endDate when
@@ -978,28 +986,26 @@ const SmartReport: React.FC = () => {
               />
               {testRunPreviewTable.rows.length > 0 ? (
                 <div className="mt-4 overflow-x-auto rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
                         {testRunPreviewTable.columns.map((col) => (
-                          <th key={col.key} className="px-3 py-2 text-left font-medium">
-                            {col.title}
-                          </th>
+                          <TableHead key={col.key}>{col.title}</TableHead>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {testRunPreviewTable.rows.map((row, rowIndex) => (
-                        <tr key={rowIndex} className="border-b last:border-0">
+                        <TableRow key={rowIndex}>
                           {testRunPreviewTable.columns.map((col) => (
-                            <td key={col.key} className="px-3 py-2">
+                            <TableCell key={col.key}>
                               {String(row[col.dataIndex as string] ?? '-')}
-                            </td>
+                            </TableCell>
                           ))}
-                        </tr>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               ) : testRunPreview.recordCount > 0 ? (
                 <p className="mt-4 text-sm text-muted-foreground">
@@ -1114,7 +1120,7 @@ const SmartReport: React.FC = () => {
                 {runningId === record.id ? (
                   <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : (
-                  <Play className="size-4" />
+                  <Play data-icon="inline-start" aria-hidden="true" />
                 )}
               </TooltipTrigger>
               <TooltipContent>Run report</TooltipContent>
@@ -1152,7 +1158,7 @@ const SmartReport: React.FC = () => {
               {loadingEditId === record.id ? (
                 <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
-                <Pencil className="size-4" />
+                <Pencil data-icon="inline-start" aria-hidden="true" />
               )}
             </TooltipTrigger>
             <TooltipContent>Edit report</TooltipContent>
@@ -1168,7 +1174,7 @@ const SmartReport: React.FC = () => {
                 />
               }
             >
-              <History className="size-4" />
+              <History data-icon="inline-start" aria-hidden="true" />
             </TooltipTrigger>
             <TooltipContent>View download history</TooltipContent>
           </Tooltip>
@@ -1184,7 +1190,7 @@ const SmartReport: React.FC = () => {
                 />
               }
             >
-              <Trash2 className="size-4 text-destructive" />
+              <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
             </TooltipTrigger>
             <TooltipContent>Delete report</TooltipContent>
           </Tooltip>
@@ -1199,7 +1205,7 @@ const SmartReport: React.FC = () => {
       title: 'Report Name',
       render: (record: DownloadHistoryRecord) => (
         <span className="flex items-center gap-2 font-medium">
-          <FileText className="size-4 text-primary" />
+          <FileText data-icon="inline-start" aria-hidden="true" />
           {record.reportName}
         </span>
       ),
@@ -1251,12 +1257,12 @@ const SmartReport: React.FC = () => {
       extra={
         <Button size="lg" onClick={handleCreateNew}>
           <Plus data-icon="inline-start" />
-          Create New Report
+          Create report
         </Button>
       }
     >
-      <Alert className="mb-6 border-info/30 bg-info/5">
-        <Code2 className="size-5" />
+      <Alert className="mb-6">
+        <Code2 data-icon="inline-start" aria-hidden="true" />
         <AlertTitle>Secure Read-Only Access</AlertTitle>
         <AlertDescription>
           All reports run on secondary database replicas in read-only mode. Heavy queries or
