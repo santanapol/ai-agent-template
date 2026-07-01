@@ -3,6 +3,7 @@ import {
   BarChart3,
   ChevronDown,
   Code2,
+  DollarSign,
   LayoutDashboard,
   LineChart,
   LogOut,
