@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { PageContainer, PageContentCard } from '@/components/layout';
+import { FiltersContainer, PageContainer, PageContentCard } from '@/components/layout';
 import Royalty21SearchForm, {
   type Royalty21SearchValues,
 } from '@/components/branch-report/marketing/Royalty21SearchForm';
@@ -177,14 +177,16 @@ const ChannelPerformancePage: React.FC = () => {
           </Alert>
         ) : null}
 
-        <Royalty21SearchForm
-          inviteLinkOptions={inviteLinkOptions}
-          inviteLinksLoading={inviteLinksLoading}
-          tableLoading={tableLoading}
-          disabled={!hasActiveBranch}
-          onSearch={handleSearch}
-          onClear={resetFormAndReport}
-        />
+        <FiltersContainer className="mb-0">
+          <Royalty21SearchForm
+            inviteLinkOptions={inviteLinkOptions}
+            inviteLinksLoading={inviteLinksLoading}
+            tableLoading={tableLoading}
+            disabled={!hasActiveBranch}
+            onSearch={handleSearch}
+            onClear={resetFormAndReport}
+          />
+        </FiltersContainer>
 
         <Separator className="my-6" />
 

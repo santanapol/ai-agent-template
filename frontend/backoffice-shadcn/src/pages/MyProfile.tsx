@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { fieldErrorIds } from '@/lib/fieldA11y';
 import { apiErrorMessage } from '@/lib/apiError';
 import {
   validateConfirmPassword,
@@ -52,6 +53,16 @@ const MyProfile: React.FC = () => {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   const userSub = user?.sub;
+  const firstnameA11y = profileErrors.firstname ? fieldErrorIds('firstname') : undefined;
+  const lastnameA11y = profileErrors.lastname ? fieldErrorIds('lastname') : undefined;
+  const emailA11y = profileErrors.email ? fieldErrorIds('email') : undefined;
+  const telA11y = profileErrors.tel ? fieldErrorIds('tel') : undefined;
+  const currentPasswordA11y = passwordErrors.current_password ? fieldErrorIds('current_password') : undefined;
+  const newPasswordErrorA11y = fieldErrorIds('new_password');
+  const newPasswordHintId = 'new_password-hint';
+  const confirmNewPasswordA11y = passwordErrors.confirm_new_password
+    ? fieldErrorIds('confirm_new_password')
+    : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +215,12 @@ const MyProfile: React.FC = () => {
         <Skeleton className="h-64 max-w-[720px] rounded-xl" aria-busy="true" />
       ) : loadError && !profile ? (
         <PageContentCard className="max-w-[720px]">
-          <p className="text-sm text-destructive">{loadError}</p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-destructive">{loadError}</p>
+            <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+              Retry
+            </Button>
+          </div>
         </PageContentCard>
       ) : profile ? (
         <>
@@ -254,9 +270,12 @@ const MyProfile: React.FC = () => {
                     }}
                     maxLength={128}
                     aria-invalid={!!profileErrors.firstname}
+                  aria-describedby={firstnameA11y?.describedBy}
                   />
                   {profileErrors.firstname ? (
-                    <FieldDescription className="text-destructive">{profileErrors.firstname}</FieldDescription>
+                  <FieldDescription id={firstnameA11y?.errorId} className="text-destructive">
+                    {profileErrors.firstname}
+                  </FieldDescription>
                   ) : null}
                 </Field>
                 <Field data-invalid={!!profileErrors.lastname}>
@@ -276,9 +295,12 @@ const MyProfile: React.FC = () => {
                     }}
                     maxLength={128}
                     aria-invalid={!!profileErrors.lastname}
+                  aria-describedby={lastnameA11y?.describedBy}
                   />
                   {profileErrors.lastname ? (
-                    <FieldDescription className="text-destructive">{profileErrors.lastname}</FieldDescription>
+                  <FieldDescription id={lastnameA11y?.errorId} className="text-destructive">
+                    {profileErrors.lastname}
+                  </FieldDescription>
                   ) : null}
                 </Field>
               </div>
@@ -300,9 +322,12 @@ const MyProfile: React.FC = () => {
                   }}
                   maxLength={254}
                   aria-invalid={!!profileErrors.email}
+                  aria-describedby={emailA11y?.describedBy}
                 />
                 {profileErrors.email ? (
-                  <FieldDescription className="text-destructive">{profileErrors.email}</FieldDescription>
+                  <FieldDescription id={emailA11y?.errorId} className="text-destructive">
+                    {profileErrors.email}
+                  </FieldDescription>
                 ) : null}
               </Field>
               <Field data-invalid={!!profileErrors.tel}>
@@ -323,9 +348,12 @@ const MyProfile: React.FC = () => {
                   placeholder="e.g. 0812345678 or +66812345678"
                   maxLength={20}
                   aria-invalid={!!profileErrors.tel}
+                  aria-describedby={telA11y?.describedBy}
                 />
                 {profileErrors.tel ? (
-                  <FieldDescription className="text-destructive">{profileErrors.tel}</FieldDescription>
+                  <FieldDescription id={telA11y?.errorId} className="text-destructive">
+                    {profileErrors.tel}
+                  </FieldDescription>
                 ) : null}
               </Field>
               <LoadingButton onClick={() => void handleSave()} loading={saving}>
@@ -346,9 +374,12 @@ const MyProfile: React.FC = () => {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   aria-invalid={!!passwordErrors.current_password}
+                  aria-describedby={currentPasswordA11y?.describedBy}
                 />
                 {passwordErrors.current_password ? (
-                  <FieldDescription className="text-destructive">{passwordErrors.current_password}</FieldDescription>
+                  <FieldDescription id={currentPasswordA11y?.errorId} className="text-destructive">
+                    {passwordErrors.current_password}
+                  </FieldDescription>
                 ) : null}
               </Field>
               <Field data-invalid={!!passwordErrors.new_password}>
@@ -360,11 +391,14 @@ const MyProfile: React.FC = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   aria-invalid={!!passwordErrors.new_password}
+                  aria-describedby={passwordErrors.new_password ? newPasswordErrorA11y.describedBy : newPasswordHintId}
                 />
                 {passwordErrors.new_password ? (
-                  <FieldDescription className="text-destructive">{passwordErrors.new_password}</FieldDescription>
+                  <FieldDescription id={newPasswordErrorA11y.errorId} className="text-destructive">
+                    {passwordErrors.new_password}
+                  </FieldDescription>
                 ) : (
-                  <FieldDescription>
+                  <FieldDescription id={newPasswordHintId}>
                     Minimum {PASSWORD_MIN_LENGTH} characters with mixed case, numbers, and symbols.
                   </FieldDescription>
                 )}
@@ -378,9 +412,12 @@ const MyProfile: React.FC = () => {
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   aria-invalid={!!passwordErrors.confirm_new_password}
+                  aria-describedby={confirmNewPasswordA11y?.describedBy}
                 />
                 {passwordErrors.confirm_new_password ? (
-                  <FieldDescription className="text-destructive">{passwordErrors.confirm_new_password}</FieldDescription>
+                  <FieldDescription id={confirmNewPasswordA11y?.errorId} className="text-destructive">
+                    {passwordErrors.confirm_new_password}
+                  </FieldDescription>
                 ) : null}
               </Field>
               <LoadingButton onClick={() => void handleChangePassword()} loading={changingPassword}>

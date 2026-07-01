@@ -230,13 +230,16 @@ const StaffManagement: React.FC = () => {
     if (!editingId) return;
     const newPassword = formValues.newPassword?.trim();
     if (!newPassword) {
+      setFormErrors((prev) => ({ ...prev, newPassword: 'Enter a new password to update it.' }));
       message.warning('Enter a new password to update, or leave the fields empty.');
       return;
     }
     if (formValues.confirmNewPassword !== newPassword) {
+      setFormErrors((prev) => ({ ...prev, confirmNewPassword: 'Passwords do not match' }));
       message.error('Passwords do not match');
       return;
     }
+    setFormErrors((prev) => ({ ...prev, newPassword: undefined, confirmNewPassword: undefined }));
     await confirm({
       title: 'Reset password?',
       content: 'This will sign the user out of all devices.',

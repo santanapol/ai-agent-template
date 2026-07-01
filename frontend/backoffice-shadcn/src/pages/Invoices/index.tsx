@@ -30,6 +30,7 @@ import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
 import { canSwitchActiveBranch } from '@/lib/branchOptions';
+import { fieldErrorIds } from '@/lib/fieldA11y';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '@/types/invoice';
 import { MAX_BULK_INVOICE_SELECTION } from './bulk/constants';
 import { BulkExportModal } from './components/BulkExportModal';
@@ -84,6 +85,7 @@ const InvoiceList: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [createMonth, setCreateMonth] = useState(dayjs().format('YYYY-MM'));
   const [createBranchId, setCreateBranchId] = useState<string | undefined>();
+  const [createMonthError, setCreateMonthError] = useState<string | undefined>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [exportJob, setExportJob] = useState<ExportJobState | null>(null);
   const [exportRunning, setExportRunning] = useState(false);
@@ -167,9 +169,11 @@ const InvoiceList: React.FC = () => {
 
   const handleCreateInvoice = async () => {
     if (!createMonth) {
+      setCreateMonthError('Please select a month');
       message.error('Please select a month');
       return;
     }
+    setCreateMonthError(undefined);
     const success = await generateInvoices({
       month: createMonth,
       branch_id: createBranchId,
@@ -232,10 +236,12 @@ const InvoiceList: React.FC = () => {
         title="Invoice Management"
         description="Manage invoices, search, and view historical billing details."
         extra={
-          <Button onClick={() => setIsModalVisible(true)}>
-            <Plus data-icon="inline-start" />
-            Create Invoice
-          </Button>
+          canWrite ? (
+            <Button onClick={() => setIsModalVisible(true)}>
+              <Plus data-icon="inline-start" />
+              Create Invoice
+            </Button>
+          ) : null
         }
       >
         <PageContentCard>
@@ -352,14 +358,24 @@ const InvoiceList: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
           </DialogHeader>
-          <Field>
-            <FieldLabel>Billing month</FieldLabel>
+          <Field data-invalid={!!createMonthError}>
+            <FieldLabel htmlFor="create-invoice-month">Billing month</FieldLabel>
             <MonthFilterField
               id="create-invoice-month"
               label=""
               value={createMonth}
-              onChange={setCreateMonth}
+              onChange={(value) => {
+                setCreateMonth(value);
+                if (createMonthError) setCreateMonthError(undefined);
+              }}
+              aria-invalid={!!createMonthError}
+              aria-describedby={createMonthError ? fieldErrorIds('create-invoice-month').describedBy : undefined}
             />
+            {createMonthError ? (
+              <FieldDescription id={fieldErrorIds('create-invoice-month').errorId} className="text-destructive">
+                {createMonthError}
+              </FieldDescription>
+            ) : null}
           </Field>
           <Field>
             <FieldLabel>Select Branch (Optional)</FieldLabel>

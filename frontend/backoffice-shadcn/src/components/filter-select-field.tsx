@@ -11,6 +11,8 @@ interface FilterSelectFieldProps {
   options: FilterOption[];
   className?: string;
   width?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
 }
 
 export function FilterSelectField({
@@ -22,6 +24,8 @@ export function FilterSelectField({
   options,
   className,
   width,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
 }: FilterSelectFieldProps) {
   return (
     <Field className={cn(width ?? 'w-[200px]', className)}>
@@ -33,6 +37,8 @@ export function FilterSelectField({
         onChange={onChange}
         options={options}
         width="w-full"
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
       />
     </Field>
   );

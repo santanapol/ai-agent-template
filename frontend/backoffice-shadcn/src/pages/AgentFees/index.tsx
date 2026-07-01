@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { LoadingButton } from '@/components/loading-button';
@@ -375,11 +376,13 @@ const AgentFeesPage: React.FC = () => {
 
   if (agentLoading) {
     return (
-      <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading agent fees">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <Skeleton className="h-96 w-full rounded-xl" />
-      </div>
+      <DetailContainer title="Agent Fees" backUrl="/agents" description="Loading agent details...">
+        <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading agent fees">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-96 w-full rounded-xl" />
+        </div>
+      </DetailContainer>
     );
   }
 
@@ -490,11 +493,11 @@ const AgentFeesPage: React.FC = () => {
             </p>
           </div>
 
-          <div>
-            <p className="mb-1 flex items-center gap-1 text-sm text-muted-foreground">
+          <Field>
+            <FieldLabel htmlFor="reference-fees" className="mb-1 flex items-center gap-1 text-sm text-muted-foreground">
               <Link2 className="size-4" />
               Reference Fees
-            </p>
+            </FieldLabel>
             <Select
               value={agent?.ref_fee_branch_id ?? '__none__'}
               disabled={savingRef}
@@ -504,7 +507,7 @@ const AgentFeesPage: React.FC = () => {
                 )
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="reference-fees" className="w-full">
                 <SelectValue placeholder="None — use own fee overrides" />
               </SelectTrigger>
               <SelectContent>
@@ -516,7 +519,7 @@ const AgentFeesPage: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         </CardContent>
       </Card>
 

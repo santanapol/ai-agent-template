@@ -9,6 +9,8 @@ interface MonthFilterFieldProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
 }
 
 export function MonthFilterField({
@@ -18,6 +20,8 @@ export function MonthFilterField({
   onChange,
   placeholder,
   className,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
 }: MonthFilterFieldProps) {
   return (
     <Field className={cn('w-[220px]', className)}>
@@ -27,6 +31,8 @@ export function MonthFilterField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
       />
     </Field>
   );

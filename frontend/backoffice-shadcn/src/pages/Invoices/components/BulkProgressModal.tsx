@@ -43,7 +43,7 @@ export function BulkProgressModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" role="status" aria-live="polite">
           <Progress value={percent} aria-label="Bulk operation progress" />
           <p className="text-sm text-muted-foreground">
             {progress.done} / {progress.total}
@@ -56,6 +56,13 @@ export function BulkProgressModal({
             ) : (
               progress.results.map((item) => (
                 <li key={item.id} className="flex gap-2 text-sm">
+                  <span className="font-medium">
+                    {item.status === 'success'
+                      ? 'Success'
+                      : item.status === 'failed'
+                        ? 'Failed'
+                        : 'Cancelled'}
+                  </span>
                   {item.status === 'success' ? (
                     <CheckCircle className="size-4 shrink-0 text-green-600" aria-hidden="true" />
                   ) : (

@@ -276,6 +276,10 @@ function MobileNav({
   onNavigate: (route: string) => void;
 }) {
   const location = useLocation();
+  const handleNavigate = (route: string) => {
+    onNavigate(route);
+    onOpenChange(false);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -285,25 +289,7 @@ function MobileNav({
         </SheetHeader>
         <div className="p-2">
           <SidebarMenu>
-            {menuTree.flatMap((item) => {
-              const items = item.children?.length ? item.children : [item];
-              return items.map((entry) => (
-                <SidebarMenuItem key={entry.key}>
-                  <SidebarMenuButton
-                    isActive={entry.route === location.pathname}
-                    onClick={() => {
-                      if (entry.route) {
-                        onNavigate(entry.route);
-                        onOpenChange(false);
-                      }
-                    }}
-                  >
-                    {entry.icon}
-                    <span>{entry.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ));
-            })}
+            <MenuTreeItems items={menuTree} selectedPath={location.pathname} onNavigate={handleNavigate} />
           </SidebarMenu>
         </div>
       </SheetContent>

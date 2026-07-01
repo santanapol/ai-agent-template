@@ -4,11 +4,12 @@ import axios from 'axios';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { LoadingButton } from '@/components/loading-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { fieldErrorIds } from '@/lib/fieldA11y';
 
 function authErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
@@ -29,6 +30,7 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ username?: string; password?: string }>({});
 
   if (loading) {
     return (
@@ -41,16 +43,26 @@ const Login: React.FC = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nextErrors: { username?: string; password?: string } = {};
     if (!username.trim() || !password) {
+      if (!username.trim()) nextErrors.username = 'Please enter username';
+      if (!password) nextErrors.password = 'Please enter password';
+      setFormErrors(nextErrors);
       message.error('Please enter username and password');
       return;
     }
+    setFormErrors({});
     setSubmitting(true);
     try {
       await login(username, password);
       navigate('/');
     } catch (err) {
-      message.error(authErrorMessage(err));
+      const errorMessage = authErrorMessage(err);
+      setFormErrors((prev) => ({
+        ...prev,
+        password: errorMessage,
+      }));
+      message.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -65,35 +77,57 @@ const Login: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="username">Username</Label>
-              <div className="relative">
-                <User className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="username"
-                  className="pl-9"
-                  placeholder="Username"
-                  autoComplete="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  className="pl-9"
-                  placeholder="Password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+            <FieldGroup className="gap-4">
+              <Field data-invalid={!!formErrors.username}>
+                <FieldLabel htmlFor="username">Username</FieldLabel>
+                <div className="relative">
+                  <User aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    className="pl-9"
+                    placeholder="Username"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (formErrors.username) setFormErrors((prev) => ({ ...prev, username: undefined }));
+                    }}
+                    aria-invalid={!!formErrors.username}
+                    aria-describedby={formErrors.username ? fieldErrorIds('username').describedBy : undefined}
+                  />
+                </div>
+                {formErrors.username ? (
+                  <FieldDescription id={fieldErrorIds('username').errorId} className="text-destructive" role="alert">
+                    {formErrors.username}
+                  </FieldDescription>
+                ) : null}
+              </Field>
+              <Field data-invalid={!!formErrors.password}>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <div className="relative">
+                  <Lock aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    className="pl-9"
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (formErrors.password) setFormErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    aria-invalid={!!formErrors.password}
+                    aria-describedby={formErrors.password ? fieldErrorIds('password').describedBy : undefined}
+                  />
+                </div>
+                {formErrors.password ? (
+                  <FieldDescription id={fieldErrorIds('password').errorId} className="text-destructive" role="alert">
+                    {formErrors.password}
+                  </FieldDescription>
+                ) : null}
+              </Field>
+            </FieldGroup>
             <LoadingButton type="submit" className="w-full" loading={submitting}>
               Sign In
             </LoadingButton>

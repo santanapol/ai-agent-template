@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Tooltip,
   TooltipContent,
@@ -714,19 +715,22 @@ const SmartReport: React.FC = () => {
                 </Field>
                 <Field>
                   <FieldLabel>Output Format</FieldLabel>
-                  <div className="flex rounded-lg border p-1">
-                    {(['csv', 'excel'] as const).map((fmt) => (
-                      <Button
-                        key={fmt}
-                        type="button"
-                        variant={form.outputFormat === fmt ? 'secondary' : 'ghost'}
-                        className="flex-1"
-                        onClick={() => setField('outputFormat', fmt)}
-                      >
-                        {fmt === 'csv' ? 'CSV (.csv)' : 'Excel (.xlsx)'}
-                      </Button>
-                    ))}
-                  </div>
+                  <ToggleGroup
+                    value={[form.outputFormat]}
+                    onValueChange={(value) => {
+                      const next = value[0];
+                      if (!next) return;
+                      setField('outputFormat', next as ReportFormValues['outputFormat']);
+                    }}
+                    className="flex w-full flex-wrap"
+                  >
+                    <ToggleGroupItem value="csv" variant="outline" size="sm">
+                      CSV (.csv)
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="excel" variant="outline" size="sm">
+                      Excel (.xlsx)
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="schedule">Schedule Frequency</FieldLabel>
@@ -887,7 +891,9 @@ const SmartReport: React.FC = () => {
               {editorTab === 'script' ? (
                 <div ref={scriptEditorScrollRef}>
                   <Field data-invalid={!!formErrors.query}>
+                    <FieldLabel htmlFor="report-query">Query Script</FieldLabel>
                     <Textarea
+                      id="report-query"
                       value={form.query}
                       onChange={(e) => handleQueryScriptChange(e.target.value)}
                       className="min-h-[280px] rounded-t-none font-mono text-xs"

@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -119,6 +120,7 @@ const MenuNodeFormModal: React.FC<MenuNodeFormModalProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Add menu node' : 'Edit menu node'}</DialogTitle>
+          <DialogDescription>Configure menu hierarchy, labels, and sort order.</DialogDescription>
         </DialogHeader>
 
         <FieldGroup>

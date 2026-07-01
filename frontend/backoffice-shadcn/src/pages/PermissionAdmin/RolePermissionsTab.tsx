@@ -244,8 +244,9 @@ const RolePermissionsTab: React.FC = () => {
         </Alert>
       ) : null}
 
-      <label className="mb-4 flex items-center gap-2 text-sm">
+      <label htmlFor="revoke-sessions" className="mb-4 flex items-center gap-2 text-sm">
         <Checkbox
+          id="revoke-sessions"
           checked={revokeSessions}
           onCheckedChange={(value) => setRevokeSessions(value === true)}
         />

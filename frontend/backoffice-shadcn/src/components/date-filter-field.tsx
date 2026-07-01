@@ -9,6 +9,8 @@ interface DateFilterFieldProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
 }
 
 export function DateFilterField({
@@ -18,6 +20,8 @@ export function DateFilterField({
   onChange,
   placeholder,
   className,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
 }: DateFilterFieldProps) {
   return (
     <Field className={cn('w-[200px]', className)}>
@@ -27,6 +31,8 @@ export function DateFilterField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
       />
     </Field>
   );

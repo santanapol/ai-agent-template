@@ -4,7 +4,8 @@ import type { ChannelType } from '@/types/branchReport';
 import { DateFilterField } from '@/components/date-filter-field';
 import { FilterSelectField } from '@/components/filter-select-field';
 import { Button } from '@/components/ui/button';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   isRegDateRangeValid,
   isRegDateRangeWithinMaxDays,
@@ -100,23 +101,23 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
       <FieldGroup>
         <Field>
           <FieldLabel>Channel Type</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <ToggleGroup
+            value={[channelType]}
+            onValueChange={(value) => {
+              const next = value[0];
+              if (!next) return;
+              setChannelType(next as ChannelType);
+              if (next !== 'affiliate_link') setInviteLinkId(undefined);
+            }}
+            disabled={disabled}
+            className="flex flex-wrap"
+          >
             {CHANNEL_TYPE_OPTIONS.map((opt) => (
-              <Button
-                key={opt.value}
-                type="button"
-                size="sm"
-                variant={channelType === opt.value ? 'default' : 'outline'}
-                disabled={disabled}
-                onClick={() => {
-                  setChannelType(opt.value as ChannelType);
-                  if (opt.value !== 'affiliate_link') setInviteLinkId(undefined);
-                }}
-              >
+              <ToggleGroupItem key={opt.value} value={opt.value} size="sm" variant="outline">
                 {opt.label}
-              </Button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </Field>
 
         {channelType === 'affiliate_link' ? (
@@ -146,7 +147,11 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
           />
         </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? (
+          <Field data-invalid>
+            <FieldError role="alert">{error}</FieldError>
+          </Field>
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={disabled || tableLoading || inviteLinksLoading}>

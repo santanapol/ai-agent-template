@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useId, useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
   const [options, setOptions] = useState<ConfirmDialogOptions>({});
   const [pending, setPending] = useState(false);
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
+  const descriptionId = useId();
 
   const confirm = useCallback((opts: ConfirmDialogOptions) => {
     return new Promise<boolean>((resolve) => {
@@ -70,13 +71,13 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
           if (!nextOpen && !pending) handleCancel();
         }}
       >
-        <AlertDialogContent className="sm:max-w-md">
+        <AlertDialogContent className="sm:max-w-md" aria-describedby={typeof options.content === 'string' ? undefined : options.content ? descriptionId : undefined}>
           <AlertDialogHeader>
             <AlertDialogTitle>{options.title ?? 'Confirm'}</AlertDialogTitle>
-            {options.content ? (
-              <AlertDialogDescription>
-                {typeof options.content === 'string' ? options.content : options.content}
-              </AlertDialogDescription>
+            {typeof options.content === 'string' ? (
+              <AlertDialogDescription>{options.content}</AlertDialogDescription>
+            ) : options.content ? (
+              <div id={descriptionId}>{options.content}</div>
             ) : null}
           </AlertDialogHeader>
           <AlertDialogFooter>

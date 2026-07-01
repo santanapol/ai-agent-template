@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -60,7 +61,7 @@ export function DetailContainer({
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
               return (
-                <span key={index} className="contents">
+                <Fragment key={index}>
                   {index > 0 ? <BreadcrumbSeparator /> : null}
                   <BreadcrumbItem>
                     {isLast ? (
@@ -81,7 +82,7 @@ export function DetailContainer({
                       <BreadcrumbPage>{item.title}</BreadcrumbPage>
                     )}
                   </BreadcrumbItem>
-                </span>
+                </Fragment>
               );
             })}
           </BreadcrumbList>

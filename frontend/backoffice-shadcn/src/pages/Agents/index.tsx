@@ -41,6 +41,7 @@ const AgentsList: React.FC = () => {
   const [showInactive, setShowInactive] = useState(false);
   const [branchId, setBranchId] = useState<string | undefined>();
   const [branchError, setBranchError] = useState<string | undefined>();
+  const [syncing, setSyncing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
   const navigate = useNavigate();
 
@@ -60,11 +61,16 @@ const AgentsList: React.FC = () => {
       setBranchError('Please select a branch!');
       return;
     }
-    const success = await syncData(branchId);
-    if (success) {
-      setIsSyncModalOpen(false);
-      setBranchId(undefined);
-      fetchAgents({ page, limit: pageSize, search: searchText });
+    setSyncing(true);
+    try {
+      const success = await syncData(branchId);
+      if (success) {
+        setIsSyncModalOpen(false);
+        setBranchId(undefined);
+        fetchAgents({ page, limit: pageSize, search: searchText });
+      }
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -208,7 +214,11 @@ const AgentsList: React.FC = () => {
                 options={branchOptions}
                 width="w-full"
               />
-              {branchError ? <p className="text-sm text-destructive">{branchError}</p> : null}
+              {branchError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {branchError}
+                </p>
+              ) : null}
             </Field>
             <Field orientation="horizontal">
               <Checkbox
@@ -227,7 +237,7 @@ const AgentsList: React.FC = () => {
             <Button variant="outline" onClick={() => setIsSyncModalOpen(false)}>
               Cancel
             </Button>
-            <LoadingButton onClick={() => void handleSync()} loading={loading}>
+            <LoadingButton onClick={() => void handleSync()} loading={syncing}>
               Sync
             </LoadingButton>
           </DialogFooter>

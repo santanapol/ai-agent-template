@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -39,7 +40,7 @@ export function PageContainer({
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
               return (
-                <span key={index} className="contents">
+                <Fragment key={index}>
                   {index > 0 ? <BreadcrumbSeparator /> : null}
                   <BreadcrumbItem>
                     {isLast ? (
@@ -60,7 +61,7 @@ export function PageContainer({
                       <BreadcrumbPage>{item.title}</BreadcrumbPage>
                     )}
                   </BreadcrumbItem>
-                </span>
+                </Fragment>
               );
             })}
           </BreadcrumbList>
