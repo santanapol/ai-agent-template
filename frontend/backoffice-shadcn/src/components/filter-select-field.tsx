@@ -9,6 +9,8 @@ interface FilterSelectFieldProps {
   value?: string;
   onChange: (value: string | undefined) => void;
   options: FilterOption[];
+  searchable?: boolean;
+  searchPlaceholder?: string;
   className?: string;
   width?: string;
   'aria-invalid'?: boolean;
@@ -22,6 +24,8 @@ export function FilterSelectField({
   value,
   onChange,
   options,
+  searchable,
+  searchPlaceholder,
   className,
   width,
   'aria-invalid': ariaInvalid,
@@ -37,6 +41,8 @@ export function FilterSelectField({
         onChange={onChange}
         options={options}
         width="w-full"
+        searchable={searchable}
+        searchPlaceholder={searchPlaceholder}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
       />

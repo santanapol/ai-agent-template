@@ -7,6 +7,11 @@ import type { StaffProfile } from '../types/staff';
 import * as staffApi from '../lib/staffApiClient';
 import { renderWithProviders } from '../test/renderWithProviders';
 
+const mockFeedback = vi.hoisted(() => ({
+  message: { success: vi.fn(), error: vi.fn() },
+  modal: { confirm: vi.fn() },
+}));
+
 // Mock dependencies
 vi.mock('../hooks/usePermission');
 vi.mock('../lib/staffApiClient');
@@ -15,10 +20,7 @@ vi.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('../hooks/useAppFeedback', () => ({
-  useAppFeedback: () => ({
-    message: { success: vi.fn(), error: vi.fn() },
-    modal: { confirm: vi.fn() },
-  }),
+  useAppFeedback: () => mockFeedback,
 }));
 
 // Mock window.matchMedia for Ant Design UI components
@@ -161,6 +163,34 @@ describe('StaffManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /View profile/i })).toBeInTheDocument();
+    });
+  });
+
+  test('shows empty state when filtered search returns no profiles', async () => {
+    vi.mocked(usePermission).mockReturnValue(true);
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+      requestId: '123',
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No data found')).toBeInTheDocument();
+    });
+  });
+
+  test('shows error toast when profile fetch fails', async () => {
+    vi.mocked(staffApi.listProfiles).mockRejectedValue(new Error('network'));
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalled();
     });
   });
 });

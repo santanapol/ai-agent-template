@@ -61,8 +61,8 @@ const branches = [
   { branch_id: 'b-off', branch_name: 'Closed Branch', branch_code: 'X01', active: false },
 ];
 
-function branchSelect() {
-  return screen.getByRole('combobox', { name: 'Select active branch' });
+function branchSwitcherTrigger() {
+  return screen.getByRole('button', { name: 'Select active branch' });
 }
 
 function mockAuth(user: DecodedUser, extra: Partial<AuthContextValue> = {}) {
@@ -113,11 +113,10 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
-    expect(screen.getByText('Branch')).toBeInTheDocument();
 
-    await user.click(branchSelect());
+    await user.click(branchSwitcherTrigger());
     await user.click(await screen.findByText('T01 - Target Branch'));
 
     await waitFor(() => {
@@ -146,10 +145,10 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
 
-    await user.click(branchSelect());
+    await user.click(branchSwitcherTrigger());
     await user.click(await screen.findByText('T01 - Target Branch'));
 
     await waitFor(() => {
@@ -171,8 +170,10 @@ describe('AdminLayout branch switcher', () => {
 
     renderWithProviders(<AdminLayout />);
 
+    const user = userEvent.setup();
+    await user.click(await waitFor(() => branchSwitcherTrigger()));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'Reset to home branch' })).toBeInTheDocument();
     });
   });
 
@@ -195,8 +196,9 @@ describe('AdminLayout branch switcher', () => {
     const user = userEvent.setup();
     renderWithProviders(<AdminLayout />);
 
-    const resetBtn = await waitFor(() => screen.getByRole('button', { name: 'Reset' }));
-    await user.click(resetBtn);
+    await user.click(await waitFor(() => branchSwitcherTrigger()));
+    const resetItem = await screen.findByRole('menuitem', { name: 'Reset to home branch' });
+    await user.click(resetItem);
 
     await waitFor(() => {
       expect(switchBranch).toHaveBeenCalledWith('b-home');
@@ -220,7 +222,7 @@ describe('AdminLayout branch switcher', () => {
     await waitFor(() => {
       expect(screen.getByText('H01 - Home Branch')).toBeInTheDocument();
     });
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Select active branch' })).not.toBeInTheDocument();
     expect(invoicesApi.listInvoiceAgents).not.toHaveBeenCalled();
     expect(authApi.getMyBranch).toHaveBeenCalled();
   });
@@ -240,10 +242,10 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
 
-    await user.click(branchSelect());
+    await user.click(branchSwitcherTrigger());
     const inactive = await screen.findByText('X01 - Closed Branch (Inactive)');
     expect(inactive.closest('[data-disabled]') ?? inactive.closest('[aria-disabled="true"]')).toBeTruthy();
   });
@@ -268,15 +270,15 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
 
-    await user.click(branchSelect());
+    await user.click(branchSwitcherTrigger());
     await user.click(await screen.findByText('T01 - Target Branch'));
 
     await waitFor(() => {
       expect(messageError).toHaveBeenCalled();
-      expect(branchSelect()).not.toHaveTextContent('T01 - Target Branch');
+      expect(branchSwitcherTrigger()).not.toHaveTextContent('T01 - Target Branch');
     });
   });
 
@@ -302,11 +304,11 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
 
     await waitFor(() => {
-      expect(branchSelect()).toHaveTextContent('ZERO - Zero HQ');
+      expect(branchSwitcherTrigger()).toHaveTextContent('ZERO - Zero HQ');
     });
   });
 
@@ -330,10 +332,10 @@ describe('AdminLayout branch switcher', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(branchSelect()).toBeInTheDocument();
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
     });
 
-    await user.click(branchSelect());
+    await user.click(branchSwitcherTrigger());
     await user.click(await screen.findByText('T01 - Target Branch'));
 
     await waitFor(() => {

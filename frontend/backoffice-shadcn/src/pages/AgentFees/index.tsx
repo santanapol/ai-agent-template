@@ -452,7 +452,7 @@ const AgentFeesPage: React.FC = () => {
                   </LoadingButton>
                   <Button
                     size="icon-sm"
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => {
                       setEditingRate(false);
                       setDraftRate(agent?.default_fee_rate ?? 0);
@@ -469,7 +469,7 @@ const AgentFeesPage: React.FC = () => {
                   </span>
                   <Button
                     size="icon-sm"
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => {
                       setEditingRate(true);
                       setDraftRate(agent?.default_fee_rate ?? 0);

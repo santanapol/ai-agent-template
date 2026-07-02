@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
@@ -134,11 +134,17 @@ describe('AdminLayout sidebar (SC-3)', () => {
     expect(screen.getByText('Branch Report')).toBeInTheDocument();
     await user.click(screen.getByText('Branch Report'));
     await waitFor(() => {
-      expect(screen.getByText('Marketing')).toBeInTheDocument();
-    });
-    await user.click(screen.getByText('Marketing'));
-    await waitFor(() => {
       expect(screen.getByText('Channel Performance')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Marketing')).not.toBeInTheDocument();
+  });
+
+  it('highlights active menu item for current route', async () => {
+    renderLayout(menusWithInvoices);
+
+    fireEvent.click(screen.getAllByText('Billing')[0]);
+    await waitFor(() => {
+      expect(screen.getByText('Invoices')).toBeInTheDocument();
     });
   });
 });

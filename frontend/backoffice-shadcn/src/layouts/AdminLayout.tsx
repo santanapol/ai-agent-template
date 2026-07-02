@@ -1,68 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BarChart3,
-  ChevronDown,
   Code2,
   DollarSign,
   LayoutDashboard,
   LineChart,
-  LogOut,
-  Menu,
-  Moon,
   Settings,
   ShieldCheck,
   Store,
-  Sun,
   User,
   Users,
   WalletCards,
 } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { AppSidebar } from '@/components/layout/app-sidebar';
+import { BranchSwitcher } from '@/components/layout/branch-switcher';
+import { NavMain } from '@/components/layout/nav-main';
+import { NavUser } from '@/components/layout/nav-user';
+import { SiteHeader } from '@/components/layout/site-header';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { UserAvatar } from '@/components/UserAvatar';
+  flattenMenuToTwoLevels,
+  resolveSidebarBreadcrumb,
+  type MenuItemType,
+} from '@/components/layout/types';
+import { PageBreadcrumbProvider } from '@/contexts/PageBreadcrumbContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
@@ -107,176 +71,44 @@ function formatRoleLabel(role: string | undefined): string {
 
 const SIDEBAR_EXCLUDED_MENU_KEYS = new Set(['my_profile']);
 
-const MENU_ICONS: Record<string, React.ReactNode> = {
-  dashboard: <LayoutDashboard className="size-4" />,
-  'dashboard:view': <LayoutDashboard className="size-4" />,
-  staff: <Users className="size-4" />,
-  'profiles:list': <Users className="size-4" />,
-  billing: <WalletCards className="size-4" />,
-  'agents:list': <Store className="size-4" />,
-  'invoices:list': <DollarSign className="size-4" />,
-  reports: <Code2 className="size-4" />,
-  'reports:smart': <BarChart3 className="size-4" />,
-  'branch-report': <LineChart className="size-4" />,
-  'branch-report:marketing': <LineChart className="size-4" />,
-  'branch-report:marketing:channel-performance:read': <LineChart className="size-4" />,
-  my_profile: <User className="size-4" />,
-  settings: <Settings className="size-4" />,
-  'permissions:manage': <ShieldCheck className="size-4" />,
-};
-
-interface MenuItemUI {
-  icon?: React.ReactNode;
-  route?: string;
-}
-
-const MENU_UI: Record<string, MenuItemUI> = {
-  dashboard: { icon: MENU_ICONS.dashboard, route: '/' },
-  'dashboard:view': { icon: MENU_ICONS['dashboard:view'], route: '/' },
-  staff: { icon: MENU_ICONS.staff },
-  'profiles:list': { icon: MENU_ICONS['profiles:list'], route: '/staff' },
-  billing: { icon: MENU_ICONS.billing },
-  'agents:list': { icon: MENU_ICONS['agents:list'], route: '/agents' },
-  'invoices:list': { icon: MENU_ICONS['invoices:list'], route: '/invoices' },
-  reports: { icon: MENU_ICONS.reports },
-  'reports:smart': { icon: MENU_ICONS['reports:smart'], route: '/smart-reports' },
-  'branch-report': { icon: MENU_ICONS['branch-report'] },
-  'branch-report:marketing': { icon: MENU_ICONS['branch-report:marketing'] },
+const MENU_ENTRIES: Record<string, { icon: React.ReactNode; route?: string }> = {
+  dashboard: { icon: <LayoutDashboard />, route: '/' },
+  'dashboard:view': { icon: <LayoutDashboard />, route: '/' },
+  staff: { icon: <Users /> },
+  'profiles:list': { icon: <Users />, route: '/staff' },
+  billing: { icon: <WalletCards /> },
+  'agents:list': { icon: <Store />, route: '/agents' },
+  'invoices:list': { icon: <DollarSign />, route: '/invoices' },
+  reports: { icon: <Code2 /> },
+  'reports:smart': { icon: <BarChart3 />, route: '/smart-reports' },
+  'branch-report': { icon: <LineChart /> },
+  'branch-report:marketing': { icon: <LineChart /> },
   'branch-report:marketing:channel-performance:read': {
-    icon: MENU_ICONS['branch-report:marketing:channel-performance:read'],
+    icon: <LineChart />,
     route: '/branch-report/marketing/channel-performance',
   },
-  my_profile: { icon: MENU_ICONS.my_profile, route: '/profile' },
-  settings: { icon: MENU_ICONS.settings },
-  'permissions:manage': { icon: MENU_ICONS['permissions:manage'], route: '/permissions' },
+  my_profile: { icon: <User />, route: '/profile' },
+  settings: { icon: <Settings /> },
+  'permissions:manage': { icon: <ShieldCheck />, route: '/permissions' },
 };
 
-interface MenuItemType {
-  key: string;
-  label: string;
-  icon?: React.ReactNode;
-  route?: string;
-  children?: MenuItemType[];
-  sort_order: number;
-}
-
-function MenuTreeItems({
-  items,
-  selectedPath,
-  onNavigate,
-  depth = 0,
-}: {
-  items: MenuItemType[];
-  selectedPath: string;
-  onNavigate: (route: string) => void;
-  depth?: number;
-}) {
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-
-  return (
-    <>
-      {items.map((item) => {
-        if (item.children?.length) {
-          const isOpen =
-            openGroups[item.key] ??
-            item.children.some(
-              (c) =>
-                c.route === selectedPath ||
-                (c.children?.some((gc) => gc.route === selectedPath) ?? false),
-            );
-          const SubMenu = depth === 0 ? SidebarMenuSub : 'div';
-
-          return (
-            <Collapsible
-              key={item.key}
-              open={isOpen}
-              onOpenChange={(open) => setOpenGroups((prev) => ({ ...prev, [item.key]: open }))}
-              className="group/collapsible"
-            >
-              <SidebarMenuItem>
-                <CollapsibleTrigger
-                  render={
-                    <SidebarMenuButton className={depth > 0 ? 'pl-6' : undefined}>
-                      {item.icon}
-                      <span>{item.label}</span>
-                      <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                    </SidebarMenuButton>
-                  }
-                />
-                <CollapsibleContent>
-                  <SubMenu className={depth === 0 ? undefined : 'ml-2 flex flex-col gap-1 border-l pl-2'}>
-                    <MenuTreeItems
-                      items={item.children}
-                      selectedPath={selectedPath}
-                      onNavigate={onNavigate}
-                      depth={depth + 1}
-                    />
-                  </SubMenu>
-                </CollapsibleContent>
-              </SidebarMenuItem>
-            </Collapsible>
-          );
-        }
-
-        if (depth === 0) {
-          return (
-            <SidebarMenuItem key={item.key}>
-              <SidebarMenuButton
-                isActive={item.route === selectedPath}
-                onClick={() => item.route && onNavigate(item.route)}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          );
-        }
-
-        return (
-          <SidebarMenuSubItem key={item.key}>
-            <SidebarMenuSubButton
-              isActive={item.route === selectedPath}
-              onClick={() => item.route && onNavigate(item.route)}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </SidebarMenuSubButton>
-          </SidebarMenuSubItem>
-        );
-      })}
-    </>
-  );
-}
-
-function AppSidebar({
-  menuTree,
-  onNavigate,
-}: {
-  menuTree: MenuItemType[];
-  onNavigate: (route: string) => void;
-}) {
-  const location = useLocation();
-  const selectedPath = location.pathname;
-
-  return (
-    <SidebarMenu>
-      <MenuTreeItems items={menuTree} selectedPath={selectedPath} onNavigate={onNavigate} />
-    </SidebarMenu>
-  );
-}
-
-function MobileNav({
+function MobileNavSheet({
   open,
   onOpenChange,
   menuTree,
+  selectedPath,
   onNavigate,
+  branchSwitcherProps,
+  navUserProps,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   menuTree: MenuItemType[];
+  selectedPath: string;
   onNavigate: (route: string) => void;
+  branchSwitcherProps: React.ComponentProps<typeof BranchSwitcher>;
+  navUserProps: React.ComponentProps<typeof NavUser>;
 }) {
-  const location = useLocation();
   const handleNavigate = (route: string) => {
     onNavigate(route);
     onOpenChange(false);
@@ -284,14 +116,17 @@ function MobileNav({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-64 p-0">
-        <SheetHeader className="border-b px-4 py-3">
-          <SheetTitle>Zero Platform</SheetTitle>
-        </SheetHeader>
-        <div className="p-2">
-          <SidebarMenu>
-            <MenuTreeItems items={menuTree} selectedPath={location.pathname} onNavigate={handleNavigate} />
-          </SidebarMenu>
+      <SheetContent side="left" className="w-72 p-0">
+        <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+          <div className="p-2">
+            <BranchSwitcher {...branchSwitcherProps} />
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <NavMain items={menuTree} selectedPath={selectedPath} onNavigate={handleNavigate} />
+          </div>
+          <div className="border-t border-sidebar-border p-2">
+            <NavUser {...navUserProps} />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -300,6 +135,7 @@ function MobileNav({
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const { theme: currentTheme, toggleTheme } = useTheme();
   const { user, logout, switchBranch, branchSwitching, menus, menuError } = useAuth();
@@ -326,6 +162,7 @@ const AdminLayout: React.FC = () => {
   const activeBranchId = optimisticBranchId ?? user?.branch_id;
   const viewingOtherBranch =
     Boolean(user?.home_branch_id) && activeBranchId !== user?.home_branch_id;
+  const roleLabel = formatRoleLabel(user?.role);
 
   const handleBranchSwitch = useCallback(
     async (branchId: string) => {
@@ -450,7 +287,7 @@ const AdminLayout: React.FC = () => {
     const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
     menus.forEach((node) => {
       if (SIDEBAR_EXCLUDED_MENU_KEYS.has(node.key)) return;
-      const ui = MENU_UI[node.key];
+      const ui = MENU_ENTRIES[node.key];
       if (!ui) return;
       const item: MenuItemType = {
         key: ui.route || node.key,
@@ -481,7 +318,7 @@ const AdminLayout: React.FC = () => {
       items.forEach((i) => i.children && sortItems(i.children, depth + 1));
     };
     sortItems(rootItems);
-    return rootItems;
+    return flattenMenuToTwoLevels(rootItems);
   }, [menus]);
 
   const branchSelectLoading =
@@ -496,158 +333,93 @@ const AdminLayout: React.FC = () => {
     return branchDisplayLabel;
   }, [branches, activeBranchId, activeBranch, branchDisplayLabel]);
 
+  const breadcrumb = useMemo(
+    () => resolveSidebarBreadcrumb(menuTree, location.pathname),
+    [menuTree, location.pathname],
+  );
+
   const handleNavigate = (route: string) => navigate(route);
+
+  const branchSwitcherProps = {
+    showBranchSwitcher,
+    branchDisplayLabel,
+    activeBranchId,
+    activeBranchSelectLabel,
+    branches,
+    branchSelectLoading,
+    viewingOtherBranch,
+    homeBranchId,
+    onBranchSwitch: (branchId: string) => void handleBranchSwitch(branchId),
+    roleLabel,
+  };
+
+  const navUserProps = {
+    displayName,
+    headerProfile,
+    user,
+    roleLabel,
+    currentTheme,
+    onToggleTheme: toggleTheme,
+    onProfile: () => navigate('/profile'),
+    onLogout: () => {
+      void logout().then(() => navigate('/login'));
+    },
+  };
+
+  const sidebarProps = {
+    menuTree,
+    selectedPath: location.pathname,
+    onNavigate: handleNavigate,
+    ...branchSwitcherProps,
+    ...navUserProps,
+  };
 
   return (
     <>
-      {!isMobile ? (
-        <Sidebar collapsible="icon">
-          <SidebarHeader className="border-b border-sidebar-border">
-            <div className="flex h-12 items-center justify-center px-2 group-data-[collapsible=icon]:px-0">
-              <span className="truncate text-lg font-bold text-primary group-data-[collapsible=icon]:hidden">
-                Zero Platform
-              </span>
-              <span className="hidden text-lg font-bold text-primary group-data-[collapsible=icon]:inline">
-                ZP
-              </span>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <AppSidebar menuTree={menuTree} onNavigate={handleNavigate} />
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter />
-        </Sidebar>
-      ) : (
-        <MobileNav
-          open={mobileNavOpen}
-          onOpenChange={setMobileNavOpen}
-          menuTree={menuTree}
-          onNavigate={handleNavigate}
-        />
-      )}
+      {!isMobile ? <AppSidebar {...sidebarProps} /> : null}
+
+      <MobileNavSheet
+        open={mobileNavOpen}
+        onOpenChange={setMobileNavOpen}
+        menuTree={menuTree}
+        selectedPath={location.pathname}
+        onNavigate={handleNavigate}
+        branchSwitcherProps={branchSwitcherProps}
+        navUserProps={navUserProps}
+      />
 
       <SidebarInset>
-        <header className="flex h-16 items-center justify-between gap-4 border-b bg-background px-4">
-          <div className="flex items-center gap-2">
-            {isMobile ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileNavOpen(true)}
-                aria-label="Open navigation menu"
-              >
-                <Menu aria-hidden="true" />
-              </Button>
-            ) : (
-              <SidebarTrigger />
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right md:block">
-              <div className="flex items-center justify-end gap-2">
-                <span className="text-sm font-medium">
-                  {displayName ?? headerProfile?.username ?? user?.username ?? user?.sub ?? '—'}
-                </span>
-                <Badge variant="secondary">{formatRoleLabel(user?.role)}</Badge>
-                {!showBranchSwitcher && (
-                  <Badge variant="outline">{branchDisplayLabel}</Badge>
-                )}
-              </div>
-              {showBranchSwitcher && (
-                <div className="mt-1 flex items-center justify-end gap-2">
-                  <span className="text-xs text-muted-foreground">Branch</span>
-                  <Select
-                    value={activeBranchId ?? undefined}
-                    onValueChange={(branchId) => {
-                      if (branchId) void handleBranchSwitch(branchId);
-                    }}
-                    disabled={branchSelectLoading}
-                  >
-                    <SelectTrigger className="h-7 w-auto max-w-[220px] border-0 shadow-none" aria-label="Select active branch">
-                      <SelectValue placeholder="Select branch">{activeBranchSelectLabel}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((branch) => (
-                        <SelectItem
-                          key={branch.branch_id}
-                          value={branch.branch_id}
-                          disabled={branch.active === false}
-                        >
-                          {formatBranchOptionLabel(branch)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {viewingOtherBranch && homeBranchId ? (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto px-1 text-xs"
-                      onClick={() => void handleBranchSwitch(homeBranchId)}
-                    >
-                      Reset
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-            </div>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
-              {currentTheme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="rounded-full"
-                    aria-label={`Account menu for ${
-                      displayName ?? headerProfile?.username ?? user?.username ?? user?.sub ?? 'current user'
-                    }`}
-                  >
-                    <UserAvatar
-                      firstname={headerProfile?.firstname}
-                      lastname={headerProfile?.lastname}
-                      displayName={displayName}
-                      username={headerProfile?.username}
-                    />
-                  </button>
+        <PageBreadcrumbProvider baseBreadcrumb={breadcrumb}>
+          {(headerBreadcrumb) => (
+            <>
+              <SiteHeader
+                breadcrumb={headerBreadcrumb}
+                isMobile={isMobile}
+                onOpenMobileNav={() => setMobileNavOpen(true)}
+                mobileBranchLabel={
+                  isMobile
+                    ? showBranchSwitcher
+                      ? activeBranchSelectLabel
+                      : branchDisplayLabel
+                    : null
                 }
               />
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="size-4" />
-                  My Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={async () => {
-                    await logout();
-                    navigate('/login');
-                  }}
-                >
-                  <LogOut className="size-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
 
-        <main className="flex flex-1 flex-col gap-4 bg-muted/30 p-4 md:p-6">
-          {menuError ? (
-            <Alert variant="destructive">
-              <AlertTitle>System warning</AlertTitle>
-              <AlertDescription>
-                Some menu items are temporarily unavailable. Please try refreshing the page or logging in again.
-              </AlertDescription>
-            </Alert>
-          ) : null}
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                {menuError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>System warning</AlertTitle>
+                    <AlertDescription>
+                      Some menu items are temporarily unavailable. Please try refreshing the page or logging in again.
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
 
-          <Outlet key={user?.branch_id ?? 'guest'} />
-        </main>
+                <Outlet key={user?.branch_id ?? 'guest'} />
+              </div>
+            </>
+          )}
+        </PageBreadcrumbProvider>
       </SidebarInset>
     </>
   );

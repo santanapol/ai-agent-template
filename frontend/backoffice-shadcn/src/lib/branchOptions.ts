@@ -122,6 +122,37 @@ export function getCachedInvoiceAgentBranches(
   return cachedBranchesByOu.branches;
 }
 
+export function mergeInvoiceAgentBranches(
+  agentBranches: InvoiceAgentBranch[],
+  invoices: Array<{ branch_id: string; branch_name?: string | null }>,
+): InvoiceAgentBranch[] {
+  const byId = new Map(agentBranches.map((branch) => [branch.branch_id, branch]));
+
+  for (const invoice of invoices) {
+    const branchId = invoice.branch_id;
+    if (!branchId || isZeroHqBranchId(branchId) || byId.has(branchId)) continue;
+    byId.set(branchId, {
+      branch_id: branchId,
+      branch_name: invoice.branch_name ?? null,
+      branch_code: null,
+      active: true,
+    });
+  }
+
+  return sortInvoiceAgentBranches([...byId.values()]);
+}
+
+export function resolveInvoiceFilterBranches(
+  agentBranches: InvoiceAgentBranch[],
+  invoices: Array<{ branch_id: string; branch_name?: string | null }>,
+  cachedBranches: InvoiceAgentBranch[] | null,
+): InvoiceAgentBranch[] {
+  const source = agentBranches.length > 0 ? agentBranches : cachedBranches ?? [];
+  return mergeInvoiceAgentBranches(source, invoices).filter(
+    (branch) => !isZeroHqBranchId(branch.branch_id),
+  );
+}
+
 export function setCachedInvoiceAgentBranches(
   ouId: string,
   branches: InvoiceAgentBranch[],

@@ -1,83 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import {
-  CheckCircle2,
-  Clock,
-  Code2,
-  Download,
-  FileText,
-  FlaskConical,
-  History,
-  Pencil,
-  Play,
-  Plus,
-  RotateCcw,
-  Square,
-  Trash2,
-} from 'lucide-react';
-import { PageContainer, PageContentCard } from '@/components/layout';
-import { DataTable } from '@/components/data-table';
-import { DescriptionList } from '@/components/description-list';
-import { LoadingButton } from '@/components/loading-button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { usePageBreadcrumb } from '@/contexts/PageBreadcrumbContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiErrorMessage } from '@/lib/apiError';
 import {
@@ -103,7 +29,6 @@ import type {
 import {
   buildPreviewTable,
   canSaveScript as evaluateCanSaveScript,
-  formatTestRunPreviewCount,
   getSaveGateHint,
   getScriptGateStep,
   getTestRunDateTagLabel,
@@ -115,27 +40,14 @@ import {
 import {
   DEFAULT_QUERY_EXAMPLE,
   formatDateTime,
-  formatScheduleLabel,
-  formatValidationStatusLabel,
   scheduleToUiValue,
   type ReportRow,
   type ReportStatus,
-  type ScheduleOption,
 } from './smartReport/formatters';
-import { cn } from '@/lib/utils';
+import { SmartReportEditor, type ReportFormValues } from './SmartReportEditor';
+import { SmartReportList } from './SmartReportList';
 
 type EditorTab = 'script' | 'compiled';
-
-type ReportFormValues = {
-  name: string;
-  description: string;
-  schedule: ScheduleOption;
-  scheduleTime: string;
-  scheduleDayOfWeek: number;
-  scheduleDayOfMonth: number | 'last';
-  outputFormat: 'csv' | 'excel';
-  query: string;
-};
 
 const INITIAL_FORM: ReportFormValues = {
   name: '',
@@ -147,51 +59,6 @@ const INITIAL_FORM: ReportFormValues = {
   outputFormat: 'csv',
   query: DEFAULT_QUERY_EXAMPLE,
 };
-
-function validationBadgeVariant(status: Report['validationStatus'] | undefined) {
-  if (status === 'valid') return 'default' as const;
-  if (status === 'invalid') return 'destructive' as const;
-  return 'secondary' as const;
-}
-
-function derivedStatusBadge(status: ReportStatus) {
-  if (status === 'running') return <Badge variant="secondary">Running</Badge>;
-  if (status === 'completed') return <Badge>Completed</Badge>;
-  if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
-  return <Badge variant="outline">Idle</Badge>;
-}
-
-function GateSteps({
-  current,
-  validateStatus,
-}: {
-  current: number;
-  validateStatus?: 'wait' | 'process' | 'finish' | 'error';
-}) {
-  const steps = ['Edit script', 'Validate', 'Test run', 'Save'];
-  return (
-    <ol className="mb-6 flex flex-wrap gap-2 text-sm">
-      {steps.map((label, index) => {
-        const isCurrent = index === current;
-        const isPast = index < current;
-        const isValidate = index === 1 && validateStatus === 'error';
-        return (
-          <li
-            key={label}
-            className={cn(
-              'rounded-full border px-3 py-1',
-              isCurrent && 'border-primary bg-primary/10 font-medium',
-              isPast && 'text-muted-foreground',
-              isValidate && 'border-destructive text-destructive',
-            )}
-          >
-            {label}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
 
 const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
@@ -517,6 +384,28 @@ const SmartReport: React.FC = () => {
     performCancelEdit();
   }, [baselineFormValues, captureEditorSnapshot, confirm, performCancelEdit]);
 
+  /** Header breadcrumb uses direct cancel; toolbar Cancel keeps discard confirmation. */
+  const handleBreadcrumbBack = useCallback(() => {
+    performCancelEdit();
+  }, [performCancelEdit]);
+
+  const editBreadcrumb = useMemo(
+    () =>
+      viewMode === 'edit'
+        ? [
+            {
+              label: 'Smart Report',
+              // eslint-disable-next-line react-hooks/refs -- invoked on breadcrumb click only
+              onClick: handleBreadcrumbBack,
+            },
+            { label: editingReport?.name ?? 'New report' },
+          ]
+        : null,
+    [viewMode, editingReport?.name, handleBreadcrumbBack],
+  );
+
+  usePageBreadcrumb(editBreadcrumb);
+
   const handleEditorTabChange = (value: EditorTab) => {
     if (editorTab === 'script' && scriptEditorScrollRef.current) {
       const textarea = scriptEditorScrollRef.current.querySelector('textarea');
@@ -634,744 +523,64 @@ const SmartReport: React.FC = () => {
   const selectedReportDownloads = history.filter((d) => d.reportId === selectedReportId);
   const selectedReportName = reports.find((r) => r.id === selectedReportId)?.name || '';
 
+
   if (viewMode === 'edit') {
     return (
-      <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleCancelEdit();
-                  }}
-                >
-                  Smart Report
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{editingReport ? editingReport.name : 'New report'}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancelEdit}>
-              Cancel
-            </Button>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <span>
-                    <LoadingButton
-                      loading={isSaving}
-                      disabled={!canSaveScript}
-                      onClick={() => void handleSaveReport()}
-                    >
-                      Save Report Script
-                    </LoadingButton>
-                  </span>
-                }
-              />
-              {saveButtonTooltip ? <TooltipContent>{saveButtonTooltip}</TooltipContent> : null}
-            </Tooltip>
-          </div>
-        </div>
-
-        {showGateAlert ? (
-          <Alert className="mb-4" variant="default">
-            <AlertTitle>Save blocked</AlertTitle>
-            <AlertDescription>{saveGateHint}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        <GateSteps
-          current={scriptGateStep.current}
-          validateStatus={scriptGateStep.validateStatus}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="size-4 text-primary" />
-                General Info & Scheduler
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FieldGroup>
-                <Field data-invalid={!!formErrors.name}>
-                  <FieldLabel htmlFor="report-name">Report Name</FieldLabel>
-                  <Input
-                    id="report-name"
-                    value={form.name}
-                    placeholder="e.g. Active Staff Login Analytics Report"
-                    onChange={(e) => setField('name', e.target.value)}
-                  />
-                  {formErrors.name ? <FieldError>{formErrors.name}</FieldError> : null}
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="report-description">Description</FieldLabel>
-                  <Input
-                    id="report-description"
-                    value={form.description}
-                    placeholder="Specify report purpose and data schema"
-                    onChange={(e) => setField('description', e.target.value)}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Output Format</FieldLabel>
-                  <ToggleGroup
-                    value={[form.outputFormat]}
-                    onValueChange={(value) => {
-                      const next = value[0];
-                      if (!next) return;
-                      setField('outputFormat', next as ReportFormValues['outputFormat']);
-                    }}
-                    className="flex w-full flex-wrap"
-                  >
-                    <ToggleGroupItem value="csv" variant="outline" size="sm">
-                      CSV (.csv)
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="excel" variant="outline" size="sm">
-                      Excel (.xlsx)
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="schedule">Schedule Frequency</FieldLabel>
-                  <Select
-                    value={form.schedule}
-                    onValueChange={(value) => setField('schedule', value as ScheduleOption)}
-                  >
-                    <SelectTrigger id="schedule" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                {form.schedule !== 'manual' ? (
-                  <>
-                    {form.schedule === 'weekly' ? (
-                      <Field>
-                        <FieldLabel htmlFor="schedule-dow">Run Day</FieldLabel>
-                        <Select
-                          value={String(form.scheduleDayOfWeek)}
-                          onValueChange={(value) =>
-                            setField('scheduleDayOfWeek', Number(value))
-                          }
-                        >
-                          <SelectTrigger id="schedule-dow" className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">Monday</SelectItem>
-                            <SelectItem value="2">Tuesday</SelectItem>
-                            <SelectItem value="3">Wednesday</SelectItem>
-                            <SelectItem value="4">Thursday</SelectItem>
-                            <SelectItem value="5">Friday</SelectItem>
-                            <SelectItem value="6">Saturday</SelectItem>
-                            <SelectItem value="0">Sunday</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    ) : null}
-                    {form.schedule === 'monthly' ? (
-                      <Field>
-                        <FieldLabel htmlFor="schedule-dom">Run Day</FieldLabel>
-                        <Select
-                          value={String(form.scheduleDayOfMonth)}
-                          onValueChange={(value) =>
-                            setField(
-                              'scheduleDayOfMonth',
-                              value === 'last' ? 'last' : Number(value),
-                            )
-                          }
-                        >
-                          <SelectTrigger id="schedule-dom" className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="last">Last day of month</SelectItem>
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                              <SelectItem key={day} value={String(day)}>
-                                Day {day}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    ) : null}
-                    <Field data-invalid={!!formErrors.scheduleTime}>
-                      <FieldLabel htmlFor="schedule-time">Run Time</FieldLabel>
-                      <Input
-                        id="schedule-time"
-                        type="time"
-                        value={form.scheduleTime}
-                        onChange={(e) => setField('scheduleTime', e.target.value)}
-                      />
-                      {formErrors.scheduleTime ? (
-                        <FieldError>{formErrors.scheduleTime}</FieldError>
-                      ) : null}
-                    </Field>
-                  </>
-                ) : null}
-              </FieldGroup>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Code2 className="size-4 text-primary" />
-                Query Script
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-t-lg border border-b-0 bg-muted/30 px-3 py-2">
-                <Tabs
-                  value={editorTab}
-                  onValueChange={(value) => handleEditorTabChange(value as EditorTab)}
-                >
-                  <TabsList>
-                    <TabsTrigger value="script">Script</TabsTrigger>
-                    <TabsTrigger value="compiled" disabled={!compiledScript}>
-                      Compiled
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <div className="flex flex-wrap gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger render={<Button variant="ghost" size="sm" />}>
-                      <RotateCcw data-icon="inline-start" />
-                      Reset to Example
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Reset to example template?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Your current script will be replaced with the default example.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction variant="destructive" onClick={handleResetToExample}>
-                          Reset
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <LoadingButton
-                    size="sm"
-                    variant="outline"
-                    loading={isValidating}
-                    onClick={() => void handleValidateScript()}
-                  >
-                    <CheckCircle2 data-icon="inline-start" />
-                    Validate
-                  </LoadingButton>
-                  <LoadingButton
-                    size="sm"
-                    variant="outline"
-                    loading={isTestRunning}
-                    disabled={scriptGateStatus === 'pending' || !compiledScript || isTestRunning}
-                    onClick={() => void handleTestRunScript()}
-                  >
-                    <FlaskConical data-icon="inline-start" />
-                    Test Run
-                  </LoadingButton>
-                  {isTestRunning ? (
-                    <Button size="sm" variant="destructive" onClick={handleCancelTestRun}>
-                      <Square data-icon="inline-start" />
-                      Cancel
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-
-              {editorTab === 'script' ? (
-                <div ref={scriptEditorScrollRef}>
-                  <Field data-invalid={!!formErrors.query}>
-                    <FieldLabel htmlFor="report-query">Query Script</FieldLabel>
-                    <Textarea
-                      id="report-query"
-                      value={form.query}
-                      onChange={(e) => handleQueryScriptChange(e.target.value)}
-                      className="min-h-[280px] rounded-t-none font-mono text-xs"
-                      placeholder="// Query example..."
-                    />
-                    {formErrors.query ? <FieldError>{formErrors.query}</FieldError> : null}
-                  </Field>
-                </div>
-              ) : (
-                <Textarea
-                  readOnly
-                  value={compiledScript ?? ''}
-                  className="min-h-[280px] rounded-t-none font-mono text-xs"
-                />
-              )}
-
-              {validationErrors.length > 0 ? (
-                <div ref={validationAlertRef} className="mt-4">
-                  <Alert variant="destructive">
-                    <AlertTitle>Validation errors</AlertTitle>
-                    <AlertDescription>
-                      <ul className="mt-2 flex flex-col gap-1">
-                        {validationErrors.map((err, index) => (
-                          <li key={index} className="font-mono text-xs">
-                            {err.line != null ? `Line ${err.line}: ` : ''}
-                            {err.message}
-                          </li>
-                        ))}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              ) : null}
-
-              <Collapsible className="mt-4">
-                <CollapsibleTrigger className="text-sm font-medium text-primary">
-                  Script workflow
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-muted-foreground">
-                    <li>Validate compiles without querying the database.</li>
-                    <li>
-                      Test run uses yesterday&apos;s params.startDate / params.endDate when
-                      referenced.
-                    </li>
-                    <li>Save unlocks after a successful test run when the script changed.</li>
-                  </ul>
-                </CollapsibleContent>
-              </Collapsible>
-            </CardContent>
-          </Card>
-        </div>
-
-        {testRunPreview ? (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FlaskConical className="size-4 text-primary" />
-                Test run preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {scriptGateStatus === 'tested' ? (
-                <Alert className="mb-4">
-                  <AlertTitle>Test run succeeded</AlertTitle>
-                </Alert>
-              ) : null}
-              <DescriptionList
-                items={[
-                  ...(testRunDateTagLabel
-                    ? [{ label: 'Date range', value: testRunDateTagLabel }]
-                    : []),
-                  {
-                    label: 'Records',
-                    value: formatTestRunPreviewCount(
-                      testRunPreview.recordCount,
-                      testRunPreview.sample.length,
-                    ),
-                  },
-                  { label: 'Duration', value: `${testRunPreview.durationMs}ms` },
-                ]}
-              />
-              {testRunPreviewTable.rows.length > 0 ? (
-                <div className="mt-4 overflow-x-auto rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {testRunPreviewTable.columns.map((col) => (
-                          <TableHead key={col.key}>{col.title}</TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {testRunPreviewTable.rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {testRunPreviewTable.columns.map((col) => (
-                            <TableCell key={col.key}>
-                              {String(row[col.dataIndex as string] ?? '-')}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : testRunPreview.recordCount > 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {testRunPreview.recordCount} record(s) returned — preview rows could not be
-                  displayed.
-                </p>
-              ) : (
-                <Empty className="mt-4">
-                  <EmptyHeader>
-                    <EmptyTitle>No rows</EmptyTitle>
-                    <EmptyDescription>
-                      {testRunDateTagLabel
-                        ? `Query returned no rows for ${testRunDateTagLabel}`
-                        : 'Query returned no rows'}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+      <SmartReportEditor
+        editingReport={editingReport}
+        form={form}
+        formErrors={formErrors}
+        onFieldChange={setField}
+        showGateAlert={showGateAlert}
+        saveGateHint={saveGateHint}
+        scriptGateStep={scriptGateStep}
+        editorTab={editorTab}
+        onEditorTabChange={handleEditorTabChange}
+        compiledScript={compiledScript}
+        validationErrors={validationErrors}
+        isValidating={isValidating}
+        isTestRunning={isTestRunning}
+        scriptGateStatus={scriptGateStatus}
+        testRunPreview={testRunPreview}
+        testRunPreviewTable={testRunPreviewTable}
+        testRunDateTagLabel={testRunDateTagLabel}
+        scriptEditorScrollRef={scriptEditorScrollRef}
+        validationAlertRef={validationAlertRef}
+        canSaveScript={canSaveScript}
+        saveButtonTooltip={saveButtonTooltip}
+        isSaving={isSaving}
+        onCancelEdit={handleCancelEdit}
+        onSaveReport={() => void handleSaveReport()}
+        onResetToExample={handleResetToExample}
+        onValidateScript={() => void handleValidateScript()}
+        onTestRunScript={() => void handleTestRunScript()}
+        onCancelTestRun={handleCancelTestRun}
+        onQueryScriptChange={handleQueryScriptChange}
+      />
     );
   }
 
-  const reportColumns = [
-    {
-      key: 'name',
-      title: 'Report',
-      render: (record: ReportRow) => (
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="font-medium">{record.name}</span>
-            {record.enabled === false ? <Badge variant="outline">Disabled</Badge> : null}
-            <Badge variant={validationBadgeVariant(record.validationStatus)}>
-              {formatValidationStatusLabel(record.validationStatus)}
-            </Badge>
-            {record.lastTestRunMeta?.recordCount != null ? (
-              <Badge variant="secondary">Test: {record.lastTestRunMeta.recordCount}</Badge>
-            ) : null}
-          </div>
-          {record.description ? (
-            <p className="truncate text-xs text-muted-foreground">{record.description}</p>
-          ) : null}
-          {isMobile ? (
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="size-3" />
-              {formatScheduleLabel(record.schedule)}
-            </p>
-          ) : null}
-        </div>
-      ),
-    },
-    ...(!isMobile
-      ? [
-          {
-            key: 'schedule',
-            title: 'Schedule',
-            render: (record: ReportRow) => (
-              <span className="flex items-center gap-1 text-sm">
-                <Clock className="size-3.5 text-muted-foreground" />
-                {formatScheduleLabel(record.schedule)}
-              </span>
-            ),
-          },
-        ]
-      : []),
-    {
-      key: 'outputFormat',
-      title: 'Output Format',
-      render: (record: ReportRow) => (
-        <Badge variant={record.outputFormat === 'csv' ? 'secondary' : 'default'}>
-          {record.outputFormat.toUpperCase()}
-        </Badge>
-      ),
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      render: (record: ReportRow) => derivedStatusBadge(record.derivedStatus),
-    },
-    {
-      key: 'lastRun',
-      title: 'Last Run',
-      render: (record: ReportRow) => (
-        <span className="text-xs text-muted-foreground">{record.lastRun}</span>
-      ),
-    },
-    {
-      key: 'actions',
-      title: 'Actions',
-      render: (record: ReportRow) => (
-        <div className="flex flex-wrap gap-1">
-          <AlertDialog>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <AlertDialogTrigger
-                    render={
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label="Run report"
-                        disabled={
-                          record.derivedStatus === 'running' || runningId === record.id
-                        }
-                      />
-                    }
-                  />
-                }
-              >
-                {runningId === record.id ? (
-                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Play data-icon="inline-start" aria-hidden="true" />
-                )}
-              </TooltipTrigger>
-              <TooltipContent>Run report</TooltipContent>
-            </Tooltip>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Run this report now?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Heavy queries may take several minutes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void handleRunReport(record)}>
-                  Run
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Edit report"
-                  disabled={
-                    record.derivedStatus === 'running' ||
-                    (loadingEditId !== null && loadingEditId !== record.id)
-                  }
-                  onClick={() => void handleEditReport(record)}
-                />
-              }
-            >
-              {loadingEditId === record.id ? (
-                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Pencil data-icon="inline-start" aria-hidden="true" />
-              )}
-            </TooltipTrigger>
-            <TooltipContent>Edit report</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="View download history"
-                  onClick={() => handleViewFiles(record.id)}
-                />
-              }
-            >
-              <History data-icon="inline-start" aria-hidden="true" />
-            </TooltipTrigger>
-            <TooltipContent>View download history</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Delete report"
-                  disabled={record.derivedStatus === 'running'}
-                  onClick={() => handleDeleteReport(record)}
-                />
-              }
-            >
-              <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
-            </TooltipTrigger>
-            <TooltipContent>Delete report</TooltipContent>
-          </Tooltip>
-        </div>
-      ),
-    },
-  ];
-
-  const downloadColumns = [
-    {
-      key: 'reportName',
-      title: 'Report Name',
-      render: (record: DownloadHistoryRecord) => (
-        <span className="flex items-center gap-2 font-medium">
-          <FileText data-icon="inline-start" aria-hidden="true" />
-          {record.reportName}
-        </span>
-      ),
-    },
-    {
-      key: 'startedAt',
-      title: 'Generated At',
-      render: (record: DownloadHistoryRecord) =>
-        formatDateTime(record.finishedAt ?? record.startedAt),
-    },
-    {
-      key: 'format',
-      title: 'File Type',
-      render: (record: DownloadHistoryRecord) => (
-        <Badge variant={record.format === 'csv' ? 'secondary' : 'default'}>
-          {record.format.toUpperCase()}
-        </Badge>
-      ),
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      render: (record: DownloadHistoryRecord) => {
-        if (record.status === 'success') return <Badge>Success</Badge>;
-        if (record.status === 'failed') return <Badge variant="destructive">Failed</Badge>;
-        return <Badge variant="secondary">Running</Badge>;
-      },
-    },
-    {
-      key: 'download',
-      title: 'Download',
-      render: (record: DownloadHistoryRecord) => (
-        <Button
-          size="sm"
-          disabled={record.status !== 'success' || !record.fileName}
-          onClick={() => void handleDownload(record)}
-        >
-          <Download data-icon="inline-start" />
-          Download
-        </Button>
-      ),
-    },
-  ];
-
   return (
-    <PageContainer
-      title="Smart Report"
-      description="Automated reporting and scheduling system. Fetches data directly via a read-only database replica."
-      extra={
-        <Button size="lg" onClick={handleCreateNew}>
-          <Plus data-icon="inline-start" />
-          Create report
-        </Button>
-      }
-    >
-      <Alert className="mb-6">
-        <Code2 data-icon="inline-start" aria-hidden="true" />
-        <AlertTitle>Secure Read-Only Access</AlertTitle>
-        <AlertDescription>
-          All reports run on secondary database replicas in read-only mode. Heavy queries or
-          aggregation pipelines can be executed safely without affecting the main transactional
-          server performance.
-        </AlertDescription>
-      </Alert>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="reports">
-            <Code2 data-icon="inline-start" />
-            Report Scripts
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <History data-icon="inline-start" />
-            Download History
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="reports" className="mt-4">
-          <PageContentCard>
-            <DataTable
-              columns={reportColumns}
-              data={reportRows}
-              loading={loading}
-              rowKey="id"
-              pageSize={10}
-            />
-          </PageContentCard>
-        </TabsContent>
-        <TabsContent value="history" className="mt-4">
-          <PageContentCard>
-            <DataTable
-              columns={downloadColumns}
-              data={history}
-              loading={loading}
-              rowKey="id"
-              pageSize={10}
-            />
-          </PageContentCard>
-        </TabsContent>
-      </Tabs>
-
-      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <SheetContent className={isMobile ? 'w-full' : 'sm:max-w-xl'}>
-          <SheetHeader>
-            <SheetTitle>Download History: {selectedReportName}</SheetTitle>
-          </SheetHeader>
-          {selectedReportDownloads.length > 0 ? (
-            <div className="mt-4">
-              <DataTable
-                columns={[
-                  {
-                    key: 'startedAt',
-                    title: 'Run Date',
-                    render: (rec: DownloadHistoryRecord) =>
-                      formatDateTime(rec.finishedAt ?? rec.startedAt),
-                  },
-                  {
-                    key: 'format',
-                    title: 'File Type',
-                    render: (rec: DownloadHistoryRecord) => (
-                      <Badge variant={rec.format === 'csv' ? 'secondary' : 'default'}>
-                        {rec.format.toUpperCase()}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    key: 'status',
-                    title: 'Status',
-                    render: (rec: DownloadHistoryRecord) => {
-                      if (rec.status === 'success') return <Badge>Success</Badge>;
-                      if (rec.status === 'failed') return <Badge variant="destructive">Failed</Badge>;
-                      return <Badge variant="secondary">Running</Badge>;
-                    },
-                  },
-                  {
-                    key: 'dl',
-                    title: 'Download',
-                    render: (rec: DownloadHistoryRecord) => (
-                      <Button
-                        size="sm"
-                        disabled={rec.status !== 'success' || !rec.fileName}
-                        onClick={() => void handleDownload(rec)}
-                      >
-                        <Download data-icon="inline-start" />
-                        Download
-                      </Button>
-                    ),
-                  },
-                ]}
-                data={selectedReportDownloads}
-                rowKey="id"
-                pageSize={8}
-              />
-            </div>
-          ) : (
-            <Empty className="mt-8">
-              <EmptyHeader>
-                <EmptyTitle>No history</EmptyTitle>
-                <EmptyDescription>
-                  No execution history or saved files for this script.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          )}
-        </SheetContent>
-      </Sheet>
-    </PageContainer>
+    <SmartReportList
+      isMobile={isMobile}
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      reportRows={reportRows}
+      history={history}
+      loading={loading}
+      runningId={runningId}
+      loadingEditId={loadingEditId}
+      isDrawerOpen={isDrawerOpen}
+      onDrawerOpenChange={setIsDrawerOpen}
+      selectedReportName={selectedReportName}
+      selectedReportDownloads={selectedReportDownloads}
+      onCreateNew={handleCreateNew}
+      onRunReport={(report) => void handleRunReport(report)}
+      onEditReport={(report) => void handleEditReport(report)}
+      onViewFiles={handleViewFiles}
+      onDeleteReport={handleDeleteReport}
+      onDownload={(record) => void handleDownload(record)}
+    />
   );
 };
 

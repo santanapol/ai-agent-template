@@ -1,7 +1,8 @@
 import React from 'react';
 import { LoadingButton } from '@/components/loading-button';
+import { StaffFormField } from '@/components/staff/StaffFormField';
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -19,11 +20,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
-import { fieldErrorIds } from '@/lib/fieldA11y';
 import { PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
 import type { CreateProfilePayload, PatchProfilePayload } from '@/types/staff';
 
 export type DrawerMode = 'create' | 'edit' | 'view';
+
+const TITLES: Record<DrawerMode, string> = {
+  create: 'Create Staff Profile',
+  edit: 'Edit Staff Profile',
+  view: 'View Staff Profile',
+};
 
 export type DrawerFormValues = CreateProfilePayload &
   PatchProfilePayload & {
@@ -76,19 +82,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   onUpdatePassword,
 }) => {
   const disabled = mode === 'view';
-  const title =
-    mode === 'create' ? 'Create Staff Profile' : mode === 'edit' ? 'Edit Staff Profile' : 'View Staff Profile';
-  const getFieldA11y = (name: string, error?: string) => (error ? fieldErrorIds(name) : undefined);
-  const codeA11y = getFieldA11y('staff-code', errors.code);
-  const firstnameA11y = getFieldA11y('staff-firstname', errors.firstname);
-  const lastnameA11y = getFieldA11y('staff-lastname', errors.lastname);
-  const emailA11y = getFieldA11y('staff-email', errors.email);
-  const telA11y = getFieldA11y('staff-tel', errors.tel);
-  const usernameA11y = getFieldA11y('staff-username', errors.username);
-  const passwordA11y = getFieldA11y('staff-password', errors.password);
-  const confirmPasswordA11y = getFieldA11y('staff-confirm-password', errors.confirmPassword);
-  const newPasswordA11y = getFieldA11y('staff-new-password', errors.newPassword);
-  const confirmNewPasswordA11y = getFieldA11y('staff-confirm-new-password', errors.confirmNewPassword);
+  const title = TITLES[mode];
 
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
@@ -103,96 +97,51 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
             </div>
           ) : (
             <FieldGroup className="gap-4">
-              <Field data-invalid={!!errors.code}>
-                <FieldLabel htmlFor="staff-code">Staff Code</FieldLabel>
+              <StaffFormField id="staff-code" label="Staff Code" error={errors.code}>
                 <Input
-                  id="staff-code"
                   value={values.code ?? ''}
                   disabled={disabled || mode !== 'create'}
                   onChange={(e) => onChange('code', e.target.value)}
                   maxLength={32}
                   placeholder="e.g. EMP-001"
-                  aria-invalid={codeA11y?.ariaInvalid}
-                  aria-describedby={codeA11y?.describedBy}
                 />
-                {errors.code ? (
-                  <FieldDescription id={codeA11y?.errorId} className="text-destructive">
-                    {errors.code}
-                  </FieldDescription>
-                ) : null}
-              </Field>
+              </StaffFormField>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field data-invalid={!!errors.firstname}>
-                  <FieldLabel htmlFor="staff-firstname">First Name</FieldLabel>
+                <StaffFormField id="staff-firstname" label="First Name" error={errors.firstname}>
                   <Input
-                    id="staff-firstname"
                     value={values.firstname ?? ''}
                     disabled={disabled}
                     onChange={(e) => onChange('firstname', e.target.value)}
                     maxLength={128}
-                    aria-invalid={firstnameA11y?.ariaInvalid}
-                    aria-describedby={firstnameA11y?.describedBy}
                   />
-                  {errors.firstname ? (
-                    <FieldDescription id={firstnameA11y?.errorId} className="text-destructive">
-                      {errors.firstname}
-                    </FieldDescription>
-                  ) : null}
-                </Field>
-                <Field data-invalid={!!errors.lastname}>
-                  <FieldLabel htmlFor="staff-lastname">Last Name</FieldLabel>
+                </StaffFormField>
+                <StaffFormField id="staff-lastname" label="Last Name" error={errors.lastname}>
                   <Input
-                    id="staff-lastname"
                     value={values.lastname ?? ''}
                     disabled={disabled}
                     onChange={(e) => onChange('lastname', e.target.value)}
                     maxLength={128}
-                    aria-invalid={lastnameA11y?.ariaInvalid}
-                    aria-describedby={lastnameA11y?.describedBy}
                   />
-                  {errors.lastname ? (
-                    <FieldDescription id={lastnameA11y?.errorId} className="text-destructive">
-                      {errors.lastname}
-                    </FieldDescription>
-                  ) : null}
-                </Field>
+                </StaffFormField>
               </div>
-              <Field data-invalid={!!errors.email}>
-                <FieldLabel htmlFor="staff-email">Email</FieldLabel>
+              <StaffFormField id="staff-email" label="Email" error={errors.email}>
                 <Input
-                  id="staff-email"
                   type="email"
                   value={values.email ?? ''}
                   disabled={disabled}
                   onChange={(e) => onChange('email', e.target.value)}
                   maxLength={254}
-                  aria-invalid={emailA11y?.ariaInvalid}
-                  aria-describedby={emailA11y?.describedBy}
                 />
-                {errors.email ? (
-                  <FieldDescription id={emailA11y?.errorId} className="text-destructive">
-                    {errors.email}
-                  </FieldDescription>
-                ) : null}
-              </Field>
-              <Field data-invalid={!!errors.tel}>
-                <FieldLabel htmlFor="staff-tel">Telephone</FieldLabel>
+              </StaffFormField>
+              <StaffFormField id="staff-tel" label="Telephone" error={errors.tel}>
                 <Input
-                  id="staff-tel"
                   value={values.tel ?? ''}
                   disabled={disabled}
                   onChange={(e) => onChange('tel', e.target.value)}
                   placeholder="e.g. 0812345678 or +66812345678"
                   maxLength={20}
-                  aria-invalid={telA11y?.ariaInvalid}
-                  aria-describedby={telA11y?.describedBy}
                 />
-                {errors.tel ? (
-                  <FieldDescription id={telA11y?.errorId} className="text-destructive">
-                    {errors.tel}
-                  </FieldDescription>
-                ) : null}
-              </Field>
+              </StaffFormField>
               {canAssignRole ? (
                 <Field>
                   <FieldLabel>System Role</FieldLabel>
@@ -218,101 +167,64 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                 <>
                   <Separator />
                   <p className="text-sm text-muted-foreground">Minimum {PASSWORD_MIN_LENGTH} characters.</p>
-                  <Field data-invalid={!!errors.username}>
-                    <FieldLabel htmlFor="staff-username">Username</FieldLabel>
+                  <StaffFormField id="staff-username" label="Username" error={errors.username}>
                     <Input
-                      id="staff-username"
                       value={values.username ?? ''}
                       disabled={disabled}
                       onChange={(e) => onChange('username', e.target.value)}
                       autoComplete="off"
-                    aria-invalid={usernameA11y?.ariaInvalid}
-                    aria-describedby={usernameA11y?.describedBy}
                     />
-                  {errors.username ? (
-                    <FieldDescription id={usernameA11y?.errorId} className="text-destructive">
-                      {errors.username}
-                    </FieldDescription>
-                  ) : null}
-                  </Field>
-                  <Field data-invalid={!!errors.password}>
-                    <FieldLabel htmlFor="staff-password">Password</FieldLabel>
+                  </StaffFormField>
+                  <StaffFormField id="staff-password" label="Password" error={errors.password}>
                     <Input
-                      id="staff-password"
                       type="password"
                       value={values.password ?? ''}
                       disabled={disabled}
                       onChange={(e) => onChange('password', e.target.value)}
                       autoComplete="new-password"
-                    aria-invalid={passwordA11y?.ariaInvalid}
-                    aria-describedby={passwordA11y?.describedBy}
                     />
-                  {errors.password ? (
-                    <FieldDescription id={passwordA11y?.errorId} className="text-destructive">
-                      {errors.password}
-                    </FieldDescription>
-                  ) : null}
-                  </Field>
-                  <Field data-invalid={!!errors.confirmPassword}>
-                    <FieldLabel htmlFor="staff-confirm-password">Confirm password</FieldLabel>
+                  </StaffFormField>
+                  <StaffFormField
+                    id="staff-confirm-password"
+                    label="Confirm password"
+                    error={errors.confirmPassword}
+                  >
                     <Input
-                      id="staff-confirm-password"
                       type="password"
                       value={values.confirmPassword ?? ''}
                       disabled={disabled}
                       onChange={(e) => onChange('confirmPassword', e.target.value)}
                       autoComplete="new-password"
-                    aria-invalid={confirmPasswordA11y?.ariaInvalid}
-                    aria-describedby={confirmPasswordA11y?.describedBy}
                     />
-                  {errors.confirmPassword ? (
-                    <FieldDescription id={confirmPasswordA11y?.errorId} className="text-destructive">
-                      {errors.confirmPassword}
-                    </FieldDescription>
-                  ) : null}
-                  </Field>
+                  </StaffFormField>
                 </>
               ) : null}
               {showAdminResetPassword ? (
                 <>
                   <Separator />
                   <p className="text-sm font-medium">Reset password (admin)</p>
-                  <Field>
-                    <FieldLabel htmlFor="staff-new-password">New password</FieldLabel>
+                  <StaffFormField id="staff-new-password" label="New password" error={errors.newPassword}>
                     <Input
-                      id="staff-new-password"
                       type="password"
                       value={values.newPassword ?? ''}
                       disabled={disabled}
                       onChange={(e) => onChange('newPassword', e.target.value)}
                       autoComplete="new-password"
-                    aria-invalid={newPasswordA11y?.ariaInvalid}
-                    aria-describedby={newPasswordA11y?.describedBy}
                     />
-                  {errors.newPassword ? (
-                    <FieldDescription id={newPasswordA11y?.errorId} className="text-destructive">
-                      {errors.newPassword}
-                    </FieldDescription>
-                  ) : null}
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="staff-confirm-new-password">Confirm password</FieldLabel>
+                  </StaffFormField>
+                  <StaffFormField
+                    id="staff-confirm-new-password"
+                    label="Confirm password"
+                    error={errors.confirmNewPassword}
+                  >
                     <Input
-                      id="staff-confirm-new-password"
                       type="password"
                       value={values.confirmNewPassword ?? ''}
                       disabled={disabled}
                       onChange={(e) => onChange('confirmNewPassword', e.target.value)}
                       autoComplete="new-password"
-                    aria-invalid={confirmNewPasswordA11y?.ariaInvalid}
-                    aria-describedby={confirmNewPasswordA11y?.describedBy}
                     />
-                  {errors.confirmNewPassword ? (
-                    <FieldDescription id={confirmNewPasswordA11y?.errorId} className="text-destructive">
-                      {errors.confirmNewPassword}
-                    </FieldDescription>
-                  ) : null}
-                  </Field>
+                  </StaffFormField>
                   <LoadingButton loading={updatingPassword} onClick={onUpdatePassword}>
                     Update password
                   </LoadingButton>

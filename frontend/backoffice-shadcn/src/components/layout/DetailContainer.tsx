@@ -61,7 +61,7 @@ export function DetailContainer({
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
               return (
-                <Fragment key={index}>
+                <Fragment key={String(item.title)}>
                   {index > 0 ? <BreadcrumbSeparator /> : null}
                   <BreadcrumbItem>
                     {isLast ? (

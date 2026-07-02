@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link2, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { FilterSelect } from '@/components/filter-select';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { LoadingButton } from '@/components/loading-button';
@@ -31,7 +31,15 @@ import { PageContainer, PageContentCard, FiltersContainer } from '@/components/l
 import { ActiveBadge } from '@/components/status-badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgents } from './hooks/useAgents';
+import { fieldErrorIds } from '@/lib/fieldA11y';
 import type { Agent } from '@/types/agents';
+
+function normalizeRefFeeBranchId(refId: unknown): string {
+  if (typeof refId === 'object' && refId !== null && (refId as { $oid?: string }).$oid) {
+    return (refId as { $oid?: string }).$oid!;
+  }
+  return String(refId);
+}
 
 const AgentsList: React.FC = () => {
   const { agents, unsyncedBranches, total, loading, loadingUnsynced, fetchAgents, fetchUnsyncedBranches, syncData, deleteData } = useAgents();
@@ -46,9 +54,13 @@ const AgentsList: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const refreshAgents = useCallback(() => {
     fetchAgents({ page, limit: pageSize, search: searchText });
   }, [fetchAgents, page, pageSize, searchText]);
+
+  useEffect(() => {
+    refreshAgents();
+  }, [refreshAgents]);
 
   const handleOpenSyncModal = () => {
     setIsSyncModalOpen(true);
@@ -68,7 +80,7 @@ const AgentsList: React.FC = () => {
       if (success) {
         setIsSyncModalOpen(false);
         setBranchId(undefined);
-        fetchAgents({ page, limit: pageSize, search: searchText });
+        refreshAgents();
       }
     } finally {
       setSyncing(false);
@@ -80,7 +92,7 @@ const AgentsList: React.FC = () => {
     const success = await deleteData(deleteTarget._id, deleteTarget.upd_date);
     setDeleteTarget(null);
     if (success) {
-      fetchAgents({ page, limit: pageSize, search: searchText });
+      refreshAgents();
     }
   };
 
@@ -104,10 +116,7 @@ const AgentsList: React.FC = () => {
       render: (record) => {
         const refId = record.ref_fee_branch_id;
         if (!refId) return <span className="text-muted-foreground">—</span>;
-        const normalizedRefId =
-          typeof refId === 'object' && refId !== null && (refId as { $oid?: string }).$oid
-            ? (refId as { $oid?: string }).$oid
-            : String(refId);
+        const normalizedRefId = normalizeRefFeeBranchId(refId);
         return record.ref_fee_branch_name ? (
           <Badge variant="outline">
             <Link2 data-icon="inline-start" />
@@ -138,12 +147,12 @@ const AgentsList: React.FC = () => {
             <TooltipTrigger
               render={
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon-sm"
                   aria-label={`Manage fees for ${record.branch_name}`}
                   onClick={() => navigate(`/agents/${record._id}/fees`)}
                 >
-                  <Settings />
+                  <Settings aria-hidden="true" />
                 </Button>
               }
             />
@@ -153,13 +162,13 @@ const AgentsList: React.FC = () => {
             <TooltipTrigger
               render={
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon-sm"
                   className="text-destructive"
                   aria-label={`Delete ${record.branch_name}`}
                   onClick={() => setDeleteTarget(record)}
                 >
-                  <Trash2 />
+                  <Trash2 aria-hidden="true" />
                 </Button>
               }
             />
@@ -231,17 +240,24 @@ const AgentsList: React.FC = () => {
                 id="sync-branch"
                 placeholder={loadingUnsynced ? 'Loading branches…' : 'Select a branch to sync'}
                 value={branchId}
+                disabled={loadingUnsynced}
                 onChange={(val) => {
                   setBranchId(val);
                   if (branchError) setBranchError(undefined);
                 }}
                 options={branchOptions}
                 width="w-full"
+                aria-invalid={!!branchError}
+                aria-describedby={branchError ? fieldErrorIds('sync-branch').describedBy : undefined}
               />
               {branchError ? (
-                <p className="text-sm text-destructive" role="alert">
+                <FieldDescription
+                  id={fieldErrorIds('sync-branch').errorId}
+                  className="text-destructive"
+                  role="alert"
+                >
                   {branchError}
-                </p>
+                </FieldDescription>
               ) : null}
             </Field>
             <Field orientation="horizontal">

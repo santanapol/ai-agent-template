@@ -1,28 +1,14 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, User } from 'lucide-react';
-import axios from 'axios';
+import { Lock, User } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { LoginCredentialField } from '@/components/auth/LoginCredentialField';
 import { LoadingButton } from '@/components/loading-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { FieldGroup } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
-import { fieldErrorIds } from '@/lib/fieldA11y';
-
-function authErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const code = err.response?.data?.code as string | undefined;
-    if (code === 'LOGIN_INVALID_CREDENTIALS') return 'Invalid username or password';
-    if (code === 'LOGIN_ACCOUNT_LOCKED') return 'Account is locked due to too many failed attempts';
-    if (code === 'AUTH_TOO_MANY_ATTEMPTS') return 'Too many attempts. Please try again later.';
-    const detail = err.response?.data?.detail as string | undefined;
-    if (detail) return detail;
-  }
-  return 'Login failed. Please try again.';
-}
+import { loginErrorMessage } from '@/lib/authErrors';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +36,6 @@ const Login: React.FC = () => {
       if (!username.trim()) nextErrors.username = 'Please enter username';
       if (!password) nextErrors.password = 'Please enter password';
       setFormErrors(nextErrors);
-      message.error('Please enter username and password');
       return;
     }
     setFormErrors({});
@@ -59,7 +44,7 @@ const Login: React.FC = () => {
       await login(username, password);
       navigate('/');
     } catch (err) {
-      const errorMessage = authErrorMessage(err);
+      const errorMessage = loginErrorMessage(err);
       setFormErrors((prev) => ({
         ...prev,
         password: errorMessage,
@@ -80,70 +65,31 @@ const Login: React.FC = () => {
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <FieldGroup className="gap-4">
-              <Field data-invalid={!!formErrors.username}>
-                <FieldLabel htmlFor="username">Username</FieldLabel>
-                <div className="relative">
-                  <User aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="username"
-                    className="pl-9"
-                    placeholder="Username"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      if (formErrors.username) setFormErrors((prev) => ({ ...prev, username: undefined }));
-                    }}
-                    aria-invalid={!!formErrors.username}
-                    aria-describedby={formErrors.username ? fieldErrorIds('username').describedBy : undefined}
-                  />
-                </div>
-                {formErrors.username ? (
-                  <FieldDescription id={fieldErrorIds('username').errorId} className="text-destructive" role="alert">
-                    {formErrors.username}
-                  </FieldDescription>
-                ) : null}
-              </Field>
-              <Field data-invalid={!!formErrors.password}>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <div className="relative">
-                  <Lock aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="pr-12 pl-9"
-                    placeholder="Password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (formErrors.password) setFormErrors((prev) => ({ ...prev, password: undefined }));
-                    }}
-                    aria-invalid={!!formErrors.password}
-                    aria-describedby={formErrors.password ? fieldErrorIds('password').describedBy : undefined}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="absolute inset-y-1 right-1"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    aria-pressed={showPassword}
-                    onClick={() => setShowPassword((prev) => !prev)}
-                  >
-                    {showPassword ? (
-                      <EyeOff data-icon="inline-start" aria-hidden="true" />
-                    ) : (
-                      <Eye data-icon="inline-start" aria-hidden="true" />
-                    )}
-                  </Button>
-                </div>
-                {formErrors.password ? (
-                  <FieldDescription id={fieldErrorIds('password').errorId} className="text-destructive" role="alert">
-                    {formErrors.password}
-                  </FieldDescription>
-                ) : null}
-              </Field>
+              <LoginCredentialField
+                id="username"
+                label="Username"
+                placeholder="Username"
+                autoComplete="username"
+                icon={<User aria-hidden="true" className="size-4" />}
+                value={username}
+                error={formErrors.username}
+                onChange={setUsername}
+                onClearError={() => setFormErrors((prev) => ({ ...prev, username: undefined }))}
+              />
+              <LoginCredentialField
+                id="password"
+                label="Password"
+                placeholder="Password"
+                autoComplete="current-password"
+                icon={<Lock aria-hidden="true" className="size-4" />}
+                value={password}
+                error={formErrors.password}
+                showPasswordToggle
+                showPassword={showPassword}
+                onShowPasswordToggle={() => setShowPassword((prev) => !prev)}
+                onChange={setPassword}
+                onClearError={() => setFormErrors((prev) => ({ ...prev, password: undefined }))}
+              />
             </FieldGroup>
             <LoadingButton type="submit" className="w-full" loading={submitting}>
               Sign In

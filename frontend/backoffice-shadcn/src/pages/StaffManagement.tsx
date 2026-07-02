@@ -15,11 +15,10 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
 import { apiErrorMessage } from '@/lib/apiError';
 import {
-  confirmPasswordRule,
   passwordFieldRules,
 } from '@/lib/passwordPolicy';
 import * as staffApi from '@/lib/staffApiClient';
-import { formatTelephoneToE164, telephoneRules } from '@/lib/telephone';
+import { formatTelephoneToE164 } from '@/lib/telephone';
 import type { PatchProfilePayload, ProfileStatus, StaffProfile } from '@/types/staff';
 
 const STATUS_OPTIONS = [
@@ -27,6 +26,15 @@ const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' },
 ];
+
+async function withProfileEtag(
+  record: StaffProfile,
+  action: (id: string, etag: string) => Promise<unknown>,
+) {
+  const { etag } = await staffApi.getProfileById(record.id);
+  if (!etag) throw new Error('Could not determine current profile version');
+  await action(record.id, etag);
+}
 
 const emptyForm: DrawerFormValues = {
   code: '',
@@ -49,19 +57,7 @@ function validateField(field: keyof DrawerFormValues, values: DrawerFormValues):
     if (!v?.trim()) return 'Please enter a valid email';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Please enter a valid email';
   }
-  if (field === 'tel') {
-    for (const rule of telephoneRules) {
-      if (typeof rule === 'object' && 'validator' in rule) {
-        const result = (rule as { validator: (_: unknown, val: string) => Promise<void> }).validator(
-          null,
-          v ?? '',
-        );
-        if (result && typeof (result as Promise<void>).then === 'function') {
-          // sync check only for simple required
-        }
-      }
-    }
-  }
+  // ST-03: tel validation deferred
   if (field === 'username' && values.password !== undefined) {
     if (!v?.trim()) return 'Please enter username';
     if (!/^[a-zA-Z0-9_]+$/.test(v)) return 'Only English letters, numbers, and underscores allowed';
@@ -74,11 +70,7 @@ function validateField(field: keyof DrawerFormValues, values: DrawerFormValues):
     }
   }
   if (field === 'confirmPassword' && values.password) {
-    const rule = confirmPasswordRule(() => values.password ?? '');
-    if (typeof rule === 'object' && 'validator' in rule) {
-      // simplified
-      if (v !== values.password) return 'Passwords do not match';
-    }
+    if (v !== values.password) return 'Passwords do not match';
   }
   return undefined;
 }
@@ -236,7 +228,6 @@ const StaffManagement: React.FC = () => {
     }
     if (formValues.confirmNewPassword !== newPassword) {
       setFormErrors((prev) => ({ ...prev, confirmNewPassword: 'Passwords do not match' }));
-      message.error('Passwords do not match');
       return;
     }
     setFormErrors((prev) => ({ ...prev, newPassword: undefined, confirmNewPassword: undefined }));
@@ -317,9 +308,7 @@ const StaffManagement: React.FC = () => {
         okText: 'Archive',
         danger: true,
         onOk: async () => {
-          const { etag } = await staffApi.getProfileById(record.id);
-          if (!etag) throw new Error('Could not determine current profile version');
-          await staffApi.archiveProfile(record.id, etag);
+          await withProfileEtag(record, staffApi.archiveProfile);
           message.success('Profile archived');
           refresh();
         },
@@ -335,9 +324,7 @@ const StaffManagement: React.FC = () => {
         content: 'This profile will become active again.',
         okText: 'Restore',
         onOk: async () => {
-          const { etag } = await staffApi.getProfileById(record.id);
-          if (!etag) throw new Error('Could not determine current profile version');
-          await staffApi.restoreProfile(record.id, etag);
+          await withProfileEtag(record, staffApi.restoreProfile);
           message.success('Profile restored');
           refresh();
         },

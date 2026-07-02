@@ -1,47 +1,79 @@
 import React, { useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   CheckCircle,
+  FileQuestion,
   FileSpreadsheet,
   FileText,
-  Info,
   XCircle,
 } from 'lucide-react';
+import { DescriptionList } from '@/components/description-list';
 import { DetailContainer } from '@/components/layout';
-import { DataTable, type DataTableColumn } from '@/components/data-table';
+import { DataTable } from '@/components/data-table';
 import { LoadingButton } from '@/components/loading-button';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TableCell, TableRow } from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { usePageBreadcrumb } from '@/contexts/PageBreadcrumbContext';
+import { usePermission } from '@/hooks/usePermission';
 import { useInvoices } from './hooks/useInvoices';
 import {
-  formatCategoryName,
   formatDate,
-  formatFee,
   formatMoney,
   sortInvoiceTransactions,
   statusTagColor,
 } from './utils';
-import type { InvoiceTransaction } from '@/types/invoice';
 import { buildInvoicePdf } from './export/buildInvoicePdf';
 import { buildInvoiceXlsx } from './export/buildInvoiceXlsx';
 import { triggerBlobDownload } from './export/downloadBlob';
+import { invoiceTransactionColumns } from './invoiceTransactionColumns';
+
+const TRANSACTION_PAGE_SIZE = 20;
+
+type InvoiceListLocationState = {
+  listSearch?: string;
+};
+
+function InvoiceDetailSkeleton() {
+  return (
+    <DetailContainer title="Invoice Details" maxWidth={900}>
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-80 w-full rounded-xl" />
+      </div>
+    </DetailContainer>
+  );
+}
 
 const InvoiceDetail: React.FC = () => {
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const canExport = usePermission('invoices:read');
+  const canWrite = usePermission('invoices:write');
   const {
     invoice,
     transactions,
@@ -53,6 +85,29 @@ const InvoiceDetail: React.FC = () => {
     markAsPaid,
     cancelInvoice,
   } = useInvoices();
+
+  const invoicesBackUrl = useMemo(() => {
+    const listSearch = (location.state as InvoiceListLocationState | null)?.listSearch;
+    return listSearch ? `/invoices?${listSearch}` : '/invoices';
+  }, [location.state]);
+
+  const headerBreadcrumb = useMemo(() => {
+    if (detailLoading) return null;
+    if (!invoice) {
+      return [
+        { label: 'Billing' },
+        { label: 'Invoices', onClick: () => navigate(invoicesBackUrl) },
+        { label: 'Not Found' },
+      ];
+    }
+    return [
+      { label: 'Billing' },
+      { label: 'Invoices', onClick: () => navigate(invoicesBackUrl) },
+      { label: invoice.iv_no },
+    ];
+  }, [detailLoading, invoice, invoicesBackUrl, navigate]);
+
+  usePageBreadcrumb(headerBreadcrumb);
 
   useEffect(() => {
     if (!id) return;
@@ -75,20 +130,28 @@ const InvoiceDetail: React.FC = () => {
   }, [sortedTransactions]);
 
   if (detailLoading) {
-    return <Skeleton className="h-96 w-full rounded-xl" aria-busy="true" />;
+    return <InvoiceDetailSkeleton />;
   }
 
   if (!invoice) {
     return (
-      <DetailContainer title="Invoice Not Found" backUrl="/invoices">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-12">
-            <p className="text-lg font-semibold">Invoice Not Found</p>
-            <Button variant="outline" onClick={() => navigate('/invoices')}>
+      <DetailContainer title="Invoice Not Found">
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileQuestion aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>Invoice not found</EmptyTitle>
+            <EmptyDescription>
+              The invoice may have been removed or you may not have access to view it.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={() => navigate(invoicesBackUrl)}>
               Back to Invoices
             </Button>
-          </CardContent>
-        </Card>
+          </EmptyContent>
+        </Empty>
       </DetailContainer>
     );
   }
@@ -105,9 +168,26 @@ const InvoiceDetail: React.FC = () => {
     if (success) fetchInvoiceDetail(id);
   };
 
+  const confirmInvoiceAction = ({
+    title,
+    content,
+    okText,
+    onOk,
+    danger,
+  }: {
+    title: string;
+    content: string;
+    okText: string;
+    onOk: () => void | Promise<void>;
+    danger?: boolean;
+  }) => {
+    if (!invoice || !id) return;
+    void confirm({ title, content, okText, onOk, danger });
+  };
+
   const promptUpdateStatus = () => {
     if (!invoice || !id) return;
-    void confirm({
+    confirmInvoiceAction({
       title: 'Mark as PAID',
       content: `Mark invoice #${invoice.iv_no} as PAID?`,
       okText: 'Mark as PAID',
@@ -117,7 +197,7 @@ const InvoiceDetail: React.FC = () => {
 
   const promptCancelInvoice = () => {
     if (!invoice || !id) return;
-    void confirm({
+    confirmInvoiceAction({
       title: 'Cancel Invoice',
       content: `Cancel invoice #${invoice.iv_no}?`,
       okText: 'Cancel Invoice',
@@ -140,53 +220,7 @@ const InvoiceDetail: React.FC = () => {
 
   const isReady = invoice.status === 'READY';
   const amount = invoice.amount ?? 0;
-
-  const columns: DataTableColumn<InvoiceTransaction>[] = [
-    {
-      key: 'company_name',
-      title: 'Game Provider',
-      render: (record) => record.company_name || '-',
-    },
-    {
-      key: 'main_category_name',
-      title: 'Game Category',
-      render: (record) => formatCategoryName(record.main_category_name),
-    },
-    {
-      key: 'bet',
-      title: 'Bet',
-      align: 'right',
-      render: (record) => formatMoney(record.bet || 0),
-    },
-    {
-      key: 'net_win',
-      title: 'Net Win',
-      align: 'right',
-      render: (record) => formatMoney(record.net_win),
-    },
-    {
-      key: 'fee',
-      title: (
-        <span className="inline-flex items-center gap-1">
-          Fee (%)
-          <Tooltip>
-            <TooltipTrigger render={<button type="button" className="inline-flex" aria-label="Fee info" />}>
-              <Info data-icon="inline-start" className="text-primary" aria-hidden="true" />
-            </TooltipTrigger>
-            <TooltipContent>Fee is calculated based on Net Win</TooltipContent>
-          </Tooltip>
-        </span>
-      ),
-      align: 'right',
-      render: (record) => formatFee(record.fee),
-    },
-    {
-      key: 'amount',
-      title: 'Amount',
-      align: 'right',
-      render: (record) => formatMoney(record.amount),
-    },
-  ];
+  const canCancel = ['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status);
 
   const summaryFooter = (
     <TableRow className="bg-muted/50 font-semibold hover:bg-muted/50">
@@ -198,114 +232,110 @@ const InvoiceDetail: React.FC = () => {
     </TableRow>
   );
 
+  const metadataItems = [
+    { label: 'Invoice No', value: invoice.iv_no },
+    { label: 'Billing Month', value: invoice.billing_month || '-' },
+    { label: 'Created Date', value: formatDate(invoice.cr_date) },
+    { label: 'Bill To', value: invoice.branch_name || '-' },
+    {
+      label: 'Due Date',
+      value: (
+        <span className={isReady ? 'font-semibold text-destructive' : undefined}>
+          {formatDate(invoice.due_date)}
+        </span>
+      ),
+    },
+    ...(invoice.status === 'PAID' && invoice.upd_date
+      ? [
+          {
+            label: 'Paid Date',
+            value: (
+              <span className="font-semibold text-success">{formatDate(invoice.upd_date)}</span>
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  const showActions = canExport || (canWrite && (isReady || canCancel));
+
   return (
     <DetailContainer
-      title="Invoice Details"
-      backUrl="/invoices"
-      breadcrumbItems={[
-        { title: 'Invoices', onClick: () => navigate('/invoices') },
-        { title: invoice.iv_no },
-      ]}
+      title={`Invoice Details: #${invoice.iv_no}`}
+      status={
+        <StatusBadge status={invoice.status} variant={statusTagColor(invoice.status)} />
+      }
       extra={
-        <div className="no-print flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={handleExportPDF}>
-            <FileText data-icon="inline-start" aria-hidden="true" />
-            Export PDF
-          </Button>
-          <Button variant="outline" onClick={handleExportExcel}>
-            <FileSpreadsheet data-icon="inline-start" aria-hidden="true" />
-            Export Excel
-          </Button>
-          {isReady ? (
-            <LoadingButton onClick={promptUpdateStatus} loading={updatingStatus}>
-              <CheckCircle data-icon="inline-start" aria-hidden="true" />
-              Mark as PAID
-            </LoadingButton>
-          ) : null}
-          {['READY', 'PENDING', 'MISSING_FEE', 'ERROR'].includes(invoice.status) ? (
-            <LoadingButton
-              variant="destructive"
-              onClick={promptCancelInvoice}
-              loading={updatingStatus}
-            >
-              <XCircle data-icon="inline-start" aria-hidden="true" />
-              Cancel Invoice
-            </LoadingButton>
-          ) : null}
-        </div>
+        showActions ? (
+          <div className="no-print flex flex-wrap items-center gap-2">
+            {canExport ? (
+              <>
+                <Button variant="outline" onClick={handleExportPDF}>
+                  <FileText data-icon="inline-start" aria-hidden="true" />
+                  Export PDF
+                </Button>
+                <Button variant="outline" onClick={handleExportExcel}>
+                  <FileSpreadsheet data-icon="inline-start" aria-hidden="true" />
+                  Export Excel
+                </Button>
+              </>
+            ) : null}
+            {canWrite && isReady ? (
+              <LoadingButton onClick={promptUpdateStatus} loading={updatingStatus}>
+                <CheckCircle data-icon="inline-start" aria-hidden="true" />
+                Mark as PAID
+              </LoadingButton>
+            ) : null}
+            {canWrite && canCancel ? (
+              <LoadingButton
+                variant="destructive"
+                onClick={promptCancelInvoice}
+                loading={updatingStatus}
+              >
+                <XCircle data-icon="inline-start" aria-hidden="true" />
+                Cancel Invoice
+              </LoadingButton>
+            ) : null}
+          </div>
+        ) : null
       }
       maxWidth={900}
     >
       <div className="flex justify-center">
         <Card className="w-full max-w-[900px] shadow-sm">
-          <CardContent className="p-10 md:p-12">
-            <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold tracking-widest text-primary">INVOICE</h2>
-                <p className="text-muted-foreground">Zero Platform</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold text-muted-foreground">#{invoice.iv_no}</p>
-                <StatusBadge
-                  status={invoice.status}
-                  variant={statusTagColor(invoice.status)}
-                />
-              </div>
-            </div>
-
-            <div className="mb-8 grid gap-6 sm:grid-cols-2">
-              <div className="flex flex-col gap-2 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Billing Month: </span>
-                  <span className="font-medium">{invoice.billing_month || '-'}</span>
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Created Date: </span>
-                  <span className="font-medium">{formatDate(invoice.cr_date)}</span>
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 text-right text-sm sm:text-right">
-                <p>
-                  <span className="text-xs font-semibold tracking-wide text-muted-foreground">BILL TO </span>
-                  <span className="text-base font-semibold">{invoice.branch_name || '-'}</span>
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Due Date: </span>
-                  <span className={isReady ? 'font-semibold text-destructive' : 'font-medium text-muted-foreground'}>
-                    {formatDate(invoice.due_date)}
-                  </span>
-                </p>
-                {invoice.status === 'PAID' && invoice.upd_date ? (
-                  <p>
-                    <span className="text-muted-foreground">Paid Date: </span>
-                    <span className="font-semibold text-success">{formatDate(invoice.upd_date)}</span>
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <Separator className="my-6" />
-
+          <CardHeader className="border-b">
+            <CardTitle className="text-2xl font-bold tracking-widest text-primary">
+              INVOICE
+            </CardTitle>
+            <CardDescription>Zero Platform</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6 pt-6">
+            <DescriptionList title="Invoice Metadata" items={metadataItems} />
+            <Separator />
             <DataTable
-              columns={columns}
+              columns={invoiceTransactionColumns}
               data={sortedTransactions}
               loading={transactionsLoading}
               rowKey="_id"
-              pageSize={sortedTransactions.length || 100}
+              pageSize={TRANSACTION_PAGE_SIZE}
               footer={summaryFooter}
+              emptyTitle="No transactions"
+              emptyDescription="This invoice has no line items yet."
             />
-
-            <div className="mt-6 flex justify-end">
-              <div className="w-full max-w-xs">
-                <div className="flex items-center justify-between border-t pt-3">
-                  <span className="font-semibold">Total Amount</span>
-                  <span className={`text-xl font-bold ${amount < 0 ? 'text-destructive' : 'text-success'}`}>
-                    {formatMoney(amount)}
-                  </span>
-                </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3 border-t">
+            <Separator />
+            <div className="flex w-full justify-end">
+              <div className="flex w-full max-w-xs items-center justify-between">
+                <span className="font-semibold">Total Amount</span>
+                <span
+                  className={`text-xl font-bold tabular-nums ${amount < 0 ? 'text-destructive' : 'text-success'}`}
+                >
+                  {formatMoney(amount)}
+                </span>
               </div>
             </div>
-          </CardContent>
+          </CardFooter>
         </Card>
       </div>
     </DetailContainer>

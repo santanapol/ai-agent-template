@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import AdminLayout from './AdminLayout';
 import { useAuth } from '../contexts/AuthContext';
 import type { AuthContextValue } from '../contexts/AuthContext';
 import { renderWithProviders } from '../test/renderWithProviders';
 import type { DecodedUser } from '../types/auth';
 import { useIsMobile } from '../hooks/use-mobile';
+
+function navMainScope() {
+  const label = screen.getByText('Menu');
+  const group = label.parentElement;
+  if (!group) throw new Error('Nav main group not found');
+  return within(group);
+}
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -70,7 +78,7 @@ describe('AdminLayout component', () => {
       expect(screen.getByText(/Some menu items are temporarily unavailable/)).toBeInTheDocument();
       
       // Fallback menu items (Dashboard) are rendered
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(navMainScope().getByText('Dashboard')).toBeInTheDocument();
       expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
       expect(screen.getByText('JD')).toBeInTheDocument();
       expect(screen.getByLabelText(/account menu for john doe/i)).toBeInTheDocument();
@@ -96,10 +104,14 @@ describe('AdminLayout component', () => {
       switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
+    const user = userEvent.setup();
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
       expect(screen.getByLabelText(/open navigation menu/i)).toBeInTheDocument();
+    });
+    await user.click(screen.getByLabelText(/open navigation menu/i));
+    await waitFor(() => {
       expect(screen.getByLabelText(/account menu for john doe/i)).toBeInTheDocument();
     });
   });
@@ -125,7 +137,7 @@ describe('AdminLayout component', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(navMainScope().getByText('Dashboard')).toBeInTheDocument();
     });
     expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
   });
@@ -166,15 +178,15 @@ describe('AdminLayout component', () => {
 
     await waitFor(() => {
       // Valid items are rendered
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      expect(navMainScope().getByText('Dashboard Page')).toBeInTheDocument();
     });
 
     // Unmapped item is filtered out
     expect(screen.queryByText('Unmapped Item')).not.toBeInTheDocument();
 
     // Expand the submenus to make children visible
-    const staffMenuHeader = screen.getByText('Staff Menu');
-    const billingMenuHeader = screen.getByText('Billing Menu');
+    const staffMenuHeader = navMainScope().getByText('Staff Menu');
+    const billingMenuHeader = navMainScope().getByText('Billing Menu');
     expect(staffMenuHeader).toBeInTheDocument();
     expect(billingMenuHeader).toBeInTheDocument();
     
@@ -214,7 +226,7 @@ describe('AdminLayout component', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(navMainScope().getByText('1')).toBeInTheDocument();
     });
 
     expect(warnSpy).toHaveBeenCalledWith('Menu structure exceeded maximum depth or contains a cycle');
@@ -245,7 +257,7 @@ describe('AdminLayout component', () => {
     // No crash: the orphan has no resolvable parent in itemMap, so it
     // falls back to a top-level item alongside Dashboard.
     await waitFor(() => {
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(navMainScope().getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Orphan Item')).toBeInTheDocument();
     });
   });
@@ -277,7 +289,7 @@ describe('AdminLayout component', () => {
 
     // No crash, no infinite loop — the rest of the menu still renders.
     await waitFor(() => {
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(navMainScope().getByText('Dashboard')).toBeInTheDocument();
     });
 
     // The cyclic pair is excluded from the tree entirely (not via the
@@ -317,10 +329,10 @@ describe('AdminLayout component', () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(navMainScope().getByText('Settings')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Settings'));
+    fireEvent.click(navMainScope().getByText('Settings'));
     expect(screen.getByText('Permissions')).toBeInTheDocument();
   });
 });

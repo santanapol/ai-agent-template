@@ -50,7 +50,7 @@ export function BulkProgressModal({
             {progress.currentIvNo ? ` — ${progress.currentIvNo}` : ''}
           </p>
           {summaryText && finished ? <p className="text-sm">{summaryText}</p> : null}
-          <ul className="max-h-64 space-y-2 overflow-y-auto">
+          <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto">
             {progress.results.length === 0 ? (
               <li className="text-sm text-muted-foreground">Waiting to start…</li>
             ) : (
@@ -64,7 +64,7 @@ export function BulkProgressModal({
                         : 'Cancelled'}
                   </span>
                   {item.status === 'success' ? (
-                    <CheckCircle className="size-4 shrink-0 text-green-600" aria-hidden="true" />
+                    <CheckCircle className="size-4 shrink-0 text-success" aria-hidden="true" />
                   ) : (
                     <XCircle className="size-4 shrink-0 text-destructive" aria-hidden="true" />
                   )}

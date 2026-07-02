@@ -22,8 +22,6 @@ import { formatDate, formatMoney, statusTagColor } from './utils';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '../../types/invoice';
 import { useAppFeedback } from '../../hooks/useAppFeedback';
 import { usePermission } from '../../hooks/usePermission';
-import { useAuth } from '../../contexts/AuthContext';
-import { canSwitchActiveBranch } from '../../lib/branchOptions';
 import { BulkInvoiceActionBar } from './components/BulkInvoiceActionBar';
 import { BulkExportModal } from './components/BulkExportModal';
 import { BulkStatusModal } from './components/BulkStatusModal';
@@ -46,7 +44,6 @@ interface StatusJobState {
 
 const InvoiceList: React.FC = () => {
   const { message } = useAppFeedback();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const canExport = usePermission('invoices:read');
   const canWrite = usePermission('invoices:write');
@@ -65,9 +62,11 @@ const InvoiceList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchText, setSearchText] = useState(searchParams.get('search') ?? '');
-  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
-    searchParams.get('branch_id') ?? undefined,
-  );
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(() => {
+    const fromUrl = searchParams.get('branch_id');
+    if (!fromUrl || fromUrl === 'all') return undefined;
+    return fromUrl;
+  });
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>(
     (searchParams.get('status') as InvoiceStatus | null) ?? undefined,
   );
@@ -85,21 +84,11 @@ const InvoiceList: React.FC = () => {
   const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
   const [statusRunning, setStatusRunning] = useState(false);
 
-  // OU-wide roles: keep invoice branch filter aligned with active branch (AC-7).
-  useEffect(() => {
-    if (!canSwitchActiveBranch(user?.role) || !user?.branch_id) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset filters when active branch changes
-    setSelectedBranchId(user.branch_id);
-    setPage(1);
-  }, [user?.branch_id, user?.role]);
-
-  const bulkBusy = exportRunning || statusRunning;
-
   // Keep filter/pagination state in the URL so it survives back-navigation from the detail page (I11)
   useEffect(() => {
     const params: Record<string, string> = {};
     if (searchText) params.search = searchText;
-    if (selectedBranchId) params.branch_id = selectedBranchId;
+    params.branch_id = selectedBranchId ?? 'all';
     if (selectedStatus) params.status = selectedStatus;
     if (billingMonth) params.billing_month = billingMonth;
     if (page !== 1) params.page = String(page);
@@ -112,7 +101,7 @@ const InvoiceList: React.FC = () => {
       page,
       limit: pageSize,
       iv_no: searchText || undefined,
-      branch_id: selectedBranchId,
+      branch_id: selectedBranchId ?? 'all',
       billing_month: billingMonth,
       status: selectedStatus,
     });

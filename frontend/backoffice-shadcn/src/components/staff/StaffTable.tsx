@@ -72,7 +72,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <Button variant="ghost" size="icon-sm" aria-label="View profile" onClick={() => onView(record)}>
+                  <Button variant="outline" size="icon-sm" aria-label="View profile" onClick={() => onView(record)}>
                     <Eye />
                   </Button>
                 }
@@ -83,7 +83,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Button variant="ghost" size="icon-sm" aria-label="Edit profile" onClick={() => onEdit(record)}>
+                    <Button variant="outline" size="icon-sm" aria-label="Edit profile" onClick={() => onEdit(record)}>
                       <Pencil />
                     </Button>
                   }
@@ -96,7 +96,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
                 <TooltipTrigger
                   render={
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon-sm"
                       className="text-destructive"
                       aria-label="Archive profile"
@@ -113,7 +113,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
                 <TooltipTrigger
                   render={
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon-sm"
                       className="text-success"
                       aria-label="Restore profile"

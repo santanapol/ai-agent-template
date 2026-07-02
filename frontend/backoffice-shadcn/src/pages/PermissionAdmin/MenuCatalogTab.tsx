@@ -149,7 +149,7 @@ const MenuCatalogTab: React.FC = () => {
                   <TooltipTrigger
                     render={
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon-sm"
                         aria-label={`Edit ${node.label}`}
                         disabled={protectedNode}
@@ -171,7 +171,7 @@ const MenuCatalogTab: React.FC = () => {
                   <TooltipTrigger
                     render={
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon-sm"
                         aria-label={`Delete ${node.label}`}
                         disabled={protectedNode}

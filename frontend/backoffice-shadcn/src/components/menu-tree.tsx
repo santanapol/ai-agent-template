@@ -16,6 +16,18 @@ interface MenuTreeProps {
   renderActions?: (node: MenuTreeNode) => React.ReactNode;
 }
 
+export type MenuTreeRowProps = {
+  node: MenuTreeNode;
+  depth: number;
+  defaultExpanded?: boolean;
+  checkable?: boolean;
+  checkedKeys?: string[];
+  onCheckedChange?: (keys: string[]) => void;
+  isCheckboxDisabled?: (key: string) => boolean;
+  getCheckboxTooltip?: (key: string) => string | undefined;
+  renderActions?: (node: MenuTreeNode) => React.ReactNode;
+};
+
 function collectDescendantKeys(node: MenuTreeNode): string[] {
   const keys = [node.key];
   node.children?.forEach((child) => {
@@ -39,6 +51,31 @@ function applyCascadeToggle(
   return [...set];
 }
 
+function MenuTreeRowShell({
+  depth,
+  label,
+  actions,
+  collapsibleTrigger,
+}: {
+  depth: number;
+  label: React.ReactNode;
+  actions?: React.ReactNode;
+  collapsibleTrigger?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
+      style={{ paddingLeft: depth * 16 + 8 }}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        {collapsibleTrigger}
+        {label}
+      </div>
+      {actions}
+    </div>
+  );
+}
+
 function MenuTreeNodeRow({
   node,
   depth,
@@ -49,17 +86,7 @@ function MenuTreeNodeRow({
   isCheckboxDisabled,
   getCheckboxTooltip,
   renderActions,
-}: {
-  node: MenuTreeNode;
-  depth: number;
-  defaultExpanded?: boolean;
-  checkable?: boolean;
-  checkedKeys?: string[];
-  onCheckedChange?: (keys: string[]) => void;
-  isCheckboxDisabled?: (key: string) => boolean;
-  getCheckboxTooltip?: (key: string) => string | undefined;
-  renderActions?: (node: MenuTreeNode) => React.ReactNode;
-}) {
+}: MenuTreeRowProps) {
   const hasChildren = Boolean(node.children?.length);
   const [open, setOpen] = useState(defaultExpanded ?? true);
   const checked = checkedKeys?.includes(node.key) ?? false;
@@ -89,37 +116,29 @@ function MenuTreeNodeRow({
     </div>
   );
 
+  const actions = renderActions?.(node);
+
   if (!hasChildren) {
-    return (
-      <div
-        className="flex items-center justify-between gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
-        style={{ paddingLeft: depth * 16 + 8 }}
-      >
-        {label}
-        {renderActions?.(node)}
-      </div>
-    );
+    return <MenuTreeRowShell depth={depth} label={label} actions={actions} />;
   }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div
-        className="flex items-center justify-between gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
-        style={{ paddingLeft: depth * 16 + 8 }}
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-1">
+      <MenuTreeRowShell
+        depth={depth}
+        label={label}
+        actions={actions}
+        collapsibleTrigger={
           <CollapsibleTrigger
             className={cn(
-              'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted'
+              'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted',
             )}
             aria-label={open ? 'Collapse' : 'Expand'}
           >
             <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} />
           </CollapsibleTrigger>
-          {label}
-        </div>
-        {renderActions?.(node)}
-      </div>
+        }
+      />
       <CollapsibleContent>
         <MenuTree
           nodes={node.children ?? []}
@@ -149,7 +168,7 @@ function MenuTree({
   renderActions,
 }: MenuTreeProps & { depth?: number }) {
   return (
-    <div role={depth === 0 ? 'tree' : undefined} className={depth === 0 ? 'space-y-0.5' : undefined}>
+    <div role={depth === 0 ? 'tree' : undefined} className={depth === 0 ? 'flex flex-col gap-0.5' : undefined}>
       {nodes.map((node) => (
         <div key={node.key} role="treeitem" aria-expanded={node.children?.length ? true : undefined}>
           <MenuTreeNodeRow
@@ -169,4 +188,4 @@ function MenuTree({
   );
 }
 
-export { MenuTree };
+export { MenuTree, MenuTreeRowShell };

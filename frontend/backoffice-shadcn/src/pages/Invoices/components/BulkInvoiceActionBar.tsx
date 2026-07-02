@@ -29,7 +29,7 @@ export function BulkInvoiceActionBar({
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border bg-background px-5 py-3 shadow-lg">
+    <div className="fixed bottom-6 left-1/2 z-[var(--z-sticky)] -translate-x-1/2 rounded-xl border bg-background px-5 py-3 shadow-lg">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">Selected {selectedCount}</span>
         {canWrite ? (

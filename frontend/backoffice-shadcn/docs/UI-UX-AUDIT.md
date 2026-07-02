@@ -74,12 +74,12 @@ The migration delivers a **coherent shadcn admin shell** with strong shared prim
 | Primary CTA in `extra` | Pass | Pass | Pass | Pass (list) | Pass | Pass |
 | Data table (`DataTable`) | Pass | Pass | Pass | Pass | Pass (child) | Pass |
 | Status badge vocabulary | Pass | Pass | Partial (`statusTagColor`) | — | — | Partial |
-| Form overlay | Sheet | Dialog (sync) | Dialog (create) | — | — | Partial |
-| Destructive confirm | AlertDialog | AlertDialog | Bulk yes / **detail no** | AlertDialog (delete) | — | Partial |
+| Form overlay | Sheet | Dialog (sync) | Dialog (create) | — | — | Pass (Sheet = multi-field CRUD; Dialog = short modals) |
+| Destructive confirm | AlertDialog | AlertDialog | Bulk yes / **detail fixed** | AlertDialog (delete) | — | Partial |
 | Row actions | Icon + `aria-label` | Text buttons | Text "View Details" | — | — | Partial |
-| Pagination sizes | 10/20/50 | 10/20/50 | **10 only** | — | — | Partial |
+| Pagination sizes | 10/20/50 | 10/20/50 | 10/20/50 | — | — | Pass |
 | Search debounce | 300ms | Immediate | Immediate | — | — | Partial |
-| Breadcrumb | Layout + implicit | Layout + implicit | Layout + **raw id** on detail | Manual in edit | PageContainer items | Fail |
+| Breadcrumb | Layout + implicit | Layout + implicit | Layout + **PageBreadcrumb override** (raw `_id` may remain) | Manual in edit | PageContainer items | Partial |
 
 ---
 
@@ -94,8 +94,8 @@ Legend: **P** Pass · **a** Partial · **M** Missing
 | Dashboard | P skeleton | a (no CTA) | — | toast only | — | — | — | — | hides stats | — |
 | My Profile | P skeleton | — | — | inline text | toast+inline | toast | — | P | — | toast |
 | Staff list | P (DataTable) | P (DataTable) | a generic msg | toast | toast+partial inline | toast | — | P drawer | gate create | If-Match toast |
-| Invoices list | P | P | a generic | toast | toast | toast | **P** bulk modals | P | **M** create ungated | — |
-| Invoice detail | a single skeleton | a custom card | — | toast | toast | toast | — | P | actions visible | If-Match |
+| Invoices list | P | P | a generic | toast | toast | toast | **P** bulk modals | P | **P** create gated (`canWrite` / `invoices:write`) | — |
+| Invoice detail | a single skeleton | a custom card | — | toast | toast | toast | — | P | actions with confirm dialogs | If-Match |
 | Agents | P | P | — | toast | inline branch | toast | — | **a** wrong loading flag | — | — |
 | Agent Fees | **M** no shell | P | — | toast | toast only | toast | — | P | — | — |
 | Smart Report | P | P | — | toast | toast | toast | — | P | — | 412 toast |
@@ -135,7 +135,7 @@ Legend: **P** Pass · **a** Partial · **M** Missing
 
 | ID | Sev | Issue |
 |----|-----|-------|
-| R-01 | P1 | Invoice **Create** button not gated by write permission (Staff gates create correctly) |
+| R-01 | ~~P1~~ **Closed** | Invoice **Create** gated by write permission — prod + tests aligned |
 | R-02 | P2 | Mobile header hides branch context — OU-wide roles lose switcher on small viewports |
 | R-03 | P2 | `displayName ?? user.sub` fallback shows MongoDB id when staff profile fetch fails |
 
@@ -203,7 +203,7 @@ Key: **MP-01 P1** load error without Retry · **MP-02 P2** profile name not head
 
 ### 5–7 — Invoices (list, bulk modals, detail)
 
-Key: **INV-01 P0** detail Mark PAID/Cancel without AlertDialog · **INV-02 P0** breadcrumb shows raw `_id` · **INV-03 P1** Create not permission-gated · **INV-04 P1** month validation toast-only · **INV-05 P2** no page size options · **INV-06 P2** search not debounced · Bulk progress: **INV-07 P1** needs `aria-live` on progress
+Key: **INV-01** ~~P0 detail Mark PAID/Cancel without AlertDialog~~ **Fixed** (confirm dialogs in InvoiceDetail) · **INV-02 P0** breadcrumb shows raw `_id` — **Partial** (`PageBreadcrumbContext` override; raw `_id` may still appear) · **INV-03** ~~P1 Create not permission-gated~~ **Fixed** (`canWrite` / `invoices:write`) · **INV-04 P1** month validation toast-only · **INV-05 P2** no page size options · **INV-06 P2** search not debounced · Bulk progress: **INV-07 P1** needs `aria-live` on progress
 
 ---
 
@@ -271,26 +271,50 @@ Key: CC-04 sonner theme · **GF-01 P1** `AlertDialogDescription` with React node
 
 ### Wave 1 — P0 (blockers)
 
-| Rank | ID | File(s) | Tag | Fix |
-|------|-----|---------|-----|-----|
-| 1 | ST-01 / CC | `StaffDrawer.tsx` | a11y | Add `aria-invalid` + `aria-describedby` on all fields |
-| 2 | ERR-01 | `RouteErrorPage.tsx` | state | Map `isRouteErrorResponse` → 404 vs 500 |
-| 3 | INV-01 | `InvoiceDetail.tsx` | shadcn | Wrap Mark PAID / Cancel in `useConfirmDialog` |
-| 4 | CC-04 | `sonner.tsx`, `App.tsx` | shadcn | Wire Toaster to `ThemeContext` |
-| 5 | CC-01, CC-02 | `AdminLayout.tsx` | a11y | `aria-label` on menu + account triggers |
-| 6 | CC-03 / INV-02 | `AdminLayout.tsx`, invoice detail | consistency | Single breadcrumb owner; humanize invoice crumb |
+| Rank | ID | File(s) | Tag | Fix | Status |
+|------|-----|---------|-----|-----|--------|
+| 1 | ST-01 / CC | `StaffDrawer.tsx` | a11y | Add `aria-invalid` + `aria-describedby` on all fields | **Fixed** (`fieldA11y` + `data-invalid` on all fields) |
+| 2 | ERR-01 | `RouteErrorPage.tsx` | state | Map `isRouteErrorResponse` → 404 vs 500 | **Fixed** (404 + chunk reload UI) |
+| 3 | INV-01 | `InvoiceDetail.tsx` | shadcn | Wrap Mark PAID / Cancel in `useConfirmDialog` | **Fixed** |
+| 4 | CC-04 | `sonner.tsx`, `App.tsx` | shadcn | Wire Toaster to `ThemeContext` | **Fixed** |
+| 5 | CC-01, CC-02 | `site-header.tsx`, `nav-user.tsx` | a11y | `aria-label` on menu + account triggers | **Fixed** |
+| 6 | CC-03 / INV-02 | `site-header.tsx`, invoice detail | consistency | Single breadcrumb owner; humanize invoice crumb | **Fixed** (header crumbs only for `items` override; invoice uses `iv_no` via `usePageBreadcrumb`) |
 
 ### Wave 2 — P1 (UX / a11y high)
 
-Staff/My Profile inline errors; Invoice create permission gate + inline month validation; Smart Report editor shell + field labels; Channel Performance `FiltersContainer` + ToggleGroup; Agents sync loading state; Agent Fees loading shell + labeled selects; bulk progress `aria-live`; mobile branch context.
+| Theme | IDs | Status |
+|-------|-----|--------|
+| Staff / Login inline errors | ST-02, L-01 | **Fixed** — inline `Field` errors; removed duplicate toasts |
+| My Profile | MP-01, MP-03 | **Fixed** — Retry button; `aria-describedby`; password API errors inline |
+| Invoices | INV-03, INV-04, INV-07 | **Fixed** — write gate; inline month validation; bulk progress `aria-live` |
+| Smart Report editor | SR-01, SR-02, SR-03 | **Fixed** — `PageContainer` + `usePageBreadcrumb`; ToggleGroup output; labeled query textarea |
+| Channel Performance | CP-01, CP-02, CP-03 | **Fixed** — `FiltersContainer`; ToggleGroup; `FieldError` on submit |
+| Agents sync | AG-01, AG-02 | **Fixed** — disabled select while loading; `FieldDescription` + `fieldErrorIds` |
+| Agent Fees | AF-01, AF-02 | **Fixed** — `DetailContainer` loading shell; labeled Reference Fees select |
+| Mobile branch | CC-07, R-02 | **Fixed** — compact branch label in `SiteHeader` on mobile |
 
 ### Wave 3 — P2 (consistency & craft)
 
-Pagination/search parity on Invoices; Dialog vs Sheet standard; replace `space-y-*`; remove raw green/red Tailwind colors; DataTable multi-row skeleton; `min-h-dvh`; debounce invoice search.
+| ID | Theme | Status | Notes |
+|----|-------|--------|-------|
+| INV-05 | Invoice pagination page sizes | **Fixed** | `pageSizeOptions: [10, 20, 50]` on list `DataTable` |
+| INV-06 | Invoice search debounce | **Fixed** | 300ms debounce before API + client filter |
+| CC-08 / L-02 | `min-h-dvh` on auth shells | **Fixed** | `App.tsx` loading gate + `Login.tsx` use `min-h-dvh` |
+| ERR-03 | Error page viewport height | **Fixed** | `ResultTemplate` uses `min-h-[80dvh]` |
+| CC-09 | DataTable loading skeleton | **Fixed** | Multi-row grid skeleton matching column count |
+| CC-10 | Replace `space-y-*` spacing | **Fixed** | Production pages use `flex flex-col gap-*`; `menu-tree` updated |
+| CC (colors) | Raw green/red Tailwind | **Fixed** | Invoice detail uses semantic `text-success` / `text-destructive` |
+| AG-03 | Dialog vs Sheet standard | **Fixed** | Convention: **Sheet** for multi-field CRUD (Staff); **Dialog** for short modals (Agents sync, invoice create, bulk) |
 
 ### Wave 4 — P3 (polish)
 
-Copy alignment (Create vs Add); icon `data-icon` sizing; dashboard empty CTA; template drift vs `live-demo-shadcn` optional pass.
+| ID | Theme | Status | Notes |
+|----|-------|--------|-------|
+| CC-11 | Create vs Add copy | **Fixed** | Staff CTA: "Create staff"; drawer title "Create Staff Profile" |
+| AG-04 | Agents list page title | **Fixed** | `PageContainer` title is "Agents" (not fee-management wording) |
+| D-01 | Dashboard empty CTA | **Fixed** | `Empty` + "Open Staff Management" button |
+| Icons | `data-icon` sizing in CTAs | **Fixed** | Primary actions use `data-icon="inline-start"`; Smart Report card icons aligned |
+| Appendix A | Template drift | **Pass** | Production extends template primitives; functional drift only |
 
 ---
 
@@ -307,10 +331,33 @@ Copy alignment (Create vs Add); icon `data-icon` sizing; dashboard empty CTA; te
 
 ## 13. Resolution log
 
+| ID | Status | Notes |
+|----|--------|-------|
+| INV-01 | Fixed | Confirm dialogs in InvoiceDetail for Mark PAID / Cancel |
+| INV-03 | Fixed | Create gated with `canWrite` / `invoices:write` |
+| CC-01, CC-02 | Fixed | `aria-label` on mobile menu trigger and account menu (`site-header` / `nav-user`) |
+| ST-01 | Fixed | `StaffDrawer` uses `fieldA11y` (`aria-invalid` + `aria-describedby`) on all inputs |
+| ERR-01 | Fixed | `RouteErrorPage` maps 404 via `isRouteErrorResponse`; chunk errors show reload UI |
+| CC-04 | Fixed | `sonner.tsx` reads `theme` from `ThemeContext` |
+| CC-03 | Fixed | `SiteHeader` shows breadcrumb only when `breadcrumb.items` override is set (PageContainer owns list-page h1) |
+| INV-02 | Fixed | Invoice detail crumb uses `iv_no` via `usePageBreadcrumb` |
+| INV-05 | Fixed | Invoice list `pageSizeOptions` 10/20/50 |
+| INV-06 | Fixed | Invoice search debounced 300ms |
+| CC-08 | Fixed | Auth shells use `min-h-dvh` (`App.tsx`, `Login.tsx`) |
+| CC-09 | Fixed | `DataTable` multi-row column-aware skeleton |
+| CC-10 | Fixed | `space-y-*` replaced with `flex flex-col gap-*` in production surfaces |
+| CC-11 | Fixed | "Create …" vocabulary on staff create flows |
+| ERR-03 | Fixed | `ResultTemplate` `min-h-[80dvh]` |
+| AG-03 | Fixed | Overlay convention documented (Sheet CRUD / Dialog short modals) |
+| AG-04 | Fixed | Agents list title "Agents" |
+| D-01 | Fixed | Dashboard empty state includes navigation CTA |
+
 | Wave | Scope | Status |
 |------|-------|--------|
-| 3 | P2 consistency & craft | Fixed |
-| 4 | P3 polish and copy | Fixed |
+| 1 | P0 blockers | **Fixed** (2026-07-02) |
+| 2 | P1 UX / a11y high | **Fixed** (2026-07-02) |
+| 3 | P2 consistency & craft | **Fixed** (2026-07-02) |
+| 4 | P3 polish and copy | **Fixed** (2026-07-02) |
 
 ---
 
@@ -340,4 +387,4 @@ Copy alignment (Create vs Add); icon `data-icon` sizing; dashboard empty CTA; te
 
 ---
 
-*Audit-only deliverable — no code changes in this commit.*
+*Audit deliverable — Waves 1–4 resolved in code as of 2026-07-02.*

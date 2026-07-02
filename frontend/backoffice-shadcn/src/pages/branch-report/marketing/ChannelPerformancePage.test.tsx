@@ -1,14 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ChannelPerformancePage from './ChannelPerformancePage';
 import { renderWithProviders } from '../../../test/renderWithProviders';
 
 const mockGetInviteLinks = vi.fn();
 const mockGetRoyalty21Times = vi.fn();
+const mockFeedback = vi.hoisted(() => ({
+  message: { success: vi.fn(), error: vi.fn() },
+}));
 
-vi.mock('../../../lib/branchReportApiClient', () => ({
-  getInviteLinks: (...args: unknown[]) => mockGetInviteLinks(...args),
-  getRoyalty21Times: (...args: unknown[]) => mockGetRoyalty21Times(...args),
+vi.mock('../../../lib/branchReportApiClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../lib/branchReportApiClient')>();
+  return {
+    ...actual,
+    getInviteLinks: (...args: unknown[]) => mockGetInviteLinks(...args),
+    getRoyalty21Times: (...args: unknown[]) => mockGetRoyalty21Times(...args),
+  };
+});
+
+vi.mock('../../../hooks/useAppFeedback', () => ({
+  useAppFeedback: () => mockFeedback,
 }));
 
 const mockUseAuth = vi.fn();
@@ -79,5 +91,35 @@ describe('ChannelPerformancePage', () => {
 
     expect(await screen.findByText('Branch changed')).toBeInTheDocument();
     expect(screen.getByText('Please search again to refresh this report.')).toBeInTheDocument();
+  });
+
+  it('fetches royalty report when search is submitted', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ChannelPerformancePage />);
+
+    await waitFor(() => {
+      expect(mockGetInviteLinks).toHaveBeenCalled();
+    });
+
+    await user.click(screen.getByRole('button', { name: /^direct$/i }));
+    await user.click(screen.getByRole('button', { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(mockGetRoyalty21Times).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('shows error toast when royalty fetch fails after search', async () => {
+    mockGetRoyalty21Times.mockRejectedValue(new Error('network'));
+
+    const user = userEvent.setup();
+    renderWithProviders(<ChannelPerformancePage />);
+
+    await user.click(screen.getByRole('button', { name: /^direct$/i }));
+    await user.click(screen.getByRole('button', { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalled();
+    });
   });
 });

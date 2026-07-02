@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -145,11 +146,18 @@ export function DataTable<T>({
     }
   };
 
+  const selectableIds = useMemo(
+    () =>
+      rowSelection
+        ? data
+            .filter((row) => !rowSelection.getRowDisabled?.(row))
+            .map((row, rowIndex) => getRowIdValue(row, rowKey, rowIndex))
+        : [],
+    [data, rowKey, rowSelection],
+  );
+
   const toggleAll = () => {
     if (!rowSelection) return;
-    const selectableIds = data
-        .filter((row) => !rowSelection.getRowDisabled?.(row))
-        .map((row) => getRowIdValue(row, rowKey, 0));
     const allSelected = selectableIds.every((id) => rowSelection.selectedKeys.includes(id));
     if (allSelected) {
       rowSelection.onChange(rowSelection.selectedKeys.filter((id) => !selectableIds.includes(id)));
@@ -221,20 +229,19 @@ export function DataTable<T>({
     );
   }
 
-  const rows = isServerPagination ? table.getRowModel().rows : table.getRowModel().rows;
+  const rows = table.getRowModel().rows;
   const serverTotalPages = pagination ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize)) : 1;
   const clientPageIndex = table.getState().pagination.pageIndex;
   const clientTotalPages = table.getPageCount();
 
-  const selectableIds = rowSelection
-    ? data
-        .filter((row) => !rowSelection.getRowDisabled?.(row))
-        .map((row, rowIndex) => getRowIdValue(row, rowKey, rowIndex))
-    : [];
   const allSelected =
     rowSelection &&
     selectableIds.length > 0 &&
     selectableIds.every((id) => rowSelection.selectedKeys.includes(id));
+  const someSelected =
+    rowSelection &&
+    selectableIds.some((id) => rowSelection.selectedKeys.includes(id)) &&
+    !allSelected;
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -244,9 +251,10 @@ export function DataTable<T>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {rowSelection ? (
-                  <TableHead scope="col" className="w-10">
+                  <TableHead scope="col" className="w-10 px-2">
                     <Checkbox
-                      checked={allSelected}
+                      checked={Boolean(allSelected)}
+                      indeterminate={Boolean(someSelected)}
                       onCheckedChange={toggleAll}
                       aria-label="Select all rows"
                     />
@@ -277,7 +285,7 @@ export function DataTable<T>({
               return (
                 <TableRow key={row.id} data-state={selected ? 'selected' : undefined}>
                   {rowSelection ? (
-                    <TableCell>
+                    <TableCell className="w-10 px-2">
                       <Checkbox
                         checked={selected}
                         disabled={disabled}
@@ -316,17 +324,23 @@ export function DataTable<T>({
             {pagination.pageSizeOptions ? (
               <Select
                 value={String(pagination.pageSize)}
+                items={pagination.pageSizeOptions.map((size) => ({
+                  value: String(size),
+                  label: `${size} / page`,
+                }))}
                 onValueChange={(val) => pagination.onChange(1, Number(val))}
               >
                 <SelectTrigger className="w-[100px]" aria-label="Rows per page">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {pagination.pageSizeOptions.map((size) => (
-                    <SelectItem key={size} value={String(size)}>
-                      {size} / page
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {pagination.pageSizeOptions.map((size) => (
+                      <SelectItem key={size} value={String(size)}>
+                        {size} / page
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             ) : null}

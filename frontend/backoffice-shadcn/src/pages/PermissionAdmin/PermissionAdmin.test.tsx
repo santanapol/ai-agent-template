@@ -5,10 +5,17 @@ import PermissionAdmin from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 
 const listAdminMenus = vi.fn();
+const mockFeedback = vi.hoisted(() => ({
+  message: { success: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock('../../lib/authApiClient', () => ({
   listAdminMenus: (...args: unknown[]) => listAdminMenus(...args),
   listRolePermissions: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../../hooks/useAppFeedback', () => ({
+  useAppFeedback: () => mockFeedback,
 }));
 
 describe('PermissionAdmin', () => {
@@ -46,5 +53,31 @@ describe('PermissionAdmin', () => {
     await user.click(screen.getByRole('tab', { name: /role permissions/i }));
     expect(screen.getByTestId('role-permissions-tab')).toBeInTheDocument();
     expect(listAdminMenus.mock.calls.length).toBeGreaterThan(callsBeforeRoleTab);
+  });
+
+  it('shows API error toast when menu catalog load fails', async () => {
+    listAdminMenus.mockRejectedValue(new Error('network'));
+
+    renderWithProviders(<PermissionAdmin />);
+
+    await screen.findByTestId('menu-catalog-tab');
+    expect(mockFeedback.message.error).toHaveBeenCalled();
+  });
+
+  it('shows 403 fallback when menu catalog API returns forbidden', async () => {
+    const err = new Error('Forbidden') as import('axios').AxiosError;
+    err.isAxiosError = true;
+    err.response = {
+      status: 403,
+      statusText: 'Forbidden',
+      data: {},
+      headers: {},
+      config: { headers: {} } as import('axios').InternalAxiosRequestConfig,
+    };
+    listAdminMenus.mockRejectedValue(err);
+
+    renderWithProviders(<PermissionAdmin />);
+
+    expect(await screen.findByText('403 Forbidden')).toBeInTheDocument();
   });
 });
