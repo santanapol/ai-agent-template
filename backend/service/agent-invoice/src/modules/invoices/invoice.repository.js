@@ -166,7 +166,7 @@ export async function findManyByFilter({ filter, skip, limit }) {
     .toArray();
 }
 
-export async function findById(ivId, ouId) {
+export async function findById(ivId, ouId, branchId) {
   const db = getInvoiceDatabase();
 
   /** @type {import('mongodb').Filter<import('mongodb').Document>} */
@@ -177,12 +177,16 @@ export async function findById(ivId, ouId) {
     filter.ou_id = new ObjectId(ouId);
   }
 
+  if (branchId) {
+    filter.branch_id = new ObjectId(branchId);
+  }
+
   return db.collection(COLLECTION).findOne(filter, {
     projection: { _id: 1, ou_id: 1, branch_id: 1, status: 1, upd_date: 1 },
   });
 }
 
-export async function findDetailById(ivId, ouId) {
+export async function findDetailById(ivId, ouId, branchId) {
   const db = getInvoiceDatabase();
 
   /** @type {import('mongodb').Filter<import('mongodb').Document>} */
@@ -191,6 +195,10 @@ export async function findDetailById(ivId, ouId) {
 
   if (ouId) {
     filter.ou_id = new ObjectId(ouId);
+  }
+
+  if (branchId) {
+    filter.branch_id = new ObjectId(branchId);
   }
 
   return db

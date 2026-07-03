@@ -16,12 +16,12 @@ import * as masterDataRepo from "./master-data.repository.js";
 
  */
 
-export async function getInvoiceDetail({ id, ouId }) {
+export async function getInvoiceDetail({ id, ouId, scopeBranchId }) {
   if (!isValidObjectId(id)) {
     return { success: false, code: "INVALID_PARAM" };
   }
 
-  const invoice = await invoiceRepo.findDetailById(id, ouId);
+  const invoice = await invoiceRepo.findDetailById(id, ouId, scopeBranchId);
 
   if (!invoice) {
     return { success: false, code: "RESOURCE_NOT_FOUND" };

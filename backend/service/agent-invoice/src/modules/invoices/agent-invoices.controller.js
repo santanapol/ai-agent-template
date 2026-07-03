@@ -1,3 +1,5 @@
+import { canSwitchActiveBranchRole } from "@zero-platform/roles";
+
 import { toDatastoreHttpError } from "../../lib/mongo-errors.js";
 import {
   httpStatusForCode,
@@ -11,6 +13,7 @@ import { calculateFee } from "./calculate-fee.service.js";
 import { generateInvoices } from "./generate.service.js";
 import { getInvoiceDetail } from "./get-detail.service.js";
 import { listInvoiceAgents } from "./list-invoice-agents.service.js";
+import { resolveListInvoicesRequestQuery } from "./list-invoices.query.js";
 import { listInvoices } from "./list-invoices.service.js";
 import { listInvoiceTransactions } from "./list-transactions.service.js";
 import { updateInvoiceStatus } from "./update-status.service.js";
@@ -36,6 +39,15 @@ function sendCaughtError(request, reply, err, logMessage) {
     message: mapped?.message ?? INTERNAL_ERROR_MESSAGE,
     requestId,
   });
+}
+
+/**
+ * @param {{ branchId?: string, role?: string }} userContext
+ * @returns {string | undefined}
+ */
+function resolveScopeBranchId(userContext) {
+  const { branchId: activeBranchId, role } = userContext;
+  return canSwitchActiveBranchRole(role) ? undefined : activeBranchId;
 }
 
 function sendServiceResult(reply, result, requestId) {
@@ -73,8 +85,16 @@ function sendServiceResult(reply, result, requestId) {
 }
 
 export async function postGenerate(request, reply) {
-  const { id: actor, ouId } = request.userContext;
-  const { month, branch_id: branchId } = request.body ?? {};
+  const {
+    id: actor,
+    ouId,
+    branchId: activeBranchId,
+    role,
+  } = request.userContext;
+  const { month, branch_id: bodyBranchId } = request.body ?? {};
+  const branchId = canSwitchActiveBranchRole(role)
+    ? bodyBranchId
+    : activeBranchId;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
 
   try {
@@ -110,6 +130,7 @@ export async function postGenerate(request, reply) {
 
 export async function postCalculateFee(request, reply) {
   const { id: actor, ouId } = request.userContext;
+  const scopeBranchId = resolveScopeBranchId(request.userContext);
   const { iv_id: ivId, action } = request.body;
   const ifMatch = request.headers["if-match"];
   const requestId = resolveRequestId(request.headers["x-request-id"]);
@@ -121,6 +142,7 @@ export async function postCalculateFee(request, reply) {
       ifMatch,
       actor,
       ouId,
+      scopeBranchId,
       log: request.log,
     });
     return sendServiceResult(reply, result, requestId);
@@ -130,12 +152,13 @@ export async function postCalculateFee(request, reply) {
 }
 
 export async function getInvoiceList(request, reply) {
-  const { ouId, branchId } = request.userContext;
+  const { ouId, branchId: activeBranchId, role } = request.userContext;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
-  const query = {
-    ...(request.query ?? {}),
-    ...(!request.query?.branch_id && branchId ? { branch_id: branchId } : {}),
-  };
+  const rawQuery = request.query ?? {};
+  const query = resolveListInvoicesRequestQuery(rawQuery, {
+    role,
+    activeBranchId,
+  });
 
   try {
     const result = await listInvoices({
@@ -149,13 +172,15 @@ export async function getInvoiceList(request, reply) {
 }
 
 export async function getInvoiceAgents(request, reply) {
-  const { ouId, branchId } = request.userContext;
+  const { ouId, branchId, role } = request.userContext;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
 
   try {
     const result = await listInvoiceAgents({
       ouId,
       ensureBranchIds: branchId ? [branchId] : [],
+      // Branch-pinned roles only ever see their own branch in the picker.
+      restrictBranchId: canSwitchActiveBranchRole(role) ? undefined : branchId,
     });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
@@ -170,11 +195,12 @@ export async function getInvoiceAgents(request, reply) {
 
 export async function getAgentInvoiceDetail(request, reply) {
   const { ouId } = request.userContext;
+  const scopeBranchId = resolveScopeBranchId(request.userContext);
   const { id } = request.params;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
 
   try {
-    const result = await getInvoiceDetail({ id, ouId });
+    const result = await getInvoiceDetail({ id, ouId, scopeBranchId });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(request, reply, err, "get-detail request failed");
@@ -183,11 +209,12 @@ export async function getAgentInvoiceDetail(request, reply) {
 
 export async function getInvoiceTransactions(request, reply) {
   const { ouId } = request.userContext;
+  const scopeBranchId = resolveScopeBranchId(request.userContext);
   const { id } = request.params;
   const requestId = resolveRequestId(request.headers["x-request-id"]);
 
   try {
-    const result = await listInvoiceTransactions({ id, ouId });
+    const result = await listInvoiceTransactions({ id, ouId, scopeBranchId });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(
@@ -201,6 +228,7 @@ export async function getInvoiceTransactions(request, reply) {
 
 export async function putInvoiceStatus(request, reply) {
   const { id: actor, ouId } = request.userContext;
+  const scopeBranchId = resolveScopeBranchId(request.userContext);
   const { id } = request.params;
   const { status } = request.body ?? {};
   const ifMatch = request.headers["if-match"];
@@ -213,6 +241,7 @@ export async function putInvoiceStatus(request, reply) {
       actor,
       ouId,
       ifMatch,
+      scopeBranchId,
     });
     return sendServiceResult(reply, result, requestId);
   } catch (err) {

@@ -23,6 +23,7 @@ export async function updateInvoiceStatus({
   actor,
   ouId,
   ifMatch,
+  scopeBranchId,
   _repos,
 }) {
   const repoInvoice = _repos?.invoice ?? invoiceRepo;
@@ -53,7 +54,7 @@ export async function updateInvoiceStatus({
     return { success: false, code: "INVALID_PARAM" };
   }
 
-  const invoice = await repoInvoice.findById(id, ouId);
+  const invoice = await repoInvoice.findById(id, ouId, scopeBranchId);
 
   if (!invoice) {
     return { success: false, code: "RESOURCE_NOT_FOUND" };
@@ -95,7 +96,7 @@ export async function updateInvoiceStatus({
     return { success: false, code: "VERSION_CONFLICT" };
   }
 
-  const updated = await repoInvoice.findDetailById(id, ouId);
+  const updated = await repoInvoice.findDetailById(id, ouId, scopeBranchId);
 
   const recordOuId = String(updated.ou_id);
 

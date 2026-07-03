@@ -40,9 +40,26 @@ export async function mergeEnsuredInvoiceAgentBranches(
 }
 
 /**
- * @param {{ ouId: string, ensureBranchIds?: string[] }} params
+ * @param {{ ouId: string, ensureBranchIds?: string[], restrictBranchId?: string }} params
  */
-export async function listInvoiceAgents({ ouId, ensureBranchIds = [] }) {
+export async function listInvoiceAgents({
+  ouId,
+  ensureBranchIds = [],
+  restrictBranchId,
+}) {
+  // Branch-pinned callers may only see their own branch (never the full OU list).
+  if (restrictBranchId) {
+    const row = await branchRepo.findBranchById(restrictBranchId);
+    if (!row) {
+      return { success: true, code: "SUCCESS", data: [] };
+    }
+    const rowOuId = row.ou_id?.toHexString?.() ?? String(row.ou_id);
+    if (rowOuId !== String(ouId)) {
+      return { success: true, code: "SUCCESS", data: [] };
+    }
+    return { success: true, code: "SUCCESS", data: [mapBranchRow(row)] };
+  }
+
   const items = await branchRepo.findBranchesByOuId(ouId);
   const merged = await mergeEnsuredInvoiceAgentBranches(
     items,
