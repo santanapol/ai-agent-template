@@ -8,5 +8,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/setupTests.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // Ant Design table + debounced search tests exceed 5s under parallel load.
+    testTimeout: 10_000,
+    pool: 'forks',
   },
 });

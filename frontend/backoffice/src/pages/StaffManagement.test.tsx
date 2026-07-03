@@ -81,13 +81,8 @@ describe('StaffManagement', () => {
 
     renderWithProviders(<StaffManagement />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Edit profile/i })).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Edit profile/i })).toBeInTheDocument();
   });
 
   test('hides Add New Staff button when profiles:create is missing', async () => {
@@ -159,8 +154,6 @@ describe('StaffManagement', () => {
 
     renderWithProviders(<StaffManagement />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /View profile/i })).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('button', { name: /View profile/i })).toBeInTheDocument();
   });
 });
