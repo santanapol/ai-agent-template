@@ -1,4 +1,4 @@
-import type { Invoice, InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from '../../types/invoice';
+import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from '../../types/invoice';
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return '-';
@@ -59,16 +59,8 @@ export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): Inv
   return [...transactions].sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
 }
 
-export const INVOICE_SEARCH_FETCH_LIMIT = 100;
-
 /** Matches agent-invoice `ALL_BRANCHES_QUERY` — omit branch filter on list API. */
 export const INVOICE_BRANCH_FILTER_ALL = 'all';
-
-export function filterInvoicesBySearch(invoices: Invoice[], search?: string): Invoice[] {
-  const query = search?.trim().toLowerCase();
-  if (!query) return invoices;
-  return invoices.filter((invoice) => invoice.iv_no.toLowerCase().includes(query));
-}
 
 export function buildInvoiceListQuery(input: {
   page: number;
@@ -78,12 +70,16 @@ export function buildInvoiceListQuery(input: {
   billingMonth?: string;
   status?: string;
 }): ListInvoicesParams {
-  const isSearching = Boolean(input.ivNo?.trim());
-  return {
-    page: isSearching ? 1 : input.page,
-    limit: isSearching ? INVOICE_SEARCH_FETCH_LIMIT : input.limit,
+  const ivNo = input.ivNo?.trim();
+  const params: ListInvoicesParams = {
+    page: input.page,
+    limit: input.limit,
     branch_id: input.branchId ?? INVOICE_BRANCH_FILTER_ALL,
     billing_month: input.billingMonth || undefined,
     status: input.status,
   };
+  if (ivNo) {
+    params.iv_no = ivNo;
+  }
+  return params;
 }

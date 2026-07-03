@@ -52,7 +52,6 @@ import { useInvoiceListFilters } from './hooks/useInvoiceListFilters';
 import type { BulkStatusAction } from './status/types';
 import {
   buildInvoiceListQuery,
-  filterInvoicesBySearch,
   formatDate,
   formatMoney,
   statusTagColor,
@@ -105,7 +104,6 @@ const InvoiceList: React.FC = () => {
     setPage,
     pageSize,
     setPageSize,
-    isInvoiceSearchActive,
   } = useInvoiceListFilters();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -132,13 +130,6 @@ const InvoiceList: React.FC = () => {
       }),
     [page, pageSize, debouncedSearchText, selectedBranchId, billingMonth, selectedStatus],
   );
-
-  const tableInvoices = useMemo(
-    () => filterInvoicesBySearch(invoices, debouncedSearchText),
-    [invoices, debouncedSearchText],
-  );
-
-  const tableTotal = isInvoiceSearchActive ? tableInvoices.length : total;
 
   useEffect(() => {
     void fetchInvoices(invoiceListQuery);
@@ -352,16 +343,15 @@ const InvoiceList: React.FC = () => {
 
           <DataTable
             columns={columns}
-            data={tableInvoices}
+            data={invoices}
             loading={loading}
             rowKey="_id"
             pagination={{
-              page: isInvoiceSearchActive ? 1 : page,
+              page,
               pageSize,
               pageSizeOptions: [10, 20, 50],
-              total: tableTotal,
+              total,
               onChange: (nextPage, nextSize) => {
-                if (isInvoiceSearchActive) return;
                 setPage(nextPage);
                 setPageSize(nextSize);
               },

@@ -38,8 +38,6 @@ export function useInvoiceListFilters() {
     setSearchParams(params, { replace: true });
   }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, setSearchParams]);
 
-  const isInvoiceSearchActive = Boolean(debouncedSearchText.trim());
-
   return {
     searchParams,
     searchText,
@@ -55,6 +53,5 @@ export function useInvoiceListFilters() {
     setPage,
     pageSize,
     setPageSize,
-    isInvoiceSearchActive,
   };
 }
