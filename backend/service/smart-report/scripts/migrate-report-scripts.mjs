@@ -64,7 +64,11 @@ if (options.testRun && !options.dryRun) {
   await connectReadDatabase();
 }
 
-const reports = await db.collection(REPORTS_COLLECTION).find({}).sort({ name: 1 }).toArray();
+const reports = await db
+  .collection(REPORTS_COLLECTION)
+  .find({})
+  .sort({ name: 1 })
+  .toArray();
 /** @type {Array<Record<string, unknown>>} */
 const results = [];
 

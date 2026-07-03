@@ -3,7 +3,10 @@
  * @returns {string}
  */
 export function resolveRunnableScript(report) {
-  if (typeof report.compiledScript === "string" && report.compiledScript.trim()) {
+  if (
+    typeof report.compiledScript === "string" &&
+    report.compiledScript.trim()
+  ) {
     return report.compiledScript;
   }
   throw new Error(
@@ -17,6 +20,7 @@ export function resolveRunnableScript(report) {
  */
 export function hasRunnableCompiledScript(report) {
   return (
-    typeof report.compiledScript === "string" && report.compiledScript.trim() !== ""
+    typeof report.compiledScript === "string" &&
+    report.compiledScript.trim() !== ""
   );
 }

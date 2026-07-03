@@ -194,7 +194,10 @@ if (!RUN) {
         });
       `;
       const result = await runReportScript({ script });
-      assert.deepEqual(result.map((row) => row.value), [20]);
+      assert.deepEqual(
+        result.map((row) => row.value),
+        [20],
+      );
     });
 
     test("compiled find cursor chain from script-compiler runs in sandbox", async () => {

@@ -56,11 +56,7 @@ export default async function reportsRoute(fastify) {
   );
 
   // GET /api/v1/smart-reports/:id
-  fastify.get(
-    "/:id",
-    { schema: getReportSchema },
-    controller.getReportHandler,
-  );
+  fastify.get("/:id", { schema: getReportSchema }, controller.getReportHandler);
 
   // PUT /api/v1/smart-reports/:id
   fastify.put(

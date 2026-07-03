@@ -4,11 +4,11 @@
 
 Compiles existing Booster-style report scripts to `compiledScript` and updates validation fields in MongoDB.
 
-| Flag | Effect |
-|------|--------|
-| `--dry-run` | Compile only; no DB writes or read-DB execution |
-| `--test-run` | Run compiled scripts against `MONGODB_URI_READ` (yesterday date range) |
-| `--fail-on-error` | Exit code 1 if any report fails compile or test-run |
+| Flag              | Effect                                                                 |
+| ----------------- | ---------------------------------------------------------------------- |
+| `--dry-run`       | Compile only; no DB writes or read-DB execution                        |
+| `--test-run`      | Run compiled scripts against `MONGODB_URI_READ` (yesterday date range) |
+| `--fail-on-error` | Exit code 1 if any report fails compile or test-run                    |
 
 **P1 exception:** `Rolling Commission 777WW [New] P1` is set to `enabled: false` (uses `insert()`). It is skipped from compile/test and does not count as a migration failure.
 
@@ -35,7 +35,7 @@ Release 2 cleanup (Phase 5) complete: `prepareBoosterStyleScript` and compile-on
 
 ## Other scripts
 
-| Script | npm command | Purpose |
-|--------|-------------|---------|
-| `init-db.mjs` | `npm run init:db` | Create MongoDB indexes |
-| `seed-example-data.mjs` | `npm run seed:example` | Dev sample reports |
+| Script                  | npm command            | Purpose                |
+| ----------------------- | ---------------------- | ---------------------- |
+| `init-db.mjs`           | `npm run init:db`      | Create MongoDB indexes |
+| `seed-example-data.mjs` | `npm run seed:example` | Dev sample reports     |

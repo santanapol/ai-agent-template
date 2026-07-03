@@ -18,7 +18,10 @@ targetDB.users.aggregate([
     const result = compileBoosterScript(input);
     assert.equal(result.success, true);
     assert.match(result.compiledScript, /^withReport\(async \(\) => \{/);
-    assert.match(result.compiledScript, /return await targetDB\.users\.aggregate/);
+    assert.match(
+      result.compiledScript,
+      /return await targetDB\.users\.aggregate/,
+    );
     assert.doesNotMatch(result.compiledScript, /\.toArray\(\)/);
   });
 
@@ -26,7 +29,10 @@ targetDB.users.aggregate([
     const input = `db.getSiblingDB("demo").items.find({ active: true });`;
     const result = compileBoosterScript(input);
     assert.equal(result.success, true);
-    assert.match(result.compiledScript, /return await db\.getSiblingDB\("demo"\)\.items\.find/);
+    assert.match(
+      result.compiledScript,
+      /return await db\.getSiblingDB\("demo"\)\.items\.find/,
+    );
   });
 
   test("wraps trailing find cursor chain", () => {
@@ -83,8 +89,14 @@ result;
 `;
     const result = compileBoosterScript(input);
     assert.equal(result.success, true);
-    assert.match(result.compiledScript, /const summary = await mainDB\.items\.aggregate/);
-    assert.match(result.compiledScript, /const docs = await mainDB\.items\.find/);
+    assert.match(
+      result.compiledScript,
+      /const summary = await mainDB\.items\.aggregate/,
+    );
+    assert.match(
+      result.compiledScript,
+      /const docs = await mainDB\.items\.find/,
+    );
     assert.match(result.compiledScript, /return result;/);
     assert.doesNotMatch(result.compiledScript, /\.toArray\(\)/);
   });
