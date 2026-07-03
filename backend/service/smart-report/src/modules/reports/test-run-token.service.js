@@ -19,8 +19,9 @@ function getTokenSecret() {
   if (process.env.NODE_ENV === "development") {
     if (!warnedDevFallbackSecret) {
       warnedDevFallbackSecret = true;
-      console.warn(
+      process.emitWarning(
         "[TestRunToken] TEST_RUN_TOKEN_SECRET is not set; using a local-dev fallback. Add TEST_RUN_TOKEN_SECRET to .env (see .env.example).",
+        { code: "TEST_RUN_TOKEN_FALLBACK" },
       );
     }
     return DEV_FALLBACK_SECRET;
