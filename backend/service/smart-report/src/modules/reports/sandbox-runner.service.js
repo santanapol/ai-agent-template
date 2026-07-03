@@ -6,7 +6,10 @@ import {
   SANDBOX_ERROR_CODES,
 } from "./sandbox-runner.errors.js";
 
-export { SandboxRunnerError, SANDBOX_ERROR_CODES } from "./sandbox-runner.errors.js";
+export {
+  SandboxRunnerError,
+  SANDBOX_ERROR_CODES,
+} from "./sandbox-runner.errors.js";
 
 const DEFAULT_REPORT_SCRIPT_TIMEOUT_MS = 120_000;
 
@@ -56,7 +59,9 @@ function createFindCursor(collection, query = {}, options = {}) {
       return chain;
     });
 
-  chain.projection = chainOp((current, projection) => current.project(projection));
+  chain.projection = chainOp((current, projection) =>
+    current.project(projection),
+  );
   chain.project = chain.projection;
   chain.sort = chainOp((current, sort) => current.sort(sort));
   chain.limit = chainOp((current, limit) => current.limit(limit));
@@ -113,11 +118,7 @@ function createSandboxDb(client) {
  * @param {number} [options.timeoutMs] - timeout สูงสุดของการรันสคริปต์ (ค่าเริ่มต้นจาก REPORT_SCRIPT_TIMEOUT_MS หรือ 120s)
  * @returns {Promise<unknown>} ผลลัพธ์จาก expression สุดท้ายของสคริปต์ (Array/Object/primitive)
  */
-export async function runReportScript({
-  script,
-  params = {},
-  timeoutMs,
-}) {
+export async function runReportScript({ script, params = {}, timeoutMs }) {
   if (typeof script !== "string" || script.trim() === "") {
     throw new SandboxRunnerError(
       SANDBOX_ERROR_CODES.INVALID_SCRIPT,

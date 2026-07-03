@@ -93,16 +93,10 @@ describe("migrate-report-scripts.lib", () => {
 
   test("hasMigrationFailures ignores P1 disable", () => {
     assert.equal(
-      hasMigrationFailures([
-        { status: "disabled-p1" },
-        { status: "updated" },
-      ]),
+      hasMigrationFailures([{ status: "disabled-p1" }, { status: "updated" }]),
       false,
     );
-    assert.equal(
-      hasMigrationFailures([{ status: "compile-failed" }]),
-      true,
-    );
+    assert.equal(hasMigrationFailures([{ status: "compile-failed" }]), true);
   });
 
   test("summarizeResults counts by status", () => {

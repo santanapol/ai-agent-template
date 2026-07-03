@@ -90,6 +90,7 @@ export default [
     rules: {
       "no-console": "off",
       "n/hashbang": "off",
+      "security/detect-unsafe-regex": "off",
     },
   },
   prettierConfig,

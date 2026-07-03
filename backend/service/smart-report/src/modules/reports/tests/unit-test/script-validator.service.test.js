@@ -9,13 +9,13 @@ import { parse } from "acorn";
 
 describe("script-validator.service", () => {
   test("getCalleePropertyName reads member call property", () => {
-    const ast = parse('db.col.aggregate([])', { ecmaVersion: 2022 });
+    const ast = parse("db.col.aggregate([])", { ecmaVersion: 2022 });
     const call = ast.body[0].expression;
     assert.equal(getCalleePropertyName(call.callee), "aggregate");
   });
 
   test("unwrapMongoReadExpression strips toArray wrapper", () => {
-    const ast = parse('db.col.aggregate([]).toArray()', { ecmaVersion: 2022 });
+    const ast = parse("db.col.aggregate([]).toArray()", { ecmaVersion: 2022 });
     const call = ast.body[0].expression;
     const inner = unwrapMongoReadExpression(call);
     assert.equal(getCalleePropertyName(inner.callee), "aggregate");
@@ -53,7 +53,9 @@ describe("script-validator.service", () => {
     const update = validateScriptSource(
       'db.getSiblingDB("demo").col.updateOne({}, { $set: { a: 1 } });',
     );
-    const del = validateScriptSource('db.getSiblingDB("demo").col.deleteMany({});');
+    const del = validateScriptSource(
+      'db.getSiblingDB("demo").col.deleteMany({});',
+    );
     assert.equal(update.valid, false);
     assert.equal(del.valid, false);
   });

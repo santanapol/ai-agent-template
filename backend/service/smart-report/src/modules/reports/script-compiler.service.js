@@ -6,7 +6,11 @@ import {
   validateScriptSource,
 } from "./script-validator.service.js";
 
-const PARSE_OPTIONS = { ecmaVersion: 2022, sourceType: "script", locations: true };
+const PARSE_OPTIONS = {
+  ecmaVersion: 2022,
+  sourceType: "script",
+  locations: true,
+};
 
 /**
  * @param {string} source
@@ -18,7 +22,9 @@ function applyPatches(source, patches) {
   let result = source;
   for (const patch of sorted) {
     result =
-      result.slice(0, patch.start) + patch.replacement + result.slice(patch.end);
+      result.slice(0, patch.start) +
+      patch.replacement +
+      result.slice(patch.end);
   }
   return result;
 }

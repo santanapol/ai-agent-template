@@ -31,10 +31,9 @@ if (!RUN) {
     before(async () => {
       const db = await connectDatabase();
       await db.collection(FIXTURE_COLLECTION).deleteMany({});
-      await db.collection(FIXTURE_COLLECTION).insertMany([
-        { label: "alpha" },
-        { label: "beta" },
-      ]);
+      await db
+        .collection(FIXTURE_COLLECTION)
+        .insertMany([{ label: "alpha" }, { label: "beta" }]);
       await connectReadDatabase();
       app = await buildApp();
     });

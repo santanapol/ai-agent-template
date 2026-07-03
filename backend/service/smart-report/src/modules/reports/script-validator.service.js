@@ -1,9 +1,19 @@
 import { parse } from "acorn";
 import * as walk from "acorn-walk";
 
-const CURSOR_CHAIN_OPS = new Set(["projection", "project", "sort", "limit", "skip"]);
+const CURSOR_CHAIN_OPS = new Set([
+  "projection",
+  "project",
+  "sort",
+  "limit",
+  "skip",
+]);
 const READ_OPS = new Set(["aggregate", "find", "findOne"]);
-const FORBIDDEN_MEMBER_NAMES = new Set(["constructor", "__proto__", "prototype"]);
+const FORBIDDEN_MEMBER_NAMES = new Set([
+  "constructor",
+  "__proto__",
+  "prototype",
+]);
 
 export const WRITE_OPS = new Set([
   "insert",
@@ -26,7 +36,10 @@ const PARSE_OPTIONS = { ecmaVersion: 2022, sourceType: "script" };
  * @returns {string | null}
  */
 export function getCalleePropertyName(callee) {
-  if (callee?.type === "MemberExpression" && callee.property?.type === "Identifier") {
+  if (
+    callee?.type === "MemberExpression" &&
+    callee.property?.type === "Identifier"
+  ) {
     return callee.property.name;
   }
   return null;
@@ -53,7 +66,10 @@ export function unwrapMongoReadExpression(node) {
   }
 
   const calleeName = getCalleePropertyName(node.callee);
-  if (calleeName === "toArray" && node.callee.object?.type === "CallExpression") {
+  if (
+    calleeName === "toArray" &&
+    node.callee.object?.type === "CallExpression"
+  ) {
     return unwrapMongoReadExpression(node.callee.object);
   }
 
@@ -84,7 +100,8 @@ export function isDirectDbCollectionAccess(node) {
     node.object?.type === "Identifier" &&
     node.object.name === "db" &&
     (node.computed ||
-      (node.property?.type === "Identifier" && node.property.name !== "getSiblingDB"))
+      (node.property?.type === "Identifier" &&
+        node.property.name !== "getSiblingDB"))
   );
 }
 
@@ -98,7 +115,12 @@ export function validateScriptSource(script) {
   if (typeof script !== "string" || script.trim() === "") {
     return {
       valid: false,
-      errors: [{ message: "Script must be a non-empty string", code: "VALIDATION_FAILED" }],
+      errors: [
+        {
+          message: "Script must be a non-empty string",
+          code: "VALIDATION_FAILED",
+        },
+      ],
     };
   }
 
@@ -134,11 +156,12 @@ export function validateScriptSource(script) {
       }
       if (isDirectDbCollectionAccess(node)) {
         const collectionName =
-          node.property?.type === "Identifier" ? node.property.name : "collection";
+          node.property?.type === "Identifier"
+            ? node.property.name
+            : "collection";
         errors.push({
           line: node.loc?.start.line,
-          message:
-            `Use const targetDB = db.getSiblingDB("your_database_name"); then targetDB.${collectionName} instead of db.${collectionName}.`,
+          message: `Use const targetDB = db.getSiblingDB("your_database_name"); then targetDB.${collectionName} instead of db.${collectionName}.`,
           code: "MISSING_GET_SIBLING_DB",
         });
       }
