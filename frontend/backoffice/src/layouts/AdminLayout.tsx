@@ -34,7 +34,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 import * as staffApi from '../lib/staffApiClient';
 import * as invoicesApi from '../lib/invoicesApiClient';
 import * as authApi from '../lib/authApiClient';
@@ -134,7 +134,8 @@ const AdminLayout: React.FC = () => {
   const { message } = useAppFeedback();
   
   const isMobile = !screens.md;
-  const [collapsed, setCollapsed] = useState(true);
+  const [siderCollapsed, setSiderCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [headerProfile, setHeaderProfile] = useState<{
     firstname: string;
@@ -157,14 +158,6 @@ const AdminLayout: React.FC = () => {
   const activeBranchId = optimisticBranchId ?? user?.branch_id;
   const viewingOtherBranch =
     Boolean(user?.home_branch_id) && activeBranchId !== user?.home_branch_id;
-
-  useEffect(() => {
-    if (isMobile) {
-      setCollapsed(true);
-    } else {
-      setCollapsed(false);
-    }
-  }, [isMobile]);
 
   const handleBranchSwitch = useCallback(
     async (branchId: string) => {
@@ -221,14 +214,13 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !user.branch_id) {
-      setActiveBranch(null);
-      setActiveBranchLoading(false);
       return;
     }
     let cancelled = false;
 
     const cached = getCachedMyBranch(user.branch_id);
     if (cached) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate from session cache before network
       setActiveBranch(cached);
       setActiveBranchLoading(false);
     } else {
@@ -256,14 +248,13 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !showBranchSwitcher) {
-      setBranches([]);
-      setBranchesLoading(false);
       return;
     }
     let cancelled = false;
 
     const cached = getCachedInvoiceAgentBranches(user.ou_id);
     if (cached) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate branch switcher from cache
       setBranches(mergePlatformBranches(cached));
       setBranchesLoading(false);
     } else {
@@ -301,19 +292,19 @@ const AdminLayout: React.FC = () => {
   }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch]);
 
   const branchDisplayLabel = formatActiveBranchLabel(
-    activeBranch,
+    user?.branch_id ? activeBranch : null,
     user?.branch_id,
-    activeBranchLoading,
+    user?.branch_id ? activeBranchLoading : false,
   );
 
   const branchSelectOptions = useMemo(
     () =>
-      branches.map((branch) => ({
+      (showBranchSwitcher ? branches : []).map((branch) => ({
         value: branch.branch_id,
         label: formatBranchOptionLabel(branch),
         disabled: branch.active === false,
       })),
-    [branches],
+    [branches, showBranchSwitcher],
   );
 
   const menuItems = useMemo(() => {
@@ -377,11 +368,11 @@ const AdminLayout: React.FC = () => {
     return keys;
   }, [menus, location.pathname]);
 
-  const [openKeys, setOpenKeys] = useState<string[]>(defaultOpenKeys);
-
-  useEffect(() => {
-    setOpenKeys((prev) => [...new Set([...prev, ...defaultOpenKeys])]);
-  }, [defaultOpenKeys]);
+  const [menuOpenKeys, setMenuOpenKeys] = useState<string[]>([]);
+  const resolvedOpenKeys = useMemo(
+    () => [...new Set([...menuOpenKeys, ...defaultOpenKeys])],
+    [menuOpenKeys, defaultOpenKeys],
+  );
 
   const userMenu = {
     items: [
@@ -433,8 +424,8 @@ const AdminLayout: React.FC = () => {
       {!isMobile ? (
         <Sider
           collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
+          collapsed={siderCollapsed}
+          onCollapse={setSiderCollapsed}
           width={250}
           theme="light"
           style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
@@ -453,14 +444,14 @@ const AdminLayout: React.FC = () => {
               level={4}
               style={{ margin: 0, color: token.colorPrimary, whiteSpace: 'nowrap' }}
             >
-              {collapsed ? 'ZP' : 'Zero Platform'}
+              {siderCollapsed ? 'ZP' : 'Zero Platform'}
             </Typography.Title>
           </div>
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}
-            openKeys={openKeys}
-            onOpenChange={setOpenKeys}
+            openKeys={resolvedOpenKeys}
+            onOpenChange={setMenuOpenKeys}
             style={{ borderRight: 0, marginTop: token.margin }}
             items={menuItems}
             onClick={({ key }) => {
@@ -474,22 +465,22 @@ const AdminLayout: React.FC = () => {
         <Drawer
           title="Zero Platform"
           placement="left"
-          onClose={() => setCollapsed(true)}
-          open={!collapsed}
+          onClose={() => setMobileMenuOpen(false)}
+          open={mobileMenuOpen}
           styles={{ body: { padding: 0 } }}
           width={250}
         >
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}
-            openKeys={openKeys}
-            onOpenChange={setOpenKeys}
+            openKeys={resolvedOpenKeys}
+            onOpenChange={setMenuOpenKeys}
             style={{ borderRight: 0 }}
             items={menuItems}
             onClick={({ key }) => {
               if (key.startsWith('/')) {
                 navigate(key);
-                setCollapsed(true);
+                setMobileMenuOpen(false);
               }
             }}
           />
@@ -512,8 +503,8 @@ const AdminLayout: React.FC = () => {
           {isMobile && (
             <Button
               type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
+              icon={mobileMenuOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{ fontSize: '16px', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             />
           )}

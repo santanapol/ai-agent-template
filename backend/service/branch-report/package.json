@@ -12,7 +12,9 @@
     "start": "node src/server.js",
     "test": "node --test --env-file=.env.test 'src/**/*.test.js' 'test/**/*.test.js'",
     "lint": "eslint src test",
-    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml"
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
+    "spec:consistency": "node scripts/validate-spec-consistency.mjs",
+    "ci": "npm run lint && npm run spec:lint && npm run spec:consistency && npm test"
   },
   "dependencies": {
     "fastify": "^5.8.5",

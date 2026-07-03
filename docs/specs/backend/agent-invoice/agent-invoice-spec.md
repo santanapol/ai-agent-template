@@ -4,7 +4,7 @@ created: 2026-07-03
 updated: 2026-07-03
 owner: Berlin
 last-verified: 2026-07-03
-source-scan: 2026-07-03 — src 75/75 files
+source-scan: 2026-07-03 — src 77/77 files
 ---
 
 # Spec: Agent Invoice Service
@@ -61,7 +61,7 @@ Prefix via gateway: `/api/v1/agent-invoice` and `/api/v1/invoices`
 |--------|------|------------|
 | GET/POST/PUT/DELETE | `/api/v1/agent-invoice/agents/:agentId/fees...` | `agent-fees:*` |
 | GET | `/api/v1/agent-invoice/master-data/game-companies` | `agents:list` |
-| GET | `/api/v1/agent-invoice/master-data/categories` | `agents:list` |
+| GET | `/api/v1/agent-invoice/master-data/game-categories` | `agents:list` |
 
 ### Invoices (`/api/v1/invoices`)
 
@@ -75,14 +75,20 @@ Prefix via gateway: `/api/v1/agent-invoice` and `/api/v1/invoices`
 | GET | `/:id/transactions` | `invoices:read` |
 | PUT | `/:id/status` | `invoices:write` |
 
-## Branch scope (**OBSERVED**)
+## Branch scope (**OBSERVED** — post #46)
+
+Roles ที่สลับสาขาได้ (`canSwitchActiveBranchRole`): `platform_admin`, `support_admin`, `support` — จาก `@zero-platform/roles`.
 
 | Rule | Behavior |
 |------|----------|
-| List default | `GET /invoices` — ถ้าไม่ส่ง `branch_id` → inject `x-user-branch` เป็น filter (`agent-invoices.controller.js`) |
-| Explicit `branch_id` | query override header |
-| OU scope | ทุก query filter ด้วย `ouId` จาก `x-user-ou` |
-| By-id reads | filter `ouId` — branch pin ตาม implementation ปัจจุบัน |
+| OU scope | ทุก read/write filter ด้วย `ouId` จาก `x-user-ou` |
+| List — pinned role | `resolveListInvoicesRequestQuery` **บังคับ** `branch_id` = `x-user-branch` (ไม่รับ override) |
+| List — switchable role, no query | default `branch_id` = `x-user-branch` เมื่อมีค่า |
+| List — switchable role, `branch_id=all` | sentinel `ALL_BRANCHES_QUERY` — ไม่ filter สาขา (OU-wide list) |
+| List — switchable role, explicit ObjectId | ใช้ค่าที่ส่งมา |
+| By-id reads | `resolveScopeBranchId` → pinned roles ส่ง `branch_id` ไป repo; switchable roles ไม่ pin (OU scope only) |
+| Generate | pinned role ใช้ `x-user-branch`; switchable role ใช้ `body.branch_id` |
+| Calculate-fee / detail / transactions / status | ใช้ `scopeBranchId` เดียวกับ by-id reads |
 
 ## Acceptance criteria
 
@@ -93,7 +99,8 @@ Prefix via gateway: `/api/v1/agent-invoice` and `/api/v1/invoices`
 | AC-3 | Agent fees CRUD | `agent-fees.route.test.js` |
 | AC-4 | Master data read | `master-data.test.js` |
 | AC-5 | Invoice list pagination | invoices unit/integration tests |
-| AC-7 | List defaults to active branch | controller inject branch_id |
+| AC-6 | List branch scope (pinned vs switchable, `all` sentinel) | `invoices.list-branch-scope.test.js`, `list-invoices.query.test.js` |
+| AC-7 | By-id branch scope on detail / transactions / calculate-fee / status | `invoices.by-id-branch-scope.test.js` |
 
 ## Spec-driven workflow
 

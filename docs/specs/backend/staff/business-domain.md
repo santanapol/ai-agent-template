@@ -440,7 +440,7 @@ Gateway ส่ง permission keys ผ่าน header **`x-user-permissions`** (
 | **`branch_id`** | **`platform_admin`:** optional filter; **`branch_admin`:** บังคับตรง context                                                                                                                      |
 | **`q`**         | case-insensitive substring บน **`code`**, **`firstname`**, **`lastname`**, **`username`** (join)                                                                                                  |
 | **`sort`**      | default **`upd_date` desc**; รองรับ `code`, `firstname`, `lastname`, `upd_date`                                                                                                                   |
-| **pagination**  | ตาม [`7-openapi-contract.md`](../../../../../../coding-standard/backend/7-openapi-contract.md) และ [`6-api-response-codes.md`](../../../../../../coding-standard/backend/6-api-response-codes.md) |
+| **pagination**  | ตาม [`7-openapi-contract.md`](../../../../coding-standard/backend/7-openapi-contract.md) และ [`6-api-response-codes.md`](../../../../coding-standard/backend/6-api-response-codes.md) |
 
 การค้นหา (at implementation): prefix/regex บน indexed fields หรือ Atlas Search ในอนาคต — ดู [`database-erd.md`](./database-erd.md)
 

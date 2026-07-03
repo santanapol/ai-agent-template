@@ -1475,11 +1475,16 @@ paths:
             type: string
         - name: branch_id
           in: query
+          description: |
+            Filter by branch ObjectId, or `all` for OU-wide list (branch-switchable roles only).
           schema:
-            type: string
-            minLength: 24
-            maxLength: 24
-            pattern: "^[a-f0-9]{24}$"
+            oneOf:
+              - type: string
+                enum: [all]
+              - type: string
+                minLength: 24
+                maxLength: 24
+                pattern: "^[a-f0-9]{24}$"
         - name: billing_month
           in: query
           schema:

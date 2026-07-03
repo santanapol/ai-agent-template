@@ -1,12 +1,34 @@
 # Confidence Map — smart-report
 
-Owner: Berlin. src 56/56. No openapi (decision B). spec:codes + spec:consistency wired.
+Owner: Berlin. src 58/58 read (2026-07-03 re-harden).
 
-| Section | Confidence |
-|---------|------------|
-| smart-report-spec | 88% |
-| business-domain | 85% |
-| technical-architecture (incl. API table) | 90% |
-| database-erd | 88% |
+## Source scan
 
-Extraction: acorn validator rules, cron scheduler, codes.yaml — synced.
+| Check | Value |
+|-------|-------|
+| Package root | `backend/service/smart-report/` |
+| `src/` files | 58/58 |
+| OpenAPI | none (prose contract in technical-architecture) |
+
+## Section confidence
+
+| Section | Confidence | Status |
+|---------|------------|--------|
+| smart-report-spec | 90% | synced |
+| business-domain | 88% | synced |
+| technical-architecture (incl. API table) | 92% | synced |
+| database-erd | 90% | synced |
+
+## Extraction coverage
+
+| Artifact | Code | Spec | Status |
+|----------|------|------|--------|
+| Env `REPORTS_STORAGE_DIR` | `file-exporter.service.js` | technical-architecture §Configuration | synced |
+| Env `REPORT_SCRIPT_TIMEOUT_MS` | `sandbox-runner.service.js` | technical-architecture §Configuration | synced |
+| Test DB fallback | `database-read.js` (`NODE_ENV=test`) | technical-architecture §Configuration | synced |
+| Permission key | `reports:smart` | business-domain §Permissions | synced |
+| `triggeredBy` values | scheduler + manual run | database-erd | synced |
+| acorn validator / cron | `script-validator`, `scheduler` | technical-architecture | synced |
+| codes.yaml | `spec:codes` gate | smart-report-spec | synced |
+
+Pre-harden: `npm run ci` + `spec:consistency` + `spec:codes` — required.

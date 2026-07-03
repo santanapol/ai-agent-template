@@ -1,0 +1,47 @@
+# Shared Spectral ruleset for zero-platform internal APIs (OpenAPI 3.1)
+extends:
+  - spectral:oas
+
+functions:
+  - trustedHeaderOrder
+functionsDir: functions
+
+rules:
+  oas3-api-servers: off
+  operation-operationId: error
+  operation-description: warn
+  operation-tag-defined: error
+  info-contact: off
+  info-license: off
+
+  # -------------------------------------------------------------------------
+  # Validation Rules (Ref: 8-openapi-validation.md)
+  # -------------------------------------------------------------------------
+  trusted-header-order:
+    description: "Header parameters must be ordered: x-user-ou, x-user-branch, x-user-id, x-user-role, If-Match, x-request-id"
+    severity: error
+    given: "$.paths.*.*.parameters"
+    then:
+      function: trustedHeaderOrder
+
+  # -------------------------------------------------------------------------
+  # Contract Constraints (Ref: 7-openapi-contract.md)
+  # -------------------------------------------------------------------------
+  openapi-version-3-1-0:
+    description: "OpenAPI version must be exactly 3.1.0"
+    severity: error
+    given: "$"
+    then:
+      field: openapi
+      function: pattern
+      functionOptions:
+        match: "^3\\.1\\.0$"
+
+  path-prefix-api-v1:
+    description: "Paths must start with /api/v1/ except /healthz, /readyz, /metrics"
+    severity: error
+    given: "$.paths[*]~"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(/api/v1/|/healthz$|/readyz$|/metrics$)"

@@ -34,7 +34,7 @@ openapi.yaml
 
 ## Configuration
 
-See `.env.example` — `MONGODB_URI`, `GATEWAY_SECRET`, `PORT` (3102)
+See `.env.example` — `MONGODB_URI`, `GATEWAY_SHARED_SECRET`, `PORT` (3102)
 
 ## Integrations
 

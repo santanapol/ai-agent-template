@@ -14,7 +14,7 @@
 ## 2. Domain entities
 
 - **Agent** (`agents`) — branch/contractor profile with fee defaults
-- **Branch category fee** (`branch_category_fees`) — override rate per game company + category
+- **Agent fee** (`agent_fees`) — override rate per game company + game category
 - **Agent invoice** (`agent_iv`) — monthly billing document per agent
 - **Invoice transaction** (`agent_iv_transaction`) — line items / fee breakdown
 
@@ -22,25 +22,31 @@
 
 ```mermaid
 stateDiagram-v2
-  [*] --> draft: generate
-  draft --> calculated: calculate-fee
-  calculated --> approved: status PUT
-  approved --> [*]
+  [*] --> PENDING: generate
+  PENDING --> CAL: calculate-fee (in progress)
+  CAL --> READY: calculate-fee OK
+  CAL --> MISSING_FEE: fee lookup failed
+  CAL --> ERROR: calculation error
+  READY --> PAID: status PUT
+  READY --> VOID: status PUT
+  PENDING --> VOID: status PUT
 ```
 
-Statuses (**OBSERVED** `invoice-status.js`): `draft`, `calculated`, `approved`, `cancelled` (verify in code)
+Statuses (**OBSERVED** `invoice-status.js`): `PENDING`, `VOID`, `CAL`, `MISSING_FEE`, `READY`, `ERROR`, `PAID`
 
 ## 4. Fee resolution
 
-1. Lookup `branch_category_fees` for agent + company + category
+1. Lookup `agent_fees` for agent + company + category
 2. Else `agents.default_fee_rate`
 3. Else error / partial failure on generate
 
 ## 5. Branch & OU tenancy
 
 - **`ou_id`** from `x-user-ou` — mandatory scope on all reads/writes
-- **List invoices:** default `branch_id` = caller `x-user-branch` when query omits filter (**OBSERVED**)
-- **Generate:** body `branch_id` + `month` (YYYY-MM)
+- **Branch-pinned roles** (`branch_admin`, `branch_staff`, …): list/detail always scoped to `x-user-branch`; cannot pass another `branch_id`
+- **Branch-switchable roles** (`platform_admin`, `support_admin`, `support`): list may use explicit `branch_id` or `branch_id=all` for OU-wide view; by-id reads are OU-scoped only (no branch pin on repository filter)
+- **List default (switchable):** when query omits `branch_id` and caller has active branch → inject `x-user-branch` (`resolveListInvoicesRequestQuery`)
+- **Generate:** pinned roles use active branch; switchable roles require/provide `body.branch_id` + `month` (YYYY-MM)
 
 ## 6. Permissions (**OBSERVED** route guards)
 

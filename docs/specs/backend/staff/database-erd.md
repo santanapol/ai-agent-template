@@ -10,7 +10,7 @@
 | **Technical**             | [`./technical-architecture.md`](./technical-architecture.md) |
 | **Persistence (ไฟล์นี้)** | ERD, constraints, indexes, search                            |
 
-สอดคล้อง [`11-database-connection.md`](../../../../../../coding-standard/backend/11-database-connection.md), [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)
+สอดคล้อง [`11-database-connection.md`](../../../../coding-standard/backend/11-database-connection.md), [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md)
 
 > **Database:** ร่วมกับ auth ได้ — prefix `auth_*` ตาม [`../../../auth/src/config/mongo-collections.js`](../../../../backend/auth/src/config/mongo-collections.js)
 
@@ -87,7 +87,7 @@ erDiagram
 | `lastname`      | string      |   yes    | 1–128                                                                                      |
 | `email`         | string      |   yes    | max 254; lowercase; **not unique** in MVP                                                  |
 | `tel`           | string      |   yes    | E.164, max 16                                                                              |
-| `cr_*`, `upd_*` | string/date |   yes    | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
+| `cr_*`, `upd_*` | string/date |   yes    | [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md) |
 
 **Out of scope:** `display_name`, `job_title`, `department`, `employment_status`
 
@@ -189,7 +189,7 @@ db.runCommand({
 
 ## Connection
 
-- Singleton client / pool — [`11-database-connection.md`](../../../../../../coding-standard/backend/11-database-connection.md)
+- Singleton client / pool — [`11-database-connection.md`](../../../../coding-standard/backend/11-database-connection.md)
 
 ## Related documents
 

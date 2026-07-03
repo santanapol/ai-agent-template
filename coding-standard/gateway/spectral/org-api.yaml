@@ -1,0 +1,46 @@
+extends:
+  - spectral:oas
+
+rules:
+  oas3-api-servers: off
+  operation-operationId: error
+  operation-description: warn
+  operation-tag-defined: error
+  info-contact: off
+  info-license: off
+
+  # -------------------------------------------------------------------------
+  # Operation Summary Constraints (Ref: 7-openapi-contract.md)
+  # -------------------------------------------------------------------------
+  check-healthz-summary:
+    description: "GET /healthz must have summary 'Liveness'"
+    severity: error
+    given: "$.paths.[/healthz].get"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Liveness
+
+  check-readyz-summary:
+    description: "GET /readyz must have summary 'Readiness'"
+    severity: error
+    given: "$.paths.[/readyz].get"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Readiness
+
+  # -------------------------------------------------------------------------
+  # Error Responses Validation (Ref: 6-api-response-codes.md)
+  # -------------------------------------------------------------------------
+  error-response-content-type:
+    description: "4xx and 5xx responses must use application/problem+json content type"
+    severity: error
+    given: "$.paths.*.*.responses[?(@property.match(/^(4|5)[0-9]{2}$/))]"
+    then:
+      field: "content.['application/problem+json']"
+      function: truthy

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Card, Divider, Form, Typography, theme } from 'antd';
+import { Alert, Divider, Form, Typography, theme } from 'antd';
 import { PageContainer, PageContentCard } from '../../../components/layout';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -18,8 +18,6 @@ import Royalty21SearchForm, {
   type Royalty21SearchValues,
 } from '../../../components/branch-report/marketing/Royalty21SearchForm';
 import Royalty21Table from '../../../components/branch-report/marketing/Royalty21Table';
-
-const { Title } = Typography;
 
 const DEFAULT_PAGE_SIZE = 50;
 

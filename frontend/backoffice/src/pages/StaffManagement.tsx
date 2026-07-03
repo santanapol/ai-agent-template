@@ -3,11 +3,7 @@ import {
   Button,
   Input,
   Select,
-  Typography,
-  Card,
-  Flex,
   Form,
-  theme,
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
@@ -26,7 +22,6 @@ import StaffDrawer, { type DrawerMode, type DrawerFormValues } from '../componen
 import { formatTelephoneToE164 } from '../lib/telephone';
 import { usePermission } from '../hooks/usePermission';
 
-const { Title } = Typography;
 const { Search } = Input;
 
 const STATUS_OPTIONS: { value: ProfileStatus; label: string }[] = [
@@ -53,7 +48,6 @@ const StaffManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<ProfileStatus>('active');
   const [refreshToken, setRefreshToken] = useState(0);
   const [form] = Form.useForm();
-  const { token } = theme.useToken();
   const currentEtag = useRef<string | null>(null);
   const canCreate = usePermission('profiles:create');
   const canEdit = usePermission('profiles:edit');

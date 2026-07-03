@@ -21,7 +21,8 @@ import Error404 from './pages/Error404';
 import Error500 from './pages/Error500';
 import RouteErrorPage from './components/RouteErrorPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useTheme } from './hooks/useTheme';
 import { getAppTheme } from './theme/themeConfig';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

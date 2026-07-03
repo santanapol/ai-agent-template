@@ -41,4 +41,4 @@ stateDiagram-v2
 
 ## Permissions
 
-Gateway mesh + role จาก `x-user-role` — รายละเอียด route guards ใน technical doc
+**OBSERVED:** `assertPermission(..., "reports:smart")` on all business routes — value from `x-user-permissions` (comma-separated). Gateway mesh + role from `x-user-role`.

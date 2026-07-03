@@ -4,7 +4,7 @@ created: 2026-07-03
 updated: 2026-07-03
 owner: Berlin
 last-verified: 2026-07-03
-source-scan: 2026-07-03 — src 56/56 files
+source-scan: 2026-07-03 — src 58/58 files
 ---
 
 # Spec: Smart Report Service

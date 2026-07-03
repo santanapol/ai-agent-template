@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Card,
   Table,
   Tag,
   Input,
   Select,
   DatePicker,
-  Space,
   Button,
-  Typography,
   Modal,
   Form,
 } from 'antd';
-import { SearchOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
+import { EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableRowSelection } from 'antd/es/table/interface';
@@ -29,8 +26,6 @@ import { MAX_BULK_INVOICE_SELECTION } from './bulk/constants';
 import { PageContainer, PageContentCard, FiltersContainer } from '../../components/layout';
 import type { BulkExportFormat } from './export/types';
 import type { BulkStatusAction } from './status/types';
-
-const { Title } = Typography;
 
 interface ExportJobState {
   ids: string[];
@@ -83,8 +78,9 @@ const InvoiceList: React.FC = () => {
   const [exportRunning, setExportRunning] = useState(false);
   const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
   const [statusRunning, setStatusRunning] = useState(false);
+  const bulkBusy = exportRunning || statusRunning;
 
-  // Keep filter/pagination state in the URL so it survives back-navigation from the detail page (I11)
+  // Keep filter/pagination state in the URL
   useEffect(() => {
     const params: Record<string, string> = {};
     if (searchText) params.search = searchText;

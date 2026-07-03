@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Button, Typography, Space, Tag, Select,
-  Breadcrumb, InputNumber, Row, Col, Alert,
+  Button, Typography, Tag, Select,
+  InputNumber, Row, Col, Alert,
   Card, Statistic, Table, Affix, Checkbox, theme, Skeleton, Empty
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { ArrowLeftOutlined, SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons';
+import { SaveOutlined, EditOutlined, CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons';
 import { useAgentFees } from '../Agents/hooks/useAgentFees';
 import { DetailContainer } from '../../components/layout';
 import { useAppFeedback } from '../../hooks/useAppFeedback';
@@ -16,7 +16,7 @@ import type { Agent } from '../../types/agents';
 import type { AgentFee, GameCompany, CreateFeePayload } from '../../types/agentFees';
 import { MatrixCell, type MatrixCellRef } from '../../components/AgentFees/MatrixCell';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const AgentFeesPage: React.FC = () => {

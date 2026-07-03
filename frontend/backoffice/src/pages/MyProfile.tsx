@@ -11,11 +11,9 @@ import {
   theme,
   Row,
   Col,
-  Divider,
 } from 'antd';
 import { KeyOutlined, SaveOutlined } from '@ant-design/icons';
 import { PageContainer, PageContentCard } from '../components/layout';
-import { usePermission } from '../hooks/usePermission';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { PatchProfilePayload, StaffProfile } from '../types/staff';

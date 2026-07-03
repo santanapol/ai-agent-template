@@ -39,7 +39,7 @@ source-scan: 2026-07-03 — src 39/39 files (re-audit round 4 — re-hardened: r
 | Persistence | [database-erd.md](./database-erd.md) | — |
 | Password design | [design-password-management.md](./design-password-management.md) | — |
 | O-16 revoke checklist | [session-revoke-token-gen-changes.md](./session-revoke-token-gen-changes.md) | — |
-| Error codes | [`coding-standard/auth/codes.yaml`](../../../../../../coding-standard/auth/codes.yaml) | sync OpenAPI |
+| Error codes | [`coding-standard/auth/codes.yaml`](../../../../coding-standard/auth/codes.yaml) | sync OpenAPI |
 | Testing | [TESTING.md](./TESTING.md) | — |
 | Workflow งานใหม่ | [WORKFLOW.md](./WORKFLOW.md) | — |
 

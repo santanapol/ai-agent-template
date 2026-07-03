@@ -35,6 +35,12 @@ jobs:
           - service: service/agent-invoice
             workspace: true
             env_file: .env.test
+          - service: service/smart-report
+            workspace: true
+            env_file: .env.test
+          - service: service/branch-report
+            workspace: false
+            env_file: .env.test
           - service: service/demo-service
             workspace: false
     steps:

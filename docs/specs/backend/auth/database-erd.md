@@ -16,8 +16,8 @@
 | HTTP contract    | [openapi.yaml](../../../../backend/auth/openapi.yaml)                            |
 | Business         | [business-domain.md](./business-domain.md)                                  |
 | Service design   | [technical-architecture.md](./technical-architecture.md)                    |
-| Org data mgmt    | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)           |
-| Org tenant audit | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
+| Org data mgmt    | [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md)           |
+| Org tenant audit | [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md) |
 
 **Scope:** MongoDB persistence สำหรับ login, refresh, throttle, audit — สร้าง index ผ่าน **`npm run init:db`** ([`scripts/init-db.mjs`](../../../../backend/auth/scripts/init-db.mjs))
 
@@ -40,7 +40,7 @@
 - **ห้าม** เก็บ refresh token แบบ plaintext — เก็บเฉพาะ **`token_hash`** (แนะนำ **SHA-256** ของ opaque token ที่ส่งให้ client)
 - **Username:** application **ต้อง** normalize ก่อน persist/query (`trim` + **lowercase**) แล้วเก็บใน **`username`** — **Globally Unique** (ไม่ scope ตาม `ou_id` / `branch_id`)
 - **ควร** ใช้ **MongoDB transaction** (หรือ pattern atomic เทียบเท่า) สำหรับ **refresh rotation**
-- **Tenant + Audit** — `auth_users` **ต้อง** มี `ou_id`, `branch_id` และ audit fields ตาม [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md); สร้าง/แก้ผ่าน Admin UI หลัง login ผ่าน `gateway` (headers `x-user-id`, `x-user-ou`, `x-user-branch`)
+- **Tenant + Audit** — `auth_users` **ต้อง** มี `ou_id`, `branch_id` และ audit fields ตาม [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md); สร้าง/แก้ผ่าน Admin UI หลัง login ผ่าน `gateway` (headers `x-user-id`, `x-user-ou`, `x-user-branch`)
 - **`access_token_gen`:** SoT ใน MongoDB; เมื่อตั้ง **`REDIS_URL`** (production) หลัง login/refresh สำเร็จ และหลัง revoke/password/branch switch → **`SET`** `user:{sub}:token_gen` ให้สอดคล้อง DB — Gateway อ่านจาก Redis (ดู [technical-architecture.md §9](./technical-architecture.md))
 - **Deviation — Operational collections:** `auth_refresh_tokens`, `auth_credential_throttle`, `auth_audit_events` **ยกเว้น** `ou_id` / `branch_id` / `cr_*` / `upd_*` — ถ้าเพิ่มในอนาคต **ต้อง** ADR
 
@@ -51,7 +51,7 @@
 | Field              | Type     | Required | Description                                                                                       |
 | :----------------- | :------- | :------- | :------------------------------------------------------------------------------------------------ |
 | `_id`              | ObjectId | Yes      | primary key                                                                                       |
-| `ou_id`            | ObjectId | Yes      | tenant OU — [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)         |
+| `ou_id`            | ObjectId | Yes      | tenant OU — [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md)         |
 | `branch_id`        | ObjectId | Yes      | tenant branch                                                                                     |
 | `username`         | string   | Yes      | หลัง normalize — login; **Globally Unique**                                                       |
 | `password_hash`    | string   | Yes      | **Argon2id** encoded — **ห้าม** plaintext                                                         |
@@ -70,6 +70,7 @@
 | :-------------- | :------------------------------- | :-------------------------- |
 | `uniq_username` | `{ "username": 1 }` **unique**   | login + global uniqueness   |
 | `by_ou_branch`  | `{ "ou_id": 1, "branch_id": 1 }` | tenant-scoped admin queries |
+| `by_ou_role`    | `{ "ou_id": 1, "role": 1 }`      | tenant-scoped role queries  |
 
 ### 2.2 Collection `auth_refresh_tokens`
 
@@ -241,6 +242,11 @@ db.auth_users.createIndex(
 db.auth_users.createIndex(
   { ou_id: 1, branch_id: 1 },
   { name: "by_ou_branch" }
+);
+
+db.auth_users.createIndex(
+  { ou_id: 1, role: 1 },
+  { name: "by_ou_role" }
 );
 
 db.auth_refresh_tokens.createIndex(

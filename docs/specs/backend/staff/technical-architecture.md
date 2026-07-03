@@ -88,8 +88,9 @@ flowchart TB
 
 | Mechanism                                             | Rule                                                                                                                |
 | :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| **`x-gateway-secret`**                                | บังคับบน business routes — [`4-request-headers.md`](../../../../../../coding-standard/backend/4-request-headers.md) |
-| **`x-user-id`**, **`x-user-ou`**, **`x-user-branch`** | tenant + audit — [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)         |
+| **`x-gateway-secret`**                                | บังคับบน business routes — [`4-request-headers.md`](../../../../coding-standard/backend/4-request-headers.md) |
+| **`x-user-id`**, **`x-user-ou`**, **`x-user-branch`** | tenant + audit — [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md)         |
+| **`x-user-home-branch`** (optional)                     | home branch ObjectId — ใช้เมื่อ active branch ต่างจาก home; parse เป็น `userContext.homeBranchId` (`user-context.js`) |
 | **`x-user-role`**                                     | RBAC enforcement — กฎ product ดู [`business-domain.md` §7](./business-domain.md#7-rbac-product)                     |
 | **`Authorization`**                                   | gateway **ไม่ forward** Bearer ไป staff                                                                             |
 
@@ -110,7 +111,7 @@ flowchart TB
 | Business API | `/api/v1/staff/profiles` | operations — [`business-domain.md` §5](./business-domain.md#5-http-operations-intent--ก่อน-openapi); includes `PATCH .../role` |
 | Metrics      | `/metrics`               | ถ้าเปิด — private network                                                                           |
 
-**Errors / pagination:** Custom JSON wrapper (`{ success, code, message, data }`), registry ใน **`codes.yaml`**, list ตาม [`6-api-response-codes.md`](../../../../../../coding-standard/backend/6-api-response-codes.md) — สร้างพร้อม **`openapi.yaml`**
+**Errors / pagination:** Custom JSON wrapper (`{ success, code, message, data }`), registry ใน **`codes.yaml`**, list ตาม [`6-api-response-codes.md`](../../../../coding-standard/backend/6-api-response-codes.md) — สร้างพร้อม **`openapi.yaml`**
 
 #### `GET /api/v1/staff/profiles` — list vs lookup (spec)
 

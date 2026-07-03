@@ -1,0 +1,97 @@
+extends:
+  - spectral:oas
+
+rules:
+  oas3-api-servers: off
+  operation-operationId: error
+  operation-description: warn
+  operation-tag-defined: error
+  info-contact: off
+  info-license: off
+
+  # -------------------------------------------------------------------------
+  # Operation Summary Constraints (Ref: 7-openapi-contract.md)
+  # -------------------------------------------------------------------------
+  check-healthz-summary:
+    description: "GET /healthz must have summary 'Liveness'"
+    severity: error
+    given: "$.paths.[/healthz].get"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Liveness
+
+  check-readyz-summary:
+    description: "GET /readyz must have summary 'Readiness'"
+    severity: error
+    given: "$.paths.[/readyz].get"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Readiness
+
+  check-login-summary:
+    description: "POST /auth/login must have summary 'Login'"
+    severity: error
+    given: "$.paths.[/auth/login].post"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Login
+
+  check-refresh-summary:
+    description: "POST /auth/refresh must have summary 'Refresh token'"
+    severity: error
+    given: "$.paths.[/auth/refresh].post"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Refresh token
+
+  check-logout-summary:
+    description: "POST /auth/logout must have summary 'Logout'"
+    severity: error
+    given: "$.paths.[/auth/logout].post"
+    then:
+      field: summary
+      function: enumeration
+      functionOptions:
+        values:
+          - Logout
+
+  # -------------------------------------------------------------------------
+  # Error Responses Validation (Ref: 8-openapi-validation.md)
+  # -------------------------------------------------------------------------
+  require-problem-component-schema:
+    description: "A Component Schema named 'Problem' must be declared"
+    severity: error
+    given: "$"
+    then:
+      field: components.schemas.Problem
+      function: truthy
+
+  error-response-content-type:
+    description: "4xx and 5xx responses must use application/problem+json content type"
+    severity: error
+    given: "$.paths.*.*.responses[?(@property.match(/^(4|5)[0-9]{2}$/))]"
+    then:
+      field: "content.['application/problem+json']"
+      function: truthy
+
+  error-response-problem-schema:
+    description: "All 4xx and 5xx error responses must reference '#/components/schemas/Problem'"
+    severity: error
+    given: "$.paths.*.*.responses[?(@property.match(/^(4|5)[0-9]{2}$/))].content.['application/problem+json'].schema"
+    then:
+      field: "$ref"
+      function: pattern
+      functionOptions:
+        match: "^#/components/schemas/Problem$"

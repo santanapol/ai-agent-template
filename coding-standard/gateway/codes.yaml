@@ -1,0 +1,17 @@
+# Gateway Service Error Codes Registry
+  GATEWAY_CLAIM_REJECTED:
+    httpStatus: 401
+  GATEWAY_JWT_MISSING:
+    httpStatus: 401
+  GATEWAY_JWT_REJECTED:
+    httpStatus: 401
+  GATEWAY_ROUTE_NOT_CONFIGURED:
+    httpStatus: 502
+  GATEWAY_ROUTE_NOT_FOUND:
+    httpStatus: 404
+  GATEWAY_UPSTREAM_UNAVAILABLE:
+    httpStatus: 502
+  GATEWAY_NOT_READY:
+    httpStatus: 503
+  GATEWAY_UPSTREAM_TIMEOUT:
+    httpStatus: 504

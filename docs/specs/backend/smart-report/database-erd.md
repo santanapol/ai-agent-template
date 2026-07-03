@@ -9,7 +9,7 @@ Consolidated from `docs/db/erd.md` — **OBSERVED** vs `init-db.mjs`
 | `name` | string | unique index |
 | `script` | string | user mongo shell script |
 | `params` | object | injection map |
-| `outputFormat` | `csv` \| `excel` | |
+| `outputFormat` | `csv` \| `excel` | export format |
 | `schedule` | object | UI schedule → cron |
 | `enabled` | boolean | |
 | `compiledScript` | string | after validate+compile |
@@ -22,7 +22,7 @@ Consolidated from `docs/db/erd.md` — **OBSERVED** vs `init-db.mjs`
 | `reportId` | FK reports |
 | `reportName`, `outputFormat` | denormalized |
 | `filePath`, `status` | `running` \| `success` \| `failed` |
-| `triggeredBy` | `manual` \| `scheduler` \| user id |
+| `triggeredBy` | `manual` \| `scheduler` | who/what started the run |
 | `startedAt` | index |
 
 Write-once — no `upd_*`

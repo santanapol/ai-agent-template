@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox, theme } from 'antd';
+import { Table, Input, Button, Space, Typography, Tag, Modal, Form, Select, Checkbox, theme } from 'antd';
 import { PageContainer, PageContentCard, FiltersContainer } from '../../components/layout';
-import { SearchOutlined, SyncOutlined, SettingOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
+import { SyncOutlined, SettingOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { useAgents } from './hooks/useAgents';
 import { useNavigate } from 'react-router-dom';
 import type { Agent } from '../../types/agents';
-
-const { Title } = Typography;
 
 const AgentsList: React.FC = () => {
   const { token } = theme.useToken();

@@ -1,2 +1,2 @@
 extends:
-  - ../../../../coding-standard/auth/spectral/org-api.yaml
+  - ../../coding-standard/auth/spectral/org-api.yaml

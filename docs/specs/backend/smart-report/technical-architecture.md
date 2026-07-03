@@ -40,10 +40,12 @@ Probes: `GET /healthz`, `GET /readyz` (Mongo ping)
 | Env | Purpose |
 |-----|---------|
 | `MONGODB_URI` | app metadata DB |
-| `MONGODB_URI_READ` | read-only script execution |
+| `MONGODB_URI_READ` | read-only script execution (required in prod; in `NODE_ENV=test` falls back to `MONGODB_URI` then `mongodb://localhost:27017`) |
 | `GATEWAY_SHARED_SECRET` | mesh trust |
-| `REPORT_OUTPUT_DIR` | export path |
-| `TEST_RUN_TIMEOUT_MS` | sandbox limit |
+| `REPORTS_STORAGE_DIR` | export file path (default under package `storage/`) |
+| `REPORT_SCRIPT_TIMEOUT_MS` | sandbox execution limit (default 120000 ms) |
+| `TEST_RUN_TOKEN_SECRET` | HMAC for `/test-run` one-time token |
+| `TEST_RUN_TOKEN_TTL_MS` | test-run token TTL |
 
 ## Error codes
 

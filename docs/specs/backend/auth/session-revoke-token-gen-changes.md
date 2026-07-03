@@ -17,7 +17,7 @@
 1. **Internal revoke-by-user** — ตัดทุก **refresh session** ของ `user_id` โดยไม่ต้องมี refresh token ในมือ (ให้ service ที่ trusted เรียก เช่น **staff**)
 2. **ตัดสิทธิ์ access JWT แบบทันที** — ใช้ **credential / token generation version** (`access_token_gen` ใน DB + claim ใน access JWT เช่น `token_gen`) และให้ **gateway** ตรวจเทียบค่าปัจจุบัน (ดู [`gateway` session-revoke doc](../../../../backend/gateway/docs/session-revoke-token-gen-changes.md))
 
-คู่มือ SoT หลักของ auth คือ [technical-architecture.md](./technical-architecture.md) และ [openapi.yaml](../../../../backend/auth/openapi.yaml) — registry error อยู่ที่ [`coding-standard/auth/codes.yaml`](../../../../../../coding-standard/auth/codes.yaml)
+คู่มือ SoT หลักของ auth คือ [technical-architecture.md](./technical-architecture.md) และ [openapi.yaml](../../../../backend/auth/openapi.yaml) — registry error อยู่ที่ [`coding-standard/auth/codes.yaml`](../../../../coding-standard/auth/codes.yaml)
 
 ---
 

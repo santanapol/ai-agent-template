@@ -103,7 +103,7 @@ After **any** successful password change (self or internal reset):
 
 ## 7. Error codes (registered)
 
-Registered in [`coding-standard/auth/codes.yaml`](../../../../../../coding-standard/auth/codes.yaml):
+Registered in [`coding-standard/auth/codes.yaml`](../../../../coding-standard/auth/codes.yaml):
 
 | `code`                           | HTTP |
 | :------------------------------- | :--- |
