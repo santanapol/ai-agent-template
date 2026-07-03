@@ -523,7 +523,7 @@ paths:
       tags: [auth]
       summary: Change own password
       description: |
-        Authenticated user changes password. Requires `current_password` and `new_password` (min 16).
+        Authenticated user changes password. Requires `current_password` and `new_password` (min 8).
         On success: bump `access_token_gen`, revoke refresh — client should sign in again.
         See [`docs/design-password-management.md`](./docs/design-password-management.md).
       operationId: changeOwnPassword
