@@ -6,6 +6,8 @@ node_modules/
 .env.*
 !.env.example
 !**/.env.example
+!.env.test
+!**/.env.test
 
 !.env.defaults
 !**/.env.defaults
