@@ -34,6 +34,7 @@ import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
 import {
+  canSwitchActiveBranch,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
   resolveInvoiceFilterBranches,
@@ -74,6 +75,9 @@ const InvoiceList: React.FC = () => {
   const navigate = useNavigate();
   const canExport = usePermission('invoices:read');
   const canWrite = usePermission('invoices:write');
+  // Branch-pinned roles are scoped to their own branch server-side, so a branch
+  // filter would be a no-op control — only OU-wide roles get the picker.
+  const canFilterBranch = canSwitchActiveBranch(user?.role);
   const {
     invoices,
     total,
@@ -307,20 +311,22 @@ const InvoiceList: React.FC = () => {
                 setPage(1);
               }}
             />
-            <FilterSelectField
-              id="invoice-branch"
-              label="Branch"
-              placeholder="Filter by Branch"
-              value={selectedBranchId}
-              onChange={(v) => {
-                setSelectedBranchId(v);
-                setPage(1);
-              }}
-              options={branchOptions}
-              width="w-[220px]"
-              searchable
-              searchPlaceholder="Search branch"
-            />
+            {canFilterBranch ? (
+              <FilterSelectField
+                id="invoice-branch"
+                label="Branch"
+                placeholder="Filter by Branch"
+                value={selectedBranchId}
+                onChange={(v) => {
+                  setSelectedBranchId(v);
+                  setPage(1);
+                }}
+                options={branchOptions}
+                width="w-[220px]"
+                searchable
+                searchPlaceholder="Search branch"
+              />
+            ) : null}
             <FilterSelectField
               id="invoice-status"
               label="Status"
