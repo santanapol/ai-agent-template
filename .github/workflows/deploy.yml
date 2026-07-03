@@ -29,9 +29,10 @@ jobs:
             # ห้ามใช้ npm ci --prefix ต่อ service ที่อ้าง file:../shared/platform-roles
             npm ci
             npm ci --prefix backend/service/demo-service
+            npm ci --prefix backend/service/branch-report
             
-            # สั่งรีสตาร์ท Backend ทั้งหมดด้วย PM2
-            pm2 reload backend/ecosystem.config.js --update-env
+            # startOrReload — เริ่ม process ใหม่ (เช่น branch-report) และ reload ตัวเดิม
+            pm2 startOrReload backend/ecosystem.config.js --update-env
             
             # ---------------------------------------------------------
             # 2. จัดการ Frontend
