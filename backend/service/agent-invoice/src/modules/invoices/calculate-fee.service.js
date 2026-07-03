@@ -30,6 +30,7 @@ export async function calculateFee({
   ifMatch,
   actor,
   ouId,
+  scopeBranchId,
   log,
 }) {
   if (!ifMatch) {
@@ -45,7 +46,7 @@ export async function calculateFee({
   let previousStatus = null;
 
   try {
-    let invoice = await invoiceRepo.findById(ivId, ouId);
+    let invoice = await invoiceRepo.findById(ivId, ouId, scopeBranchId);
 
     if (!invoice) {
       return { success: false, code: "RESOURCE_NOT_FOUND" };
@@ -65,7 +66,7 @@ export async function calculateFee({
           staleBefore,
         });
 
-        invoice = await invoiceRepo.findById(ivId, ouId);
+        invoice = await invoiceRepo.findById(ivId, ouId, scopeBranchId);
 
         if (!invoice) {
           return { success: false, code: "RESOURCE_NOT_FOUND" };

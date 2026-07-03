@@ -93,6 +93,27 @@ describe("GET /api/v1/invoices — active branch scoping (AC-7)", () => {
     assert.strictEqual(scoped[0].iv_no, `${ivPrefix}-ACTIVE`);
   });
 
+  test("branch_id=all returns invoices across branches", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/invoices?page=1&limit=50&branch_id=all",
+      headers: buildMeshHeaders({
+        ouId,
+        userId: mockUserId,
+        role: "platform_admin",
+        branchId: activeBranchId,
+        permissions: "invoices:*",
+      }),
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    const body = res.json();
+    const scoped = body.data.items.filter((row) =>
+      String(row.iv_no).startsWith(ivPrefix),
+    );
+    assert.strictEqual(scoped.length, 2);
+  });
+
   test("explicit branch_id query overrides x-user-branch", async () => {
     const res = await app.inject({
       method: "GET",
@@ -115,4 +136,53 @@ describe("GET /api/v1/invoices — active branch scoping (AC-7)", () => {
     assert.strictEqual(scoped[0].branch_id, homeBranchId);
     assert.strictEqual(scoped[0].iv_no, `${ivPrefix}-HOME`);
   });
+
+  // Branch-pinned roles must never escape their active branch, regardless of the
+  // branch_id they send (SECURITY: prevents cross-branch invoice disclosure).
+  for (const role of ["branch_admin", "staff"]) {
+    test(`${role} cannot escape own branch via branch_id=all`, async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/v1/invoices?page=1&limit=50&branch_id=all",
+        headers: buildMeshHeaders({
+          ouId,
+          userId: mockUserId,
+          role,
+          branchId: activeBranchId,
+          permissions: "invoices:*",
+        }),
+      });
+
+      assert.strictEqual(res.statusCode, 200);
+      const scoped = res
+        .json()
+        .data.items.filter((row) => String(row.iv_no).startsWith(ivPrefix));
+      assert.strictEqual(scoped.length, 1);
+      assert.strictEqual(scoped[0].branch_id, activeBranchId);
+      assert.strictEqual(scoped[0].iv_no, `${ivPrefix}-ACTIVE`);
+    });
+
+    test(`${role} cannot read another branch via explicit branch_id`, async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/v1/invoices?page=1&limit=50&branch_id=${homeBranchId}`,
+        headers: buildMeshHeaders({
+          ouId,
+          userId: mockUserId,
+          role,
+          branchId: activeBranchId,
+          permissions: "invoices:*",
+        }),
+      });
+
+      assert.strictEqual(res.statusCode, 200);
+      const scoped = res
+        .json()
+        .data.items.filter((row) => String(row.iv_no).startsWith(ivPrefix));
+      assert.strictEqual(scoped.length, 1);
+      // Coerced back to the caller's active branch, not the requested branch.
+      assert.strictEqual(scoped[0].branch_id, activeBranchId);
+      assert.strictEqual(scoped[0].iv_no, `${ivPrefix}-ACTIVE`);
+    });
+  }
 });

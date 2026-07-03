@@ -14,12 +14,12 @@ import * as transactionRepo from "./transaction.repository.js";
 
  */
 
-export async function listInvoiceTransactions({ id, ouId }) {
+export async function listInvoiceTransactions({ id, ouId, scopeBranchId }) {
   if (!isValidObjectId(id)) {
     return { success: false, code: "INVALID_PARAM" };
   }
 
-  const invoice = await invoiceRepo.findById(id, ouId);
+  const invoice = await invoiceRepo.findById(id, ouId, scopeBranchId);
 
   if (!invoice) {
     return { success: false, code: "RESOURCE_NOT_FOUND" };

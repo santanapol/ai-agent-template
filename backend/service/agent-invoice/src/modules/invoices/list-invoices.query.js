@@ -1,3 +1,4 @@
+import { canSwitchActiveBranchRole } from "@zero-platform/roles";
 import { isValidObjectId } from "../../lib/object-id.js";
 
 import { isInvoiceStatus } from "./invoice-status.js";
@@ -5,6 +6,9 @@ import { isInvoiceStatus } from "./invoice-status.js";
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
+
+/** Querystring sentinel: list invoices across all branches (no branch_id filter). */
+export const ALL_BRANCHES_QUERY = "all";
 
 const BILLING_MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -19,7 +23,8 @@ export function parseListInvoicesQuery(query = {}) {
   const limit = parsePositiveInt(query.limit, DEFAULT_LIMIT);
 
   const ivNo = pickNonEmptyString(query.iv_no);
-  const branchId = pickNonEmptyString(query.branch_id);
+  const rawBranchId = pickNonEmptyString(query.branch_id);
+  const branchId = rawBranchId === ALL_BRANCHES_QUERY ? undefined : rawBranchId;
   const billingMonth = pickNonEmptyString(query.billing_month);
   const status = pickNonEmptyString(query.status);
 
@@ -45,6 +50,64 @@ function pickNonEmptyString(value) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return trimmed === "" ? undefined : trimmed;
+}
+
+/**
+ * Normalize branch_id from querystring (ignores non-string / array values).
+ * @param {unknown} value
+ */
+export function normalizeBranchIdQuery(value) {
+  return pickNonEmptyString(value);
+}
+
+/**
+ * Resolve list query branch scope from role + active branch + optional query override.
+ * @param {{ rawBranchId?: string, role?: string, activeBranchId?: string }} params
+ * @returns {string | undefined} branchId for downstream parse (undefined = all branches)
+ */
+export function resolveInvoiceBranchScope({
+  rawBranchId,
+  role,
+  activeBranchId,
+}) {
+  if (!canSwitchActiveBranchRole(role)) {
+    return activeBranchId;
+  }
+  if (!rawBranchId || rawBranchId === ALL_BRANCHES_QUERY) {
+    return undefined;
+  }
+  return rawBranchId;
+}
+
+/**
+ * Build the query object passed to listInvoices from raw request query + user context.
+ * @param {Record<string, unknown>} rawQuery
+ * @param {{ role?: string, activeBranchId?: string }} userContext
+ */
+export function resolveListInvoicesRequestQuery(
+  rawQuery = {},
+  { role, activeBranchId },
+) {
+  const rawBranchId = normalizeBranchIdQuery(rawQuery.branch_id);
+
+  if (!canSwitchActiveBranchRole(role)) {
+    return { ...rawQuery, branch_id: activeBranchId };
+  }
+
+  if (rawBranchId === ALL_BRANCHES_QUERY) {
+    const { branch_id: _omit, ...rest } = rawQuery;
+    return rest;
+  }
+
+  if (rawBranchId) {
+    return rawQuery;
+  }
+
+  if (activeBranchId) {
+    return { ...rawQuery, branch_id: activeBranchId };
+  }
+
+  return rawQuery;
 }
 
 /**
