@@ -11,13 +11,15 @@
     "test": "node --test --env-file-if-exists=.env src/**/*.test.js",
     "test:unit": "node --test --env-file-if-exists=.env src/lib/tests/*.test.js src/plugins/tests/*.test.js src/modules/agents/tests/agents.service.test.js src/modules/agents/tests/agents.repository.test.js src/modules/agents/tests/agents.controller.test.js src/modules/invoices/tests/*.test.js",
     "test:integration": "node --test --env-file-if-exists=.env src/app.test.js src/modules/agents/tests/integration-test/agents.route.test.js src/modules/agent-fees/tests/integration-test/master-data.test.js src/modules/agent-fees/tests/integration-test/agent-fees.route.test.js",
+    "test:integration:ci": "node --test --env-file-if-exists=.env src/app.test.js src/modules/agents/tests/integration-test/agents.route.test.js src/modules/agent-fees/tests/integration-test/master-data.test.js src/modules/agent-fees/tests/integration-test/agent-fees.route.test.js src/modules/invoices/tests/integration-test/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
+    "spec:consistency": "node scripts/validate-spec-consistency.mjs",
     "audit:check": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run format:check && npm run test:unit && npm run audit:check",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run test:unit && npm run test:integration:ci && npm run spec:consistency && npm run audit:check",
     "init:db": "node --env-file=.env scripts/init-db.mjs"
   },
   "dependencies": {
