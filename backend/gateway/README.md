@@ -4,7 +4,8 @@ API Gateway (Fastify, ESM) for the `zero-platform` monorepo — verify JWT (JWKS
 
 | Read | Role |
 | :--- | :--- |
-| [docs/architecture.md](./docs/architecture.md) | **Technical SoT** — contract, env, errors, routing |
+| [**Central spec**](../../docs/specs/backend/gateway/gateway-spec.md) | **SoT** — orchestrator + links |
+| [docs/README.md](./docs/README.md) | Package docs redirect map |
 | [openapi.yaml](./openapi.yaml) | **HTTP Contract** (`spec:lint`, `spec:codes`) |
 | [docs/session-revoke-token-gen-changes.md](./docs/session-revoke-token-gen-changes.md) | **Checklist** — D3 `token_gen` + Redis (implemented) |
 | [docs/adrs/001-gateway-esm-fastify.md](./docs/adrs/001-gateway-esm-fastify.md) | **ADR 001** — Fastify + ESM exception |
