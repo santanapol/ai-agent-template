@@ -10,8 +10,6 @@ export function loginErrorMessage(err: unknown): string {
     if (code === 'LOGIN_INVALID_CREDENTIALS') return 'Invalid username or password';
     if (code === 'LOGIN_ACCOUNT_LOCKED') return 'Account is locked due to too many failed attempts';
     if (code === 'AUTH_TOO_MANY_ATTEMPTS') return 'Too many attempts. Please try again later.';
-    const detail = err.response?.data?.detail as string | undefined;
-    if (detail) return detail;
   }
   return 'Login failed. Please try again.';
 }
