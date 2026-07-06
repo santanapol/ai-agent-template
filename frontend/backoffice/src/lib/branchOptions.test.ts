@@ -13,6 +13,8 @@ import {
   getCachedMyBranch,
   isZeroHqBranchId,
   mergePlatformBranches,
+  mergeInvoiceAgentBranches,
+  resolveInvoiceFilterBranches,
   setCachedInvoiceAgentBranches,
   setCachedMyBranch,
   sortInvoiceAgentBranches,
@@ -157,6 +159,38 @@ describe('branchOptions', () => {
     expect(merged[0]).toEqual(ZERO_HQ_BRANCH);
     expect(merged.map((b) => b.branch_id)).toEqual([ZERO_HQ_BRANCH_ID, 'a', 'z']);
     expect(mergePlatformBranches(merged)).toEqual(merged);
+  });
+
+  it('mergeInvoiceAgentBranches adds branches discovered from invoices', () => {
+    const agentBranches: InvoiceAgentBranch[] = [
+      { branch_id: 'a', branch_name: 'Alpha', branch_code: 'A01', active: true },
+    ];
+    const merged = mergeInvoiceAgentBranches(agentBranches, [
+      { branch_id: 'b', branch_name: 'Beta Branch' },
+      { branch_id: 'a', branch_name: 'Alpha' },
+    ]);
+    expect(merged.map((branch) => branch.branch_id)).toEqual(['a', 'b']);
+    expect(merged.find((branch) => branch.branch_id === 'b')?.branch_name).toBe('Beta Branch');
+  });
+
+  it('resolveInvoiceFilterBranches prefers fresh API data over cache', () => {
+    const cached: InvoiceAgentBranch[] = [
+      { branch_id: 'old', branch_name: 'Old', branch_code: 'OLD', active: true },
+    ];
+    const fresh: InvoiceAgentBranch[] = [
+      { branch_id: 'new', branch_name: 'New', branch_code: 'NEW', active: true },
+    ];
+    const resolved = resolveInvoiceFilterBranches(fresh, [], cached);
+    expect(resolved.map((branch) => branch.branch_id)).toEqual(['new']);
+  });
+
+  it('resolveInvoiceFilterBranches excludes Zero HQ', () => {
+    const resolved = resolveInvoiceFilterBranches(
+      [{ branch_id: ZERO_HQ_BRANCH_ID, branch_name: 'Zero HQ', branch_code: 'ZERO', active: true }],
+      [],
+      null,
+    );
+    expect(resolved).toEqual([]);
   });
 
   it('caches invoice agent branches per OU', () => {

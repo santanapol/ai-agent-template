@@ -24,8 +24,8 @@ Read-only re-audit of all backend services. Method: `backend-service-spec-bootst
 | Topic | Status |
 |-------|--------|
 | `spec:consistency` behavioral blind spots | Known limitation — keep integration tests + periodic re-audit |
-| Frontend GHA targets `frontend/backoffice` only | `backoffice-shadcn` still untested in GHA |
-| Vendored `coding-standard/` | Self-contained for CI — see `coding-standard/README.md` for sync |
+| Frontend GHA targets `frontend/backoffice` only | `backoffice` still untested in GHA |
+| Vendored `coding-standard/` | Self-contained copy in repo — sync from org upstream; see `coding-standard/README.md` |
 
 ---
 
@@ -48,8 +48,8 @@ Read-only re-audit of all backend services. Method: `backend-service-spec-bootst
 |-----|--------|
 | `smart-report` not in GHA matrix | spec gates never run in CI |
 | `branch-report` not in GHA matrix | lint only local |
-| Gateway `spec:lint` extends `coding-standard/.../org-api.yaml` **outside repo** | GHA fails on clean checkout |
-| Frontend job builds `frontend/backoffice` only | `backoffice-shadcn` untested in GHA |
+| Gateway `spec:lint` extends vendored `coding-standard/.../org-api.yaml` | In-repo copy — GHA works on clean checkout |
+| Frontend job builds `frontend/backoffice` only | `backoffice` untested in GHA |
 
 ---
 

@@ -24,7 +24,7 @@ source-scan: 2026-07-03 — src 62/62 files
 
 ## Consumers
 
-- **backoffice-shadcn** — Staff Management (admin CRUD, archive, role assign), My Profile (self lookup/patch)
+- **backoffice** — Staff Management (admin CRUD, archive, role assign), My Profile (self lookup/patch)
 
 ## Source of Truth
 
@@ -135,7 +135,7 @@ Prefix ผ่าน gateway: `/api/v1/staff`
   - `@zero-platform/roles` — role-based access control
   - MongoDB — shared DB กับ auth (`auth_login`)
 - **ถูกเรียกใช้โดย (Consumed by):**
-  - `backoffice-shadcn` — UI สำหรับจัดการพนักงาน + My Profile
+  - `backoffice` — UI สำหรับจัดการพนักงาน + My Profile
 
 ### External (ภายนอก)
 

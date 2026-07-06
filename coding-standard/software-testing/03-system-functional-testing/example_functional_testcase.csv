@@ -1,0 +1,15 @@
+TC_ID,Module,Severity,Description,Pre-Condition,Test Steps,Test Data,Expected Result,Status,Comments
+FUNC-001,Authentication,High,Verify login success with valid credentials,User is on login page,"1. Enter valid username
+2. Enter valid password
+3. Click Login",User: admin / Pass: 123456,User is redirected to Dashboard. Welcome message is shown.,Pass,
+FUNC-002,Authentication,High,Verify login failure with invalid password,User is on login page,"1. Enter valid username
+2. Enter invalid password
+3. Click Login",User: admin / Pass: wrongpass,Error message "Invalid credentials" is shown. System stays on login page.,Pass,
+FUNC-003,Authentication,Medium,Verify login form validation (Empty fields),User is on login page,"1. Leave username empty
+2. Leave password empty
+3. Click Login",,"Validation errors 'Username required' and 'Password required' appear below fields. Submit button is disabled.",Pass,
+FUNC-004,Authentication,Medium,Verify password masking,User is on login page,"1. Type in password field
+2. Click 'Eye' icon to toggle visibility",Pass: SecretP@ss1,"Characters are masked as dots initially. Clicking 'Eye' reveals the password.",Fail,"UI bug: Eye icon is not clickable on Safari"
+FUNC-005,Authentication,Low,Verify SQL Injection prevention on login form,User is on login page,"1. Enter SQL injection string in username
+2. Enter random password
+3. Click Login",User: admin' OR 1=1 --,Error message "Invalid credentials" is shown. No data is leaked.,Not Tested,Waiting for security team

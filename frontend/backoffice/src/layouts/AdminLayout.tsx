@@ -1,45 +1,37 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Layout,
-  Menu,
-  Dropdown,
-  Space,
-  Tag,
-  Typography,
-  theme,
-  Alert,
-  Select,
-  Grid,
-  Button,
-  Breadcrumb,
-  Drawer,
-} from 'antd';
-import type { MenuProps } from 'antd';
+  BarChart3,
+  Code2,
+  DollarSign,
+  LayoutDashboard,
+  LineChart,
+  Settings,
+  ShieldCheck,
+  Store,
+  User,
+  Users,
+  WalletCards,
+} from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { AppSidebar } from '@/components/layout/app-sidebar';
+import { BranchSwitcher } from '@/components/layout/branch-switcher';
+import { NavMain } from '@/components/layout/nav-main';
+import { NavUser } from '@/components/layout/nav-user';
+import { SiteHeader } from '@/components/layout/site-header';
 import {
-  UserOutlined,
-  TeamOutlined,
-  DashboardOutlined,
-  LogoutOutlined,
-  FileTextOutlined,
-  ShopOutlined,
-  CodeOutlined,
-  DollarOutlined,
-  FundOutlined,
-  SettingOutlined,
-  SafetyCertificateOutlined,
-  SunOutlined,
-  MoonOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from '@ant-design/icons';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../hooks/useTheme';
-import * as staffApi from '../lib/staffApiClient';
-import * as invoicesApi from '../lib/invoicesApiClient';
-import * as authApi from '../lib/authApiClient';
-import { apiErrorMessage } from '../lib/apiError';
-import { useAppFeedback } from '../hooks/useAppFeedback';
+  flattenMenuToTwoLevels,
+  resolveSidebarBreadcrumb,
+  type MenuItemType,
+} from '@/components/layout/types';
+import { PageBreadcrumbProvider } from '@/contexts/PageBreadcrumbContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { apiErrorMessage } from '@/lib/apiError';
+import * as authApi from '@/lib/authApiClient';
 import {
   canSwitchActiveBranch,
   findInvoiceAgentBranch,
@@ -51,14 +43,12 @@ import {
   setCachedInvoiceAgentBranches,
   setCachedMyBranch,
   upsertBranchInList,
-} from '../lib/branchOptions';
-import { subscribeProfileRefresh } from '../lib/profileRefresh';
-import type { InvoiceAgentBranch } from '../types/invoice';
-import { UserAvatar } from '../components/UserAvatar';
-
-const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
-const { useBreakpoint } = Grid;
+} from '@/lib/branchOptions';
+import * as invoicesApi from '@/lib/invoicesApiClient';
+import { subscribeProfileRefresh } from '@/lib/profileRefresh';
+import * as staffApi from '@/lib/staffApiClient';
+import type { InvoiceAgentBranch } from '@/types/invoice';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ROLE_LABELS: Record<string, string> = {
   platform_admin: 'Platform Admin',
@@ -81,61 +71,77 @@ function formatRoleLabel(role: string | undefined): string {
 
 const SIDEBAR_EXCLUDED_MENU_KEYS = new Set(['my_profile']);
 
-const MENU_UI: Record<string, MenuItemUI> = {
-  dashboard: { icon: <DashboardOutlined />, route: '/' },
-  'dashboard:view': { icon: <DashboardOutlined />, route: '/' },
-  staff: { icon: <TeamOutlined /> },
-  'profiles:list': { icon: <TeamOutlined />, route: '/staff' },
-  billing: { icon: <DollarOutlined /> },
-  'agents:list': { icon: <ShopOutlined />, route: '/agents' },
-  'invoices:list': { icon: <FileTextOutlined />, route: '/invoices' },
-  reports: { icon: <CodeOutlined /> },
-  'reports:smart': { icon: <CodeOutlined />, route: '/smart-reports' },
-  'branch-report': { icon: <FundOutlined /> },
-  'branch-report:marketing': { icon: <FundOutlined /> },
+const MENU_ENTRIES: Record<string, { icon: React.ReactNode; route?: string }> = {
+  dashboard: { icon: <LayoutDashboard />, route: '/' },
+  'dashboard:view': { icon: <LayoutDashboard />, route: '/' },
+  staff: { icon: <Users /> },
+  'profiles:list': { icon: <Users />, route: '/staff' },
+  billing: { icon: <WalletCards /> },
+  'agents:list': { icon: <Store />, route: '/agents' },
+  'invoices:list': { icon: <DollarSign />, route: '/invoices' },
+  reports: { icon: <Code2 /> },
+  'reports:smart': { icon: <BarChart3 />, route: '/smart-reports' },
+  'branch-report': { icon: <LineChart /> },
+  'branch-report:marketing': { icon: <LineChart /> },
   'branch-report:marketing:channel-performance:read': {
-    icon: <FundOutlined />,
+    icon: <LineChart />,
     route: '/branch-report/marketing/channel-performance',
   },
-  my_profile: { icon: <UserOutlined />, route: '/profile' },
-  settings: { icon: <SettingOutlined /> },
-  'permissions:manage': { icon: <SafetyCertificateOutlined />, route: '/permissions' },
+  my_profile: { icon: <User />, route: '/profile' },
+  settings: { icon: <Settings /> },
+  'permissions:manage': { icon: <ShieldCheck />, route: '/permissions' },
 };
 
-interface MenuItemUI {
-  icon: React.ReactNode;
-  route?: string;
-}
+function MobileNavSheet({
+  open,
+  onOpenChange,
+  menuTree,
+  selectedPath,
+  onNavigate,
+  branchSwitcherProps,
+  navUserProps,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  menuTree: MenuItemType[];
+  selectedPath: string;
+  onNavigate: (route: string) => void;
+  branchSwitcherProps: React.ComponentProps<typeof BranchSwitcher>;
+  navUserProps: React.ComponentProps<typeof NavUser>;
+}) {
+  const handleNavigate = (route: string) => {
+    onNavigate(route);
+    onOpenChange(false);
+  };
 
-interface MenuItemType {
-  key: string;
-  label: React.ReactNode;
-  icon?: React.ReactNode;
-  children?: MenuItemType[];
-  sort_order: number;
-}
-
-function toAntdMenuItems(items: MenuItemType[]): MenuProps['items'] {
-  return items.map((item) => ({
-    key: item.key,
-    label: item.label,
-    icon: item.icon,
-    children: item.children?.length ? toAntdMenuItems(item.children) : undefined,
-  }));
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="w-72 p-0">
+        <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+          <div className="p-2">
+            <BranchSwitcher {...branchSwitcherProps} />
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <NavMain items={menuTree} selectedPath={selectedPath} onNavigate={handleNavigate} />
+          </div>
+          <div className="border-t border-sidebar-border p-2">
+            <NavUser {...navUserProps} />
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
 }
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = theme.useToken();
-  const screens = useBreakpoint();
+  const isMobile = useIsMobile();
   const { theme: currentTheme, toggleTheme } = useTheme();
   const { user, logout, switchBranch, branchSwitching, menus, menuError } = useAuth();
   const { message } = useAppFeedback();
-  
-  const isMobile = !screens.md;
-  const [siderCollapsed, setSiderCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [headerProfile, setHeaderProfile] = useState<{
     firstname: string;
@@ -152,17 +158,15 @@ const AdminLayout: React.FC = () => {
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const showBranchSwitcher = canSwitchActiveBranch(user?.role);
-  const isCompactHeader = !screens.md;
-
   const homeBranchId = user?.home_branch_id ?? user?.branch_id;
   const activeBranchId = optimisticBranchId ?? user?.branch_id;
   const viewingOtherBranch =
     Boolean(user?.home_branch_id) && activeBranchId !== user?.home_branch_id;
+  const roleLabel = formatRoleLabel(user?.role);
 
   const handleBranchSwitch = useCallback(
     async (branchId: string) => {
-      if (branchSwitching) return;
-      if (branchId === activeBranchId) return;
+      if (branchSwitching || branchId === activeBranchId) return;
       const target = findInvoiceAgentBranch(branches, branchId);
       const label = target ? formatBranchOptionLabel(target) : branchId;
       setOptimisticBranchId(branchId);
@@ -178,16 +182,11 @@ const AdminLayout: React.FC = () => {
     [switchBranch, message, branches, activeBranchId, branchSwitching],
   );
 
-  useEffect(() => {
-    return subscribeProfileRefresh(() => {
-      setProfileRefreshKey((key) => key + 1);
-    });
-  }, []);
+  useEffect(() => subscribeProfileRefresh(() => setProfileRefreshKey((k) => k + 1)), []);
 
   useEffect(() => {
     if (!user?.sub) return;
     let cancelled = false;
-
     staffApi
       .getProfileByUserId(user.sub)
       .then(({ profile }) => {
@@ -206,7 +205,6 @@ const AdminLayout: React.FC = () => {
           setHeaderProfile(null);
         }
       });
-
     return () => {
       cancelled = true;
     };
@@ -214,19 +212,18 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !user.branch_id) {
+      setActiveBranch(null);
+      setActiveBranchLoading(false);
       return;
     }
     let cancelled = false;
-
     const cached = getCachedMyBranch(user.branch_id);
     if (cached) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate from session cache before network
       setActiveBranch(cached);
       setActiveBranchLoading(false);
     } else {
       setActiveBranchLoading(true);
     }
-
     authApi
       .getMyBranch()
       .then((branch) => {
@@ -240,7 +237,6 @@ const AdminLayout: React.FC = () => {
       .finally(() => {
         if (!cancelled) setActiveBranchLoading(false);
       });
-
     return () => {
       cancelled = true;
     };
@@ -248,372 +244,193 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     if (!user?.sub || !showBranchSwitcher) {
+      setBranches([]);
+      setBranchesLoading(false);
       return;
     }
     let cancelled = false;
-
     const cached = getCachedInvoiceAgentBranches(user.ou_id);
     if (cached) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate branch switcher from cache
       setBranches(mergePlatformBranches(cached));
       setBranchesLoading(false);
     } else {
       setBranchesLoading(true);
     }
-
     const loadSwitcherBranches = async () => {
       let list: InvoiceAgentBranch[] = cached ?? [];
-
       try {
         const res = await invoicesApi.listInvoiceAgents();
         list = res.data;
       } catch {
         // Switcher still works with active branch only when invoice service is down.
       }
-
-      if (activeBranch) {
-        list = upsertBranchInList(list, activeBranch);
-      }
-
+      if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
       const sorted = mergePlatformBranches(list);
-      if (user.ou_id) {
-        setCachedInvoiceAgentBranches(user.ou_id, sorted);
-      }
+      if (user.ou_id) setCachedInvoiceAgentBranches(user.ou_id, sorted);
       setBranches(sorted);
       setBranchesLoading(false);
     };
-
     void loadSwitcherBranches();
-
     return () => {
       cancelled = true;
     };
   }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch]);
 
   const branchDisplayLabel = formatActiveBranchLabel(
-    user?.branch_id ? activeBranch : null,
+    activeBranch,
     user?.branch_id,
-    user?.branch_id ? activeBranchLoading : false,
+    activeBranchLoading,
   );
 
-  const branchSelectOptions = useMemo(
-    () =>
-      (showBranchSwitcher ? branches : []).map((branch) => ({
-        value: branch.branch_id,
-        label: formatBranchOptionLabel(branch),
-        disabled: branch.active === false,
-      })),
-    [branches, showBranchSwitcher],
-  );
-
-  const menuItems = useMemo(() => {
+  const menuTree = useMemo(() => {
     const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
-
     menus.forEach((node) => {
       if (SIDEBAR_EXCLUDED_MENU_KEYS.has(node.key)) return;
-      const ui = MENU_UI[node.key];
+      const ui = MENU_ENTRIES[node.key];
       if (!ui) return;
-
       const item: MenuItemType = {
         key: ui.route || node.key,
         label: node.label,
         icon: ui.icon,
+        route: ui.route,
         sort_order: node.sort_order,
       };
-
       itemMap.set(node.key, { item, parentKey: node.parent_key });
     });
-
     const rootItems: MenuItemType[] = [];
-
     itemMap.forEach((val) => {
       const { item, parentKey } = val;
       if (parentKey && itemMap.has(parentKey)) {
         const parentVal = itemMap.get(parentKey)!;
-        if (!parentVal.item.children) {
-          parentVal.item.children = [];
-        }
+        if (!parentVal.item.children) parentVal.item.children = [];
         parentVal.item.children.push(item);
       } else {
         rootItems.push(item);
       }
     });
-
     const sortItems = (items: MenuItemType[], depth = 0) => {
       if (depth > 5) {
         console.warn('Menu structure exceeded maximum depth or contains a cycle');
         return;
       }
       items.sort((a, b) => a.sort_order - b.sort_order);
-      items.forEach((item) => {
-        if (item.children) {
-          sortItems(item.children, depth + 1);
-        }
-      });
+      items.forEach((i) => i.children && sortItems(i.children, depth + 1));
     };
-
     sortItems(rootItems);
-    return toAntdMenuItems(rootItems);
+    return flattenMenuToTwoLevels(rootItems);
   }, [menus]);
-
-  const defaultOpenKeys = useMemo(() => {
-    const keys: string[] = [];
-    menus.forEach((node) => {
-      const ui = MENU_UI[node.key];
-      if (ui && ui.route === location.pathname && node.parent_key) {
-        keys.push(node.parent_key);
-      }
-    });
-    return keys;
-  }, [menus, location.pathname]);
-
-  const [menuOpenKeys, setMenuOpenKeys] = useState<string[]>([]);
-  const resolvedOpenKeys = useMemo(
-    () => [...new Set([...menuOpenKeys, ...defaultOpenKeys])],
-    [menuOpenKeys, defaultOpenKeys],
-  );
-
-  const userMenu = {
-    items: [
-      {
-        key: 'profile',
-        icon: <UserOutlined />,
-        label: 'My Profile',
-        onClick: () => navigate('/profile'),
-      },
-      {
-        key: 'logout',
-        icon: <LogoutOutlined />,
-        label: 'Logout',
-        onClick: async () => {
-          await logout();
-          navigate('/login');
-        },
-      },
-    ],
-  };
 
   const branchSelectLoading =
     branchSwitching || (showBranchSwitcher && branchesLoading && branches.length === 0);
 
-  const breadcrumbItems = useMemo(() => {
-    const paths = location.pathname.split('/').filter(Boolean);
-    if (paths.length === 0) return [{ title: 'Home' }];
+  const activeBranchSelectLabel = useMemo(() => {
+    const match = branches.find((b) => b.branch_id === activeBranchId);
+    if (match) return formatBranchOptionLabel(match);
+    if (activeBranch && activeBranch.branch_id === activeBranchId) {
+      return formatBranchOptionLabel(activeBranch);
+    }
+    return branchDisplayLabel;
+  }, [branches, activeBranchId, activeBranch, branchDisplayLabel]);
 
-    const items = [{ title: <a onClick={() => navigate('/')}>Home</a> }];
-    let currentPath = '';
-    paths.forEach((path, index) => {
-      currentPath += `/${path}`;
-      const name = path
-        .replace(/-/g, ' ')
-        .split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+  const breadcrumb = useMemo(
+    () => resolveSidebarBreadcrumb(menuTree, location.pathname),
+    [menuTree, location.pathname],
+  );
 
-      const isLast = index === paths.length - 1;
-      items.push({
-        title: isLast ? <span>{name}</span> : <a onClick={() => navigate(currentPath)}>{name}</a>,
-      });
-    });
-    return items;
-  }, [location.pathname, navigate]);
+  const handleNavigate = (route: string) => navigate(route);
+
+  const branchSwitcherProps = {
+    showBranchSwitcher,
+    branchDisplayLabel,
+    activeBranchId,
+    activeBranchSelectLabel,
+    branches,
+    branchSelectLoading,
+    viewingOtherBranch,
+    homeBranchId,
+    onBranchSwitch: (branchId: string) => void handleBranchSwitch(branchId),
+    roleLabel,
+  };
+
+  const navUserProps = {
+    displayName,
+    headerProfile,
+    user,
+    roleLabel,
+    currentTheme,
+    onToggleTheme: toggleTheme,
+    onProfile: () => navigate('/profile'),
+    onLogout: () => {
+      void logout().then(() => navigate('/login'));
+    },
+  };
+
+  const sidebarProps = {
+    menuTree,
+    selectedPath: location.pathname,
+    onNavigate: handleNavigate,
+    ...branchSwitcherProps,
+    ...navUserProps,
+  };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      {!isMobile ? (
-        <Sider
-          collapsible
-          collapsed={siderCollapsed}
-          onCollapse={setSiderCollapsed}
-          width={250}
-          theme="light"
-          style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
-        >
-          <div
-            style={{
-              height: 64,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderBottom: `1px solid ${token.colorBorderSecondary}`,
-              overflow: 'hidden',
-            }}
-          >
-            <Typography.Title
-              level={4}
-              style={{ margin: 0, color: token.colorPrimary, whiteSpace: 'nowrap' }}
-            >
-              {siderCollapsed ? 'ZP' : 'Zero Platform'}
-            </Typography.Title>
-          </div>
-          <Menu
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            openKeys={resolvedOpenKeys}
-            onOpenChange={setMenuOpenKeys}
-            style={{ borderRight: 0, marginTop: token.margin }}
-            items={menuItems}
-            onClick={({ key }) => {
-              if (key.startsWith('/')) {
-                navigate(key);
-              }
-            }}
-          />
-        </Sider>
-      ) : (
-        <Drawer
-          title="Zero Platform"
-          placement="left"
-          onClose={() => setMobileMenuOpen(false)}
-          open={mobileMenuOpen}
-          styles={{ body: { padding: 0 } }}
-          width={250}
-        >
-          <Menu
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            openKeys={resolvedOpenKeys}
-            onOpenChange={setMenuOpenKeys}
-            style={{ borderRight: 0 }}
-            items={menuItems}
-            onClick={({ key }) => {
-              if (key.startsWith('/')) {
-                navigate(key);
-                setMobileMenuOpen(false);
-              }
-            }}
-          />
-        </Drawer>
-      )}
-      <Layout>
-        <Header
-          style={{
-            height: 64,
-            lineHeight: 'normal',
-            background: token.colorBgContainer,
-            paddingInline: token.paddingLG,
-            paddingBlock: 0,
-            borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            display: 'flex',
-            justifyContent: isMobile ? 'space-between' : 'flex-end',
-            alignItems: 'center',
-          }}
-        >
-          {isMobile && (
-            <Button
-              type="text"
-              icon={mobileMenuOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ fontSize: '16px', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            />
-          )}
-          <Space size="middle" align="center">
-            <div style={{ textAlign: 'right', lineHeight: 1.25, maxWidth: 340 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <Text strong style={{ fontSize: token.fontSize }}>
-                  {displayName ?? user?.sub ?? '—'}
-                </Text>
-                {!isCompactHeader && (
-                  <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                    {formatRoleLabel(user?.role)}
-                  </Tag>
-                )}
-                {!showBranchSwitcher && (
-                  <Tag icon={<ShopOutlined />} style={{ marginInlineEnd: 0 }}>
-                    {branchDisplayLabel}
-                  </Tag>
-                )}
-              </div>
+    <>
+      {!isMobile ? <AppSidebar {...sidebarProps} /> : null}
 
-              {showBranchSwitcher && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    gap: 6,
-                    marginTop: 2,
-                    flexWrap: 'nowrap',
-                  }}
-                >
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: token.fontSizeSM, whiteSpace: 'nowrap' }}
-                  >
-                    Branch
-                  </Text>
-                  <Select
-                    size="small"
-                    variant="borderless"
-                    showSearch
-                    optionFilterProp="label"
-                    placement="bottomRight"
-                    listHeight={320}
-                    popupMatchSelectWidth={false}
-                    style={{ width: 'auto', maxWidth: 220 }}
-                    styles={{ popup: { root: { minWidth: 200 } } }}
-                    aria-label="Select active branch"
-                    placeholder="Select branch"
-                    value={activeBranchId}
-                    loading={branchSelectLoading}
-                    allowClear={viewingOtherBranch}
-                    options={branchSelectOptions}
-                    notFoundContent={branchesLoading ? 'Loading branches...' : 'No branches found'}
-                    onChange={(branchId) => {
-                      if (!branchId || branchId === activeBranchId) return;
-                      void handleBranchSwitch(branchId);
-                    }}
-                    onClear={() => {
-                      if (homeBranchId) void handleBranchSwitch(homeBranchId);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            <Button
-              type="text"
-              icon={currentTheme === 'dark' ? <SunOutlined /> : <MoonOutlined />}
-              onClick={toggleTheme}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            />
-            <Dropdown menu={userMenu} placement="bottomRight">
-              <UserAvatar
-                size={40}
-                firstname={headerProfile?.firstname}
-                lastname={headerProfile?.lastname}
-                displayName={displayName}
-                username={headerProfile?.username}
-                style={{ backgroundColor: token.colorPrimary, cursor: 'pointer' }}
+      <MobileNavSheet
+        open={mobileNavOpen}
+        onOpenChange={setMobileNavOpen}
+        menuTree={menuTree}
+        selectedPath={location.pathname}
+        onNavigate={handleNavigate}
+        branchSwitcherProps={branchSwitcherProps}
+        navUserProps={navUserProps}
+      />
+
+      <SidebarInset>
+        <PageBreadcrumbProvider baseBreadcrumb={breadcrumb}>
+          {(headerBreadcrumb) => (
+            <>
+              <SiteHeader
+                breadcrumb={headerBreadcrumb}
+                isMobile={isMobile}
+                onOpenMobileNav={() => setMobileNavOpen(true)}
+                mobileBranchLabel={
+                  isMobile
+                    ? showBranchSwitcher
+                      ? activeBranchSelectLabel
+                      : branchDisplayLabel
+                    : null
+                }
               />
-            </Dropdown>
-          </Space>
-        </Header>
-        <Content style={{ padding: token.paddingLG, background: token.colorBgLayout }}>
-          <Breadcrumb style={{ marginBottom: token.marginMD }} items={breadcrumbItems} />
-          {menuError && (
-            <Alert
-              title="System warning"
-              description="Some menu items are temporarily unavailable. Please try refreshing the page or logging in again."
-              type="warning"
-              showIcon
-              closable
-              style={{ marginBottom: token.marginLG, borderRadius: token.borderRadius }}
-            />
+
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                {menuError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>System warning</AlertTitle>
+                    <AlertDescription>
+                      Some menu items are temporarily unavailable. Please try refreshing the page or logging in again.
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <Outlet key={user?.branch_id ?? 'guest'} />
+              </div>
+            </>
           )}
-          <Outlet key={user?.branch_id ?? 'guest'} />
-        </Content>
-      </Layout>
-    </Layout>
+        </PageBreadcrumbProvider>
+      </SidebarInset>
+    </>
   );
 };
 
-export default AdminLayout;
+function AdminLayoutShell() {
+  return (
+    <SidebarProvider>
+      <AdminLayout />
+    </SidebarProvider>
+  );
+}
+
+export default AdminLayoutShell;

@@ -17,7 +17,7 @@ source-scan: 2026-07-03 — src 77/77 files
 
 ## Consumers
 
-- **backoffice** / **backoffice-shadcn** — invoice UI, agent management
+- **backoffice** / **backoffice** — invoice UI, agent management
 - **gateway** — `/api/v1/agent-invoice/*`, `/api/v1/invoices/*`
 
 ## Source of Truth

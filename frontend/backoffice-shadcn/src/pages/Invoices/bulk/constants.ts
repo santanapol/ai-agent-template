@@ -1,2 +1,0 @@
-export const MAX_BULK_INVOICE_SELECTION = 50;
-export const DEFAULT_BULK_CONCURRENCY = 5;

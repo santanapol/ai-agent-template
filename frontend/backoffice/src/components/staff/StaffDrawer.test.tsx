@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { Form } from 'antd';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import StaffDrawer, { type DrawerMode } from './StaffDrawer';
 
@@ -10,6 +9,7 @@ interface WrapperProps {
   isSaving?: boolean;
   showAdminResetPassword?: boolean;
   canAssignRole?: boolean;
+  errors?: Partial<Record<'code' | 'firstname' | 'lastname' | 'email' | 'tel' | 'username' | 'password' | 'confirmPassword' | 'newPassword' | 'confirmNewPassword', string>>;
 }
 
 const Wrapper: React.FC<WrapperProps> = ({
@@ -17,8 +17,17 @@ const Wrapper: React.FC<WrapperProps> = ({
   isSaving = false,
   showAdminResetPassword = false,
   canAssignRole = false,
+  errors = {},
 }) => {
-  const [form] = Form.useForm();
+  const [values, setValues] = useState({
+    code: '',
+    firstname: '',
+    lastname: '',
+    email: '',
+    tel: '',
+    role: 'staff',
+  });
+
   return (
     <StaffDrawer
       open={true}
@@ -28,7 +37,9 @@ const Wrapper: React.FC<WrapperProps> = ({
       updatingPassword={false}
       showAdminResetPassword={showAdminResetPassword}
       canAssignRole={canAssignRole}
-      form={form}
+      values={values}
+      errors={errors}
+      onChange={(field, value) => setValues((prev) => ({ ...prev, [field]: value }))}
       onClose={vi.fn()}
       onSave={vi.fn()}
       onSwitchToEdit={vi.fn()}
@@ -58,6 +69,31 @@ describe('StaffDrawer', () => {
     it('hides System Role when canAssignRole is false', () => {
       renderWithProviders(<Wrapper mode="create" />);
       expect(screen.queryByText('System Role')).not.toBeInTheDocument();
+    });
+
+    it('links validation errors to the matching inputs', () => {
+      renderWithProviders(
+        <Wrapper
+          mode="create"
+          errors={{
+            code: 'Code is required',
+            email: 'Email is invalid',
+            password: 'Password is too short',
+          }}
+        />,
+      );
+
+      expect(screen.getByLabelText('Staff Code')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Staff Code')).toHaveAttribute('aria-describedby', 'staff-code-error');
+      expect(screen.getByText('Code is required')).toHaveAttribute('id', 'staff-code-error');
+
+      expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Email')).toHaveAttribute('aria-describedby', 'staff-email-error');
+      expect(screen.getByText('Email is invalid')).toHaveAttribute('id', 'staff-email-error');
+
+      expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Password')).toHaveAttribute('aria-describedby', 'staff-password-error');
+      expect(screen.getByText('Password is too short')).toHaveAttribute('id', 'staff-password-error');
     });
 
     it('disables Create Profile button while saving', () => {

@@ -18,5 +18,21 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // shadcn/ui exports variants alongside components; TanStack Table triggers incompatible-library warnings
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-hooks/incompatible-library': 'warn',
+      'react-hooks/set-state-in-effect': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    files: ['src/components/ui/**', 'src/hooks/useConfirmDialog.tsx', 'src/contexts/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ]);

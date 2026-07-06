@@ -17,7 +17,7 @@ npm run seed:example      # dev sample staff_profiles
 
 Included in `backend-checks` matrix → `npm run ci` ([ci-check.yml](../../../../.github/workflows/ci-check.yml))
 
-## E2E (via backoffice-shadcn)
+## E2E (via backoffice)
 
 | UI route | Spec | Coverage |
 |----------|------|----------|
@@ -38,4 +38,4 @@ Requires staff service running + auth seed. Staff-specific seed optional for ric
 ## Reference
 
 - agent-invoice `INTEGRATION-TESTS.md` — pattern to copy when integration CI is added
-- backoffice-shadcn `QA-TEST-MATRIX.md` — staff rows (when frontend QA matrix exists)
+- backoffice `QA-TEST-MATRIX.md` — staff rows (when frontend QA matrix exists)

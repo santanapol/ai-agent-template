@@ -1,5 +1,13 @@
-import { Button, List, Modal, Progress, Space, Typography } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { failedResultIds } from '../bulk/markUnprocessed';
 import type { BulkProgress } from '../bulk/types';
 
@@ -30,70 +38,60 @@ export function BulkProgressModal({
   const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   return (
-    <Modal
-      title={title}
-      open={open}
-      width={560}
-      onCancel={onClose}
-      footer={(
-        <Space>
-          {running && <Button onClick={onCancelRun}>Cancel</Button>}
-          {finished && retryIds.length > 0 && (
-            <Button onClick={() => onRetry(retryIds)} disabled={running}>
+    <Dialog open={open} onOpenChange={(next) => !next && !running && onClose()}>
+      <DialogContent className="sm:max-w-lg" showCloseButton={!running}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4" role="status" aria-live="polite">
+          <Progress value={percent} aria-label="Bulk operation progress" />
+          <p className="text-sm text-muted-foreground">
+            {progress.done} / {progress.total}
+            {progress.currentIvNo ? ` — ${progress.currentIvNo}` : ''}
+          </p>
+          {summaryText && finished ? <p className="text-sm">{summaryText}</p> : null}
+          <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+            {progress.results.length === 0 ? (
+              <li className="text-sm text-muted-foreground">Waiting to start…</li>
+            ) : (
+              progress.results.map((item) => (
+                <li key={item.id} className="flex gap-2 text-sm">
+                  <span className="font-medium">
+                    {item.status === 'success'
+                      ? 'Success'
+                      : item.status === 'failed'
+                        ? 'Failed'
+                        : 'Cancelled'}
+                  </span>
+                  {item.status === 'success' ? (
+                    <CheckCircle className="size-4 shrink-0 text-success" aria-hidden="true" />
+                  ) : (
+                    <XCircle className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{item.ivNo}</p>
+                    {item.error ? <p className="text-destructive">{item.error}</p> : null}
+                    {item.status === 'cancelled' && !item.error ? (
+                      <p className="text-muted-foreground">Cancelled</p>
+                    ) : null}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+        <DialogFooter className="gap-2">
+          {running ? <Button variant="outline" onClick={onCancelRun}>Cancel</Button> : null}
+          {finished && retryIds.length > 0 ? (
+            <Button variant="outline" onClick={() => onRetry(retryIds)} disabled={running}>
               Retry failed
             </Button>
-          )}
-          <Button type="primary" onClick={onClose} disabled={running}>
+          ) : null}
+          <Button onClick={onClose} disabled={running}>
             Close
           </Button>
-        </Space>
-      )}
-      closable={!running}
-      maskClosable={false}
-    >
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        <Progress percent={percent} status={running ? 'active' : 'normal'} />
-        <Typography.Text type="secondary">
-          {progress.done} / {progress.total}
-          {progress.currentIvNo ? ` — ${progress.currentIvNo}` : ''}
-        </Typography.Text>
-        {summaryText && finished && (
-          <Typography.Text>{summaryText}</Typography.Text>
-        )}
-        <List
-          size="small"
-          dataSource={progress.results}
-          locale={{ emptyText: 'Waiting to start…' }}
-          renderItem={(item) => (
-            <List.Item style={{ display: 'block', paddingInline: 0 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
-                <span style={{ flexShrink: 0, lineHeight: '22px' }}>
-                  {item.status === 'success' ? (
-                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                  ) : (
-                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                  )}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Typography.Text strong style={{ whiteSpace: 'nowrap' }}>
-                    {item.ivNo}
-                  </Typography.Text>
-                  {item.error && (
-                    <Typography.Text type="danger" style={{ display: 'block', marginTop: 2 }}>
-                      {item.error}
-                    </Typography.Text>
-                  )}
-                  {item.status === 'cancelled' && !item.error && (
-                    <Typography.Text type="secondary" style={{ display: 'block', marginTop: 2 }}>
-                      Cancelled
-                    </Typography.Text>
-                  )}
-                </div>
-              </div>
-            </List.Item>
-          )}
-        />
-      </Space>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

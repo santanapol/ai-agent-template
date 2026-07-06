@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import * as api from '../../../lib/agentsApiClient';
 import type { Agent, ListAgentsParams, UpdateAgentPayload } from '../../../types/agents';
 
@@ -18,7 +18,7 @@ export function useAgents() {
       if (data.total !== undefined) setTotal(data.total);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to fetch agents');
+      toast.error(err.response?.data?.message || 'Failed to fetch agents');
     } finally {
       setLoading(false);
     }
@@ -31,7 +31,7 @@ export function useAgents() {
       setUnsyncedBranches(data.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to fetch unsynced branches');
+      toast.error(err.response?.data?.message || 'Failed to fetch unsynced branches');
     } finally {
       setLoadingUnsynced(false);
     }
@@ -41,11 +41,11 @@ export function useAgents() {
     setLoading(true);
     try {
       await api.syncAgent(branchId);
-      message.success('Agent synchronized successfully');
+      toast.success('Agent synchronized successfully');
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to sync agent');
+      toast.error(err.response?.data?.message || 'Failed to sync agent');
       return false;
     } finally {
       setLoading(false);
@@ -56,11 +56,11 @@ export function useAgents() {
     setLoading(true);
     try {
       await api.updateAgent(id, payload, dateISO);
-      message.success('Agent updated successfully');
+      toast.success('Agent updated successfully');
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to update agent');
+      toast.error(err.response?.data?.message || 'Failed to update agent');
       return false;
     } finally {
       setLoading(false);
@@ -71,11 +71,11 @@ export function useAgents() {
     setLoading(true);
     try {
       await api.softDeleteAgent(id, dateISO);
-      message.success('Agent deleted successfully');
+      toast.success('Agent deleted successfully');
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to delete agent');
+      toast.error(err.response?.data?.message || 'Failed to delete agent');
       return false;
     } finally {
       setLoading(false);

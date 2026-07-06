@@ -113,7 +113,7 @@ describe('MenuCatalogTab', () => {
     renderWithProviders(<MenuCatalogTab />);
     await screen.findByText('Settings');
 
-    await user.click(screen.getByRole('button', { name: /add node/i }));
+    await user.click(screen.getByRole('button', { name: /create menu node/i }));
 
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText(/^key$/i), 'new:action');
@@ -182,7 +182,7 @@ describe('MenuCatalogTab', () => {
 
     renderWithProviders(<MenuCatalogTab />);
     await screen.findByText('Settings');
-    await user.click(screen.getByRole('button', { name: /add node/i }));
+    await user.click(screen.getByRole('button', { name: /create menu node/i }));
 
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText(/^key$/i), 'dup:action');

@@ -1,33 +1,38 @@
 import React from 'react';
-import { App as AntApp, ConfigProvider, Spin } from 'antd';
-import enUS from 'antd/locale/en_US';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
-import AdminLayout from './layouts/AdminLayout';
-import { PermissionGuard } from './components/PermissionGuard';
-import Dashboard from './pages/Dashboard';
-import StaffManagement from './pages/StaffManagement';
-import MyProfile from './pages/MyProfile';
-import InvoiceList from './pages/Invoices';
-import InvoiceDetail from './pages/Invoices/InvoiceDetail';
-import AgentsList from './pages/Agents';
-import AgentFeesPage from './pages/AgentFees';
-import Login from './pages/Login';
-import SmartReport from './pages/SmartReport';
-import ChannelPerformancePage from './pages/branch-report/marketing/ChannelPerformancePage';
-import PermissionAdmin from './pages/PermissionAdmin';
-import Error403 from './pages/Error403';
-
-import Error404 from './pages/Error404';
-import Error500 from './pages/Error500';
-import RouteErrorPage from './components/RouteErrorPage';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { useTheme } from './hooks/useTheme';
-import { getAppTheme } from './theme/themeConfig';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
+import { Spinner } from '@/components/ui/spinner';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import RouteErrorPage from '@/components/RouteErrorPage';
+import { ConfirmDialogProvider } from '@/hooks/useConfirmDialog';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import AdminLayout from '@/layouts/AdminLayout';
+import Login from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import MyProfile from '@/pages/MyProfile';
+import InvoiceList from '@/pages/Invoices';
+import InvoiceDetail from '@/pages/Invoices/InvoiceDetail';
+import AgentsList from '@/pages/Agents';
+import AgentFeesPage from '@/pages/AgentFees';
+import StaffManagement from '@/pages/StaffManagement';
+import SmartReport from '@/pages/SmartReport';
+import ChannelPerformancePage from '@/pages/branch-report/marketing/ChannelPerformancePage';
+import PermissionAdmin from '@/pages/PermissionAdmin';
+import Error403 from '@/pages/Error403';
+import Error404 from '@/pages/Error404';
+import Error500 from '@/pages/Error500';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <Spin size="large" fullscreen />;
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
@@ -124,7 +129,6 @@ const router = createBrowserRouter([
         ),
       },
       { path: '403', element: <Error403 /> },
-
       { path: '500', element: <Error500 /> },
     ],
   },
@@ -132,25 +136,17 @@ const router = createBrowserRouter([
   { path: '*', element: <Navigate to="/404" replace /> },
 ]);
 
-const AppContent: React.FC = () => {
-  const { theme } = useTheme();
-  const appTheme = getAppTheme(theme);
-
-  return (
-    <ConfigProvider locale={enUS} theme={appTheme}>
-      <AntApp>
-        <AuthProvider>
-          <RouterProvider router={router} />
-        </AuthProvider>
-      </AntApp>
-    </ConfigProvider>
-  );
-};
-
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <AppContent />
+      <TooltipProvider>
+        <AuthProvider>
+          <ConfirmDialogProvider>
+            <RouterProvider router={router} />
+            <Toaster richColors closeButton />
+          </ConfirmDialogProvider>
+        </AuthProvider>
+      </TooltipProvider>
     </ThemeProvider>
   );
 };

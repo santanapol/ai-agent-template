@@ -17,7 +17,7 @@ source-scan: 2026-07-03 — src 39/39 files
 
 ## Consumers
 
-- **backoffice** / **backoffice-shadcn** — branch marketing reports UI
+- **backoffice** / **backoffice** — branch marketing reports UI
 - **gateway** — `/api/v1/branch-report/*` → `:3015`
 
 ## Source of Truth

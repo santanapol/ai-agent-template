@@ -1,16 +1,17 @@
-import React from 'react';
-import { Button, DatePicker, Flex, Form, Grid, Radio, Select } from 'antd';
-import type { FormInstance } from 'antd/es/form';
-import type { Dayjs } from 'dayjs';
-import type { ChannelType } from '../../../types/branchReport';
+import React, { useState } from 'react';
+import dayjs, { type Dayjs } from 'dayjs';
+import type { ChannelType } from '@/types/branchReport';
+import { DateFilterField } from '@/components/date-filter-field';
+import { FilterSelectField } from '@/components/filter-select-field';
+import { Button } from '@/components/ui/button';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
-  createRegDateRangeDisabledDate,
-  getRoyalty21DefaultSearchValues,
   isRegDateRangeValid,
   isRegDateRangeWithinMaxDays,
   MAX_REG_DATE_RANGE_DAYS,
-  regDateRangePresets,
-} from '../../../lib/branch-report/royalty21DateRange';
+  getRoyalty21DefaultSearchValues,
+} from '@/lib/branch-report/royalty21DateRange';
 
 export interface Royalty21SearchValues {
   channelType: ChannelType;
@@ -24,133 +25,144 @@ export interface InviteLinkOption {
 }
 
 interface Royalty21SearchFormProps {
-  form: FormInstance<Royalty21SearchValues>;
   inviteLinkOptions: InviteLinkOption[];
   inviteLinksLoading: boolean;
   tableLoading?: boolean;
   disabled?: boolean;
+  initialValues?: Partial<Royalty21SearchValues>;
   onSearch: (values: Royalty21SearchValues) => void;
   onClear: () => void;
 }
 
 const CHANNEL_TYPE_OPTIONS = [
-  { label: 'Affiliate Link', value: 'affiliate_link' as const },
-  { label: 'Member Referral', value: 'member_referral' as const },
-  { label: 'Direct', value: 'direct' as const },
+  { value: 'affiliate_link', label: 'Affiliate Link' },
+  { value: 'member_referral', label: 'Member Referral' },
+  { value: 'direct', label: 'Direct' },
 ];
 
-const disabledRegDate = createRegDateRangeDisabledDate();
-
 const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
-  form,
   inviteLinkOptions,
   inviteLinksLoading,
   tableLoading = false,
   disabled = false,
+  initialValues,
   onSearch,
   onClear,
 }) => {
-  const screens = Grid.useBreakpoint();
-  const isHorizontal = Boolean(screens.md);
+  const defaults = getRoyalty21DefaultSearchValues();
+  const [channelType, setChannelType] = useState<ChannelType>(
+    initialValues?.channelType ?? defaults.channelType,
+  );
+  const [inviteLinkId, setInviteLinkId] = useState<string | undefined>(
+    initialValues?.inviteLinkId,
+  );
+  const [regFrom, setRegFrom] = useState(
+    initialValues?.regDateRange?.[0]?.format('YYYY-MM-DD') ??
+      defaults.regDateRange[0].format('YYYY-MM-DD'),
+  );
+  const [regTo, setRegTo] = useState(
+    initialValues?.regDateRange?.[1]?.format('YYYY-MM-DD') ??
+      defaults.regDateRange[1].format('YYYY-MM-DD'),
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const from = dayjs(regFrom);
+    const to = dayjs(regTo);
+    if (!isRegDateRangeValid(from, to)) {
+      setError('Register To must be on or after Register From');
+      return;
+    }
+    if (!isRegDateRangeWithinMaxDays(from, to)) {
+      setError(`Register date range must not exceed ${MAX_REG_DATE_RANGE_DAYS} days`);
+      return;
+    }
+    if (channelType === 'affiliate_link' && !inviteLinkId) {
+      setError('Please select affiliate link');
+      return;
+    }
+    setError(null);
+    onSearch({ channelType, inviteLinkId, regDateRange: [from, to] });
+  };
+
+  const handleClear = () => {
+    const next = getRoyalty21DefaultSearchValues();
+    setChannelType(next.channelType);
+    setInviteLinkId(undefined);
+    setRegFrom(next.regDateRange[0].format('YYYY-MM-DD'));
+    setRegTo(next.regDateRange[1].format('YYYY-MM-DD'));
+    setError(null);
+    onClear();
+  };
 
   return (
-    <Form<Royalty21SearchValues>
-      form={form}
-      layout={isHorizontal ? 'horizontal' : 'vertical'}
-      labelCol={isHorizontal ? { flex: '140px' } : undefined}
-      wrapperCol={isHorizontal ? { flex: 1 } : undefined}
-      initialValues={getRoyalty21DefaultSearchValues()}
-      onFinish={onSearch}
-      disabled={disabled}
-      scrollToFirstError
-    >
-      <Form.Item
-        name="channelType"
-        label="Channel Type"
-        rules={[{ required: true, message: 'Please select channel type' }]}
-      >
-        <Radio.Group
-          optionType="button"
-          options={CHANNEL_TYPE_OPTIONS}
-          onChange={() => form.setFieldValue('inviteLinkId', undefined)}
-        />
-      </Form.Item>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <FieldGroup>
+        <Field>
+          <FieldLabel>Channel Type</FieldLabel>
+          <ToggleGroup
+            value={[channelType]}
+            onValueChange={(value) => {
+              const next = value[0];
+              if (!next) return;
+              setChannelType(next as ChannelType);
+              if (next !== 'affiliate_link') setInviteLinkId(undefined);
+            }}
+            disabled={disabled}
+            className="flex flex-wrap"
+          >
+            {CHANNEL_TYPE_OPTIONS.map((opt) => (
+              <ToggleGroupItem key={opt.value} value={opt.value} size="sm" variant="outline">
+                {opt.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Field>
 
-      <Form.Item
-        noStyle
-        shouldUpdate={(prev, cur) => prev.channelType !== cur.channelType}
-      >
-        {({ getFieldValue }) =>
-          getFieldValue('channelType') === 'affiliate_link' ? (
-            <Form.Item
-              name="inviteLinkId"
-              label="Affiliate Link"
-              rules={[{ required: true, message: 'Please select affiliate link' }]}
-            >
-              <Select
-                showSearch
-                placeholder="Select affiliate link"
-                optionFilterProp="label"
-                options={inviteLinkOptions}
-                loading={inviteLinksLoading}
-                allowClear={false}
-                notFoundContent={
-                  inviteLinksLoading
-                    ? undefined
-                    : 'No affiliate links for this branch'
-                }
-                style={{ minWidth: isHorizontal ? 320 : undefined, width: '100%' }}
-              />
-            </Form.Item>
-          ) : null
-        }
-      </Form.Item>
+        {channelType === 'affiliate_link' ? (
+          <FilterSelectField
+            id="royalty21-invite-link"
+            label="Affiliate Link"
+            placeholder="Select affiliate link"
+            value={inviteLinkId}
+            onChange={setInviteLinkId}
+            options={inviteLinkOptions}
+            width="w-full max-w-md"
+          />
+        ) : null}
 
-      <Form.Item
-        name="regDateRange"
-        label="Register Date"
-        rules={[
-          { required: true, message: 'Please select register date range' },
-          {
-            validator(_, value: [Dayjs, Dayjs] | null | undefined) {
-              const [from, to] = value ?? [];
-              if (!from || !to) return Promise.resolve();
-              if (!isRegDateRangeValid(from, to)) {
-                return Promise.reject(
-                  new Error('Register To must be on or after Register From'),
-                );
-              }
-              if (!isRegDateRangeWithinMaxDays(from, to)) {
-                return Promise.reject(
-                  new Error(
-                    `Register date range must not exceed ${MAX_REG_DATE_RANGE_DAYS} days`,
-                  ),
-                );
-              }
-              return Promise.resolve();
-            },
-          },
-        ]}
-      >
-        <DatePicker.RangePicker
-          format="DD/MM/YYYY"
-          presets={regDateRangePresets()}
-          disabledDate={disabledRegDate}
-          style={{ width: isHorizontal ? 280 : '100%' }}
-        />
-      </Form.Item>
+        <div className="grid gap-4 md:grid-cols-2">
+          <DateFilterField
+            id="royalty21-reg-from"
+            label="From"
+            value={regFrom}
+            onChange={setRegFrom}
+          />
+          <DateFilterField
+            id="royalty21-reg-to"
+            label="To"
+            value={regTo}
+            onChange={setRegTo}
+          />
+        </div>
 
-      <Form.Item wrapperCol={isHorizontal ? { offset: 140 } : undefined}>
-        <Flex gap="middle" wrap="wrap">
-          <Button type="primary" htmlType="submit" loading={tableLoading}>
+        {error ? (
+          <Field data-invalid>
+            <FieldError role="alert">{error}</FieldError>
+          </Field>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={disabled || tableLoading || inviteLinksLoading}>
             Search
           </Button>
-          <Button htmlType="button" onClick={onClear} disabled={tableLoading}>
+          <Button type="button" variant="outline" onClick={handleClear} disabled={tableLoading}>
             Clear
           </Button>
-        </Flex>
-      </Form.Item>
-    </Form>
+        </div>
+      </FieldGroup>
+    </form>
   );
 };
 

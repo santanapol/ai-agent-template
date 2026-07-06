@@ -21,12 +21,12 @@ source-scan: 2026-07-03 — src 39/39 files (re-audit round 4 — re-hardened: r
 - Dynamic permissions admin (`/auth/admin/menus`, `/auth/admin/role-permissions`)
 - Internal APIs สำหรับ trusted services (provision user, set password, revoke sessions, set role)
 
-**ผู้ใช้หลัก:** Gateway (JWT verify), backoffice-shadcn (login ผ่าน gateway), staff (internal APIs)
+**ผู้ใช้หลัก:** Gateway (JWT verify), backoffice (login ผ่าน gateway), staff (internal APIs)
 
 ## Consumers
 
 - **gateway** — JWKS + JWT `token_gen` verification
-- **backoffice-shadcn** — login/logout/refresh, me, branch switch, menus
+- **backoffice** — login/logout/refresh, me, branch switch, menus
 - **staff** — `POST /internal/users`, password reset, session revoke, role assign
 
 ## Source of Truth
@@ -152,7 +152,7 @@ Normative detail: [openapi.yaml](../../../../backend/auth/openapi.yaml)
 ### Internal
 
 - **Depends on:** MongoDB, Redis (production), `@zero-platform/roles`
-- **Consumed by:** gateway, staff, backoffice-shadcn
+- **Consumed by:** gateway, staff, backoffice
 
 ### External
 

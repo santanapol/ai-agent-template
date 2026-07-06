@@ -7,6 +7,11 @@ import type { StaffProfile } from '../types/staff';
 import * as staffApi from '../lib/staffApiClient';
 import { renderWithProviders } from '../test/renderWithProviders';
 
+const mockFeedback = vi.hoisted(() => ({
+  message: { success: vi.fn(), error: vi.fn() },
+  modal: { confirm: vi.fn() },
+}));
+
 // Mock dependencies
 vi.mock('../hooks/usePermission');
 vi.mock('../lib/staffApiClient');
@@ -15,10 +20,7 @@ vi.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('../hooks/useAppFeedback', () => ({
-  useAppFeedback: () => ({
-    message: { success: vi.fn(), error: vi.fn() },
-    modal: { confirm: vi.fn() },
-  }),
+  useAppFeedback: () => mockFeedback,
 }));
 
 // Mock window.matchMedia for Ant Design UI components
@@ -63,7 +65,7 @@ describe('StaffManagement', () => {
     });
   });
 
-  test('renders Add New Staff and Edit buttons when permissions are granted', async () => {
+  test('renders Create staff and Edit buttons when permissions are granted', async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === 'profiles:create') return true;
       if (permission === 'profiles:edit') return true;
@@ -81,11 +83,16 @@ describe('StaffManagement', () => {
 
     renderWithProviders(<StaffManagement />);
 
-    expect(await screen.findByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /Edit profile/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Create staff/i })).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Edit profile/i })).toBeInTheDocument();
+    });
   });
 
-  test('hides Add New Staff button when profiles:create is missing', async () => {
+  test('hides Create staff button when profiles:create is missing', async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === 'profiles:create') return false;
       return true;
@@ -94,7 +101,7 @@ describe('StaffManagement', () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /Add New Staff/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Create staff/i })).not.toBeInTheDocument();
     });
   });
 
@@ -108,10 +115,10 @@ describe('StaffManagement', () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Add New Staff/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Create staff/i })).toBeInTheDocument();
     });
 
-    screen.getByRole('button', { name: /Add New Staff/i }).click();
+    screen.getByRole('button', { name: /Create staff/i }).click();
 
     await waitFor(() => {
       expect(screen.getByText('System Role')).toBeInTheDocument();
@@ -154,6 +161,36 @@ describe('StaffManagement', () => {
 
     renderWithProviders(<StaffManagement />);
 
-    expect(await screen.findByRole('button', { name: /View profile/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /View profile/i })).toBeInTheDocument();
+    });
+  });
+
+  test('shows empty state when filtered search returns no profiles', async () => {
+    vi.mocked(usePermission).mockReturnValue(true);
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: 'OK',
+      message: null,
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+      requestId: '123',
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No data found')).toBeInTheDocument();
+    });
+  });
+
+  test('shows error toast when profile fetch fails', async () => {
+    vi.mocked(staffApi.listProfiles).mockRejectedValue(new Error('network'));
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalled();
+    });
   });
 });

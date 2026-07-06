@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
-import { Table, Button, Badge, Typography, Space, Tooltip, theme } from 'antd';
-import { EyeOutlined, EditOutlined, InboxOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import type { StaffProfile } from '../../types/staff';
-
-const { Text } = Typography;
+import { Archive, Eye, Pencil, RotateCcw } from 'lucide-react';
+import { DataTable, type DataTableColumn, type ServerPaginationConfig } from '@/components/data-table';
+import { StatusBadge } from '@/components/status-badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { StaffProfile } from '@/types/staff';
 
 export interface StaffTablePagination {
   current: number;
@@ -20,7 +20,7 @@ interface StaffTableProps {
   onEdit?: (record: StaffProfile) => void;
   onArchive: (record: StaffProfile) => void;
   onRestore: (record: StaffProfile) => void;
-  onTableChange: (cfg: TablePaginationConfig) => void;
+  onTableChange: (page: number, pageSize: number) => void;
 }
 
 const StaffTable: React.FC<StaffTableProps> = ({
@@ -33,113 +33,121 @@ const StaffTable: React.FC<StaffTableProps> = ({
   onRestore,
   onTableChange,
 }) => {
-  const { token } = theme.useToken();
-
-  const columns = useMemo<ColumnsType<StaffProfile>>(
+  const columns = useMemo<DataTableColumn<StaffProfile>[]>(
     () => [
-      { title: 'Code', dataIndex: 'code', key: 'code' },
+      { key: 'code', title: 'Code', accessor: 'code' },
       {
-        title: 'Name',
         key: 'name',
-        render: (_, record) => (
-          <Text strong>
+        title: 'Name',
+        render: (record) => (
+          <span className="font-medium">
             {record.firstname} {record.lastname}
-          </Text>
+          </span>
         ),
       },
       {
-        title: 'Username',
         key: 'username',
-        render: (_, record) => <Text type="secondary">{record.user?.username ?? '—'}</Text>,
+        title: 'Username',
+        render: (record) => (
+          <span className="text-muted-foreground">{record.user?.username ?? '—'}</span>
+        ),
       },
-      { title: 'Email', dataIndex: 'email', key: 'email' },
-      { title: 'Tel', dataIndex: 'tel', key: 'tel' },
+      { key: 'email', title: 'Email', accessor: 'email' },
+      { key: 'tel', title: 'Tel', accessor: 'tel' },
       {
-        title: 'Status',
-        dataIndex: 'status',
         key: 'status',
-        render: (status: StaffProfile['status']) => (
-          <Badge
-            status={status === 'active' ? 'success' : 'default'}
-            text={
-              <span
-                style={{
-                  textTransform: 'capitalize',
-                  color: status === 'active' ? token.colorSuccess : token.colorTextSecondary,
-                }}
-              >
-                {status}
-              </span>
-            }
+        title: 'Status',
+        render: (record) => (
+          <StatusBadge
+            status={record.status}
+            variant={record.status === 'active' ? 'success' : 'secondary'}
           />
         ),
       },
       {
-        title: 'Actions',
         key: 'actions',
-        render: (_, record) => (
-          <Space>
-            <Tooltip title="View profile">
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                aria-label="View profile"
-                onClick={() => onView(record)}
+        title: 'Actions',
+        render: (record) => (
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="outline" size="icon-sm" aria-label="View profile" onClick={() => onView(record)}>
+                    <Eye />
+                  </Button>
+                }
               />
+              <TooltipContent>View profile</TooltipContent>
             </Tooltip>
-            {onEdit && (
-              <Tooltip title="Edit profile">
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  aria-label="Edit profile"
-                  onClick={() => onEdit(record)}
+            {onEdit ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button variant="outline" size="icon-sm" aria-label="Edit profile" onClick={() => onEdit(record)}>
+                      <Pencil />
+                    </Button>
+                  }
                 />
+                <TooltipContent>Edit profile</TooltipContent>
               </Tooltip>
-            )}
+            ) : null}
             {record.status === 'active' ? (
-              <Tooltip title="Archive profile">
-                <Button
-                  type="text"
-                  danger
-                  icon={<InboxOutlined />}
-                  aria-label="Archive profile"
-                  onClick={() => onArchive(record)}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="text-destructive"
+                      aria-label="Archive profile"
+                      onClick={() => onArchive(record)}
+                    >
+                      <Archive />
+                    </Button>
+                  }
                 />
+                <TooltipContent>Archive profile</TooltipContent>
               </Tooltip>
             ) : (
-              <Tooltip title="Restore profile">
-                <Button
-                  type="text"
-                  style={{ color: token.colorSuccess }}
-                  icon={<ReloadOutlined />}
-                  aria-label="Restore profile"
-                  onClick={() => onRestore(record)}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="text-success"
+                      aria-label="Restore profile"
+                      onClick={() => onRestore(record)}
+                    >
+                      <RotateCcw />
+                    </Button>
+                  }
                 />
+                <TooltipContent>Restore profile</TooltipContent>
               </Tooltip>
             )}
-          </Space>
+          </div>
         ),
       },
     ],
-    [onView, onEdit, onArchive, onRestore, token],
+    [onView, onEdit, onArchive, onRestore],
   );
 
+  const serverPagination: ServerPaginationConfig = {
+    page: pagination.current,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    pageSizeOptions: [10, 20, 50],
+    onChange: onTableChange,
+  };
+
   return (
-    <Table
+    <DataTable
       columns={columns}
-      dataSource={profiles}
-      rowKey="id"
+      data={profiles}
       loading={loading}
-      scroll={{ x: 'max-content' }}
-      pagination={{
-        current: pagination.current,
-        pageSize: pagination.pageSize,
-        total: pagination.total,
-        showSizeChanger: true,
-        pageSizeOptions: [10, 20, 50],
-      }}
-      onChange={onTableChange}
+      rowKey="id"
+      pagination={serverPagination}
     />
   );
 };

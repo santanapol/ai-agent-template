@@ -36,7 +36,7 @@ npm install
 npm run dev
 ```
 
-ตัวระบบจะรันขึ้นมาที่ `http://localhost:5174` โดยมีการตั้งค่า **Proxy** ผ่าน `vite.config.ts` ดังนี้:
+ตัวระบบจะรันขึ้นมาที่ `http://localhost:5175` โดยมีการตั้งค่า **Proxy** ผ่าน `vite.config.ts` ดังนี้:
 - **`/auth/*`** → จะถูก Forward ไปที่ `http://127.0.0.1:3001` (Auth Service)
 - **`/api/*`**  → จะถูก Forward ไปที่ `http://127.0.0.1:3000` (Gateway Service)
 

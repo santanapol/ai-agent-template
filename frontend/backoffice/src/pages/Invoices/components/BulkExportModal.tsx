@@ -26,36 +26,42 @@ export function BulkExportModal({
   const abortRef = useRef<AbortController | null>(null);
   const activeFormatRef = useRef<BulkExportFormat>(format);
 
-  const setRunningState = useCallback((value: boolean) => {
-    setRunning(value);
-    onRunningChange?.(value);
-  }, [onRunningChange]);
+  const setRunningState = useCallback(
+    (value: boolean) => {
+      setRunning(value);
+      onRunningChange?.(value);
+    },
+    [onRunningChange],
+  );
 
-  const runExport = useCallback(async (ids: string[], exportFormat: BulkExportFormat) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    activeFormatRef.current = exportFormat;
-    setRunningState(true);
-    setFinished(false);
-    setProgress({ done: 0, total: ids.length, results: [] });
+  const runExport = useCallback(
+    async (ids: string[], exportFormat: BulkExportFormat) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      activeFormatRef.current = exportFormat;
+      setRunningState(true);
+      setFinished(false);
+      setProgress({ done: 0, total: ids.length, results: [] });
 
-    try {
-      const zipBlob = await runBulkExport({
-        invoiceIds: ids,
-        format: exportFormat,
-        signal: controller.signal,
-        onProgress: setProgress,
-      });
+      try {
+        const zipBlob = await runBulkExport({
+          invoiceIds: ids,
+          format: exportFormat,
+          signal: controller.signal,
+          onProgress: setProgress,
+        });
 
-      if (zipBlob) {
-        triggerBlobDownload(zipBlob, formatBulkExportZipFilename());
+        if (zipBlob) {
+          triggerBlobDownload(zipBlob, formatBulkExportZipFilename());
+        }
+      } finally {
+        setRunningState(false);
+        setFinished(true);
       }
-    } finally {
-      setRunningState(false);
-      setFinished(true);
-    }
-  }, [setRunningState]);
+    },
+    [setRunningState],
+  );
 
   useEffect(() => {
     if (!open || invoiceIds.length === 0) {

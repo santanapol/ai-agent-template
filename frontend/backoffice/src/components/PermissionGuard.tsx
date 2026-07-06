@@ -1,8 +1,8 @@
 import React from 'react';
-import { Spin } from 'antd';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { usePermission } from '../hooks/usePermission';
+import { Spinner } from '@/components/ui/spinner';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermission } from '@/hooks/usePermission';
 
 interface PermissionGuardProps {
   required: string;
@@ -14,7 +14,11 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({ required, chil
   const hasPermission = usePermission(required);
 
   if (loading || menuLoading) {
-    return <Spin size="large" fullscreen />;
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
   }
 
   if (!user || !hasPermission) {

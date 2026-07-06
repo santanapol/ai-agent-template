@@ -1,0 +1,11 @@
+Platform,OS Version,Browser,Browser Version,Screen Resolution,Category,Status,Notes / Found Bugs
+Windows,Win 11,Google Chrome,Latest (v120+),1920x1080,Desktop,Pass,Primary target audience (No UI issues)
+Windows,Win 11,Microsoft Edge,Latest,1920x1080,Desktop,Pass,Chromium based behaves identically to Chrome
+Windows,Win 10,Mozilla Firefox,Latest,1366x768,Desktop,Pass,Standard laptop resolution
+macOS,macOS 14 Sonoma,Safari,Latest,1440x900,Desktop,Pass,"Apple's layout engine works, animations are smooth"
+macOS,macOS 14 Sonoma,Google Chrome,Latest,1440x900,Desktop,Pass,
+iOS,iOS 17,Safari,Mobile,390x844 (iPhone 14),Mobile,Pass,"Responsive layout works, touch targets are large enough"
+iOS,iOS 16,Chrome,Mobile,390x844,Mobile,Pass,
+Android,Android 14,Chrome,Mobile,412x915 (Pixel 7),Mobile,Fail,"Critical Bug: Datepicker overlay goes out of screen bounds"
+Android,Android 13,Samsung Internet,Latest,360x800,Mobile,Fail,"Bug: Custom select dropdown cannot be closed once opened"
+iPadOS,iPadOS 17,Safari,Tablet,810x1080 (iPad),Tablet,Pass,Displays in desktop-mode appropriately

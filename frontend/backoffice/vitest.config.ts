@@ -1,15 +1,23 @@
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+import path from 'path';
+import { defineConfig, mergeConfig } from 'vitest/config';
+import viteConfig from './vite.config';
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/setupTests.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
-    // Ant Design table + debounced search tests exceed 5s under parallel load.
-    testTimeout: 10_000,
-    pool: 'forks',
-  },
-});
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    esbuild: {
+      jsxInject: `import React from 'react'`,
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./src/setupTests.ts'],
+      include: ['src/**/*.test.{ts,tsx}'],
+    },
+  }),
+);

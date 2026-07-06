@@ -39,7 +39,7 @@ describe('BulkStatusModal', () => {
       expect(screen.getByText('IV-001')).toBeInTheDocument();
     });
 
-    const footer = document.querySelector('.ant-modal-footer');
+    const footer = document.querySelector('[data-slot="dialog-footer"]');
     expect(footer).not.toBeNull();
     await userEvent.click(within(footer as HTMLElement).getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledWith(true, true);
@@ -149,7 +149,7 @@ describe('BulkStatusModal', () => {
       expect(screen.getByRole('button', { name: 'Retry failed' })).toBeInTheDocument();
     });
 
-    const footer = document.querySelector('.ant-modal-footer');
+    const footer = document.querySelector('[data-slot="dialog-footer"]');
     await userEvent.click(within(footer as HTMLElement).getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledWith(false, true);
   });

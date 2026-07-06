@@ -25,32 +25,38 @@ export function BulkStatusModal({
   const abortRef = useRef<AbortController | null>(null);
   const activeActionRef = useRef<BulkStatusAction>(action);
 
-  const setRunningState = useCallback((value: boolean) => {
-    setRunning(value);
-    onRunningChange?.(value);
-  }, [onRunningChange]);
+  const setRunningState = useCallback(
+    (value: boolean) => {
+      setRunning(value);
+      onRunningChange?.(value);
+    },
+    [onRunningChange],
+  );
 
-  const runUpdate = useCallback(async (ids: string[], statusAction: BulkStatusAction) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    activeActionRef.current = statusAction;
-    setRunningState(true);
-    setFinished(false);
-    setProgress({ done: 0, total: ids.length, results: [] });
+  const runUpdate = useCallback(
+    async (ids: string[], statusAction: BulkStatusAction) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      activeActionRef.current = statusAction;
+      setRunningState(true);
+      setFinished(false);
+      setProgress({ done: 0, total: ids.length, results: [] });
 
-    try {
-      await runBulkStatusUpdate({
-        invoiceIds: ids,
-        action: statusAction,
-        signal: controller.signal,
-        onProgress: setProgress,
-      });
-    } finally {
-      setRunningState(false);
-      setFinished(true);
-    }
-  }, [setRunningState]);
+      try {
+        await runBulkStatusUpdate({
+          invoiceIds: ids,
+          action: statusAction,
+          signal: controller.signal,
+          onProgress: setProgress,
+        });
+      } finally {
+        setRunningState(false);
+        setFinished(true);
+      }
+    },
+    [setRunningState],
+  );
 
   useEffect(() => {
     if (!open || invoiceIds.length === 0) {

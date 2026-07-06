@@ -1,10 +1,7 @@
 import React, { useRef } from 'react';
-import { Empty, Table } from 'antd';
-import type { Royalty21Row } from '../../../types/branchReport';
-import { royalty21Columns } from './royalty21Columns';
-
-/** AdminLayout header + card chrome — keeps sticky header below the navbar. */
-const STICKY_OFFSET_HEADER = 64;
+import { DataTable } from '@/components/data-table';
+import type { Royalty21Row } from '@/types/branchReport';
+import { buildRoyalty21Columns } from './royalty21Columns';
 
 interface Royalty21TableProps {
   rows: Royalty21Row[];
@@ -26,36 +23,27 @@ const Royalty21Table: React.FC<Royalty21TableProps> = ({
   onTableChange,
 }) => {
   const tableWrapRef = useRef<HTMLDivElement>(null);
+  const columns = buildRoyalty21Columns();
 
   return (
-    <div ref={tableWrapRef}>
-      <Table<Royalty21Row>
-        rowKey={(row) => `${row.username}::${row.register}`}
-        size="small"
-        bordered
+    <div ref={tableWrapRef} className="overflow-x-auto">
+      <DataTable
+        columns={columns}
+        data={rows}
         loading={loading}
-        columns={royalty21Columns}
-        dataSource={rows}
+        rowKey={(row) => `${row.username}::${row.register}`}
+        emptyTitle={hasSearched ? 'No members found for selected channel' : 'Select channel and click Search'}
+        emptyDescription=""
         pagination={{
-          current: page,
+          page,
           pageSize,
           total,
-          showSizeChanger: true,
-          pageSizeOptions: ['20', '50', '100'],
+          pageSizeOptions: [20, 50, 100],
           showTotal: (count) => `Total ${count} members`,
-        }}
-        scroll={{ x: 'max-content' }}
-        sticky={{ offsetHeader: STICKY_OFFSET_HEADER }}
-        locale={{
-          emptyText: hasSearched ? (
-            <Empty description="No members found for selected channel" />
-          ) : (
-            <Empty description="Select channel and click Search" />
-          ),
-        }}
-        onChange={(pagination) => {
-          onTableChange(pagination.current ?? 1, pagination.pageSize ?? pageSize);
-          tableWrapRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          onChange: (nextPage, nextSize) => {
+            onTableChange(nextPage, nextSize);
+            tableWrapRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          },
         }}
       />
     </div>

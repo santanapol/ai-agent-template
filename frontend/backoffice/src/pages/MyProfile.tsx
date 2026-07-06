@@ -1,45 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  Card,
-  Descriptions,
-  Flex,
-  Form,
-  Input,
-  Spin,
-  Typography,
-  theme,
-  Row,
-  Col,
-} from 'antd';
-import { KeyOutlined, SaveOutlined } from '@ant-design/icons';
-import { PageContainer, PageContentCard } from '../components/layout';
+import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import type { PatchProfilePayload, StaffProfile } from '../types/staff';
-import * as staffApi from '../lib/staffApiClient';
-import * as authApi from '../lib/authApiClient';
+import { PageContainer, PageContentCard } from '@/components/layout';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { passwordChangeFieldErrors } from '@/lib/authErrors';
+import { apiErrorMessage } from '@/lib/apiError';
 import {
-  PASSWORD_MIN_LENGTH,
-  confirmPasswordRule,
-  passwordFieldRules,
-} from '../lib/passwordPolicy';
-import { telephoneRules, formatTelephoneToE164 } from '../lib/telephone';
-import axios from 'axios';
-import { apiErrorMessage } from '../lib/apiError';
-import { useAppFeedback } from '../hooks/useAppFeedback';
-import { UserAvatar } from '../components/UserAvatar';
-import { notifyProfileRefresh } from '../lib/profileRefresh';
-
-const { Title, Text } = Typography;
+  validateConfirmPassword,
+  validateEmail,
+  validatePassword,
+  validateRequired,
+  validateTelephone,
+} from '@/lib/formValidation';
+import { notifyProfileRefresh } from '@/lib/profileRefresh';
+import * as authApi from '@/lib/authApiClient';
+import * as staffApi from '@/lib/staffApiClient';
+import { formatTelephoneToE164 } from '@/lib/telephone';
+import type { PatchProfilePayload, StaffProfile } from '@/types/staff';
+import { ChangePasswordCard } from './profile/ChangePasswordCard';
+import { ProfileDetailsCard } from './profile/ProfileDetailsCard';
 
 const MyProfile: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { message } = useAppFeedback();
-  const { token } = theme.useToken();
-  const [form] = Form.useForm();
-  const [passwordForm] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -47,6 +34,18 @@ const MyProfile: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const currentEtag = useRef<string | null>(null);
+
+  const [code, setCode] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
+  const [email, setEmail] = useState('');
+  const [tel, setTel] = useState('');
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   const userSub = user?.sub;
 
@@ -66,13 +65,11 @@ const MyProfile: React.FC = () => {
         if (cancelled) return;
         setProfile(data);
         currentEtag.current = etag;
-        form.setFieldsValue({
-          code: data.code,
-          firstname: data.firstname,
-          lastname: data.lastname,
-          email: data.email,
-          tel: data.tel,
-        });
+        setCode(data.code);
+        setFirstname(data.firstname);
+        setLastname(data.lastname);
+        setEmail(data.email);
+        setTel(data.tel);
       } catch (err) {
         if (cancelled) return;
         setProfile(null);
@@ -87,22 +84,40 @@ const MyProfile: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [form, message, userSub, reloadKey]);
+  }, [message, userSub, reloadKey]);
+
+  const clearProfileError = (field: string) => {
+    if (!profileErrors[field]) return;
+    setProfileErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleSave = async () => {
     if (!profile || !currentEtag.current) return;
 
-    let values: Record<string, string>;
-    try {
-      values = await form.validateFields();
-    } catch {
+    const errors: Record<string, string> = {};
+    const fnErr = validateRequired(firstname, 'first name');
+    const lnErr = validateRequired(lastname, 'last name');
+    const emailErr = validateEmail(email);
+    const telErr = validateTelephone(tel);
+    if (fnErr) errors.firstname = fnErr;
+    if (lnErr) errors.lastname = lnErr;
+    if (emailErr) errors.email = emailErr;
+    if (telErr) errors.tel = telErr;
+    if (Object.keys(errors).length > 0) {
+      setProfileErrors(errors);
       return;
     }
+    setProfileErrors({});
+
     const payload: PatchProfilePayload = {
-      firstname: values.firstname,
-      lastname: values.lastname,
-      email: values.email,
-      tel: formatTelephoneToE164(values.tel),
+      firstname,
+      lastname,
+      email,
+      tel: formatTelephoneToE164(tel),
     };
 
     setSaving(true);
@@ -114,13 +129,11 @@ const MyProfile: React.FC = () => {
       );
       setProfile(updated);
       currentEtag.current = etag;
-      form.setFieldsValue({
-        code: updated.code,
-        firstname: updated.firstname,
-        lastname: updated.lastname,
-        email: updated.email,
-        tel: updated.tel,
-      });
+      setCode(updated.code);
+      setFirstname(updated.firstname);
+      setLastname(updated.lastname);
+      setEmail(updated.email);
+      setTel(updated.tel);
       message.success('Profile updated');
       notifyProfileRefresh();
     } catch (err) {
@@ -131,37 +144,35 @@ const MyProfile: React.FC = () => {
   };
 
   const handleChangePassword = async () => {
-    let values: Record<string, string>;
-    try {
-      values = await passwordForm.validateFields();
-    } catch {
+    const errors: Record<string, string> = {};
+    if (!currentPassword) errors.current_password = 'Please enter your current password';
+    const npErr = validatePassword(newPassword);
+    const cpErr = validateConfirmPassword(confirmNewPassword, newPassword);
+    if (npErr) errors.new_password = npErr;
+    if (cpErr) errors.confirm_new_password = cpErr;
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
       return;
     }
+    setPasswordErrors({});
+
     setChangingPassword(true);
     try {
       await authApi.changePassword({
-        current_password: values.current_password,
-        new_password: values.new_password,
+        current_password: currentPassword,
+        new_password: newPassword,
       });
       message.success('Password updated. Please sign in again.');
-      passwordForm.resetFields();
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
       await logout();
       navigate('/login', { replace: true });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const code = err.response?.data?.code as string | undefined;
-        if (code === 'LOGIN_INVALID_CREDENTIALS') {
-          message.error('Current password is incorrect.');
-          return;
-        }
-        if (code === 'AUTH_PASSWORD_UNCHANGED') {
-          message.error('New password must differ from the current password.');
-          return;
-        }
-        if (code === 'AUTH_PASSWORD_POLICY_VIOLATION') {
-          message.error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
-          return;
-        }
+      const fieldErrors = passwordChangeFieldErrors(err);
+      if (fieldErrors) {
+        setPasswordErrors(fieldErrors);
+        return;
       }
       message.error(apiErrorMessage(err, 'Failed to change password'));
     } finally {
@@ -169,139 +180,92 @@ const MyProfile: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <PageContainer
+        title="My Profile"
+        description="View and update your staff contact details. Staff code cannot be changed."
+      >
+        <Skeleton className="h-64 max-w-[720px] rounded-xl" aria-busy="true" />
+      </PageContainer>
+    );
+  }
+
+  if (loadError && !profile) {
+    return (
+      <PageContainer
+        title="My Profile"
+        description="View and update your staff contact details. Staff code cannot be changed."
+        extra={
+          <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+            <RefreshCw data-icon="inline-start" />
+            Refresh
+          </Button>
+        }
+      >
+        <PageContentCard className="max-w-[720px]">
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-destructive">{loadError}</p>
+            <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+              Retry
+            </Button>
+          </div>
+        </PageContentCard>
+      </PageContainer>
+    );
+  }
+
+  if (!profile) return null;
+
   return (
     <PageContainer
       title="My Profile"
       description="View and update your staff contact details. Staff code cannot be changed."
       extra={
-        <Button onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
+        <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
+          <RefreshCw data-icon="inline-start" />
           Refresh
         </Button>
       }
     >
-
-      <Spin spinning={loading}>
-        {loadError && !profile ? (
-          <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
-            <Text type="danger">{loadError}</Text>
-          </Card>
-        ) : profile ? (
-          <PageContentCard style={{ maxWidth: 720 }}>
-            <Flex align="center" gap={token.margin} style={{ marginBottom: token.marginLG }}>
-              <UserAvatar
-                size={64}
-                firstname={profile.firstname}
-                lastname={profile.lastname}
-                username={profile.user.username}
-                style={{ backgroundColor: token.colorPrimary, flexShrink: 0 }}
-              />
-              <div>
-                <Title level={4} style={{ margin: 0 }}>
-                  {[profile.firstname, profile.lastname].filter(Boolean).join(' ') || profile.user.username}
-                </Title>
-                <Text type="secondary">{profile.user.username}</Text>
-              </div>
-            </Flex>
-
-            <Descriptions
-              column={1}
-              size="small"
-              style={{ marginBottom: token.marginLG }}
-              items={[
-                { label: 'Login username', children: profile.user.username },
-                { label: 'System role', children: profile.user.role },
-                { label: 'Status', children: profile.status },
-              ]}
-            />
-
-            <Form form={form} layout="vertical" onFinish={() => void handleSave()}>
-              <Form.Item label="Staff Code" name="code">
-                <Input disabled placeholder="e.g. EMP-001" maxLength={32} />
-              </Form.Item>
-
-              <Row gutter={token.margin}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="First Name"
-                    name="firstname"
-                    rules={[{ required: true, message: 'Please enter first name' }]}
-                  >
-                    <Input maxLength={128} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Last Name"
-                    name="lastname"
-                    rules={[{ required: true, message: 'Please enter last name' }]}
-                  >
-                    <Input maxLength={128} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}
-              >
-                <Input maxLength={254} />
-              </Form.Item>
-
-              <Form.Item
-                label="Telephone"
-                name="tel"
-                rules={telephoneRules}
-              >
-                <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
-              </Form.Item>
-
-              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
-                Save Changes
-              </Button>
-            </Form>
-          </PageContentCard>
-        ) : null}
-      </Spin>
-
-      {profile ? (
-        <PageContentCard
-          title="Change password"
-          style={{ maxWidth: 720, marginTop: token.marginLG }}
-        >
-          <Form form={passwordForm} layout="vertical" onFinish={() => void handleChangePassword()}>
-            <Form.Item
-              label="Current password"
-              name="current_password"
-              rules={[{ required: true, message: 'Please enter your current password' }]}
-            >
-              <Input.Password autoComplete="current-password" />
-            </Form.Item>
-            <Form.Item label="New password" name="new_password" rules={passwordFieldRules}>
-              <Input.Password autoComplete="new-password" />
-            </Form.Item>
-            <Form.Item
-              label="Confirm new password"
-              name="confirm_new_password"
-              dependencies={['new_password']}
-              rules={[
-                { required: true, message: 'Please confirm your new password' },
-                confirmPasswordRule(() => passwordForm.getFieldValue('new_password') as string),
-              ]}
-            >
-              <Input.Password autoComplete="new-password" />
-            </Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<KeyOutlined />}
-              loading={changingPassword}
-            >
-              Change password
-            </Button>
-          </Form>
-        </PageContentCard>
-      ) : null}
+      <ProfileDetailsCard
+        profile={profile}
+        code={code}
+        firstname={firstname}
+        lastname={lastname}
+        email={email}
+        tel={tel}
+        errors={profileErrors}
+        saving={saving}
+        onFirstnameChange={(value) => {
+          setFirstname(value);
+          clearProfileError('firstname');
+        }}
+        onLastnameChange={(value) => {
+          setLastname(value);
+          clearProfileError('lastname');
+        }}
+        onEmailChange={(value) => {
+          setEmail(value);
+          clearProfileError('email');
+        }}
+        onTelChange={(value) => {
+          setTel(value);
+          clearProfileError('tel');
+        }}
+        onSave={() => void handleSave()}
+      />
+      <ChangePasswordCard
+        currentPassword={currentPassword}
+        newPassword={newPassword}
+        confirmNewPassword={confirmNewPassword}
+        errors={passwordErrors}
+        changingPassword={changingPassword}
+        onCurrentPasswordChange={setCurrentPassword}
+        onNewPasswordChange={setNewPassword}
+        onConfirmNewPasswordChange={setConfirmNewPassword}
+        onChangePassword={() => void handleChangePassword()}
+      />
     </PageContainer>
   );
 };

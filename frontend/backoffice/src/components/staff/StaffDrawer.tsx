@@ -1,29 +1,35 @@
 import React from 'react';
+import { LoadingButton } from '@/components/loading-button';
+import { StaffFormField } from '@/components/staff/StaffFormField';
+import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import {
-  Button,
-  Divider,
-  Drawer,
-  Flex,
-  Form,
-  Input,
   Select,
-  Space,
-  Spin,
-  Typography,
-  theme,
-} from 'antd';
-import type { FormInstance } from 'antd';
-import type { CreateProfilePayload, PatchProfilePayload } from '../../types/staff';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
-  PASSWORD_MIN_LENGTH,
-  confirmPasswordRule,
-  optionalConfirmPasswordRule,
-  optionalNewPasswordRules,
-  passwordFieldRules,
-} from '../../lib/passwordPolicy';
-import { telephoneRules } from '../../lib/telephone';
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import { PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
+import type { CreateProfilePayload, PatchProfilePayload } from '@/types/staff';
 
 export type DrawerMode = 'create' | 'edit' | 'view';
+
+const TITLES: Record<DrawerMode, string> = {
+  create: 'Create Staff Profile',
+  edit: 'Edit Staff Profile',
+  view: 'View Staff Profile',
+};
 
 export type DrawerFormValues = CreateProfilePayload &
   PatchProfilePayload & {
@@ -31,6 +37,7 @@ export type DrawerFormValues = CreateProfilePayload &
     confirmPassword?: string;
     newPassword?: string;
     confirmNewPassword?: string;
+    role?: string;
   };
 
 interface StaffDrawerProps {
@@ -40,14 +47,23 @@ interface StaffDrawerProps {
   isSaving: boolean;
   updatingPassword: boolean;
   showAdminResetPassword: boolean;
-  /** When true, show System Role field (requires `roles:assign` permission). */
   canAssignRole?: boolean;
-  form: FormInstance;
+  values: DrawerFormValues;
+  errors: Partial<Record<keyof DrawerFormValues, string>>;
+  onChange: (field: keyof DrawerFormValues, value: string) => void;
   onClose: () => void;
   onSave: () => void;
   onSwitchToEdit: () => void;
   onUpdatePassword: () => void;
 }
+
+const ROLE_OPTIONS = [
+  { value: 'platform_admin', label: 'Platform Admin' },
+  { value: 'branch_admin', label: 'Branch Admin' },
+  { value: 'support_admin', label: 'Support Admin' },
+  { value: 'support', label: 'Support' },
+  { value: 'staff', label: 'Staff' },
+];
 
 const StaffDrawer: React.FC<StaffDrawerProps> = ({
   open,
@@ -57,168 +73,180 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
   updatingPassword,
   showAdminResetPassword,
   canAssignRole = false,
-  form,
+  values,
+  errors,
+  onChange,
   onClose,
   onSave,
   onSwitchToEdit,
   onUpdatePassword,
 }) => {
-  const { token } = theme.useToken();
-
-  const drawerTitle =
-    mode === 'create'
-      ? 'Create Staff Profile'
-      : mode === 'edit'
-        ? 'Edit Staff Profile'
-        : 'View Staff Profile';
+  const disabled = mode === 'view';
+  const title = TITLES[mode];
 
   return (
-    <Drawer
-      title={drawerTitle}
-      size={500}
-      onClose={onClose}
-      open={open}
-      destroyOnHidden
-      extra={
-        <Space>
-          <Button onClick={onClose}>Cancel</Button>
-          {mode !== 'view' && (
-            <Button type="primary" onClick={onSave} loading={isSaving} disabled={isSaving}>
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent className="flex w-full flex-col gap-0 sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Spinner className="size-8" />
+            </div>
+          ) : (
+            <FieldGroup className="gap-4">
+              <StaffFormField id="staff-code" label="Staff Code" error={errors.code}>
+                <Input
+                  value={values.code ?? ''}
+                  disabled={disabled || mode !== 'create'}
+                  onChange={(e) => onChange('code', e.target.value)}
+                  maxLength={32}
+                  placeholder="e.g. EMP-001"
+                />
+              </StaffFormField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <StaffFormField id="staff-firstname" label="First Name" error={errors.firstname}>
+                  <Input
+                    value={values.firstname ?? ''}
+                    disabled={disabled}
+                    onChange={(e) => onChange('firstname', e.target.value)}
+                    maxLength={128}
+                  />
+                </StaffFormField>
+                <StaffFormField id="staff-lastname" label="Last Name" error={errors.lastname}>
+                  <Input
+                    value={values.lastname ?? ''}
+                    disabled={disabled}
+                    onChange={(e) => onChange('lastname', e.target.value)}
+                    maxLength={128}
+                  />
+                </StaffFormField>
+              </div>
+              <StaffFormField id="staff-email" label="Email" error={errors.email}>
+                <Input
+                  type="email"
+                  value={values.email ?? ''}
+                  disabled={disabled}
+                  onChange={(e) => onChange('email', e.target.value)}
+                  maxLength={254}
+                />
+              </StaffFormField>
+              <StaffFormField id="staff-tel" label="Telephone" error={errors.tel}>
+                <Input
+                  value={values.tel ?? ''}
+                  disabled={disabled}
+                  onChange={(e) => onChange('tel', e.target.value)}
+                  placeholder="e.g. 0812345678 or +66812345678"
+                  maxLength={20}
+                />
+              </StaffFormField>
+              {canAssignRole ? (
+                <Field>
+                  <FieldLabel>System Role</FieldLabel>
+                  <Select
+                    value={values.role ?? 'staff'}
+                    onValueChange={(v) => onChange('role', v ?? 'staff')}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              ) : null}
+              {mode === 'create' ? (
+                <>
+                  <Separator />
+                  <p className="text-sm text-muted-foreground">Minimum {PASSWORD_MIN_LENGTH} characters.</p>
+                  <StaffFormField id="staff-username" label="Username" error={errors.username}>
+                    <Input
+                      value={values.username ?? ''}
+                      disabled={disabled}
+                      onChange={(e) => onChange('username', e.target.value)}
+                      autoComplete="off"
+                    />
+                  </StaffFormField>
+                  <StaffFormField id="staff-password" label="Password" error={errors.password}>
+                    <Input
+                      type="password"
+                      value={values.password ?? ''}
+                      disabled={disabled}
+                      onChange={(e) => onChange('password', e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </StaffFormField>
+                  <StaffFormField
+                    id="staff-confirm-password"
+                    label="Confirm password"
+                    error={errors.confirmPassword}
+                  >
+                    <Input
+                      type="password"
+                      value={values.confirmPassword ?? ''}
+                      disabled={disabled}
+                      onChange={(e) => onChange('confirmPassword', e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </StaffFormField>
+                </>
+              ) : null}
+              {showAdminResetPassword ? (
+                <>
+                  <Separator />
+                  <p className="text-sm font-medium">Reset password (admin)</p>
+                  <StaffFormField id="staff-new-password" label="New password" error={errors.newPassword}>
+                    <Input
+                      type="password"
+                      value={values.newPassword ?? ''}
+                      disabled={disabled}
+                      onChange={(e) => onChange('newPassword', e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </StaffFormField>
+                  <StaffFormField
+                    id="staff-confirm-new-password"
+                    label="Confirm password"
+                    error={errors.confirmNewPassword}
+                  >
+                    <Input
+                      type="password"
+                      value={values.confirmNewPassword ?? ''}
+                      disabled={disabled}
+                      onChange={(e) => onChange('confirmNewPassword', e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </StaffFormField>
+                  <LoadingButton loading={updatingPassword} onClick={onUpdatePassword}>
+                    Update password
+                  </LoadingButton>
+                </>
+              ) : null}
+            </FieldGroup>
+          )}
+        </div>
+        <SheetFooter className="flex-row justify-end gap-2 border-t px-4 py-3">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          {mode !== 'view' ? (
+            <LoadingButton loading={isSaving} onClick={onSave}>
               {mode === 'create' ? 'Create Profile' : 'Save Changes'}
-            </Button>
+            </LoadingButton>
+          ) : (
+            <Button onClick={onSwitchToEdit}>Edit Profile</Button>
           )}
-          {mode === 'view' && (
-            <Button type="primary" onClick={onSwitchToEdit}>
-              Edit Profile
-            </Button>
-          )}
-        </Space>
-      }
-    >
-      <Spin spinning={loading}>
-        <Form form={form} layout="vertical" disabled={mode === 'view'}>
-          <Form.Item
-            label="Staff Code"
-            name="code"
-            rules={[{ required: true, message: 'Please enter staff code' }]}
-          >
-            <Input disabled={mode !== 'create'} placeholder="e.g. EMP-001" maxLength={32} />
-          </Form.Item>
-
-          <Flex gap={token.margin}>
-            <Form.Item
-              label="First Name"
-              name="firstname"
-              rules={[{ required: true, message: 'Please enter first name' }]}
-              style={{ flex: 1 }}
-            >
-              <Input maxLength={128} />
-            </Form.Item>
-            <Form.Item
-              label="Last Name"
-              name="lastname"
-              rules={[{ required: true, message: 'Please enter last name' }]}
-              style={{ flex: 1 }}
-            >
-              <Input maxLength={128} />
-            </Form.Item>
-          </Flex>
-
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}
-          >
-            <Input maxLength={254} />
-          </Form.Item>
-
-          <Form.Item
-            label="Telephone"
-            name="tel"
-            rules={telephoneRules}
-          >
-            <Input placeholder="e.g. 0812345678 or +66812345678" maxLength={20} />
-          </Form.Item>
-
-          {canAssignRole && (
-            <Form.Item
-              label="System Role"
-              name="role"
-              initialValue="staff"
-              rules={[{ required: true, message: 'Please select system role' }]}
-            >
-              <Select
-                disabled={mode === 'view'}
-                options={[
-                  { value: 'platform_admin', label: 'Platform Admin' },
-                  { value: 'branch_admin', label: 'Branch Admin' },
-                  { value: 'support_admin', label: 'Support Admin' },
-                  { value: 'support', label: 'Support' },
-                  { value: 'staff', label: 'Staff' },
-                ]}
-              />
-            </Form.Item>
-          )}
-
-          {mode === 'create' ? (
-            <>
-              <Divider plain>Login credentials</Divider>
-              <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-                Minimum {PASSWORD_MIN_LENGTH} characters.
-              </Typography.Paragraph>
-              <Form.Item
-                label="Username"
-                name="username"
-                rules={[
-                  { required: true, message: 'Please enter username' },
-                  { pattern: /^[a-zA-Z0-9_]+$/, message: 'Only English letters, numbers, and underscores allowed' }
-                ]}
-              >
-                <Input maxLength={128} autoComplete="off" />
-              </Form.Item>
-              <Form.Item label="Password" name="password" rules={passwordFieldRules}>
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-              <Form.Item
-                label="Confirm password"
-                name="confirmPassword"
-                dependencies={['password']}
-                rules={[
-                  { required: true, message: 'Please confirm the password' },
-                  confirmPasswordRule(() => form.getFieldValue('password') as string),
-                ]}
-              >
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-            </>
-          ) : null}
-
-          {showAdminResetPassword ? (
-            <>
-              <Divider plain>Reset password (admin)</Divider>
-              <Form.Item label="New password" name="newPassword" rules={optionalNewPasswordRules}>
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-              <Form.Item
-                label="Confirm password"
-                name="confirmNewPassword"
-                dependencies={['newPassword']}
-                rules={[
-                  optionalConfirmPasswordRule(
-                    () => form.getFieldValue('newPassword') as string,
-                  ),
-                ]}
-              >
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-              <Button loading={updatingPassword} onClick={onUpdatePassword}>
-                Update password
-              </Button>
-            </>
-          ) : null}
-        </Form>
-      </Spin>
-    </Drawer>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };
 

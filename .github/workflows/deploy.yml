@@ -16,28 +16,14 @@ jobs:
           username: ${{ secrets.DO_USERNAME }}
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
-            # ไปที่โฟลเดอร์โปรเจกต์
             cd /var/www/zero-platform
-            
-            # ดึงโค้ดล่าสุด
             git pull origin main
-            
-            # ---------------------------------------------------------
-            # 1. จัดการ Backend
-            # ---------------------------------------------------------
-            # Monorepo workspaces (@zero-platform/roles ฯลฯ) — ต้อง npm ci ที่ root
-            # ห้ามใช้ npm ci --prefix ต่อ service ที่อ้าง file:../shared/platform-roles
-            npm ci
-            npm ci --prefix backend/service/demo-service
-            npm ci --prefix backend/service/branch-report
-            
-            # startOrReload — เริ่ม process ใหม่ (เช่น branch-report) และ reload ตัวเดิม
+
+            # Backend + frontend — npm ci per package (no root workspace)
+            bash backend/scripts/install-all-deps.sh
+
             pm2 startOrReload backend/ecosystem.config.js --update-env
-            
-            # ---------------------------------------------------------
-            # 2. จัดการ Frontend
-            # ---------------------------------------------------------
-            npm ci --prefix frontend/backoffice
+
             npm run build --prefix frontend/backoffice
-            
+
             echo "Deployment Successful! 🚀"

@@ -23,7 +23,7 @@ Edge **API Gateway** สำหรับ zero-platform — **OBSERVED** จาก
 
 ## Consumers
 
-- **backoffice-shadcn**, **backoffice** — เรียก API ผ่าน gateway เท่านั้น
+- **backoffice**, **backoffice** — เรียก API ผ่าน gateway เท่านั้น
 - **staff**, **agent-invoice**, **smart-report**, **branch-report** — รับ `x-gateway-secret` + user context
 
 ## Source of Truth

@@ -1,86 +1,27 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { Button, Empty, Flex, Popconfirm, Skeleton, Space, Tooltip, Tree, Typography } from 'antd';
-import type { DataNode } from 'antd/es/tree';
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import type { AdminMenuNode, CreateMenuPayload, UpdateMenuPayload } from '../../types/permissionAdmin';
-import * as authApi from '../../lib/authApiClient';
-import { apiErrorMessage } from '../../lib/apiError';
-import { useAppFeedback } from '../../hooks/useAppFeedback';
-import { buildMenuTree, isProtectedMenuKey, type MenuTreeNode } from './permissionAdminUtils';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import type { AdminMenuNode, CreateMenuPayload, UpdateMenuPayload } from '@/types/permissionAdmin';
+import * as authApi from '@/lib/authApiClient';
+import { apiErrorMessage } from '@/lib/apiError';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { MenuTree } from '@/components/menu-tree';
+import { Button } from '@/components/ui/button';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { buildMenuTree, isProtectedMenuKey } from './permissionAdminUtils';
 import AdminApiForbidden from './AdminApiForbidden';
 import MenuNodeFormModal, { type MenuNodeFormMode } from './MenuNodeFormModal';
 
-const { Text } = Typography;
-
-function mapTreeToDataNodes(
-  nodes: MenuTreeNode[],
-  handlers: {
-    onEdit: (node: AdminMenuNode) => void;
-    onDelete: (node: AdminMenuNode) => void;
-  },
-): DataNode[] {
-  return nodes.map((node) => ({
-    key: node.key,
-    title: (
-      <Flex align="center" justify="space-between" gap={8} style={{ width: '100%' }}>
-        <Space size={4}>
-          <Text>{node.label}</Text>
-          <Text type="secondary">({node.key})</Text>
-        </Space>
-        <Space size={4} onClick={(e) => e.stopPropagation()}>
-          <Tooltip
-            title={
-              isProtectedMenuKey(node.key)
-                ? 'This node is protected and cannot be modified.'
-                : undefined
-            }
-          >
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              aria-label={`Edit ${node.label}`}
-              disabled={isProtectedMenuKey(node.key)}
-              onClick={() => handlers.onEdit(node)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="Delete this menu node?"
-            description="This cannot be undone if the node has no children or references."
-            okText="Delete"
-            okButtonProps={{ danger: true }}
-            disabled={isProtectedMenuKey(node.key)}
-            onConfirm={() => handlers.onDelete(node)}
-          >
-            <Tooltip
-              title={
-                isProtectedMenuKey(node.key)
-                  ? 'This node is protected and cannot be deleted.'
-                  : undefined
-              }
-            >
-              <Button
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                aria-label={`Delete ${node.label}`}
-                disabled={isProtectedMenuKey(node.key)}
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      </Flex>
-    ),
-    children: node.children?.length
-      ? mapTreeToDataNodes(node.children, handlers)
-      : undefined,
-  }));
-}
-
 const MenuCatalogTab: React.FC = () => {
   const { message } = useAppFeedback();
+  const { confirm } = useConfirmDialog();
   const [menus, setMenus] = useState<AdminMenuNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -107,7 +48,6 @@ const MenuCatalogTab: React.FC = () => {
   }, [message]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial catalog fetch on mount
     void loadMenus();
   }, [loadMenus]);
 
@@ -116,30 +56,31 @@ const MenuCatalogTab: React.FC = () => {
     [menus],
   );
 
-  const treeData = useMemo(() => {
-    const tree = buildMenuTree(menus);
-    return mapTreeToDataNodes(tree, {
-      onEdit: (node) => {
-        setModalMode('edit');
-        setEditingNode(node);
-        setModalOpen(true);
-      },
-      onDelete: async (node) => {
+  const treeNodes = useMemo(() => buildMenuTree(menus), [menus]);
+
+  const openCreate = () => {
+    setModalMode('create');
+    setEditingNode(null);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (node: AdminMenuNode) => {
+    void confirm({
+      title: 'Delete this menu node?',
+      content: 'This cannot be undone if the node has no children or references.',
+      okText: 'Delete',
+      danger: true,
+      onOk: async () => {
         try {
           await authApi.deleteAdminMenu(node.key, node.upd_date);
           message.success('Menu node deleted');
           await loadMenus();
         } catch (err) {
           message.error(apiErrorMessage(err, 'Failed to delete menu node'));
+          throw err;
         }
       },
     });
-  }, [menus, loadMenus, message]);
-
-  const openCreate = () => {
-    setModalMode('create');
-    setEditingNode(null);
-    setModalOpen(true);
   };
 
   const handleSubmit = async (
@@ -152,7 +93,11 @@ const MenuCatalogTab: React.FC = () => {
         await authApi.createAdminMenu(values as CreateMenuPayload);
         message.success('Menu node created');
       } else if (editingNode) {
-        await authApi.updateAdminMenu(editingNode.key, values as UpdateMenuPayload, editingNode.upd_date);
+        await authApi.updateAdminMenu(
+          editingNode.key,
+          values as UpdateMenuPayload,
+          editingNode.upd_date,
+        );
         message.success('Menu node updated');
       }
       setModalOpen(false);
@@ -170,18 +115,80 @@ const MenuCatalogTab: React.FC = () => {
 
   return (
     <div data-testid="menu-catalog-tab">
-      <Flex justify="flex-end" style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Add node
+      <div className="mb-4 flex justify-end">
+        <Button onClick={openCreate}>
+          <Plus data-icon="inline-start" />
+          Create menu node
         </Button>
-      </Flex>
+      </div>
 
       {loading ? (
-        <Skeleton active paragraph={{ rows: 6 }} />
+        <Skeleton className="h-48 w-full" aria-busy="true" />
       ) : menus.length === 0 ? (
-        <Empty description="No menu nodes in registry" />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No menu nodes in registry</EmptyTitle>
+            <EmptyDescription>Add a node to build the menu catalog.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={openCreate}>
+              <Plus data-icon="inline-start" />
+              Create menu node
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
-        <Tree showLine defaultExpandAll treeData={treeData} selectable={false} />
+        <MenuTree
+          nodes={treeNodes}
+          defaultExpanded
+          renderActions={(node) => {
+            const protectedNode = isProtectedMenuKey(node.key);
+            return (
+              <div className="flex shrink-0 items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={`Edit ${node.label}`}
+                        disabled={protectedNode}
+                        onClick={() => {
+                          setModalMode('edit');
+                          setEditingNode(node);
+                          setModalOpen(true);
+                        }}
+                      />
+                    }
+                  >
+                    <Pencil data-icon="inline-start" aria-hidden="true" />
+                  </TooltipTrigger>
+                  {protectedNode ? (
+                    <TooltipContent>This node is protected and cannot be modified.</TooltipContent>
+                  ) : null}
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={`Delete ${node.label}`}
+                        disabled={protectedNode}
+                        onClick={() => handleDelete(node)}
+                      />
+                    }
+                  >
+                    <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
+                  </TooltipTrigger>
+                  {protectedNode ? (
+                    <TooltipContent>This node is protected and cannot be deleted.</TooltipContent>
+                  ) : null}
+                </Tooltip>
+              </div>
+            );
+          }}
+        />
       )}
 
       <MenuNodeFormModal

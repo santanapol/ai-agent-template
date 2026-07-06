@@ -1,21 +1,20 @@
-import React from 'react';
-import { Flex } from 'antd';
-import { layoutTokens } from '../../theme/themeConfig';
+import { FieldGroup } from '@/components/ui/field';
+import { cn } from '@/lib/utils';
 
 interface FiltersContainerProps {
   children: React.ReactNode;
-  style?: React.CSSProperties;
+  className?: string;
 }
 
-export const FiltersContainer: React.FC<FiltersContainerProps> = ({ children, style }) => {
+export function FiltersContainer({ children, className }: FiltersContainerProps) {
   return (
-    <Flex
-      wrap="wrap"
-      align="center"
-      gap={layoutTokens.sectionGap}
-      style={{ marginBottom: layoutTokens.sectionGap, ...style }}
+    <FieldGroup
+      className={cn(
+        'mb-4 flex flex-row flex-wrap items-end gap-4 *:data-[slot=field]:w-auto',
+        className
+      )}
     >
       {children}
-    </Flex>
+    </FieldGroup>
   );
-};
+}

@@ -1,4 +1,4 @@
-import type { InvoiceStatus, InvoiceTransaction } from '../../types/invoice';
+import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from '../../types/invoice';
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return '-';
@@ -28,18 +28,23 @@ export function formatCategoryName(name: string | null | undefined): string {
     .join(' ');
 }
 
-const STATUS_COLORS: Record<InvoiceStatus, string> = {
-  PENDING: 'warning',
-  VOID: 'default',
-  CAL: 'processing',
-  MISSING_FEE: 'orange',
-  READY: 'processing',
-  ERROR: 'error',
+import type { VariantProps } from 'class-variance-authority';
+import type { badgeVariants } from '@/components/ui/badge';
+
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
+
+const STATUS_VARIANTS: Record<InvoiceStatus, BadgeVariant> = {
+  PENDING: 'secondary',
+  VOID: 'secondary',
+  CAL: 'outline',
+  MISSING_FEE: 'warning',
+  READY: 'warning',
+  ERROR: 'destructive',
   PAID: 'success',
 };
 
-export function statusTagColor(status: string): string {
-  return STATUS_COLORS[status as InvoiceStatus] ?? 'default';
+export function statusTagColor(status: string): BadgeVariant {
+  return STATUS_VARIANTS[status as InvoiceStatus] ?? 'secondary';
 }
 
 export function ribbonColor(status: string): string {
@@ -52,4 +57,29 @@ export function ribbonColor(status: string): string {
 
 export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): InvoiceTransaction[] {
   return [...transactions].sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+}
+
+/** Matches agent-invoice `ALL_BRANCHES_QUERY` — omit branch filter on list API. */
+export const INVOICE_BRANCH_FILTER_ALL = 'all';
+
+export function buildInvoiceListQuery(input: {
+  page: number;
+  limit: number;
+  ivNo?: string;
+  branchId?: string;
+  billingMonth?: string;
+  status?: string;
+}): ListInvoicesParams {
+  const ivNo = input.ivNo?.trim();
+  const params: ListInvoicesParams = {
+    page: input.page,
+    limit: input.limit,
+    branch_id: input.branchId ?? INVOICE_BRANCH_FILTER_ALL,
+    billing_month: input.billingMonth || undefined,
+    status: input.status,
+  };
+  if (ivNo) {
+    params.iv_no = ivNo;
+  }
+  return params;
 }

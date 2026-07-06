@@ -1,41 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Divider, Form, Typography, theme } from 'antd';
-import { PageContainer, PageContentCard } from '../../../components/layout';
 import axios from 'axios';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useAppFeedback } from '../../../hooks/useAppFeedback';
-import { apiErrorMessage } from '../../../lib/apiError';
-import {
-  getInviteLinks,
-  getRoyalty21Times,
-} from '../../../lib/branchReportApiClient';
-import {
-  getRoyalty21DefaultSearchValues,
-  toRoyalty21QueryParams,
-} from '../../../lib/branch-report/royalty21DateRange';
-import type { InviteLinkItem, Royalty21QueryParams, Royalty21Row } from '../../../types/branchReport';
+import { FiltersContainer, PageContainer, PageContentCard } from '@/components/layout';
 import Royalty21SearchForm, {
   type Royalty21SearchValues,
-} from '../../../components/branch-report/marketing/Royalty21SearchForm';
-import Royalty21Table from '../../../components/branch-report/marketing/Royalty21Table';
+} from '@/components/branch-report/marketing/Royalty21SearchForm';
+import Royalty21Table from '@/components/branch-report/marketing/Royalty21Table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { apiErrorMessage } from '@/lib/apiError';
+import {
+  toRoyalty21QueryParams,
+} from '@/lib/branch-report/royalty21DateRange';
+import { getInviteLinks, getRoyalty21Times } from '@/lib/branchReportApiClient';
+import type { InviteLinkItem, Royalty21QueryParams, Royalty21Row } from '@/types/branchReport';
 
 const DEFAULT_PAGE_SIZE = 50;
 
 function isRequestAborted(err: unknown): boolean {
-  return (
-    axios.isCancel(err) ||
-    (err instanceof DOMException && err.name === 'AbortError')
-  );
+  return axios.isCancel(err) || (err instanceof DOMException && err.name === 'AbortError');
 }
 
 const ChannelPerformancePage: React.FC = () => {
-  const { token } = theme.useToken();
   const { user } = useAuth();
   const { message } = useAppFeedback();
-  const [form] = Form.useForm<Royalty21SearchValues>();
-
   const hasActiveBranch = Boolean(user?.branch_id);
-  const channelType = Form.useWatch('channelType', form) ?? 'affiliate_link';
 
   const [hasSearched, setHasSearched] = useState(false);
   const [rows, setRows] = useState<Royalty21Row[]>([]);
@@ -45,7 +35,6 @@ const ChannelPerformancePage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [searchParams, setSearchParams] = useState<Royalty21QueryParams | null>(null);
   const [showBranchSwitchNotice, setShowBranchSwitchNotice] = useState(false);
-
   const [inviteLinks, setInviteLinks] = useState<InviteLinkItem[]>([]);
   const [inviteLinksLoading, setInviteLinksLoading] = useState(false);
 
@@ -63,9 +52,8 @@ const ChannelPerformancePage: React.FC = () => {
   }, []);
 
   const resetFormAndReport = useCallback(() => {
-    form.setFieldsValue(getRoyalty21DefaultSearchValues());
     resetReportState();
-  }, [form, resetReportState]);
+  }, [resetReportState]);
 
   const resetForBranchChange = useCallback(() => {
     reportAbortRef.current?.abort();
@@ -77,16 +65,10 @@ const ChannelPerformancePage: React.FC = () => {
   useEffect(() => {
     const prevBranchId = prevBranchIdRef.current;
     const nextBranchId = user?.branch_id;
-
     if (prevBranchId !== undefined && prevBranchId !== nextBranchId) {
-      if (nextBranchId) {
-        /* eslint-disable react-hooks/set-state-in-effect -- branch switch resets report state */
-        setShowBranchSwitchNotice(true);
-        /* eslint-enable react-hooks/set-state-in-effect */
-      }
+      if (nextBranchId) setShowBranchSwitchNotice(true);
       resetForBranchChange();
     }
-
     prevBranchIdRef.current = nextBranchId;
   }, [user?.branch_id, resetForBranchChange]);
 
@@ -103,11 +85,9 @@ const ChannelPerformancePage: React.FC = () => {
       setInviteLinks([]);
       return;
     }
-
     inviteAbortRef.current?.abort();
     const controller = new AbortController();
     inviteAbortRef.current = controller;
-
     setInviteLinksLoading(true);
     try {
       const links = await getInviteLinks(controller.signal);
@@ -118,26 +98,19 @@ const ChannelPerformancePage: React.FC = () => {
       message.error(apiErrorMessage(err, 'Failed to load affiliate links'));
       setInviteLinks([]);
     } finally {
-      if (!controller.signal.aborted) {
-        setInviteLinksLoading(false);
-      }
+      if (!controller.signal.aborted) setInviteLinksLoading(false);
     }
   }, [hasActiveBranch, message]);
 
   useEffect(() => {
-    if (channelType === 'affiliate_link' && hasActiveBranch) {
-      /* eslint-disable react-hooks/set-state-in-effect -- load invite links when channel/branch changes */
-      void loadInviteLinks();
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [channelType, hasActiveBranch, user?.branch_id, loadInviteLinks]);
+    if (hasActiveBranch) void loadInviteLinks();
+  }, [hasActiveBranch, user?.branch_id, loadInviteLinks]);
 
   const fetchReport = useCallback(
     async (params: Royalty21QueryParams) => {
       reportAbortRef.current?.abort();
       const controller = new AbortController();
       reportAbortRef.current = controller;
-
       setTableLoading(true);
       try {
         const result = await getRoyalty21Times(params, controller.signal);
@@ -152,9 +125,7 @@ const ChannelPerformancePage: React.FC = () => {
         setRows([]);
         setTotal(0);
       } finally {
-        if (!controller.signal.aborted) {
-          setTableLoading(false);
-        }
+        if (!controller.signal.aborted) setTableLoading(false);
       }
     },
     [message],
@@ -169,27 +140,15 @@ const ChannelPerformancePage: React.FC = () => {
     void fetchReport(params);
   };
 
-  const handleClear = () => {
-    resetFormAndReport();
-  };
-
   const handleTableChange = (nextPage: number, nextPageSize: number) => {
     if (!searchParams) return;
-    const params: Royalty21QueryParams = {
-      ...searchParams,
-      page: nextPage,
-      pageSize: nextPageSize,
-    };
+    const params: Royalty21QueryParams = { ...searchParams, page: nextPage, pageSize: nextPageSize };
     setSearchParams(params);
     void fetchReport(params);
   };
 
   const inviteLinkOptions = useMemo(
-    () =>
-      inviteLinks.map((link) => ({
-        value: link.id,
-        label: `${link.inviteCode} — ${link.username}`,
-      })),
+    () => inviteLinks.map((link) => ({ value: link.id, label: `${link.inviteCode} — ${link.username}` })),
     [inviteLinks],
   );
 
@@ -203,44 +162,33 @@ const ChannelPerformancePage: React.FC = () => {
         { title: 'Channel Performance' },
       ]}
     >
-      <PageContentCard
-        title={
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            Royalty 21 Times
-          </Typography.Title>
-        }
-      >
-        {!hasActiveBranch && (
-          <Alert
-            type="warning"
-            showIcon
-            title="Please select a branch from the top navigation"
-            style={{ marginBottom: token.marginMD }}
+      <PageContentCard title="Royalty 21 Times">
+        {!hasActiveBranch ? (
+          <Alert className="mb-4">
+            <AlertTitle>Branch required</AlertTitle>
+            <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {showBranchSwitchNotice && hasActiveBranch ? (
+          <Alert className="mb-4">
+            <AlertTitle>Branch changed</AlertTitle>
+            <AlertDescription>Please search again to refresh this report.</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <FiltersContainer className="mb-0">
+          <Royalty21SearchForm
+            inviteLinkOptions={inviteLinkOptions}
+            inviteLinksLoading={inviteLinksLoading}
+            tableLoading={tableLoading}
+            disabled={!hasActiveBranch}
+            onSearch={handleSearch}
+            onClear={resetFormAndReport}
           />
-        )}
+        </FiltersContainer>
 
-        {showBranchSwitchNotice && hasActiveBranch && (
-          <Alert
-            type="info"
-            showIcon
-            closable
-            title="Branch changed — please search again to refresh this report"
-            style={{ marginBottom: token.marginMD }}
-            onClose={() => setShowBranchSwitchNotice(false)}
-          />
-        )}
-
-        <Royalty21SearchForm
-          form={form}
-          inviteLinkOptions={inviteLinkOptions}
-          inviteLinksLoading={inviteLinksLoading}
-          tableLoading={tableLoading}
-          disabled={!hasActiveBranch}
-          onSearch={handleSearch}
-          onClear={handleClear}
-        />
-
-        <Divider style={{ margin: `${token.marginLG}px 0` }} />
+        <Separator className="my-6" />
 
         <Royalty21Table
           rows={rows}

@@ -78,10 +78,8 @@ cd /var/www/zero-platform
 npm ci --prefix frontend/backoffice
 npm run build --prefix frontend/backoffice
 
-# 2. ติดตั้งไลบรารี Backend (npm workspaces — รันที่ root)
-npm ci
-npm ci --prefix backend/service/demo-service
-npm ci --prefix backend/service/branch-report
+# 2. ติดตั้งไลบรารี Backend และ Frontend (แยก service — ไม่มี root workspace)
+bash backend/scripts/install-all-deps.sh
 
 # 3. รัน Redis ผ่าน Docker
 docker compose -f backend/docker-compose.prod.yml up -d
@@ -210,7 +208,7 @@ git push origin main
 1. GitHub จะใช้ไฟล์ `.github/workflows/deploy.yml` เพื่อเปิด Runner
 2. GitHub Runner จะต่อ SSH เข้ามายังเซิร์ฟเวอร์ DigitalOcean โดยอัตโนมัติ
 3. สั่ง `git pull` ดึงโค้ดเวอร์ชันล่าสุด
-4. สั่ง `npm ci` เพื่อดาวน์โหลดไลบรารีใหม่ใน Backend
+4. รัน `backend/scripts/install-all-deps.sh` เพื่อ `npm ci` แต่ละ service และ frontend
 5. สั่ง `npm run build` เพื่อสร้างไฟล์เว็บ Frontend ใหม่
 6. สั่ง `pm2 reload` ให้ Backend รับโค้ดใหม่แบบไร้รอยต่อ (Zero-downtime)
 

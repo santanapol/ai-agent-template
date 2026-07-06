@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, Row, Col, Statistic, theme, Skeleton, Empty, Space } from 'antd';
-import { PageContainer } from '../components/layout';
-import { TeamOutlined, UsergroupAddOutlined, AppstoreAddOutlined } from '@ant-design/icons';
-import * as staffApi from '../lib/staffApiClient';
-import { apiErrorMessage } from '../lib/apiError';
-import { useAppFeedback } from '../hooks/useAppFeedback';
-import { useAuth } from '../contexts/AuthContext';
-
-const { Title, Text } = Typography;
+import { Archive, UserPlus, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { PageContainer, PageContentCard } from '@/components/layout';
+import { StatCard } from '@/components/stat-card';
+import { Button } from '@/components/ui/button';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { apiErrorMessage } from '@/lib/apiError';
+import * as staffApi from '@/lib/staffApiClient';
 
 const Dashboard: React.FC = () => {
-  const { token } = theme.useToken();
   const { message } = useAppFeedback();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
   const [archivedCount, setArchivedCount] = useState(0);
+
+  const isAdmin = user?.role === 'platform_admin' || user?.role === 'branch_admin';
 
   useEffect(() => {
     let cancelled = false;
@@ -27,7 +31,6 @@ const Dashboard: React.FC = () => {
         setLoading(false);
         return;
       }
-
       try {
         const [activeRes, archivedRes] = await Promise.all([
           staffApi.listProfiles({ status: 'active', page: 1, limit: 1 }),
@@ -46,78 +49,52 @@ const Dashboard: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [message, user?.role]);
+  }, [user?.role]);
 
   return (
     <PageContainer
       title="Dashboard"
       description="Welcome to Zero Platform Admin. Here is an overview of your system."
     >
-
-      {(user?.role === 'platform_admin' || user?.role === 'branch_admin') && (
-        <Row gutter={[24, 24]}>
-          <Col xs={24} sm={12} md={8}>
-            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
-              {loading ? (
-                <Skeleton active paragraph={{ rows: 1 }} title={{ width: 100 }} />
-              ) : (
-                <Statistic
-                  title="Total Active Staff"
-                  value={activeCount}
-                  prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
-                />
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
-              <Statistic
+      {isAdmin && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+            <>
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+            </>
+          ) : (
+            <>
+              <StatCard title="Total Active Staff" value={activeCount} icon={Users} />
+              <StatCard
                 title="New Profiles (This Week)"
                 value="—"
-                prefix={<UsergroupAddOutlined style={{ color: token.colorSuccess }} />}
+                suffix="no new profiles this week"
+                icon={UserPlus}
+                iconTone="success"
               />
-              <Text type="secondary" style={{ display: 'block', marginTop: token.marginXS }}>
-                Coming soon
-              </Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Card variant="borderless" style={{ borderRadius: token.borderRadius }}>
-              {loading ? (
-                <Skeleton active paragraph={{ rows: 1 }} title={{ width: 100 }} />
-              ) : (
-                <Statistic
-                  title="Archived Profiles"
-                  value={archivedCount}
-                  prefix={<AppstoreAddOutlined style={{ color: token.colorError }} />}
-                />
-              )}
-            </Card>
-          </Col>
-        </Row>
+              <StatCard title="Archived Profiles" value={archivedCount} icon={Archive} iconTone="warning" />
+            </>
+          )}
+        </div>
       )}
 
-      <Card
-        variant="borderless"
-        style={{
-          marginTop: token.marginXXL,
-          borderRadius: token.borderRadius,
-          border: `1px dashed ${token.colorBorderSecondary}`,
-        }}
-      >
-        <Empty
-          description={
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <Title level={4} style={{ color: token.colorTextSecondary, margin: 0 }}>
-                More dashboard widgets coming soon
-              </Title>
-              <Text type="secondary">
-                Select Staff Management from the sidebar to manage profiles.
-              </Text>
-            </Space>
-          }
-        />
-      </Card>
+      <PageContentCard className="mt-6 border-dashed">
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>More dashboard widgets coming soon</EmptyTitle>
+            <EmptyDescription>
+              Select Staff Management from the sidebar to manage profiles.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={() => navigate('/staff')}>
+              Open Staff Management
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </PageContentCard>
     </PageContainer>
   );
 };

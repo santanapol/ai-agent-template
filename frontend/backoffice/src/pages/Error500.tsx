@@ -1,16 +1,17 @@
 import React from 'react';
-import { Result, Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { ResultTemplate } from '@/components/layout';
 
 const Error500: React.FC = () => {
+  const navigate = useNavigate();
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Result
-        status="500"
-        title="500 Internal Server Error"
-        subTitle="Something went wrong on our end. Please try again later."
-        extra={<Button type="primary" onClick={() => window.location.reload()}>Try Again</Button>}
-      />
-    </div>
+    <ResultTemplate
+      status="500"
+      title="500 Server Error"
+      subTitle="Something went wrong on our end. Please try again later."
+      primaryActionText="Go to Dashboard"
+      onPrimaryAction={() => navigate('/')}
+    />
   );
 };
 

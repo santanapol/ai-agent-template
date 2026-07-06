@@ -1,40 +1,51 @@
-import React from 'react';
-import { Card, theme } from 'antd';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface PageContentCardProps {
   children: React.ReactNode;
   title?: React.ReactNode;
+  description?: string;
   extra?: React.ReactNode;
-  style?: React.CSSProperties;
-  bodyPadding?: number | string;
+  footer?: React.ReactNode;
+  className?: string;
 }
 
-export const PageContentCard: React.FC<PageContentCardProps> = ({
+export function PageContentCard({
   children,
   title,
+  description,
   extra,
-  style,
-  bodyPadding,
-}) => {
-  const { token } = theme.useToken();
+  footer,
+  className,
+}: PageContentCardProps) {
+  const hasHeader = Boolean(title || description || extra);
 
   return (
-    <Card
-      variant="borderless"
-      title={title}
-      extra={extra}
-      style={{
-        boxShadow: token.boxShadowSecondary,
-        borderRadius: token.borderRadiusLG,
-        ...style,
-      }}
-      styles={{
-        body: {
-          padding: bodyPadding ?? token.paddingLG,
-        },
-      }}
-    >
-      {children}
+    <Card className={cn('shadow-sm', className)}>
+      {hasHeader ? (
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            {title ? (
+              typeof title === 'string' ? (
+                <CardTitle className="text-base">{title}</CardTitle>
+              ) : (
+                title
+              )
+            ) : null}
+            {description ? <CardDescription>{description}</CardDescription> : null}
+          </div>
+          {extra}
+        </CardHeader>
+      ) : null}
+      <CardContent className={hasHeader ? undefined : 'pt-6'}>{children}</CardContent>
+      {footer ? <CardFooter>{footer}</CardFooter> : null}
     </Card>
   );
-};
+}

@@ -101,4 +101,6 @@ Gateway routes (SoT: [`gateway/routes.json`](./gateway/routes.json)):
 
 ## Quality gates
 
-แต่ละ service มี `npm run ci` ของตัวเอง — รันจาก directory ของ service นั้น
+แต่ละ service มี `npm run ci` ของตัวเอง — รันจาก directory ของ service นั้น (`npm ci` ก่อนรัน test)
+
+ติดตั้ง dependency ทุก service พร้อมกัน: `bash scripts/install-all-deps.sh`

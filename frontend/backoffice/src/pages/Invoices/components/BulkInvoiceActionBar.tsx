@@ -1,10 +1,5 @@
-import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  FileExcelOutlined,
-  FilePdfOutlined,
-} from '@ant-design/icons';
-import { Button, Space, theme } from 'antd';
+import { CheckCircle, FileSpreadsheet, FileText, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface BulkInvoiceActionBarProps {
   selectedCount: number;
@@ -29,70 +24,42 @@ export function BulkInvoiceActionBar({
   onCancelInvoices,
   onClear,
 }: BulkInvoiceActionBarProps) {
-  const { token } = theme.useToken();
-
   if (selectedCount === 0) {
     return null;
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 24,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        padding: '12px 20px',
-        background: token.colorBgElevated,
-        borderRadius: token.borderRadiusLG,
-        boxShadow: token.boxShadowSecondary,
-      }}
-    >
-      <Space wrap>
-        <span>Selected {selectedCount}</span>
-        {canWrite && (
+    <div className="fixed bottom-6 left-1/2 z-[var(--z-sticky)] -translate-x-1/2 rounded-xl border bg-background px-5 py-3 shadow-lg">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">Selected {selectedCount}</span>
+        {canWrite ? (
           <>
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={onMarkPaid}
-              disabled={busy}
-            >
+            <Button size="sm" onClick={onMarkPaid} disabled={busy}>
+              <CheckCircle data-icon="inline-start" />
               Mark as PAID
             </Button>
-            <Button
-              danger
-              icon={<CloseCircleOutlined />}
-              onClick={onCancelInvoices}
-              disabled={busy}
-            >
+            <Button size="sm" variant="destructive" onClick={onCancelInvoices} disabled={busy}>
+              <XCircle data-icon="inline-start" />
               Cancel
             </Button>
           </>
-        )}
-        {canExport && (
+        ) : null}
+        {canExport ? (
           <>
-            <Button
-              icon={<FilePdfOutlined />}
-              onClick={onExportPdf}
-              disabled={busy}
-            >
+            <Button size="sm" variant="outline" onClick={onExportPdf} disabled={busy}>
+              <FileText data-icon="inline-start" />
               Export PDF
             </Button>
-            <Button
-              icon={<FileExcelOutlined />}
-              onClick={onExportExcel}
-              disabled={busy}
-            >
+            <Button size="sm" variant="outline" onClick={onExportExcel} disabled={busy}>
+              <FileSpreadsheet data-icon="inline-start" />
               Export Excel
             </Button>
           </>
-        )}
-        <Button onClick={onClear} disabled={busy}>
+        ) : null}
+        <Button size="sm" variant="ghost" onClick={onClear} disabled={busy}>
           Clear
         </Button>
-      </Space>
+      </div>
     </div>
   );
 }

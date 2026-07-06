@@ -1,0 +1,39 @@
+meta {
+  name: Create Rolling Commission
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/commission
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "amount": 1000,
+    "rate": 0.05,
+    "userId": "usr_123"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.data.payoutAmount: eq 50
+  res.body.message: eq "Commission saved successfully"
+}
+
+tests {
+  test("Response time should be less than 500ms", function() {
+    expect(res.getResponseTime()).to.be.below(500);
+  });
+}

@@ -1,4 +1,5 @@
-export * from './PageContainer';
-export * from './DetailContainer';
-export * from './FiltersContainer';
-export * from './PageContentCard';
+export { PageContainer } from './PageContainer';
+export { DetailContainer } from './DetailContainer';
+export { FiltersContainer } from './FiltersContainer';
+export { PageContentCard } from './PageContentCard';
+export { default as ResultTemplate } from './ResultTemplate';

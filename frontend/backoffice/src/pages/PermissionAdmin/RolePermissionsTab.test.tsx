@@ -163,10 +163,6 @@ describe('RolePermissionsTab', () => {
 
   it('sends revoke_sessions when checkbox enabled and confirmed', async () => {
     const user = userEvent.setup();
-    mockFeedback.modal.confirm.mockImplementation(({ onOk }) => {
-      onOk?.();
-      return { destroy: vi.fn() };
-    });
     upsertRolePermission.mockResolvedValue({
       ou_id: 'null',
       role: 'platform_admin',
@@ -182,6 +178,7 @@ describe('RolePermissionsTab', () => {
       screen.getByRole('checkbox', { name: /revoke active sessions for users with this role/i }),
     );
     await user.click(screen.getByRole('button', { name: /^save$/i }));
+    await user.click(await screen.findByRole('button', { name: /save and revoke/i }));
 
     await waitFor(() => {
       expect(upsertRolePermission).toHaveBeenCalledWith('platform_admin', {
@@ -206,8 +203,10 @@ describe('RolePermissionsTab', () => {
     await screen.findByText('Permissions');
 
     const manageCheckbox = screen.getByRole('checkbox', { name: /permissions/i });
+    await waitFor(() => {
+      expect(manageCheckbox).toBeChecked();
+    });
     expect(manageCheckbox).toHaveAttribute('aria-disabled', 'true');
-    expect(manageCheckbox).toBeChecked();
   });
 
   it('resets revoke_sessions when changing role', async () => {
@@ -264,10 +263,6 @@ describe('RolePermissionsTab', () => {
         upd_date: '2026-06-10T10:00:00.000Z',
       },
     ]);
-    mockFeedback.modal.confirm.mockImplementation(({ onOk }) => {
-      onOk?.();
-      return { destroy: vi.fn() };
-    });
 
     renderWithProviders(<RolePermissionsTab />);
     await screen.findByText('Permissions');
@@ -279,9 +274,8 @@ describe('RolePermissionsTab', () => {
     await user.click(screen.getByLabelText('Role'));
     await user.click(screen.getByText('Branch Admin'));
 
-    expect(mockFeedback.modal.confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Discard unsaved changes?' }),
-    );
+    expect(await screen.findByText('Discard unsaved changes?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^discard$/i }));
     await waitFor(() => {
       expect(listRolePermissions).toHaveBeenCalledWith({ role: 'branch_admin' });
     });
@@ -289,10 +283,6 @@ describe('RolePermissionsTab', () => {
 
   it('does not switch role when discard dialog is cancelled', async () => {
     const user = userEvent.setup();
-    mockFeedback.modal.confirm.mockImplementation(({ onCancel }) => {
-      onCancel?.();
-      return { destroy: vi.fn() };
-    });
 
     renderWithProviders(<RolePermissionsTab />);
     await screen.findByText('Permissions');
@@ -304,9 +294,8 @@ describe('RolePermissionsTab', () => {
     await user.click(screen.getByLabelText('Role'));
     await user.click(screen.getByText('Branch Admin'));
 
-    expect(mockFeedback.modal.confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Discard unsaved changes?' }),
-    );
+    expect(await screen.findByText('Discard unsaved changes?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
     expect(listRolePermissions).not.toHaveBeenCalledWith({ role: 'branch_admin' });
     expect(listRolePermissions).toHaveBeenCalledTimes(1);
     expect(listRolePermissions).toHaveBeenCalledWith({ role: 'platform_admin' });
@@ -314,10 +303,6 @@ describe('RolePermissionsTab', () => {
 
   it('does not save when revoke sessions dialog is cancelled', async () => {
     const user = userEvent.setup();
-    mockFeedback.modal.confirm.mockImplementation(({ onCancel }) => {
-      onCancel?.();
-      return { destroy: vi.fn() };
-    });
 
     renderWithProviders(<RolePermissionsTab />);
     await screen.findByText('Permissions');
@@ -327,9 +312,8 @@ describe('RolePermissionsTab', () => {
     );
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
-    expect(mockFeedback.modal.confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Revoke active sessions?' }),
-    );
+    expect(await screen.findByText('Revoke active sessions?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
     expect(upsertRolePermission).not.toHaveBeenCalled();
   });
 
