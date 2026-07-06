@@ -1,2 +1,28 @@
-# Keep env defaults LF-only so Windows checkout does not append `\r` to TZ=UTC.
+# Cross-platform: LF in repo (Linux CI + DO deploy)
+* text=auto eol=lf
+
+# Shell (must stay LF on Ubuntu)
+*.sh text eol=lf
+
+# Env templates (line-ending sensitive)
 *.env.defaults text eol=lf
+*.env.example text eol=lf
+*.env.test text eol=lf
+*.env.local.example text eol=lf
+
+# Lockfiles — never auto-merge
+package-lock.json -merge linguist-generated=true
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# GitHub linguist — generated / vendored (not app code)
+.cursor/** linguist-vendored
+references/** linguist-vendored
