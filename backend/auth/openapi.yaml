@@ -4,7 +4,8 @@ info:
   version: 0.1.8
   description: |
     Edge identity API (login, refresh, logout), password change (`POST /auth/me/password`),
-    active branch metadata (`GET /auth/me/branch`), active branch switch (`POST /auth/me/active-branch`),
+    active branch metadata (`GET /auth/me/branch`), switchable branch list (`GET /auth/me/branches`),
+    active branch switch (`POST /auth/me/active-branch`),
     internal user provisioning and password reset for trusted services, session revoke, and JWKS.
 
     All **POST /auth/** requests require header **Content-Type: application/json** (or the same with `charset=utf-8`), including cookie-only flows (use body `{}` if needed).
@@ -664,6 +665,49 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '404':
           description: Branch not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Branch master read not configured.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/me/branches:
+    get:
+      tags: [auth]
+      summary: List switchable branches for the caller's OU
+      description: |
+        Returns branches the caller may select in the backoffice branch switcher.
+        Merges `platform_branches` (e.g. Zero HQ) with customer branches from
+        `gpp_777ww.su_branch` when branch master read is configured.
+
+        **OU-wide switch roles** (`platform_admin`, `support_admin`, `support`) receive
+        the full OU list. Branch-pinned roles receive at most their active branch.
+        Does not require the invoice agent service.
+      operationId: listMyBranches
+      security:
+        - BearerAccess: []
+      x-ratelimit:
+        windowMs: 60000
+        max: 60
+      responses:
+        '200':
+          description: Branches available for the branch switcher.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyBranchesResponse'
+        '401':
+          description: Missing/invalid Bearer or stale `token_gen`.
           content:
             application/problem+json:
               schema:
@@ -1650,6 +1694,14 @@ components:
         active:
           type: boolean
           description: Whether the branch is active (`su_branch` `0`/`false` → inactive).
+    MyBranchesResponse:
+      type: object
+      required: [branches]
+      properties:
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyBranchSummary'
     LogoutRequest:
       type: object
       description: Optional body for logout on native channel.

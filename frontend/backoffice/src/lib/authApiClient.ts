@@ -53,6 +53,13 @@ export async function getMyBranch(): Promise<InvoiceAgentBranch> {
   return res.data;
 }
 
+export async function listMyBranches(signal?: AbortSignal): Promise<InvoiceAgentBranch[]> {
+  const res = await authClient.get<{ branches: InvoiceAgentBranch[] }>('/auth/me/branches', {
+    signal,
+  });
+  return res.data.branches;
+}
+
 export async function listAdminMenus(): Promise<AdminMenuNode[]> {
   const res = await authClient.get<{ menus: AdminMenuNode[] }>('/auth/admin/menus');
   return res.data.menus;

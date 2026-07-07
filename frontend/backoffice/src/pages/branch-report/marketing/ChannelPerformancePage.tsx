@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { FiltersContainer, PageContainer, PageContentCard } from '@/components/layout';
+import { PageContainer, PageContentCard } from '@/components/layout';
 import Royalty21SearchForm, {
   type Royalty21SearchValues,
 } from '@/components/branch-report/marketing/Royalty21SearchForm';
@@ -156,11 +156,6 @@ const ChannelPerformancePage: React.FC = () => {
     <PageContainer
       title="Channel Performance"
       description="Analyze and query Royalty 21 performance marketing statistics by channels."
-      breadcrumbItems={[
-        { title: 'Branch Report' },
-        { title: 'Marketing' },
-        { title: 'Channel Performance' },
-      ]}
     >
       <PageContentCard title="Royalty 21 Times">
         {!hasActiveBranch ? (
@@ -177,16 +172,14 @@ const ChannelPerformancePage: React.FC = () => {
           </Alert>
         ) : null}
 
-        <FiltersContainer className="mb-0">
-          <Royalty21SearchForm
-            inviteLinkOptions={inviteLinkOptions}
-            inviteLinksLoading={inviteLinksLoading}
-            tableLoading={tableLoading}
-            disabled={!hasActiveBranch}
-            onSearch={handleSearch}
-            onClear={resetFormAndReport}
-          />
-        </FiltersContainer>
+        <Royalty21SearchForm
+          inviteLinkOptions={inviteLinkOptions}
+          inviteLinksLoading={inviteLinksLoading}
+          tableLoading={tableLoading}
+          disabled={!hasActiveBranch}
+          onSearch={handleSearch}
+          onClear={resetFormAndReport}
+        />
 
         <Separator className="my-6" />
 

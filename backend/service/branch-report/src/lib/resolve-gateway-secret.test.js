@@ -17,24 +17,40 @@ describe('resolveGatewaySecret', () => {
     );
   });
 
-  it('reads GATEWAY_SECRET from env', () => {
-    process.env.GATEWAY_SECRET = ' from-env ';
+  it('reads GATEWAY_SHARED_SECRET from env', () => {
+    process.env.GATEWAY_SHARED_SECRET = ' from-env ';
     assert.equal(resolveGatewaySecret(), 'from-env');
   });
 
+  it('rejects known sample secret in production', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.GATEWAY_SHARED_SECRET = 'test-gateway-secret-32-chars-minimum!!';
+    assert.throws(
+      () => resolveGatewaySecret(),
+      /known sample value/,
+    );
+  });
+
+  it('accepts strong secret in production', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.GATEWAY_SHARED_SECRET =
+      'staging-branch-report-secret-32chars!';
+    assert.equal(resolveGatewaySecret(), 'staging-branch-report-secret-32chars!');
+  });
+
   it('falls back to test secret only in NODE_ENV=test', () => {
-    delete process.env.GATEWAY_SECRET;
+    delete process.env.GATEWAY_SHARED_SECRET;
     process.env.NODE_ENV = 'test';
     assert.equal(resolveGatewaySecret(), 'test-gateway-secret');
   });
 
   it('throws when secret is missing outside test env', () => {
-    delete process.env.GATEWAY_SECRET;
+    delete process.env.GATEWAY_SHARED_SECRET;
     process.env.NODE_ENV = 'development';
 
     assert.throws(
       () => resolveGatewaySecret(),
-      /GATEWAY_SECRET is required/,
+      /GATEWAY_SHARED_SECRET is required/,
     );
   });
 });

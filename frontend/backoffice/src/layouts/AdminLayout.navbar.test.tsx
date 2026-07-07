@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { AuthContextValue } from '../contexts/AuthContext';
 import type { DecodedUser } from '../types/auth';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { useIsMobile } from '../hooks/use-mobile';
+import { useIsMobile } from '../hooks/useMobile';
 import { useTheme } from '../contexts/ThemeContext';
 import * as staffApi from '../lib/staffApiClient';
 
@@ -39,10 +39,6 @@ vi.mock('../lib/staffApiClient', () => ({
   }),
 }));
 
-vi.mock('../lib/invoicesApiClient', () => ({
-  listInvoiceAgents: vi.fn().mockResolvedValue({ data: [] }),
-}));
-
 vi.mock('../lib/authApiClient', () => ({
   getMyBranch: vi.fn().mockResolvedValue({
     branch_id: 'b1',
@@ -50,9 +46,10 @@ vi.mock('../lib/authApiClient', () => ({
     branch_code: 'B1',
     active: true,
   }),
+  listMyBranches: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('../hooks/use-mobile', () => ({
+vi.mock('../hooks/useMobile', () => ({
   useIsMobile: vi.fn(),
 }));
 

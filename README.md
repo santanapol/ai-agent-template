@@ -7,13 +7,14 @@ Reference implementation ของ **zero-platform**: API backend (auth + gatewa
 
 ## Repository zones
 
-Four top-level areas — same depth, different jobs:
+Five top-level areas — same depth, different jobs:
 
 | Zone | Paths | Purpose |
 |------|-------|---------|
 | **Code** | `backend/`, `frontend/` | Runnable applications |
 | **Product docs** | `docs/specs/` | What to build (per-service specs) |
 | **Domain standards** | `coding-standard/` | How to build (org rules, vendored) |
+| **Harness** | `harness-engineering/` | Working philosophy — beliefs, skills ↔ harness |
 | **Agent tooling** | `scripts/`, `.cursor/`, `references/` | Cursor agent-skills + command standards |
 
 ```bash
@@ -42,6 +43,7 @@ zero-platform/
 │   └── backoffice/               # React admin UI
 ├── docs/
 │   └── specs/                    # Service specs — [docs/README.md](./docs/README.md)
+├── harness-engineering/          # How we work — [harness-engineering/README.md](./harness-engineering/README.md)
 ├── coding-standard/              # Vendored org standards (auth, gateway, backend, frontend, testing)
 ├── scripts/
 │   ├── sync-agent-skills.sh      # Sync agent-skills → .cursor + references
@@ -86,12 +88,19 @@ flowchart LR
 
 | Area | Entry | เนื้อหา |
 | :--- | :--- | :--- |
+| **Local ops (start here)** | [RUNBOOK.md](./RUNBOOK.md) | Boot harness, manual, seed, smoke, CI, troubleshooting |
 | **Backend** | [backend/README.md](./backend/README.md) | Services, ports, gateway routes, quick start |
-| **Backend ops** | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Docker, seed DB, smoke test, deploy checklist |
+| **Backend ops (deep)** | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Docker, seed DB, deploy checklist |
 | **Deployment** | [DEPLOY_DIGITALOCEAN.md](./DEPLOY_DIGITALOCEAN.md) | GitHub Actions CI/CD to DigitalOcean |
 | **Frontend** | [frontend/backoffice/README.md](./frontend/backoffice/README.md) | UX docs, API mapping, scripts |
 | **Frontend ops** | [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md) | Proxy routing, dev setup, troubleshooting |
 | **Frontend API** | [frontend/backoffice/docs/api-mapping.md](./frontend/backoffice/docs/api-mapping.md) | UI actions → HTTP endpoints |
+| **Agent map** | [AGENTS.md](./AGENTS.md) | Table of contents for agents — start here |
+| **Golden principles** | [docs/golden-principles.md](./docs/golden-principles.md) | Mechanical invariants |
+| **Quality score** | [docs/QUALITY_SCORE.md](./docs/QUALITY_SCORE.md) | Domain grades and gaps |
+| **Exec plans** | [docs/exec-plans/](./docs/exec-plans/) | Active/completed work, tech debt |
+| **Observability** | [docs/observability.md](./docs/observability.md) | Logs/metrics query for agents |
+| **Harness (how we work)** | [harness-engineering/README.md](./harness-engineering/README.md) | แนวคิดการทำงาน + agent-skills integration |
 | **Product specs** | [docs/README.md](./docs/README.md) | Spec index; files under `docs/specs/` |
 | **Domain standards** | [coding-standard/](./coding-standard/) | Vendored org rules (auth, gateway, backend, frontend, testing) |
 | **Agent skills** | [scripts/README.md](./scripts/README.md) | `sync-agent-skills.sh`, command standards |
@@ -112,53 +121,19 @@ flowchart LR
 
 ## Full-stack quick start
 
-### 1. Infrastructure + backend
+ดูคู่มือรวมทุกวิธีรัน: **[RUNBOOK.md](./RUNBOOK.md)**
 
 ```bash
-cd backend
-docker compose up -d
-
-# Terminal 1 — auth
-cd auth && npm ci && npm run create-env && npm run init:db && npm run dev
-
-# Terminal 2 — gateway
-cd gateway && cp .env.example .env && npm ci && npm run dev
-
-# Terminal 3 — sample upstream (optional)
-cd demo-service && cp .env.example .env && npm ci && npm run dev
+./scripts/dev-up.sh --with-frontend   # Docker + all services + seed + UI
+./scripts/smoke.sh                    # login platform_admin / 1234
+./scripts/dev-down.sh
 ```
 
-ค่า env สำคัญ: `JWT_JWKS_URL`, `GATEWAY_SECRET` (≥32 ตัว), `REDIS_URL=redis://127.0.0.1:6379/0` — ดู [backend/RUNBOOK.md](./backend/RUNBOOK.md)
+Re-seed: `./scripts/seed-all.sh` · CI baseline: `./scripts/ci-all.sh --skip-install`
 
-### 2. Frontend
+### Manual fallback (แยก terminal)
 
-```bash
-cd frontend/backoffice
-npm ci
-cp .env.local.example .env.local   # mesh headers สำหรับ dev ตรง staff API (ถ้าต้องการ)
-npm run dev
-```
-
-Vite proxy ([`vite.config.ts`](./frontend/backoffice/vite.config.ts)):
-
-| Path | Target |
-| :--- | :--- |
-| `/auth` | `http://127.0.0.1:3001` |
-| `/api` | `http://127.0.0.1:3000` |
-
-เปิด UI ที่ URL ที่ `npm run dev` แสดง (ปกติ `http://localhost:5175`) แล้ว login ด้วย user จาก `auth` seed (ดู RUNBOOK)
-
-### 3. Smoke test
-
-```bash
-# Token
-curl -s -X POST http://127.0.0.1:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"ChangeMe!Admin-1","client_kind":"native"}'
-
-# ผ่าน gateway
-curl -s http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>"
-```
+ดู [RUNBOOK.md § วิธีรัน](./RUNBOOK.md#วิธีรัน--เลือกแบบที่เหมาะ) หรือ [backend/RUNBOOK.md](./backend/RUNBOOK.md) + [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md)
 
 ## Prerequisites
 

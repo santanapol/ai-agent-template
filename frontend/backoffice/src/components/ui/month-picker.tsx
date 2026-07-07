@@ -13,7 +13,7 @@ import {
   formatDisplayMonth,
   parseBillingMonth,
   toBillingMonth,
-} from "@/lib/date-utils"
+} from "@/lib/dateUtils"
 
 const MONTH_INDEXES = Array.from({ length: 12 }, (_, index) => index)
 

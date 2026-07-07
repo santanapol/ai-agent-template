@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { ChannelType } from '@/types/branchReport';
-import { DateFilterField } from '@/components/date-filter-field';
-import { FilterSelectField } from '@/components/filter-select-field';
+import { DateFilterField } from '@/components/DateFilterField';
+import { FilterSelectField } from '@/components/FilterSelectField';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';

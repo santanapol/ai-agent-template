@@ -185,8 +185,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLastBranchSwitchAt(Date.now());
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.data?.code === 'AUTH_NOT_READY') {
-          const data = await authApi.refresh();
+          await authApi.refresh();
+          const data = await authApi.switchActiveBranch(branchId);
           applyToken(data);
+          setLastBranchSwitchAt(Date.now());
           return;
         }
         throw err;

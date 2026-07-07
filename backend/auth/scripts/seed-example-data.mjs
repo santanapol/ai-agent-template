@@ -117,7 +117,16 @@ const now = new Date()
 for (const row of examples) {
   const username = normalizeUsername(row.username)
   const password_hash = await argon2.hash(row.password, argonOpts)
-  const existingUser = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ _id: row._id })
+  const usersCol = db.collection(AUTH_COLLECTIONS.USERS)
+  const existingUser = await usersCol.findOne({ _id: row._id })
+  const duplicateUsername = await usersCol.findOne({
+    username,
+    _id: { $ne: row._id }
+  })
+  if (duplicateUsername) {
+    await db.collection('staff_profiles').deleteMany({ user_id: duplicateUsername._id })
+    await usersCol.deleteOne({ _id: duplicateUsername._id })
+  }
   const homeBranchId = homeBranchIdForRole(row.role)
   const userDoc = {
     _id: row._id,
@@ -135,9 +144,7 @@ for (const row of examples) {
     upd_prog: SEED_PROG
   }
 
-  await db
-    .collection(AUTH_COLLECTIONS.USERS)
-    .replaceOne({ _id: row._id }, userDoc, { upsert: true })
+  await usersCol.replaceOne({ _id: row._id }, userDoc, { upsert: true })
   const userId = row._id
   if (userId) {
     const existingProfile = await db.collection('staff_profiles').findOne({ user_id: userId })

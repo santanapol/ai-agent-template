@@ -6,6 +6,7 @@ import { loadEnv } from './config/env.js'
 import { buildFastifyLoggerOptions } from './config/logger.js'
 import { problemPayload, problemTypes } from './lib/problem.js'
 import { genRequestId } from './lib/request-id.js'
+import { registerBasicMetrics } from '../../shared/fastify-metrics/basic-metrics.js'
 import { createClient } from 'redis'
 import { loadSigningMaterial, finalizeJwk } from './lib/jwt-access.js'
 import { AuthRepository } from './modules/auth/auth.repository.js'
@@ -174,6 +175,8 @@ export async function buildApp(env = loadEnv(), options = {}) {
     timestamp: new Date().toISOString(),
     uptime: Math.floor((Date.now() - startedAtMs) / 1000)
   }))
+
+  registerBasicMetrics(fastify, { startedAtMs, serviceName: env.APP_NAME ?? 'auth' })
 
   fastify.get('/readyz', async (_request, reply) => {
     try {

@@ -43,7 +43,7 @@ The migration delivers a **coherent shadcn admin shell** with strong shared prim
 | Out of scope | AntD parity, animation perf, bundle size, backend rate limits | — |
 
 **Skills loaded (ui-skills-root):** `baseline-ui`, `fixing-accessibility`, `shadcn`  
-**Org guardrail read:** `coding-standard/frontend/backoffice/6-ui-and-styling.md`
+**Org guardrail read:** `coding-standard/frontend/backoffice/06-ui-and-styling.md`
 
 ---
 

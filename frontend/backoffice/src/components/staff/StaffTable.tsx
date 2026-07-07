@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Archive, Eye, Pencil, RotateCcw } from 'lucide-react';
-import { DataTable, type DataTableColumn, type ServerPaginationConfig } from '@/components/data-table';
-import { StatusBadge } from '@/components/status-badge';
+import { DataTable, type DataTableColumn, type ServerPaginationConfig } from '@/components/DataTable';
+import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { StaffProfile } from '@/types/staff';

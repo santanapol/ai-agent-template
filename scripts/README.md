@@ -15,11 +15,43 @@
 ./scripts/sync-agent-skills.sh /path/to/agent-skills
 ```
 
-**What sync overwrites:** `.cursor/skills/`, `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `references/`, `.cursor/VENDOR.md`
+**What sync overwrites:** `.cursor/skills/` (upstream), `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `references/`, `.cursor/VENDOR.md` — then **restores** `scripts/local-skills/` via `sync-local-agent-skills.sh`
 
-**What sync never touches:** `scripts/agent-skills-standards/`, `coding-standard/`, `backend/`, `frontend/`
+**What sync never touches:** `scripts/agent-skills-standards/`, `scripts/local-skills/`, `scripts/local-commands/`, `coding-standard/`, `backend/`, `frontend/`
 
 Edit standards in `agent-skills-standards/<command>.md`, then re-run sync to append them to `.cursor/commands/`.
+
+Local-only commands (`/gc`, `/release`) live in `scripts/local-commands/` and are copied on sync.
+
+Local-only skills (`release-notes-and-handoff`) live in `scripts/local-skills/` — install with:
+
+```bash
+./scripts/sync-local-agent-skills.sh   # or full ./scripts/sync-agent-skills.sh
+```
+
+## Harness engineering (zero-platform)
+
+| Script | Role |
+|--------|------|
+| [`RUNBOOK.md`](../RUNBOOK.md) | **Local ops hub** — boot, seed, smoke, CI (start here) |
+| [`dev-up.sh`](./dev-up.sh) | Boot Mongo/Redis + auth/gateway/demo/staff/agent-invoice/smart-report/branch-report (`PORT_OFFSET`; `--with-frontend` adds backoffice Vite; `--skip-seed` skips example data) |
+| [`env-status.mjs`](./env-status.mjs) | แสดงว่ามี `.env` / `.env.prod` / harness ไฟล์ไหนบ้าง — ดู [backend/ENV.md](../backend/ENV.md) |
+| [`seed-all.sh`](./seed-all.sh) | Seed example data (uses `backend/*/.env.harness`; called by `dev-up` by default) |
+| [`setup-staging.sh`](./setup-staging.sh) | **Staging first-time setup** — Docker, seed, build, PM2 ([RUNBOOK](../server-environment/staging/RUNBOOK.md)) |
+| [`deploy-staging.sh`](./deploy-staging.sh) | Staging re-deploy after `git pull` |
+| [`smoke-staging.sh`](./smoke-staging.sh) | **จาก local** — smoke HTTPS หลัง deploy (`SMOKE_PASSWORD` required) |
+| [`staging-init-env.sh`](./staging-init-env.sh) | Copy `.env.example` → `.env.staging` (skip existing) |
+| [`staging-seed-all.sh`](./staging-seed-all.sh) | DB init + seed on staging (`.env.staging`) |
+| [`staging-verify-seed.sh`](./staging-verify-seed.sh) | ตรวจ indexes + document counts หลัง seed |
+| [`dev-down.sh`](./dev-down.sh) | Stop harness services (incl. frontend) |
+| [`smoke.sh`](./smoke.sh) | Healthz + metrics + login/gateway smoke (+ frontend when booted) |
+| [`ci-all.sh`](./ci-all.sh) | Package CI for all services + docs + smoke (`--skip-install`, `--skip-smoke`, `--with-frontend`, `--only`) |
+| [`dev-obs-up.sh`](./dev-obs-up.sh) / [`dev-obs-down.sh`](./dev-obs-down.sh) | VictoriaLogs/Metrics + Vector |
+| [`docs-lint.mjs`](./docs-lint.mjs) | Validate knowledge base (CI) |
+| [`check-coding-standard-sync.sh`](./check-coding-standard-sync.sh) | Diff vendored `coding-standard/` vs org upstream |
+| [`generate-db-schema.mjs`](./generate-db-schema.mjs) | Dump Mongo schema → `docs/generated/` |
+
+See [AGENTS.md](../AGENTS.md), [harness-engineering/README.md](../harness-engineering/README.md), and [docs/golden-principles.md](../docs/golden-principles.md).
 
 ## Domain coding standards (org)
 

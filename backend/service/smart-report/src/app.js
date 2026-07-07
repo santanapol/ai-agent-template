@@ -10,6 +10,7 @@ import duplicateHeaderGuard from "./plugins/duplicate-header.js";
 import gatewaySecretGuard from "./plugins/gateway-secret.js";
 import userContextGuard from "./plugins/user-context.js";
 import reportsRoute from "./modules/reports/reports.route.js";
+import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
 
 const REDACT_PATHS = [
   'req.headers["x-gateway-secret"]',
@@ -19,6 +20,7 @@ const REDACT_PATHS = [
 
 export default async function buildApp(opts = {}) {
   const isDev = process.env.NODE_ENV !== "production";
+  const startedAtMs = Date.now();
 
   const app = Fastify({
     logger: {
@@ -62,6 +64,8 @@ export default async function buildApp(opts = {}) {
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
   }));
+
+  registerBasicMetrics(app, { startedAtMs, serviceName: "smart-report" });
 
   app.get("/readyz", async (_request, reply) => {
     const dependencies = await Promise.all([

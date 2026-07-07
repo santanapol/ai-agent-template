@@ -1,0 +1,27 @@
+# Vector config — tails harness log files, forwards to VictoriaLogs.
+# Metrics scraped separately via prometheus-scrape.yml → VictoriaMetrics.
+
+data_dir = "/var/lib/vector"
+
+[sources.harness_logs]
+type = "file"
+include = ["/var/log/harness/*.log"]
+read_from = "beginning"
+
+[transforms.parse_json]
+type = "remap"
+inputs = ["harness_logs"]
+source = '''
+  .service = parse_regex!(.file, r'/var/log/harness/(?P<service>[^.]+)\\.log').service
+  parsed, err = parse_json(.message)
+  if err == null {
+    . = merge(., parsed)
+  }
+'''
+
+[sinks.vlogs]
+type = "http"
+inputs = ["parse_json"]
+uri = "${VLOGS_URL:-http://victoria-logs:9428}/insert/jsonline?_stream_fields=service"
+encoding.codec = "json"
+method = "post"

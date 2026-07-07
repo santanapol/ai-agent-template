@@ -128,6 +128,21 @@ export function createAuthController({ service, env, types }) {
       return reply.send(result.body)
     },
 
+    async listMyBranches(request, reply) {
+      const result = await service.listMyBranches({
+        user_id_hex: request.accessSub,
+        access_token_gen_claim: request.accessTokenGen,
+        branch_id_hex: request.accessBranchId,
+        ou_id_hex: request.accessOuId
+      })
+
+      if (!result.ok) {
+        return sendServiceProblem(reply, result)
+      }
+
+      return reply.send(result.body)
+    },
+
     async changeOwnPassword(request, reply) {
       const value = request.body ?? {}
       const result = await service.changeOwnPassword({

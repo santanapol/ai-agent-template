@@ -9,8 +9,9 @@ import userContext from './plugins/user-context.js';
 import { registerInviteLinksRoutes } from './modules/invite-links/invite-links.route.js';
 import { registerRoyalty21TimesRoutes } from './modules/royalty-21-times/royalty-21-times.route.js';
 import { registerHealthRoutes } from './routes/health.route.js';
+import { registerBasicMetrics } from '../../../shared/fastify-metrics/basic-metrics.js';
 
-const PUBLIC_PATHS = ['/healthz', '/readyz'];
+const PUBLIC_PATHS = ['/healthz', '/readyz', '/metrics'];
 
 /**
  * @param {import('fastify').FastifyServerOptions & {
@@ -19,6 +20,7 @@ const PUBLIC_PATHS = ['/healthz', '/readyz'];
  * }} [options]
  */
 export async function buildApp(options = {}) {
+  const startedAtMs = Date.now();
   const app = Fastify({
     logger: options.logger ?? true,
     ...options,
@@ -38,6 +40,7 @@ export async function buildApp(options = {}) {
   });
 
   await registerHealthRoutes(app);
+  registerBasicMetrics(app, { startedAtMs, serviceName: 'branch-report' });
   await registerInviteLinksRoutes(app, { getDb: options.getDb });
   await registerRoyalty21TimesRoutes(app, { getDb: options.getDb });
 

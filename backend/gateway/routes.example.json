@@ -50,7 +50,7 @@
   },
   {
     "prefix": "/api/v1/branch-report",
-    "upstream": "http://127.0.0.1:3015",
+    "upstream": "http://127.0.0.1:3104",
     "stripPrefix": false
   }
 ]

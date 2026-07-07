@@ -17,7 +17,7 @@ export const defaultGatewayDotenvPath = resolve(MODULE_DIR, '../../.env')
  * often export a stale `ROUTES_JSON`. The package `.env` is the SoT for route table.
  *
  * @param {{ envPath?: string }} [opts]
- * @returns {{ kind: 'ROUTES_JSON' | 'ROUTES_FILE' | 'none' }}
+ * @returns {{ kind: 'ROUTES_JSON' | 'ROUTES_FILE' | 'none'; warning?: string }}
  */
 export function reapplyRoutesEnvFromDotenvFile(opts = {}) {
   const envPath = opts.envPath ?? defaultGatewayDotenvPath
@@ -64,9 +64,11 @@ export function reapplyRoutesEnvFromDotenvFile(opts = {}) {
   const fileVal = fileLine === null ? '' : stripOuterQuotes(fileLine)
 
   if (jsonVal !== '' && fileVal !== '') {
-    console.warn(
-      '[gateway] .env defines both ROUTES_JSON and ROUTES_FILE; using ROUTES_JSON (see env rules)'
-    )
+    return {
+      kind: 'ROUTES_JSON',
+      warning:
+        '[gateway] .env defines both ROUTES_JSON and ROUTES_FILE; using ROUTES_JSON (see env rules)'
+    }
   }
 
   if (jsonVal !== '') {

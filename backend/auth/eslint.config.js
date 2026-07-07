@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import globals from 'globals'
 import security from 'eslint-plugin-security'
+import { harnessMaxLinesConfig } from '../shared/eslint-rules/harness-taste.mjs'
 
 export default [
   { ignores: ['node_modules/**', 'coverage/**', 'scripts/**'] },
@@ -30,5 +31,6 @@ export default [
     rules: {
       'security/detect-non-literal-fs-filename': 'off'
     }
-  }
+  },
+  ...harnessMaxLinesConfig('error')
 ]

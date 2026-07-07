@@ -29,6 +29,31 @@ export const WRITE_OPS = new Set([
   "dropIndex",
 ]);
 
+const FORBIDDEN_PIPELINE_STAGES = new Set(["$out", "$merge"]);
+
+/**
+ * Reject write aggregation stages at runtime (defense in depth after AST validation).
+ *
+ * @param {unknown} pipeline
+ */
+export function assertPipelineStagesSafe(pipeline) {
+  if (!Array.isArray(pipeline)) {
+    return;
+  }
+  for (const stage of pipeline) {
+    if (!stage || typeof stage !== "object") {
+      continue;
+    }
+    for (const key of Object.keys(stage)) {
+      if (FORBIDDEN_PIPELINE_STAGES.has(key)) {
+        throw new Error(
+          `Aggregation stage ${key} is not allowed in report scripts.`,
+        );
+      }
+    }
+  }
+}
+
 const PARSE_OPTIONS = { ecmaVersion: 2022, sourceType: "script" };
 
 /**
@@ -143,6 +168,21 @@ export function validateScriptSource(script) {
   let hasReadPath = false;
 
   walk.simple(ast, {
+    Property(node) {
+      const key =
+        node.key?.type === "Identifier"
+          ? node.key.name
+          : node.key?.type === "Literal"
+            ? String(node.key.value)
+            : null;
+      if (key && FORBIDDEN_PIPELINE_STAGES.has(key)) {
+        errors.push({
+          line: node.loc?.start.line,
+          message: `Aggregation stage ${key} is not allowed in report scripts.`,
+          code: "VALIDATION_FAILED",
+        });
+      }
+    },
     MemberExpression(node) {
       if (
         node.property?.type === "Identifier" &&

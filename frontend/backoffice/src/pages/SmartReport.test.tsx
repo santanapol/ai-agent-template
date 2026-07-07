@@ -45,7 +45,7 @@ vi.mock('../hooks/useConfirmDialog', async (importOriginal) => {
   };
 });
 
-vi.mock('../hooks/use-mobile', () => ({
+vi.mock('../hooks/useMobile', () => ({
   useIsMobile: () => false,
 }));
 

@@ -16,8 +16,14 @@ vi.mock('../lib/staffApiClient', () => ({
   getProfileByUserId: vi.fn().mockRejectedValue(new Error('skip')),
 }));
 
-vi.mock('../lib/invoicesApiClient', () => ({
-  listInvoiceAgents: vi.fn().mockResolvedValue({ data: [] }),
+vi.mock('../lib/authApiClient', () => ({
+  getMyBranch: vi.fn().mockResolvedValue({
+    branch_id: 'b1',
+    branch_name: 'Branch One',
+    branch_code: 'B1',
+    active: true,
+  }),
+  listMyBranches: vi.fn().mockResolvedValue([]),
 }));
 
 const branchAdminUser = { sub: '456', role: 'branch_admin', branch_id: 'b1' } as DecodedUser;
@@ -36,17 +42,10 @@ const menusWithBranchReport: MenuNode[] = [
   { key: 'dashboard', label: 'Dashboard', type: 'action', parent_key: null, sort_order: 0 },
   { key: 'branch-report', label: 'Branch Report', type: 'menu', parent_key: null, sort_order: 35 },
   {
-    key: 'branch-report:marketing',
-    label: 'Marketing',
-    type: 'menu',
-    parent_key: 'branch-report',
-    sort_order: 10,
-  },
-  {
     key: 'branch-report:marketing:channel-performance:read',
     label: 'Channel Performance',
     type: 'action',
-    parent_key: 'branch-report:marketing',
+    parent_key: 'branch-report',
     sort_order: 10,
   },
 ];

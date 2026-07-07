@@ -16,11 +16,11 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { AppSidebar } from '@/components/layout/app-sidebar';
-import { BranchSwitcher } from '@/components/layout/branch-switcher';
-import { NavMain } from '@/components/layout/nav-main';
-import { NavUser } from '@/components/layout/nav-user';
-import { SiteHeader } from '@/components/layout/site-header';
+import { AppSidebar } from '@/components/layout/AppSidebar';
+import { BranchSwitcher } from '@/components/layout/BranchSwitcher';
+import { NavMain } from '@/components/layout/NavMain';
+import { NavUser } from '@/components/layout/NavUser';
+import { SiteHeader } from '@/components/layout/SiteHeader';
 import {
   flattenMenuToTwoLevels,
   resolveSidebarBreadcrumb,
@@ -44,11 +44,10 @@ import {
   setCachedMyBranch,
   upsertBranchInList,
 } from '@/lib/branchOptions';
-import * as invoicesApi from '@/lib/invoicesApiClient';
 import { subscribeProfileRefresh } from '@/lib/profileRefresh';
 import * as staffApi from '@/lib/staffApiClient';
 import type { InvoiceAgentBranch } from '@/types/invoice';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/useMobile';
 
 const ROLE_LABELS: Record<string, string> = {
   platform_admin: 'Platform Admin',
@@ -82,7 +81,6 @@ const MENU_ENTRIES: Record<string, { icon: React.ReactNode; route?: string }> = 
   reports: { icon: <Code2 /> },
   'reports:smart': { icon: <BarChart3 />, route: '/smart-reports' },
   'branch-report': { icon: <LineChart /> },
-  'branch-report:marketing': { icon: <LineChart /> },
   'branch-report:marketing:channel-performance:read': {
     icon: <LineChart />,
     route: '/branch-report/marketing/channel-performance',
@@ -259,10 +257,10 @@ const AdminLayout: React.FC = () => {
     const loadSwitcherBranches = async () => {
       let list: InvoiceAgentBranch[] = cached ?? [];
       try {
-        const res = await invoicesApi.listInvoiceAgents();
-        list = res.data;
+        const res = await authApi.listMyBranches();
+        list = res;
       } catch {
-        // Switcher still works with active branch only when invoice service is down.
+        // Switcher still works with active branch only when branch list is unavailable.
       }
       if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
@@ -283,7 +281,7 @@ const AdminLayout: React.FC = () => {
     activeBranchLoading,
   );
 
-  const menuTree = useMemo(() => {
+  const { sidebarMenuTree, breadcrumbMenuTree } = useMemo(() => {
     const itemMap = new Map<string, { item: MenuItemType; parentKey: string | null }>();
     menus.forEach((node) => {
       if (SIDEBAR_EXCLUDED_MENU_KEYS.has(node.key)) return;
@@ -318,7 +316,10 @@ const AdminLayout: React.FC = () => {
       items.forEach((i) => i.children && sortItems(i.children, depth + 1));
     };
     sortItems(rootItems);
-    return flattenMenuToTwoLevels(rootItems);
+    return {
+      breadcrumbMenuTree: rootItems,
+      sidebarMenuTree: flattenMenuToTwoLevels(rootItems),
+    };
   }, [menus]);
 
   const branchSelectLoading =
@@ -334,8 +335,8 @@ const AdminLayout: React.FC = () => {
   }, [branches, activeBranchId, activeBranch, branchDisplayLabel]);
 
   const breadcrumb = useMemo(
-    () => resolveSidebarBreadcrumb(menuTree, location.pathname),
-    [menuTree, location.pathname],
+    () => resolveSidebarBreadcrumb(breadcrumbMenuTree, location.pathname),
+    [breadcrumbMenuTree, location.pathname],
   );
 
   const handleNavigate = (route: string) => navigate(route);
@@ -367,7 +368,7 @@ const AdminLayout: React.FC = () => {
   };
 
   const sidebarProps = {
-    menuTree,
+    menuTree: sidebarMenuTree,
     selectedPath: location.pathname,
     onNavigate: handleNavigate,
     ...branchSwitcherProps,
@@ -381,7 +382,7 @@ const AdminLayout: React.FC = () => {
       <MobileNavSheet
         open={mobileNavOpen}
         onOpenChange={setMobileNavOpen}
-        menuTree={menuTree}
+        menuTree={sidebarMenuTree}
         selectedPath={location.pathname}
         onNavigate={handleNavigate}
         branchSwitcherProps={branchSwitcherProps}
@@ -405,7 +406,7 @@ const AdminLayout: React.FC = () => {
                 }
               />
 
-              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+              <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 {menuError ? (
                   <Alert variant="destructive">
                     <AlertTitle>System warning</AlertTitle>

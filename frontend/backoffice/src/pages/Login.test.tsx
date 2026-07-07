@@ -63,7 +63,7 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith('/');
   });
 
-  it('shows toast error when login rejects', async () => {
+  it('shows inline error when login rejects', async () => {
     login.mockRejectedValue(new Error('Unauthorized'));
     const user = userEvent.setup();
 
@@ -73,7 +73,8 @@ describe('Login', () => {
     await user.type(screen.getByLabelText(/^password$/i), 'bad');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(mockFeedback.message.error).toHaveBeenCalledWith('Login failed. Please try again.');
+    expect(screen.getByText('Login failed. Please try again.')).toBeInTheDocument();
+    expect(mockFeedback.message.error).not.toHaveBeenCalled();
   });
 
   it('redirects when already authenticated', () => {

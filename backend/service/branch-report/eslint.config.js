@@ -3,6 +3,7 @@ import importPlugin from 'eslint-plugin-import';
 import nodePlugin from 'eslint-plugin-node';
 import promisePlugin from 'eslint-plugin-promise';
 import prettier from 'eslint-config-prettier';
+import { harnessMaxLinesConfig } from '../../shared/eslint-rules/harness-taste.mjs';
 
 export default [
   js.configs.recommended,
@@ -28,6 +29,14 @@ export default [
     },
   },
   {
+    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
+    rules: {
+      'no-console': 'off',
+      'n/hashbang': 'off',
+    },
+  },
+  {
     ignores: ['node_modules/**'],
   },
+  ...harnessMaxLinesConfig('error'),
 ];

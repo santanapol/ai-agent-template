@@ -29,6 +29,18 @@ export class PlatformBranchRepository {
   }
 
   /**
+   * @param {import('mongodb').ObjectId} ouId
+   */
+  async findByOuId(ouId) {
+    return this.db
+      .collection(COLLECTION)
+      .find({ ou_id: ouId })
+      .project({ branch_name: 1, branch_code: 1, active: 1 })
+      .sort({ branch_name: 1 })
+      .toArray()
+  }
+
+  /**
    * @returns {Promise<'not_found' | 'forbidden' | 'inactive' | 'ok'>}
    */
   async resolveBranchAccess(branchId, ouId) {

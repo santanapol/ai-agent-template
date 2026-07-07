@@ -32,6 +32,7 @@ Client ──Bearer JWT──► gateway ──x-gateway-secret + x-user-*──
 
 | Document | เนื้อหา |
 | :--- | :--- |
+| [ENV.md](./ENV.md) | **ไฟล์ env** — `.env` / `.env.prod` / harness / ชื่อตัวแปรมาตรฐาน |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | ภาพรวมระบบ, trust zones, Mermaid diagrams (**อ่านก่อน**) |
 | [RUNBOOK.md](./RUNBOOK.md) | Setup, Docker, smoke test, troubleshooting, deploy checklist |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes ระดับ repository |

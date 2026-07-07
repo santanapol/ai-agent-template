@@ -25,7 +25,7 @@ function gatewayAuthPlugin(fastify, options) {
   const { secret, skipPaths = [] } = options;
 
   if (!secret) {
-    throw new Error('[gateway-auth] GATEWAY_SECRET is required');
+    throw new Error('[gateway-auth] GATEWAY_SHARED_SECRET is required');
   }
 
   fastify.addHook('onRequest', async (request, reply) => {

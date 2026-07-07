@@ -10,6 +10,9 @@ node_modules/
 !**/.env.test
 !.env.defaults
 !**/.env.defaults
+!.env.harness.example
+!**/.env.harness.example
+!**/.env.staging.example
 !**/.env.local.example
 
 # Test / tooling
@@ -38,3 +41,9 @@ dist-ssr/
 **/environments/*.local.yml
 !**/environments/Local.yml.example
 !**/environments/*.example.yml
+
+# Harness dev runtime (logs, pids only; offset≠0 also has harness/)
+.dev-run/
+
+# Server credentials (SSH passwords, staging logins — never commit)
+server-environment/**/credential.md

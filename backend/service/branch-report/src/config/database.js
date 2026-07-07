@@ -21,11 +21,13 @@ export async function connectDatabase() {
     return db;
   }
 
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI_READ ?? process.env.MONGODB_URI;
   const dbName = process.env.MONGODB_DB_BRANCH;
 
   if (!uri || !dbName) {
-    throw new Error('[Database] Missing MONGODB_URI or MONGODB_DB_BRANCH config.');
+    throw new Error(
+      '[Database] Missing MONGODB_URI_READ (or MONGODB_URI) and MONGODB_DB_BRANCH config.',
+    );
   }
 
   client = new MongoClient(uri, DB_OPTIONS);

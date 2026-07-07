@@ -12,6 +12,7 @@ import invoicesRoute from "./modules/invoices/agent-invoices.route.js";
 import userContextPlugin from "./plugins/user-context.js";
 import { pingInvoiceDatabase } from "./config/database-invoice.js";
 import { pingReadDatabase } from "./config/database-read.js";
+import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
 
 const REDACT_PATHS = [
   'req.headers["x-gateway-secret"]',
@@ -32,6 +33,7 @@ const CRITICAL_HEADERS = [
 
 export default async function buildApp(opts = {}) {
   const isDev = process.env.NODE_ENV !== "production";
+  const startedAtMs = Date.now();
 
   const app = Fastify({
     logger: {
@@ -69,8 +71,13 @@ export default async function buildApp(opts = {}) {
 
   // Gateway secret + duplicate header guard
   app.addHook("onRequest", async (request, reply) => {
-    // Skip health probes
-    if (request.url === "/healthz" || request.url === "/readyz") return;
+    // Skip health probes and metrics scrape
+    if (
+      request.url === "/healthz" ||
+      request.url === "/readyz" ||
+      request.url === "/metrics"
+    )
+      return;
 
     // Reject duplicate critical headers
     for (const header of CRITICAL_HEADERS) {
@@ -88,12 +95,11 @@ export default async function buildApp(opts = {}) {
 
     // Validate gateway secret
     const secret = request.headers["x-gateway-secret"];
+    const sharedSecret = process.env.GATEWAY_SHARED_SECRET;
     if (
       !secret ||
-      !secretsMatch(
-        String(secret),
-        process.env.GATEWAY_SHARED_SECRET || process.env.GATEWAY_SECRET,
-      )
+      !sharedSecret ||
+      !secretsMatch(String(secret), sharedSecret)
     ) {
       return reply.status(401).send({
         success: false,
@@ -142,6 +148,8 @@ export default async function buildApp(opts = {}) {
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
   }));
+
+  registerBasicMetrics(app, { startedAtMs, serviceName: "agent-invoice" });
 
   app.get("/readyz", async (request, reply) => {
     const dependencies = [];

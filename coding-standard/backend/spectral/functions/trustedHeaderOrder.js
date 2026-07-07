@@ -1,4 +1,4 @@
-/** Enforce mesh header parameter order (see coding-standard/backend/8-openapi-validation.md). */
+/** Enforce mesh header parameter order (see coding-standard/backend/08-openapi-validation.md). */
 const ORDER = [
   "x-user-ou",
   "x-user-branch",

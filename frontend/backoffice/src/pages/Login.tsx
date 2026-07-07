@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import { Lock, User } from 'lucide-react';
+import { Store } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { LoginCredentialField } from '@/components/auth/LoginCredentialField';
-import { LoadingButton } from '@/components/loading-button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldGroup } from '@/components/ui/field';
+import { LoginForm } from '@/components/auth/LoginForm';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { loginErrorMessage } from '@/lib/authErrors';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { message } = useAppFeedback();
   const { user, loading, login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +17,7 @@ const Login: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
+      <div className="flex min-h-svh items-center justify-center bg-muted p-6 md:p-10">
         <Spinner className="size-8" />
       </div>
     );
@@ -45,58 +40,35 @@ const Login: React.FC = () => {
       navigate('/');
     } catch (err) {
       const errorMessage = loginErrorMessage(err);
-      setFormErrors((prev) => ({
-        ...prev,
-        password: errorMessage,
-      }));
-      message.error(errorMessage);
+      setFormErrors({ password: errorMessage });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md shadow-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-primary">Zero Platform</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <FieldGroup className="gap-4">
-              <LoginCredentialField
-                id="username"
-                label="Username"
-                placeholder="Username"
-                autoComplete="username"
-                icon={<User aria-hidden="true" className="size-4" />}
-                value={username}
-                error={formErrors.username}
-                onChange={setUsername}
-                onClearError={() => setFormErrors((prev) => ({ ...prev, username: undefined }))}
-              />
-              <LoginCredentialField
-                id="password"
-                label="Password"
-                placeholder="Password"
-                autoComplete="current-password"
-                icon={<Lock aria-hidden="true" className="size-4" />}
-                value={password}
-                error={formErrors.password}
-                showPasswordToggle
-                showPassword={showPassword}
-                onShowPasswordToggle={() => setShowPassword((prev) => !prev)}
-                onChange={setPassword}
-                onClearError={() => setFormErrors((prev) => ({ ...prev, password: undefined }))}
-              />
-            </FieldGroup>
-            <LoadingButton type="submit" className="w-full" loading={submitting}>
-              Sign In
-            </LoadingButton>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex items-center gap-2 self-center font-medium">
+          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Store className="size-4" aria-hidden="true" />
+          </div>
+          Zero Platform
+        </div>
+        <LoginForm
+          username={username}
+          password={password}
+          showPassword={showPassword}
+          formErrors={formErrors}
+          submitting={submitting}
+          onSubmit={onSubmit}
+          onUsernameChange={setUsername}
+          onPasswordChange={setPassword}
+          onShowPasswordToggle={() => setShowPassword((prev) => !prev)}
+          onClearUsernameError={() => setFormErrors((prev) => ({ ...prev, username: undefined }))}
+          onClearPasswordError={() => setFormErrors((prev) => ({ ...prev, password: undefined }))}
+        />
+      </div>
     </div>
   );
 };

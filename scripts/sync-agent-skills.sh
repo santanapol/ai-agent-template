@@ -105,6 +105,26 @@ sync_commands() {
   fi
 }
 
+sync_local_commands() {
+  local src="$SCRIPT_DIR/local-commands"
+  if [[ ! -d "$src" ]]; then
+    return 0
+  fi
+  echo "Syncing local commands (zero-platform)..."
+  for cmd in "$src"/*.md; do
+    [[ -f "$cmd" ]] || continue
+    cp -f "$cmd" "$CURSOR/commands/$(basename "$cmd")"
+    echo "  $(basename "$cmd") (local)"
+  done
+}
+
+sync_local_agent_skills() {
+  if [[ -x "$SCRIPT_DIR/sync-local-agent-skills.sh" ]]; then
+    echo "Syncing local agent skills (zero-platform)..."
+    "$SCRIPT_DIR/sync-local-agent-skills.sh"
+  fi
+}
+
 bootstrap_cursor_meta() {
   local sha="$1"
   mkdir -p "$CURSOR/rules"
@@ -131,6 +151,12 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Web perf | `/webperf` | performance-optimization + web-performance-auditor |
 | Simplify | `/code-simplify` | code-simplification |
 | Ship | `/ship` | shipping-and-launch + parallel personas |
+| Release | `/release` | release-notes-and-handoff |
+| GC | `/gc` | code-simplification + golden principles |
+
+## Agent map
+
+Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [harness-engineering/README.md](../../harness-engineering/README.md).
 
 ## Intent → skill (auto)
 
@@ -142,6 +168,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 - API design → `api-and-interface-design`
 - UI work → `frontend-ui-engineering`
 - Session start / which skill? → `using-agent-skills`
+- After `/ship` GO → `/release` → `release-notes-and-handoff`
 
 ## Subagents (`.cursor/agents/`)
 
@@ -175,7 +202,10 @@ MDC
 | Path | Role |
 |------|------|
 | \`scripts/agent-skills-standards/\` | Related Coding Standards per command |
-| \`.cursor/commands/\` | Generated — upstream + standards |
+| \`scripts/local-skills/\` | zero-platform skills (restored after upstream sync) |
+| \`scripts/local-commands/\` | Local slash commands (\`/gc\`, \`/release\`) |
+| \`scripts/sync-local-agent-skills.sh\` | Copy local-skills → \`.cursor/skills/\` |
+| \`.cursor/commands/\` | Generated — upstream + standards + local |
 | \`.cursor/rules/agent-skills.mdc\` | Orchestration (regenerated each sync) |
 
 ## Sync
@@ -203,6 +233,8 @@ VENDOR
 | `/webperf` | [webperf.md](../../scripts/agent-skills-standards/webperf.md) |
 | `/code-simplify` | [code-simplify.md](../../scripts/agent-skills-standards/code-simplify.md) |
 | `/ship` | [ship.md](../../scripts/agent-skills-standards/ship.md) |
+| `/release` | local — [release.md](../../scripts/local-commands/release.md) |
+| `/gc` | local — [gc.md](../../scripts/local-commands/gc.md) |
 CMDREADME
 
   cat >"$CURSOR/README.md" <<'README'
@@ -241,7 +273,7 @@ README
 
 ## SDLC
 
-`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship`
+`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`
 USAGE
 
   echo "Bootstrapped .cursor/rules, VENDOR.md, README"
@@ -278,6 +310,8 @@ mkdir -p "$REFS"
 rsync -a "$UPSTREAM/references/" "$REFS/"
 
 sync_commands
+sync_local_commands
+sync_local_agent_skills
 
 SHA="$(git -C "$UPSTREAM" rev-parse HEAD 2>/dev/null || echo unknown)"
 bootstrap_cursor_meta "$SHA"

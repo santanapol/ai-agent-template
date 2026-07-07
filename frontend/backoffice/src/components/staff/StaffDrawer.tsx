@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoadingButton } from '@/components/loading-button';
+import { LoadingButton } from '@/components/LoadingButton';
 import { StaffFormField } from '@/components/staff/StaffFormField';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';

@@ -13,7 +13,7 @@ import {
   formatDisplayDate,
   parseIsoDate,
   toIsoDate,
-} from "@/lib/date-utils"
+} from "@/lib/dateUtils"
 
 interface DatePickerProps {
   id?: string

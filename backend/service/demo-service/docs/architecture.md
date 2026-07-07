@@ -136,7 +136,7 @@ Global: **`x-request-id`** (generate/echo), **Helmet**, **Pino** HTTP log (skip 
 | :--- | :--- |
 | [`openapi.yaml`](../openapi.yaml) | HTTP contract (direct mesh) |
 | [`db/erd.md`](./db/erd.md) | MongoDB ERD, dictionary, indexes |
-| [`adrs/001-put-full-replace.md`](./adrs/001-put-full-replace.md) | `PUT` teaching exception |
+| [`adrs/01-put-full-replace.md`](./adrs/001-put-full-replace.md) | `PUT` teaching exception |
 | [`openapi-via-gateway.yaml`](../openapi-via-gateway.yaml) | Client via gateway |
 | [`bruno/`](./bruno/) | Optional HTTP collections |
 | [`codes.yaml`](../codes.yaml) | Service error code snapshot |

@@ -6,8 +6,8 @@ import StaffDrawerComponent, {
   type DrawerFormValues,
   type DrawerMode,
 } from '@/components/staff/StaffDrawer';
-import { FilterSelectField } from '@/components/filter-select-field';
-import { SearchFilterField } from '@/components/search-filter-field';
+import { FilterSelectField } from '@/components/FilterSelectField';
+import { SearchFilterField } from '@/components/SearchFilterField';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';

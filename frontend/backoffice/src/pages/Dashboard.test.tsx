@@ -41,6 +41,7 @@ describe('Dashboard', () => {
   it('loads stat cards for admin roles', async () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockAuthUser('platform_admin'),
+      permissions: ['profiles:list'],
     } as ReturnType<typeof useAuth>);
 
     vi.mocked(staffApi.listProfiles)
@@ -61,6 +62,7 @@ describe('Dashboard', () => {
   it('does not fetch stats for non-admin roles', async () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockAuthUser('staff'),
+      permissions: ['profiles:lookup', 'profiles:read'],
     } as ReturnType<typeof useAuth>);
 
     renderWithRouter(<Dashboard />);
@@ -70,6 +72,7 @@ describe('Dashboard', () => {
     });
     expect(staffApi.listProfiles).not.toHaveBeenCalled();
     expect(screen.getByText(/more dashboard widgets coming soon/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /open staff management/i })).not.toBeInTheDocument();
   });
 
   it('shows error toast when stats fetch fails', async () => {
@@ -88,6 +91,7 @@ describe('Dashboard', () => {
   it('navigates to staff management from quick action', async () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockAuthUser('platform_admin'),
+      permissions: ['profiles:list'],
     } as ReturnType<typeof useAuth>);
 
     const user = userEvent.setup();

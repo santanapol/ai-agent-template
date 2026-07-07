@@ -1,4 +1,4 @@
-import type { DataTableColumn } from '@/components/data-table';
+import type { DataTableColumn } from '@/components/DataTable';
 import type { Royalty21Row } from '@/types/branchReport';
 import {
   formatDeposit,

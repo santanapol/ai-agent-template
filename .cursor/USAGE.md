@@ -18,4 +18,4 @@
 
 ## SDLC
 
-`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship`
+`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`

@@ -20,7 +20,8 @@
     "spec:consistency": "node scripts/validate-spec-consistency.mjs",
     "audit:check": "npm audit --audit-level=high",
     "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run test:unit && npm run test:integration:ci && npm run spec:consistency && npm run audit:check",
-    "init:db": "node --env-file=.env scripts/init-db.mjs"
+    "init:db": "node --env-file=.env scripts/init-db.mjs",
+    "seed:example": "node --env-file=.env scripts/seed-example-data.mjs"
   },
   "dependencies": {
     "@zero-platform/roles": "file:../../shared/platform-roles",

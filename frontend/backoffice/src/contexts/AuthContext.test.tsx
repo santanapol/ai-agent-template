@@ -264,6 +264,15 @@ describe('AuthContext', () => {
 
     const homeBranch = '507f1f77bcf86cd799439012';
     const activeBranch = '507f1f77bcf86cd799439014';
+    const initialToken = makeJwt({
+      sub: '123',
+      role: 'platform_admin',
+      ou_id: '507f1f77bcf86cd799439011',
+      branch_id: homeBranch,
+      home_branch_id: homeBranch,
+      token_gen: 0,
+      exp: 1924999999,
+    });
     const refreshedToken = makeJwt({
       sub: '123',
       role: 'platform_admin',
@@ -287,15 +296,25 @@ describe('AuthContext', () => {
         data: { code: 'AUTH_NOT_READY' },
       },
     );
-    mockedSwitch.mockRejectedValue(notReady);
     mockedRefresh
-      .mockRejectedValueOnce(new Error('No session'))
+      .mockResolvedValueOnce({
+        access_token: initialToken,
+        expires_in: 900,
+        token_type: 'Bearer',
+        permissions: ['profiles:*'],
+      })
       .mockResolvedValueOnce({
         access_token: refreshedToken,
         expires_in: 900,
         token_type: 'Bearer',
         permissions: ['profiles:*'],
       });
+    mockedSwitch.mockRejectedValueOnce(notReady).mockResolvedValueOnce({
+      access_token: refreshedToken,
+      expires_in: 900,
+      token_type: 'Bearer',
+      permissions: ['profiles:*'],
+    });
 
     const BranchProbe = () => {
       const { user, switchBranch } = useAuth();
@@ -317,10 +336,15 @@ describe('AuthContext', () => {
       </AuthProvider>,
     );
 
+    await waitFor(() => {
+      expect(screen.getByTestId('branch-id').textContent).toBe(homeBranch);
+    });
+
     await user.click(screen.getByText('Switch branch'));
 
     await waitFor(() => {
-      expect(mockedRefresh).toHaveBeenCalled();
+      expect(mockedRefresh).toHaveBeenCalledTimes(2);
+      expect(mockedSwitch).toHaveBeenCalledTimes(2);
       expect(screen.getByTestId('branch-id').textContent).toBe(activeBranch);
     });
   });

@@ -7,7 +7,7 @@
  *
  * กำหนดค่า admin ผ่าน env (หรือใช้ default dev):
  *   ADMIN_USERNAME     default: platform_admin
- *   ADMIN_PASSWORD     default: ChangeMe!Admin-1  (ห้ามใช้ใน production!)
+ *   ADMIN_PASSWORD     default: 1234  (ห้ามใช้ใน production!)
  *   ADMIN_ROLE         default: platform_admin
  *   SEED_OU_ID         default: สร้าง ObjectId ใหม่
  *   SEED_BRANCH_ID     default: Zero HQ สำหรับ OU-wide roles, ObjectId ใหม่สำหรับ role อื่น
@@ -38,7 +38,7 @@ if (!uri) {
 }
 
 const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME ?? 'platform_admin')
-const adminPassword = process.env.ADMIN_PASSWORD ?? 'ChangeMe!Admin-1'
+const adminPassword = process.env.ADMIN_PASSWORD ?? '1234'
 const adminRole = process.env.ADMIN_ROLE ?? 'platform_admin'
 
 const ouId = process.env.SEED_OU_ID

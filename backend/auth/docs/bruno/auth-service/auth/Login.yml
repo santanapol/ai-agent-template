@@ -16,7 +16,7 @@ http:
     data: |-
       {
         "username": "admin",
-        "password": "ChangeMe!Admin-1",
+        "password": "1234",
         "client_kind": "native"
       }
   auth: inherit

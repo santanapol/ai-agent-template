@@ -8,8 +8,8 @@ import {
   Square,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout';
-import { DescriptionList } from '@/components/description-list';
-import { LoadingButton } from '@/components/loading-button';
+import { DescriptionList } from '@/components/DescriptionList';
+import { LoadingButton } from '@/components/LoadingButton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -54,7 +54,7 @@ import {
 import type { Report, ScriptValidationError } from '@/types/smartReport';
 import type { ScriptGateStatus } from '@/lib/smartReportScriptGate';
 import { formatTestRunPreviewCount } from '@/lib/smartReportScriptGate';
-import { type ScheduleOption } from './smartReport/formatters';
+import { type ScheduleOption } from './smart-report/formatters';
 import { cn } from '@/lib/utils';
 
 type EditorTab = 'script' | 'compiled';

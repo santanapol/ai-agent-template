@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { usePageBreadcrumb } from '@/contexts/PageBreadcrumbContext';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/useMobile';
 import { apiErrorMessage } from '@/lib/apiError';
 import {
   listReports,
@@ -43,7 +43,7 @@ import {
   scheduleToUiValue,
   type ReportRow,
   type ReportStatus,
-} from './smartReport/formatters';
+} from './smart-report/formatters';
 import { SmartReportEditor, type ReportFormValues } from './SmartReportEditor';
 import { SmartReportList } from './SmartReportList';
 

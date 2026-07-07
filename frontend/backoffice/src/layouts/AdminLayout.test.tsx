@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { AuthContextValue } from '../contexts/AuthContext';
 import { renderWithProviders } from '../test/renderWithProviders';
 import type { DecodedUser } from '../types/auth';
-import { useIsMobile } from '../hooks/use-mobile';
+import { useIsMobile } from '../hooks/useMobile';
 
 function navMainScope() {
   const label = screen.getByText('Menu');
@@ -30,10 +30,6 @@ vi.mock('../lib/staffApiClient', () => ({
   getProfileByUserId: vi.fn().mockResolvedValue({ profile: { firstname: 'John', lastname: 'Doe', user: { username: 'john_doe' } } }),
 }));
 
-vi.mock('../lib/invoicesApiClient', () => ({
-  listInvoiceAgents: vi.fn().mockResolvedValue({ data: [] }),
-}));
-
 vi.mock('../lib/authApiClient', () => ({
   getMyBranch: vi.fn().mockResolvedValue({
     branch_id: 'b1',
@@ -41,9 +37,10 @@ vi.mock('../lib/authApiClient', () => ({
     branch_code: 'B1',
     active: true,
   }),
+  listMyBranches: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('../hooks/use-mobile', () => ({
+vi.mock('../hooks/useMobile', () => ({
   useIsMobile: vi.fn(),
 }));
 

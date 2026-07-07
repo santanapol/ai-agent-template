@@ -1,5 +1,7 @@
 # Frontend Back-office RUNBOOK
 
+> **คู่มือรวมทุกวิธีรัน:** [RUNBOOK.md](../../RUNBOOK.md) ที่ repo root
+
 เอกสารนี้รวบรวมวิธีรันโปรเจกต์ Frontend (Back-office) ในเครื่อง Local (Development) และวิธีแก้ปัญหาเบื้องต้นที่อาจพบได้บ่อย
 
 ## 1. Prerequisites (สิ่งที่ต้องมี)
@@ -12,7 +14,7 @@
 
 ## 2. Environment Variables
 
-คัดลอกไฟล์ `.env.local.example` มาสร้างเป็นไฟล์ `.env.local`
+คัดลอกไฟล์ `.env.local.example` มาสร้างเป็นไฟล์ `.env.local` (ดู [backend/ENV.md](../../backend/ENV.md) — frontend ใช้ `.env.local` ไม่ใช่ `.env`)
 
 ```bash
 cp .env.local.example .env.local

@@ -1,6 +1,7 @@
 import { Script, createContext } from "node:vm";
 import { ObjectId } from "mongodb";
 import { getReadClient } from "../../config/database-read.js";
+import { assertPipelineStagesSafe } from "./script-validator.service.js";
 import {
   SandboxRunnerError,
   SANDBOX_ERROR_CODES,
@@ -80,9 +81,10 @@ function wrapCollection(collection) {
   wrapped.find = makeSafeFunction((query = {}, options = {}) =>
     createFindCursor(collection, query, options),
   );
-  wrapped.aggregate = makeSafeFunction((pipeline = [], options = {}) =>
-    collection.aggregate(pipeline, options).toArray(),
-  );
+  wrapped.aggregate = makeSafeFunction((pipeline = [], options = {}) => {
+    assertPipelineStagesSafe(pipeline);
+    return collection.aggregate(pipeline, options).toArray();
+  });
   wrapped.findOne = makeSafeFunction((query = {}, options = {}) =>
     collection.findOne(query, options),
   );

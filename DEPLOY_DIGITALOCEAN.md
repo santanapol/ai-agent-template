@@ -63,7 +63,7 @@ cp backend/service/demo-service/.env.example backend/service/demo-service/.env.p
 # 2. เข้าไปแก้ไขรหัสผ่าน/ความลับ ในไฟล์ .env.prod ของแต่ละ Service ให้ถูกต้อง
 nano backend/gateway/.env.prod
 # (เช่น แก้ไขค่า GATEWAY_SECRET ให้ปลอดภัย)
-# branch-report: ตั้ง GATEWAY_SECRET ให้ตรง gateway, MONGODB_URI เป็น read replica (เช่น user เดียวกับ auth MONGODB_URI_READ), MONGODB_DB_BRANCH=gpp_777ww
+# branch-report: ตั้ง GATEWAY_SHARED_SECRET ให้ตรง gateway, MONGODB_URI_READ เป็น read replica (เช่น user เดียวกับ auth MONGODB_URI_READ), MONGODB_DB_BRANCH=gpp_777ww
 
 # ทำแบบเดียวกันกับโฟลเดอร์อื่นๆ...
 ```

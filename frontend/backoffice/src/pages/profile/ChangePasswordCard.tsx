@@ -1,6 +1,6 @@
 import { KeyRound } from 'lucide-react';
 import { PageContentCard } from '@/components/layout';
-import { LoadingButton } from '@/components/loading-button';
+import { LoadingButton } from '@/components/LoadingButton';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { fieldErrorIds } from '@/lib/fieldA11y';

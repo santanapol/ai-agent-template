@@ -2,14 +2,18 @@ import { loadEnv } from './config/env.js'
 import { buildApp } from './app.js'
 import { reapplyRoutesEnvFromDotenvFile } from './config/reapply-routes-env-from-dotenv.js'
 
-reapplyRoutesEnvFromDotenvFile()
+const routesReapply = reapplyRoutesEnvFromDotenvFile()
 
 const env = loadEnv()
 const app = await buildApp(env)
 
+if (routesReapply.warning) {
+  app.log.warn(routesReapply.warning)
+}
+
 const prefixes = app.gatewayRoutePrefixes
 if (Array.isArray(prefixes) && prefixes.length > 0) {
-  console.info(`[gateway] Effective proxy prefixes: ${prefixes.join(' | ')}`)
+  app.log.info({ prefixes }, '[gateway] Effective proxy prefixes')
 }
 
 const log = app.log ?? console

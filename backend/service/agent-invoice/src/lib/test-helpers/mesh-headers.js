@@ -2,8 +2,7 @@
 export function testGatewaySecret() {
   return (
     process.env.GATEWAY_SHARED_SECRET ||
-    process.env.GATEWAY_SECRET ||
-    "change-me"
+    "test-gateway-secret-32-chars-minimum!!"
   );
 }
 

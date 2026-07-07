@@ -12,6 +12,7 @@ import injectContextPlugin from './plugins/inject-context.js'
 import { registerProxies } from './proxy/register-proxies.js'
 import { upstreamProblemDetail } from './lib/upstream-problem-detail.js'
 import { genRequestId } from './lib/request-id.js'
+import { registerBasicMetrics } from '../../shared/fastify-metrics/basic-metrics.js'
 
 const TRUSTED_HEADER_KEYS = [
   'x-gateway-secret',
@@ -155,6 +156,8 @@ export async function buildApp(env = loadEnv(), options = {}) {
     timestamp: new Date().toISOString(),
     uptime: Math.floor((Date.now() - startedAtMs) / 1000)
   }))
+
+  registerBasicMetrics(fastify, { startedAtMs, serviceName: env.APP_NAME ?? 'gateway' })
 
   fastify.get('/readyz', async (request, reply) => {
     const controller = new AbortController()

@@ -1,7 +1,7 @@
 import { Save } from 'lucide-react';
 import { PageContentCard } from '@/components/layout';
-import { DescriptionList } from '@/components/description-list';
-import { LoadingButton } from '@/components/loading-button';
+import { DescriptionList } from '@/components/DescriptionList';
+import { LoadingButton } from '@/components/LoadingButton';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

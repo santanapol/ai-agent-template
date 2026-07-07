@@ -11,7 +11,11 @@ function readHeader(request, name) {
 
 export default fp(async function userContextPlugin(fastify) {
   fastify.addHook("onRequest", async (request, reply) => {
-    if (request.url === "/healthz" || request.url === "/readyz") {
+    if (
+      request.url === "/healthz" ||
+      request.url === "/readyz" ||
+      request.url === "/metrics"
+    ) {
       return;
     }
 

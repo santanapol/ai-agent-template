@@ -8,7 +8,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PageContainer, PageContentCard } from '@/components/layout';
-import { DataTable } from '@/components/data-table';
+import { DataTable } from '@/components/DataTable';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -42,8 +42,8 @@ import {
   formatValidationStatusLabel,
   type ReportRow,
   type ReportStatus,
-} from './smartReport/formatters';
-import { buildDownloadHistoryColumns } from './smartReport/downloadHistoryColumns';
+} from './smart-report/formatters';
+import { buildDownloadHistoryColumns } from './smart-report/downloadHistoryColumns';
 
 function validationBadgeVariant(status: Report['validationStatus'] | undefined) {
   if (status === 'valid') return 'default' as const;

@@ -22,7 +22,7 @@ export interface SidebarBreadcrumb {
   items?: BreadcrumbLinkItem[];
 }
 
-/** Routes that render their own breadcrumb via DetailContainer — hide SiteHeader breadcrumb. */
+/** Detail routes use a shortened menu trail until a page pushes a custom trail. */
 const DETAIL_ROUTE_PATTERNS: RegExp[] = [/^\/invoices\/[^/]+$/];
 
 export function isDetailRoute(pathname: string): boolean {
@@ -52,36 +52,56 @@ export function flattenMenuToTwoLevels(items: MenuItemType[]): MenuItemType[] {
   });
 }
 
-function findMenuBreadcrumb(
+function findMenuBreadcrumbTrail(
   menuTree: MenuItemType[],
   pathname: string,
-): SidebarBreadcrumb | null {
-  for (const item of menuTree) {
-    if (item.route === pathname) {
-      return { parent: null, page: item.label };
-    }
-    for (const child of item.children ?? []) {
-      if (child.route === pathname) {
-        return { parent: item.label, page: child.label };
+): BreadcrumbLinkItem[] | null {
+  function search(items: MenuItemType[], ancestors: MenuItemType[]): BreadcrumbLinkItem[] | null {
+    for (const item of items) {
+      const chain = [...ancestors, item];
+      if (item.route === pathname) {
+        return chain.map((node) => ({ label: node.label }));
       }
-      if (child.route && pathname.startsWith(`${child.route}/`)) {
-        return { parent: item.label, page: child.label };
+      if (item.children?.length) {
+        const found = search(item.children, chain);
+        if (found) return found;
       }
     }
-    if (item.route && pathname.startsWith(`${item.route}/`)) {
-      return { parent: null, page: item.label };
-    }
+    return null;
   }
-  return null;
+
+  return search(menuTree, []);
+}
+
+function breadcrumbFromTrail(trail: BreadcrumbLinkItem[]): SidebarBreadcrumb {
+  const page = String(trail.at(-1)?.label ?? '');
+  const parent = trail.length > 1 ? String(trail.at(-2)?.label ?? '') : null;
+  return { parent, page, items: trail };
+}
+
+/** Normalize menu or page override breadcrumb for SiteHeader rendering. */
+export function resolveBreadcrumbItems(breadcrumb: SidebarBreadcrumb): BreadcrumbLinkItem[] {
+  if (breadcrumb.items?.length) {
+    return breadcrumb.items;
+  }
+
+  const items: BreadcrumbLinkItem[] = [];
+  if (breadcrumb.parent) {
+    items.push({ label: breadcrumb.parent });
+  }
+  if (breadcrumb.page) {
+    items.push({ label: breadcrumb.page });
+  }
+  return items;
 }
 
 export function resolveSidebarBreadcrumb(
   menuTree: MenuItemType[],
   pathname: string,
 ): SidebarBreadcrumb {
-  const fromMenu = findMenuBreadcrumb(menuTree, pathname);
-  if (fromMenu) {
-    return fromMenu;
+  const trail = findMenuBreadcrumbTrail(menuTree, pathname);
+  if (trail) {
+    return breadcrumbFromTrail(trail);
   }
 
   if (pathname === '/' || pathname === '') {

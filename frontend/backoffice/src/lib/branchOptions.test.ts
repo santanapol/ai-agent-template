@@ -68,10 +68,10 @@ describe('branchOptions', () => {
     expect(formatBranchOptionLabel(sorted[0]!)).toBe('ZERO - Zero HQ (Inactive)');
   });
 
-  it('ZERO_HQ_BRANCH_ID stays in sync with auth seed constants', () => {
+  it('ZERO_HQ_BRANCH_ID stays in sync with auth platform-branches config', () => {
     const authZeroHq = path.resolve(
       fileURLToPath(import.meta.url),
-      '../../../../../backend/auth/scripts/seed-data/zero-hq.js',
+      '../../../../../backend/auth/src/config/platform-branches.js',
     );
     const source = readFileSync(authZeroHq, 'utf8');
     const match = source.match(/export const ZERO_HQ_BRANCH_ID = '([a-f0-9]{24})'/);

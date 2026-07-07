@@ -7,7 +7,7 @@ When executing this command, follow the domain standards that apply to the work:
 - `coding-standard/software-testing/11-accessibility-testing/README.md`
 
 **Frontend (Backoffice):**
-- `coding-standard/frontend/backoffice/6-ui-and-styling.md`
+- `coding-standard/frontend/backoffice/06-ui-and-styling.md`
 
 **Backend:**
 - `coding-standard/backend/10-observability-and-logging.md`

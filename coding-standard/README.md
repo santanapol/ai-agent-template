@@ -13,6 +13,7 @@ Copy of the organization **coding-standard** tree, bundled inside `zero-platform
 | `backend/spectral/org-api.yaml` | `backend/service/*/.spectral.yaml` |
 | `backend/*.md`, `auth/*.md` | Spec markdown links under `docs/specs/` |
 | `frontend/backoffice/` | Backoffice UI standards and live-demo templates |
+| `naming-conventions.md` | File and folder naming rules (all zones) |
 
 ## Sync from upstream
 

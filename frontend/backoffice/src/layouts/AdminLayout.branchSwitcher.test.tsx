@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 import type { AuthContextValue } from '../contexts/AuthContext';
 import type { DecodedUser } from '../types/auth';
 import { renderWithProviders } from '../test/renderWithProviders';
-import * as invoicesApi from '../lib/invoicesApiClient';
 import * as authApi from '../lib/authApiClient';
 import { ZERO_HQ_BRANCH_ID } from '../lib/branchOptions';
 
@@ -24,12 +23,9 @@ vi.mock('../lib/staffApiClient', () => ({
   getProfileByUserId: vi.fn().mockRejectedValue(new Error('skip')),
 }));
 
-vi.mock('../lib/invoicesApiClient', () => ({
-  listInvoiceAgents: vi.fn(),
-}));
-
 vi.mock('../lib/authApiClient', () => ({
   getMyBranch: vi.fn(),
+  listMyBranches: vi.fn(),
 }));
 
 const messageError = vi.fn();
@@ -89,7 +85,7 @@ describe('AdminLayout branch switcher', () => {
     vi.clearAllMocks();
     messageError.mockReset();
     messageSuccess.mockReset();
-    vi.mocked(invoicesApi.listInvoiceAgents).mockResolvedValue({ data: branches } as never);
+    vi.mocked(authApi.listMyBranches).mockResolvedValue(branches);
     vi.mocked(authApi.getMyBranch).mockResolvedValue(homeBranch);
   });
 
@@ -223,7 +219,7 @@ describe('AdminLayout branch switcher', () => {
       expect(screen.getByText('H01 - Home Branch')).toBeInTheDocument();
     });
     expect(screen.queryByRole('button', { name: 'Select active branch' })).not.toBeInTheDocument();
-    expect(invoicesApi.listInvoiceAgents).not.toHaveBeenCalled();
+    expect(authApi.listMyBranches).not.toHaveBeenCalled();
     expect(authApi.getMyBranch).toHaveBeenCalled();
   });
 
@@ -282,7 +278,8 @@ describe('AdminLayout branch switcher', () => {
     });
   });
 
-  it('shows Zero HQ label when home branch is platform HQ (not in gpp list)', async () => {
+  it('shows read-only Zero HQ when only one branch is available', async () => {
+    vi.mocked(authApi.listMyBranches).mockResolvedValue([]);
     vi.mocked(authApi.getMyBranch).mockResolvedValue({
       branch_id: ZERO_HQ_BRANCH_ID,
       branch_name: 'Zero HQ',
@@ -292,6 +289,33 @@ describe('AdminLayout branch switcher', () => {
 
     mockAuth({
       sub: 'user-zero-hq',
+      role: 'platform_admin',
+      ou_id: 'ou-1',
+      branch_id: ZERO_HQ_BRANCH_ID,
+      home_branch_id: ZERO_HQ_BRANCH_ID,
+      token_gen: 0,
+      exp: 9999999999,
+      iat: 0,
+    });
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ZERO - Zero HQ')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Select active branch' })).not.toBeInTheDocument();
+  });
+
+  it('shows branch Select when multiple branches are available', async () => {
+    vi.mocked(authApi.getMyBranch).mockResolvedValue({
+      branch_id: ZERO_HQ_BRANCH_ID,
+      branch_name: 'Zero HQ',
+      branch_code: 'ZERO',
+      active: true,
+    });
+
+    mockAuth({
+      sub: 'user-zero-hq-multi',
       role: 'platform_admin',
       ou_id: 'ou-1',
       branch_id: ZERO_HQ_BRANCH_ID,

@@ -1,7 +1,7 @@
 import { buildApp } from './app.js';
 import { closeDatabase, connectDatabase } from './config/database.js';
 
-const port = Number(process.env.PORT ?? 3015);
+const port = Number(process.env.PORT ?? 3104);
 const host = process.env.HOST ?? '0.0.0.0';
 
 const app = await buildApp();

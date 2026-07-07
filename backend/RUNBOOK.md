@@ -1,8 +1,12 @@
 # 📘 Authorization Gateway System Runbook
 
+> **คู่มือรวมทุกวิธีรัน (harness + manual + CI):** [RUNBOOK.md](../RUNBOOK.md) ที่ repo root
+
 คู่มือปฏิบัติการสำหรับ Monorepo (`auth`, `gateway`, `demo-service`, `items`)
 
 ## 1. ⚙️ Setup & Environment
+
+> **ไฟล์ env:** [ENV.md](./ENV.md) — harness → `backend/*/.env.harness` · manual → `.env` · PM2 → `.env.prod`
 
 ### `auth`
 
@@ -45,7 +49,7 @@ docker compose up -d
 cd auth && npm run init:db
 ```
 
-_(ค่าเริ่มต้น: admin / ChangeMe!Admin-1)_
+_(ค่าเริ่มต้น: admin / 1234)_
 
 ตรวจสอบให้แน่ใจว่าทั้ง `auth` และ `gateway` มีค่าใน `.env`: `REDIS_URL=redis://127.0.0.1:6379/0`
 
@@ -64,7 +68,7 @@ _(ค่าเริ่มต้น: admin / ChangeMe!Admin-1)_
 **1. ขอ Token**
 
 ```bash
-curl -X POST http://127.0.0.1:3001/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"ChangeMe!Admin-1","client_kind":"native"}'
+curl -X POST http://127.0.0.1:3001/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"1234","client_kind":"native"}'
 ```
 
 **2. เทสต์ผ่าน Gateway**

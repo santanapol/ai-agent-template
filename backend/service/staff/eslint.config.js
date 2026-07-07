@@ -5,6 +5,7 @@ import securityPlugin from "eslint-plugin-security";
 import importPlugin from "eslint-plugin-import";
 import boundariesPlugin from "eslint-plugin-boundaries";
 import prettierConfig from "eslint-config-prettier";
+import { harnessMaxLinesConfig } from "../../shared/eslint-rules/harness-taste.mjs";
 
 export default [
   {
@@ -85,4 +86,5 @@ export default [
     },
   },
   prettierConfig,
+  ...harnessMaxLinesConfig("error"),
 ];

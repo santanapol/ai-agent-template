@@ -4,6 +4,7 @@ import {
   validateScriptSource,
   unwrapMongoReadExpression,
   getCalleePropertyName,
+  assertPipelineStagesSafe,
 } from "../../script-validator.service.js";
 import { parse } from "acorn";
 
@@ -96,6 +97,34 @@ describe("script-validator.service", () => {
     `);
     assert.equal(result.valid, true);
     assert.deepEqual(result.errors, []);
+  });
+
+  test("rejects aggregation pipeline write stages $out and $merge", () => {
+    const out = validateScriptSource(`
+      const targetDB = db.getSiblingDB("demo");
+      targetDB.users.aggregate([{ $out: "stolen" }]);
+    `);
+    const merge = validateScriptSource(`
+      const targetDB = db.getSiblingDB("demo");
+      targetDB.users.aggregate([{ $merge: { into: "other" } }]);
+    `);
+    assert.equal(out.valid, false);
+    assert.equal(merge.valid, false);
+    assert.match(out.errors[0].message, /\$out/);
+  });
+
+  test("assertPipelineStagesSafe rejects write stages at runtime", () => {
+    assert.throws(
+      () => assertPipelineStagesSafe([{ $out: "stolen" }]),
+      /\$out/,
+    );
+    assert.throws(
+      () => assertPipelineStagesSafe([{ $merge: { into: "other" } }]),
+      /\$merge/,
+    );
+    assert.doesNotThrow(() =>
+      assertPipelineStagesSafe([{ $match: { active: true } }]),
+    );
   });
 
   test("rejects constructor member access", () => {

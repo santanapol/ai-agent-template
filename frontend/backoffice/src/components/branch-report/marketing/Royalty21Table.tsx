@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { DataTable } from '@/components/data-table';
+import { DataTable } from '@/components/DataTable';
 import type { Royalty21Row } from '@/types/branchReport';
 import { buildRoyalty21Columns } from './royalty21Columns';
 

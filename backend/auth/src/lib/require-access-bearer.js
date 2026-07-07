@@ -39,7 +39,11 @@ export function buildRequireAccessBearer({ publicKey, env, types }) {
       const branchId = typeof payload.branch_id === 'string' ? payload.branch_id : ''
       if (OBJECT_ID_HEX.test(ouId)) request.accessOuId = ouId
       if (OBJECT_ID_HEX.test(branchId)) request.accessBranchId = branchId
-    } catch {
+    } catch (err) {
+      request.log?.warn(
+        { errCode: err?.code, errName: err?.name },
+        'access token verification failed'
+      )
       return reply
         .code(401)
         .type('application/problem+json')

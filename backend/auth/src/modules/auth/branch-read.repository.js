@@ -28,6 +28,18 @@ export class BranchReadRepository {
   }
 
   /**
+   * @param {import('mongodb').ObjectId} ouId
+   */
+  async findByOuId(ouId) {
+    return this.db
+      .collection(BRANCH_COLLECTION)
+      .find({ ou_id: ouId })
+      .project({ branch_name: 1, branch_code: 1, active: 1 })
+      .sort({ branch_name: 1 })
+      .toArray()
+  }
+
+  /**
    * Distinguishes missing branch (404) from cross-OU branch (403) for active-branch switch.
    * @returns {Promise<'not_found' | 'forbidden' | 'inactive' | 'ok'>}
    */

@@ -13,3 +13,4 @@
 | `/webperf` | [webperf.md](../../scripts/agent-skills-standards/webperf.md) |
 | `/code-simplify` | [code-simplify.md](../../scripts/agent-skills-standards/code-simplify.md) |
 | `/ship` | [ship.md](../../scripts/agent-skills-standards/ship.md) |
+| `/gc` | local — [gc.md](../../scripts/local-commands/gc.md) |

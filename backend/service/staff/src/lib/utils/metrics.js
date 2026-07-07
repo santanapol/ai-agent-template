@@ -1,6 +1,7 @@
 import client from "prom-client";
 
 const registry = new client.Registry();
+client.collectDefaultMetrics({ register: registry });
 const staffAuthRevokePendingTotal = new client.Counter({
   name: "staff_auth_revoke_pending_total",
   help: "Total archive operations where auth revoke remained pending",

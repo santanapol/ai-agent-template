@@ -19,6 +19,12 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Web perf | `/webperf` | performance-optimization + web-performance-auditor |
 | Simplify | `/code-simplify` | code-simplification |
 | Ship | `/ship` | shipping-and-launch + parallel personas |
+| Release | `/release` | release-notes-and-handoff |
+| GC | `/gc` | code-simplification + golden principles |
+
+## Agent map
+
+Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [harness-engineering/README.md](../../harness-engineering/README.md).
 
 ## Intent → skill (auto)
 
@@ -30,6 +36,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 - API design → `api-and-interface-design`
 - UI work → `frontend-ui-engineering`
 - Session start / which skill? → `using-agent-skills`
+- After `/ship` GO → `/release` → `release-notes-and-handoff`
 
 ## Subagents (`.cursor/agents/`)
 
@@ -39,8 +46,9 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 
 ## References
 
-- Skills: `.cursor/skills/<name>/SKILL.md`
+- Skills: `.cursor/skills/<name>/SKILL.md` (local: `scripts/local-skills/`)
 - Checklists: `references/`
 - Command standards: `scripts/agent-skills-standards/`
+- Local commands: `scripts/local-commands/`
 - Team guide: `.cursor/USAGE.md`
 - Vendor pin: `.cursor/VENDOR.md`

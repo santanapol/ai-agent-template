@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Archive, UserPlus, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer, PageContentCard } from '@/components/layout';
-import { StatCard } from '@/components/stat-card';
+import { StatCard } from '@/components/StatCard';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppFeedback } from '@/hooks/useAppFeedback';
+import { usePermission } from '@/hooks/usePermission';
 import { apiErrorMessage } from '@/lib/apiError';
 import * as staffApi from '@/lib/staffApiClient';
 
@@ -15,6 +16,7 @@ const Dashboard: React.FC = () => {
   const { message } = useAppFeedback();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const canManageStaff = usePermission('profiles:list');
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
   const [archivedCount, setArchivedCount] = useState(0);
@@ -85,14 +87,18 @@ const Dashboard: React.FC = () => {
           <EmptyHeader>
             <EmptyTitle>More dashboard widgets coming soon</EmptyTitle>
             <EmptyDescription>
-              Select Staff Management from the sidebar to manage profiles.
+              {canManageStaff
+                ? 'Select Staff Management from the sidebar to manage profiles.'
+                : 'Additional insights and shortcuts will appear here in a future release.'}
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <Button variant="outline" onClick={() => navigate('/staff')}>
-              Open Staff Management
-            </Button>
-          </EmptyContent>
+          {canManageStaff ? (
+            <EmptyContent>
+              <Button variant="outline" onClick={() => navigate('/staff')}>
+                Open Staff Management
+              </Button>
+            </EmptyContent>
+          ) : null}
         </Empty>
       </PageContentCard>
     </PageContainer>

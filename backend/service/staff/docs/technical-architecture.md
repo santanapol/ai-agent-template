@@ -9,7 +9,7 @@
 | **Business**            | [`business-domain.md`](./business-domain.md)                                                                                           |
 | **Technical (ไฟล์นี้)** | trust boundary, mesh, outbound auth env, probes/metrics, `src/` layout, operations                                                     |
 | **Persistence**         | [`database-erd.md`](./database-erd.md)                                                                                                 |
-| **HTTP contract**       | **`openapi.yaml`** — สร้างเมื่อ bootstrap ([`2-folder-structure.md`](../../../../../../coding-standard/backend/2-folder-structure.md)) |
+| **HTTP contract**       | **`openapi.yaml`** — สร้างเมื่อ bootstrap ([`2-folder-structure.md`](../../../../../../coding-standard/backend/02-folder-structure.md)) |
 
 ## Contents
 
@@ -88,7 +88,7 @@ flowchart TB
 
 | Mechanism                                             | Rule                                                                                                                |
 | :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| **`x-gateway-secret`**                                | บังคับบน business routes — [`4-request-headers.md`](../../../../../../coding-standard/backend/4-request-headers.md) |
+| **`x-gateway-secret`**                                | บังคับบน business routes — [`4-request-headers.md`](../../../../../../coding-standard/backend/04-request-headers.md) |
 | **`x-user-id`**, **`x-user-ou`**, **`x-user-branch`** | tenant + audit — [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md)         |
 | **`x-user-role`**                                     | RBAC enforcement — กฎ product ดู [`business-domain.md` §7](./business-domain.md#7-rbac-product)                     |
 | **`Authorization`**                                   | gateway **ไม่ forward** Bearer ไป staff                                                                             |
@@ -110,7 +110,7 @@ flowchart TB
 | Business API | `/api/v1/staff/profiles` | operations — [`business-domain.md` §5](./business-domain.md#5-http-operations-intent--ก่อน-openapi) |
 | Metrics      | `/metrics`               | ถ้าเปิด — private network                                                                           |
 
-**Errors / pagination:** Custom JSON wrapper (`{ success, code, message, data }`), registry ใน **`codes.yaml`**, list ตาม [`6-api-response-codes.md`](../../../../../../coding-standard/backend/6-api-response-codes.md) — สร้างพร้อม **`openapi.yaml`**
+**Errors / pagination:** Custom JSON wrapper (`{ success, code, message, data }`), registry ใน **`codes.yaml`**, list ตาม [`6-api-response-codes.md`](../../../../../../coding-standard/backend/06-api-response-codes.md) — สร้างพร้อม **`openapi.yaml`**
 
 #### `GET /api/v1/staff/profiles` — list vs lookup (spec)
 

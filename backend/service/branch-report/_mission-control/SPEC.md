@@ -53,7 +53,7 @@ Per-member lifetime report: one row per member in the selected marketing channel
 - [ ] **AC-5** API `GET /api/v1/branch-report/invite-links` returns links for active branch, sorted `invite_code` ASC; fields `id`, `inviteCode`, `username`, `description`; dropdown label `{inviteCode} — {username}`.
 - [ ] **AC-6** API `GET /api/v1/branch-report/royalty-21-times` accepts `channelType`, **`regDateFrom`**, **`regDateTo`** (required), optional `inviteLinkId`, `page`, `pageSize`; scopes by gateway user context; filters members where `reg_date` is within inclusive UTC day range; default sort username ASC; lifetime metrics unchanged.
 - [ ] **AC-7** Branch switch: reset form defaults (including **current-month** reg dates), clear table, reload invite links, info toast.
-- [ ] **AC-8** Standard API envelope and HTTP status codes per `coding-standard/backend/6-api-response-codes.md`.
+- [ ] **AC-8** Standard API envelope and HTTP status codes per `coding-standard/backend/06-api-response-codes.md`.
 - [ ] **AC-9** No auto-fetch report on mount; fetch only after Search.
 - [ ] **AC-10** Invalid or missing `regDateFrom` / `regDateTo`, or `regDateFrom` > `regDateTo` → `400 INVALID_PARAM`; form shows inline validation before API call when possible.
 

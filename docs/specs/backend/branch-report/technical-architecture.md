@@ -19,7 +19,7 @@ openapi.yaml
 
 ## Trust boundary
 
-- **No JWT verify** — `GATEWAY_SECRET` header + mesh `x-user-*`
+- **No JWT verify** — `GATEWAY_SHARED_SECRET` header + mesh `x-user-*`
 - **No** `x-user-permissions` check in service (gateway/UI responsibility)
 - `requireBranch: true` on user-context
 
@@ -28,8 +28,8 @@ openapi.yaml
 | Env | Purpose |
 |-----|---------|
 | `PORT` | default 3015 |
-| `GATEWAY_SECRET` | mesh shared secret (matches gateway `GATEWAY_SECRET`) |
-| `MONGODB_URI` | branch DB connection |
+| `GATEWAY_SHARED_SECRET` | mesh shared secret (matches gateway `GATEWAY_SECRET`) |
+| `MONGODB_URI_READ` | branch DB read connection |
 | `MONGODB_DB_BRANCH` | database name (e.g. `gpp_777ww`) |
 
 ## Integrations

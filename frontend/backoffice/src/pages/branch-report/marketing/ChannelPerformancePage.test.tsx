@@ -42,12 +42,11 @@ describe('ChannelPerformancePage', () => {
     });
   });
 
-  it('renders page title and breadcrumb (AC-1)', async () => {
+  it('renders page title (AC-1)', async () => {
     renderWithProviders(<ChannelPerformancePage />);
 
     expect(screen.getByText('Royalty 21 Times')).toBeInTheDocument();
-    expect(screen.getByText('Branch Report')).toBeInTheDocument();
-    expect(screen.getAllByText('Channel Performance')[0]).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Channel Performance' })).toBeInTheDocument();
   });
 
   it('renders register date range field with current month defaults', () => {

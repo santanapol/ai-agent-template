@@ -152,18 +152,10 @@ export const seedMenus = [
     ou_id: null
   },
   {
-    key: 'branch-report:marketing',
-    label: 'Marketing',
-    type: 'menu',
-    parent_key: 'branch-report',
-    sort_order: 10,
-    ou_id: null
-  },
-  {
     key: 'branch-report:marketing:channel-performance:read',
     label: 'Channel Performance',
     type: 'action',
-    parent_key: 'branch-report:marketing',
+    parent_key: 'branch-report',
     sort_order: 10,
     ou_id: null
   },
