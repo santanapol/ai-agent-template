@@ -12,6 +12,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-07
+
+Repository snapshot: **auth-owned branch list**, backoffice switcher migration, **`.env.harness`** harness refactor, env naming (`GATEWAY_SHARED_SECRET`, `MONGODB_URI_READ`), staging deploy/smoke tooling, `/release` versioning workflow.
+
+Handoff: [docs/releases/2026-07-07-user.md](docs/releases/2026-07-07-user.md), [docs/releases/2026-07-07-deploy.md](docs/releases/2026-07-07-deploy.md). Git tag: `v0.4.0`.
+
+### Added
+
+- **`GET /auth/me/branches`** — OU-scoped branch list for switch-capable roles; backoffice switcher uses auth instead of agent-invoice.
+- **Harness env:** `backend/<service>/.env.harness` (replaces `0/env/*`); [backend/ENV.md](backend/ENV.md), `scripts/env-status.mjs`.
+- **Staging ops:** `deploy-staging.sh`, `setup-staging.sh`, `staging-init-env.sh`, `staging-seed-all.sh`, `staging-verify-env.sh`, `smoke-staging.sh`, `release-tag.sh`; [server-environment/staging/RUNBOOK.md](server-environment/staging/RUNBOOK.md).
+- **`/release` skill** — platform semver, CHANGELOG, handoff notes, post-deploy git tag.
+- **Auth:** `branches-list.integration.test.js`; platform-branches config extraction.
+
+### Changed
+
+- **Env naming:** `GATEWAY_SHARED_SECRET`, `MONGODB_URI_READ` across services; auth keeps `DATABASE_URI`.
+- **Backoffice:** `AUTH_NOT_READY` retry on branch switch; Branch Report menu hierarchy (Channel Performance under Branch Report).
+- **branch-report:** default `PORT=3104` to match gateway routes.
+
+### Fixed
+
+- **smart-report:** block `$out` / `$merge` in script validator and runtime sandbox.
+- **branch-report:** production gateway secret guard; remove legacy `GATEWAY_SECRET` fallback.
+- **Staging bootstrap:** `staging-init-env.sh` patches branch-report `PORT=3104`.
+
 ## [0.3.0] - 2026-07-06
 
 Repository snapshot: backoffice on **shadcn/ui + Tailwind v4**, business services through **branch-report**, Cursor **agent-skills** integrated, **coding-standard** vendored in-repo.

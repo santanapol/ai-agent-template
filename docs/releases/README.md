@@ -1,14 +1,16 @@
 # Release notes
 
-Handoff documents created by `/release` ([release-notes-and-handoff](../../scripts/local-skills/release-notes-and-handoff/SKILL.md)) after `/ship` GO.
+Handoff documents from `/release` ([release-notes-and-handoff](../../scripts/local-skills/release-notes-and-handoff/SKILL.md)) after `/ship` GO.
 
-Quality gates (`ci-all`, smoke) run at **`/ship`** — `/release` only adds these docs and runs `docs-lint`.
+| Artifact | Purpose |
+|----------|---------|
+| `CHANGELOG.md` (repo root) | Platform semver snapshot — consumer-facing summary |
+| `docs/releases/YYYY-MM-DD-user.md` | End users, support, PM |
+| `docs/releases/YYYY-MM-DD-deploy.md` | Ops — env, deploy, rollback, merge SHA |
+| Git tag `vX.Y.Z` | Immutable release point (after deploy smoke) |
 
-| File pattern | Audience |
-|--------------|----------|
-| `YYYY-MM-DD-user.md` | End users, support, PM |
-| `YYYY-MM-DD-deploy.md` | Developers, ops (env, restart, rollback) |
+**Versioning:** Filename uses **date**; document title uses **platform version** (`v0.4.0`). Tag is created **after** staging/prod smoke — see `scripts/release-tag.sh`.
 
-**After merge:** copy or link the user note for announcements; follow the deploy note on production.
+Quality gates (`ci-all`, smoke) run at **`/ship`** — `/release` runs `docs-lint` only.
 
 Do not store secrets in these files.

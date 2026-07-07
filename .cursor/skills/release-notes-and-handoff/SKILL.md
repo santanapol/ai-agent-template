@@ -1,244 +1,232 @@
 ---
 name: release-notes-and-handoff
-description: After ship GO — write user and deploy release notes in docs/releases, get human confirmation, docs-lint, commit, and open or update a PR. Use when handoff docs are needed before merge. Does not re-run full CI (/ship already did).
+description: After ship GO — version bump, CHANGELOG, user/deploy release notes, docs-lint, PR, and post-deploy git tag. Does not re-run ci-all (/ship already did).
 ---
 
 # Release Notes and Handoff
 
 ## Overview
 
-Bridge between **quality gate** (`/ship` GO) and **merge/deploy**. Produce two audience-specific release notes in `docs/releases/`, get human approval, validate docs, then commit and open or update a PR.
+Bridge between **quality gate** (`/ship` GO) and **merge/deploy**. Produce versioned handoff: platform semver in [CHANGELOG.md](../../../CHANGELOG.md), two notes in `docs/releases/`, then **git tag after deploy smoke passes**.
 
-**Does not replace** `shipping-and-launch` (pre-merge GO) or production deploy. **Does not** auto-deploy. **Does not re-run** `./scripts/ci-all.sh` — `/ship` already verified code; this phase only adds documentation handoff.
+**Does not replace** `shipping-and-launch` or production deploy. **Does not** auto-deploy. **Does not re-run** `./scripts/ci-all.sh`.
 
-## When to Use
+## Version model (this monorepo)
 
-- After `/ship` returns **GO** on a meaningful change set
-- Before opening (or finalizing) a PR that will merge to `main` and trigger deploy
-- When ops or users need written handoff (env changes, new endpoints, breaking config)
+| Layer | Where | When to bump |
+|-------|--------|--------------|
+| **Platform snapshot** | Root [CHANGELOG.md](../../../CHANGELOG.md) + git tag `v0.x.x` | Every meaningful `/release` (staging or prod) |
+| **Per-service semver** | `backend/*/package.json`, OpenAPI `info.version` | Only when that service's API contract changes |
+| **Handoff docs** | `docs/releases/YYYY-MM-DD-*.md` | Every `/release`; filename = date, header = platform version |
 
-## When to Skip
+Read **Release & Versioning** in `git-workflow-and-versioning` for semver rules (breaking → major, feature → minor, fix → patch).
 
-- Tiny fixes (≤2 files, <50 lines, no auth/env/deploy impact) — PR description is enough
-- `/ship` returned **NO-GO** — fix findings first
-- Docs-only typo — no deploy note needed
+---
 
-## Prerequisites
+## When to Use / Skip
 
-- `/ship` **GO** (or explicit user waiver with documented risk)
-- Code already passed `/ship` harness (`ci-all`, smoke, docs-lint as applicable)
-- Working tree reflects the change set to ship
-- No secrets in tracked files (`.env`, `.env.harness`, `.env.prod` stay gitignored)
+**Use:** After `/ship` GO on a meaningful change set.
 
-## Related skills (read sections, do not duplicate)
-
-| Skill | Use for |
-|-------|---------|
-| `shipping-and-launch` | Deploy checklist, rollback, monitoring → **deploy note** |
-| `git-workflow-and-versioning` | Atomic commits, message format, PR size |
-| `documentation-and-adrs` | Architectural decisions → link ADR in deploy note |
-
-## Ops references (for deploy note)
-
-| Doc | Use for |
-|-----|---------|
-| [backend/ENV.md](../../../backend/ENV.md) | Env naming, `.env.prod` |
-| [backend/RUNBOOK.md](../../../backend/RUNBOOK.md) | Post-deploy smoke, ops |
-| [DEPLOY_DIGITALOCEAN.md](../../../DEPLOY_DIGITALOCEAN.md) | CI/CD, server setup |
-| [backend/ecosystem.config.js](../../../backend/ecosystem.config.js) | PM2 app names for `pm2 restart` |
+**Skip:** ≤2 files, no auth/env/deploy impact — PR description only.
 
 ---
 
 ## Phase 1 — Gather context
 
-1. `git status` and `git diff` (staged + unstaged) vs default branch
-2. Active exec plan in `docs/exec-plans/active/` if any
-3. Touched services — list for deploy note
-4. `backend/ENV.md` when env names or harness changed
-5. Check whether a PR already exists for the current branch (`gh pr view` or ask user)
+1. `git status` and `git diff` vs `main`
+2. Active exec plan in `docs/exec-plans/active/`
+3. Touched services — deploy note
+4. [backend/ENV.md](../../../backend/ENV.md) when env/harness changed
+5. `gh pr view` — PR exists or create new
+6. **Current platform version:** latest `[x.y.z]` in [CHANGELOG.md](../../../CHANGELOG.md) (today: read `## [Unreleased]` and last released section)
 
 ---
 
-## Phase 2 — Write two release notes
+## Phase 2 — Decide platform version
 
-Create **both** files under `docs/releases/`:
+Pick the **next** platform semver (not per-service unless API spec changed):
+
+| Change type | Bump | Example |
+|-------------|------|---------|
+| Breaking API/env for consumers | **MAJOR** | `0.4.0` → `1.0.0` |
+| New backward-compatible feature | **MINOR** | `0.3.0` → `0.4.0` |
+| Bugfix, ops, docs-only deploy | **PATCH** | `0.4.0` → `0.4.1` |
+
+Record in deploy note:
+
+- `Platform version: v0.4.0`
+- `Merge commit:` (after merge) or `PR branch HEAD:` (before merge)
+
+Bump **per-service** `package.json` / OpenAPI only for services whose public API changed in this release.
+
+---
+
+## Phase 3 — Write release notes + CHANGELOG
+
+### Files
 
 ```
 docs/releases/YYYY-MM-DD-user.md
 docs/releases/YYYY-MM-DD-deploy.md
 ```
 
-Use today's date (or agreed release date). If a pair already exists for that date, use the next suffix on the **stem**:
+If a pair exists for that date, use `-2` suffix on the stem.
 
-```
-docs/releases/YYYY-MM-DD-user-2.md
-docs/releases/YYYY-MM-DD-deploy-2.md
-```
-
-### User release note (`*-user.md`)
-
-**Audience:** end users, support, PM — plain language, no secrets, no internal hostnames.
+### User note (`*-user.md`)
 
 ```markdown
-# Release — YYYY-MM-DD
+# Release v0.4.0 — 2026-07-07
 
 ## สรุป
-1–2 ประโยค
+...
 
 ## สิ่งที่ใหม่
 - ...
 
-## สิ่งที่เปลี่ยน
-- ...
-
-## สิ่งที่แก้ไข
-- ...
-
 ## ผู้ใช้ต้องทำอะไร
-- ไม่ต้องทำ / หรือขั้นตอนสั้น ๆ
+- ...
 ```
 
-### Deploy release note (`*-deploy.md`)
-
-**Audience:** developers, ops — actionable before/during/after merge.
+### Deploy note (`*-deploy.md`)
 
 ```markdown
-# Deploy — YYYY-MM-DD
+# Deploy v0.4.0 — 2026-07-07
+
+## Version
+| | |
+|---|---|
+| **Platform** | `v0.4.0` |
+| **Git tag** | `v0.4.0` (after post-deploy smoke) |
+| **Merge commit** | `<sha>` (fill after merge) |
+| **Previous tag** | `v0.3.0` |
 
 ## สรุป
-1–2 ประโยค technical scope
-
-## Services ที่กระทบ
-- auth, gateway, ...
-
-## ก่อน merge / deploy
-- [ ] อัปเดต `backend/<service>/.env.prod` — ระบุ key (ไม่ใส่ค่า secret)
-- [ ] ...
-
-## หลัง deploy
-- [ ] `pm2 restart <apps>` — ดูชื่อ app ใน ecosystem.config.js
-- [ ] Smoke: ...
-- [ ] ตรวจ monitoring / logs
-
-## Breaking / migration
-- ชื่อ env เปลี่ยน, API เปลี่ยน, ลำดับ restart
+...
 
 ## Rollback
-- Revert PR / tag ก่อนหน้า
-- คืนค่า `.env.prod` จาก backup
-
-## ไม่กระทบ production
-- เปลี่ยนเฉพาะ harness / local dev
+git fetch origin && git reset --hard <previous-tag-or-sha> && bash scripts/deploy-staging.sh
 ```
 
-**Rules:**
+### CHANGELOG.md
 
-- Never paste passwords, connection strings, tokens, or database usernames
-- Reference `backend/ENV.md` for env naming
-- Pull deploy checklist items from `shipping-and-launch` pre-launch sections
-- Use PM2 app names from `backend/ecosystem.config.js` in restart steps
+Move content from `## [Unreleased]` into a new section:
+
+```markdown
+## [Unreleased]
+
+## [0.4.0] - 2026-07-07
+
+### Added
+- ...
+
+### Changed
+- ...
+
+### Fixed
+- ...
+```
+
+Link to handoff: `Handoff: docs/releases/2026-07-07-user.md, docs/releases/2026-07-07-deploy.md`
+
+**Rules:** No secrets. Reference [backend/ENV.md](../../../backend/ENV.md). PM2 names from [ecosystem.config.js](../../../backend/ecosystem.config.js).
 
 ---
 
-## Phase 3 — Human confirmation (required)
+## Phase 4 — Human confirmation (required)
 
-Present both notes to the user. **Stop** until they approve or request edits.
-
-Do not commit or update PR until approved.
+Present version choice, CHANGELOG entry, and both notes. **Stop** until approved.
 
 ---
 
-## Phase 4 — Docs validation (not full CI)
-
-`/ship` already ran `./scripts/ci-all.sh` (and smoke/docs-lint as required). **Do not re-run ci-all** unless code changed after ship GO.
-
-After approval, validate only the new release docs:
+## Phase 5 — Docs validation
 
 ```bash
 node scripts/docs-lint.mjs
 ```
 
-If docs-lint fails → fix, re-run. If you changed code after `/ship` → stop and re-run `/ship` before continuing.
+Do **not** re-run `ci-all` unless code changed after `/ship`.
 
 ---
 
-## Phase 5 — Commit and PR
+## Phase 6 — Commit and PR
 
-Follow `git-workflow-and-versioning`.
-
-### Staging
-
-**Never** `git add .` for mixed sessions. Exclude secrets and local env.
-
-| Situation | What to stage |
-|-----------|----------------|
-| Code **already committed** on branch | `docs/releases/YYYY-MM-DD-*.md` only (+ exec-plan moves in Phase 6) |
-| Code **still uncommitted** | Intended code files + release notes — **named paths only** |
-
-Prefer separate commits: code first (if needed), then `docs(release): …` for notes.
-
-### Commit message (release notes)
-
-```
-docs(release): add 2026-07-07 user and deploy handoff notes
-
-Captures handoff after ship GO for auth branches and env harness work.
-```
-
-### PR — open or update
-
-| Situation | Action |
+| Situation | Stage |
 |-----------|--------|
-| **No PR yet** | `git push -u origin HEAD` then `gh pr create` |
-| **PR exists** | Push commits; update PR description — **do not** open a second PR |
+| Code already on branch | `CHANGELOG.md`, `docs/releases/*.md`, exec-plan moves |
+| Code uncommitted | Named paths only — never `git add .` |
 
-PR body template:
+### Commit message
+
+```
+docs(release): v0.4.0 handoff notes and changelog
+
+Platform release after ship GO. Tag v0.4.0 after staging smoke passes.
+```
+
+### PR body
 
 ```markdown
 ## Summary
-- (2–4 bullets)
+- ...
 
-## Release notes
+## Release
+- Version: **v0.4.0**
 - User: docs/releases/YYYY-MM-DD-user.md
 - Deploy: docs/releases/YYYY-MM-DD-deploy.md
+- Changelog: CHANGELOG.md
 
 ## Test plan
-- [x] Verified by `/ship` (ci-all + smoke/docs-lint)
-- [ ] node scripts/docs-lint.mjs (release notes)
+- [x] `/ship` (ci-all + smoke)
+- [x] `node scripts/docs-lint.mjs`
 ```
-
-**After merge:** user note → notify users/support; deploy note → ops runbook for that deploy.
 
 ---
 
-## Phase 6 — Close exec plan (if applicable)
+## Phase 7 — Post-deploy git tag (after smoke)
 
-If work tracked an active plan:
+**Only after** target environment smoke passes (e.g. `bash scripts/smoke-staging.sh`). Do not tag at PR open time.
 
-1. Move `docs/exec-plans/active/<plan>.md` → `docs/exec-plans/completed/`
-2. Update front-matter `status: completed`
-3. Add any remaining debt to `docs/exec-plans/tech-debt-tracker.md`
+```bash
+# On merge commit (main)
+git fetch origin main
+git checkout main && git pull
+MERGE_SHA=$(git rev-parse HEAD)
 
-Commit with release notes or immediately after.
+# Annotated tag — source of truth
+git tag -a v0.4.0 "$MERGE_SHA" -m "Release v0.4.0 — 2026-07-07"
+git push origin v0.4.0
+```
+
+Or use helper:
+
+```bash
+./scripts/release-tag.sh v0.4.0
+```
+
+Update deploy note with final `Merge commit:` SHA if not filled earlier.
+
+---
+
+## Phase 8 — Close exec plan (if applicable)
+
+Move `docs/exec-plans/active/<plan>.md` → `completed/`, `status: completed`.
 
 ---
 
 ## Red flags
 
-- Writing release notes before `/ship` GO (scope may change)
-- Re-running `ci-all.sh` here without re-running `/ship` after code changes
-- Single combined note for users and ops (audiences blur)
-- Committing `.env*` with secrets
-- Skipping human confirmation
-- Opening a duplicate PR when one already exists
-- PR body duplicating entire deploy note instead of linking docs
+- Tag before deploy smoke passes
+- Platform version in notes but not in CHANGELOG
+- Hand-editing version in files without matching git tag
+- Re-running `ci-all` here without re-running `/ship`
+- Secrets in release docs
 
 ## Verification checklist
 
-- [ ] Two files in `docs/releases/` with correct date (and `-2` suffix if needed)
-- [ ] User note has no secrets or internal-only detail
-- [ ] Deploy note has checklist, rollback, services list, PM2 app names
+- [ ] Platform version chosen (semver) and in both release notes + CHANGELOG
+- [ ] Per-service bumps only where API changed
 - [ ] Human approved
 - [ ] `node scripts/docs-lint.mjs` pass
-- [ ] PR links both notes (created or updated)
-- [ ] Exec plan moved to `completed/` if applicable
+- [ ] PR links version + notes + CHANGELOG
+- [ ] After deploy smoke: `git tag vX.Y.Z` pushed
+- [ ] Deploy note records merge SHA and previous tag

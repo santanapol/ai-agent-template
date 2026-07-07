@@ -36,9 +36,97 @@ sudo ufw allow 'Nginx Full'
 sudo ufw enable
 ```
 
-Clone repo (deploy key): see [DEPLOY_DIGITALOCEAN.md](../../DEPLOY_DIGITALOCEAN.md) §1.2 — use `/var/www/zero-platform`.
+### 1.1 Deploy key + clone (once)
 
-**หรือรันสคริปต์รวม** (แทนขั้น 1–5 ด้านล่าง):
+Private repo — server ต้องมี **Deploy key** (read-only) บน GitHub ก่อน `git clone` / `git pull`
+
+> **อย่าสลับกับ GitHub Actions secret `DO_SSH_KEY`** — คนละกุญแจ (ดู [DEPLOY_DIGITALOCEAN.md](../../DEPLOY_DIGITALOCEAN.md) §2)
+
+| ทิศทาง | Private key | Public key | ใช้ทำอะไร |
+|--------|-------------|------------|-----------|
+| Staging → GitHub | บน server `~/.ssh/zero-staging-deploy` | GitHub **Deploy keys** | `git pull` บน staging |
+| Dev/CI → Staging | เครื่อง dev / GitHub Secret | `~/.ssh/authorized_keys` บน server | SSH เข้า server |
+
+**1. สร้างกุญแจบน staging server** (รันบน `143.198.213.26`):
+
+```bash
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+ssh-keygen -t ed25519 -C "zero-staging-deploy" -f ~/.ssh/zero-staging-deploy -N ""
+chmod 600 ~/.ssh/zero-staging-deploy
+cat ~/.ssh/zero-staging-deploy.pub
+```
+
+**2. ใส่ใน GitHub** (ทำครั้งเดียว):
+
+- Repo **Chiang-Rai-Technology/zero-platform** → **Settings** → **Deploy keys** → **Add deploy key**
+- Title: `zero-staging (143.198.213.26)` (หรือชื่อที่จำง่าย)
+- Key: วาง output จาก `zero-staging-deploy.pub`
+- ✅ **Allow read access** (ไม่ต้อง write)
+- หรือจากเครื่อง dev (ถ้ามี `gh` login):
+
+```bash
+gh api repos/Chiang-Rai-Technology/zero-platform/keys \
+  -f title='zero-staging (143.198.213.26)' \
+  -f key="$(ssh root@143.198.213.26 'cat ~/.ssh/zero-staging-deploy.pub')" \
+  -F read_only=true
+```
+
+**3. ตั้ง SSH config บน server** (ให้ `git` ใช้กุญแจนี้กับ GitHub):
+
+```bash
+cat > ~/.ssh/config << 'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/zero-staging-deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+```
+
+**4. ทดสอบ:**
+
+```bash
+ssh -T git@github.com
+# คาดหวัง: Hi Chiang-Rai-Technology/zero-platform! You've successfully authenticated...
+```
+
+**5. Clone:**
+
+```bash
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
+cd /var/www
+git clone --branch main git@github.com:Chiang-Rai-Technology/zero-platform.git zero-platform
+cd zero-platform
+git status   # ต้องเป็น git repo ปกติ (มี .git/objects)
+```
+
+**ย้ายจาก tarball (ถ้าเคย sync โค้ดแบบไม่มี git):**
+
+```bash
+# backup env ก่อน
+BACKUP=/tmp/staging-env-backup
+mkdir -p "$BACKUP"
+find /var/www/zero-platform -name '.env.staging' -exec cp --parents {} "$BACKUP/" \;
+
+mv /var/www/zero-platform /var/www/zero-platform.bak-tarball
+git clone --branch main git@github.com:Chiang-Rai-Technology/zero-platform.git /var/www/zero-platform
+
+# restore env
+while IFS= read -r f; do
+  dest="/var/www/zero-platform/${f#"$BACKUP/var/www/zero-platform/"}"
+  mkdir -p "$(dirname "$dest")" && cp "$f" "$dest"
+done < <(find "$BACKUP" -name '.env.staging')
+
+cd /var/www/zero-platform && bash scripts/deploy-staging.sh
+```
+
+Deploy key ที่ตั้งไว้แล้วบน server นี้: ชื่อ `zero-staging (143.198.213.26)` ใน GitHub Deploy keys
+
+---
+
+**หรือรันสคริปต์รวม** (หลัง clone + deploy key แล้ว — แทนขั้น 2–6 ด้านล่าง):
 
 ```bash
 cd /var/www/zero-platform
@@ -209,7 +297,7 @@ Login smoke: use credentials from `init:db` / seed (not local `admin/1234` unles
 git push
 ```
 
-**บน server:**
+**บน server** (ต้องมี deploy key แล้ว — §1.1):
 
 ```bash
 cd /var/www/zero-platform

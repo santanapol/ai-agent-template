@@ -1,23 +1,26 @@
 ---
 name: release
-description: After ship GO — write user + deploy release notes, confirm, docs-lint, commit and open or update PR (no ci-all repeat)
+description: After ship GO — version, CHANGELOG, release notes, docs-lint, PR, git tag after smoke (no ci-all)
 disable-model-invocation: true
 ---
 
 Read and follow **release-notes-and-handoff** (`.cursor/skills/release-notes-and-handoff/SKILL.md`) **completely**.
 
-Prerequisite: **`/ship` GO** (or user explicitly accepts risk). Code quality already verified by `/ship` — **do not re-run** `./scripts/ci-all.sh` here.
+Prerequisite: **`/ship` GO**. Do **not** re-run `./scripts/ci-all.sh` here.
 
 ## Quick flow
 
 ```
 /ship (GO)
   → /release
-      1. docs/releases/YYYY-MM-DD-user.md + *-deploy.md
-      2. Human confirm
-      3. node scripts/docs-lint.mjs
-      4. commit → push → gh pr create OR update existing PR
-      5. close exec plan if applicable
+      1. Pick platform version (vX.Y.Z) — semver in CHANGELOG
+      2. docs/releases/YYYY-MM-DD-user.md + *-deploy.md (title includes version)
+      3. Update CHANGELOG.md [Unreleased] → [X.Y.Z]
+      4. Human confirm
+      5. node scripts/docs-lint.mjs
+      6. commit → push → update PR
+      7. merge → deploy → smoke
+      8. ./scripts/release-tag.sh vX.Y.Z   ← after smoke only
 ```
 
 ## Harness gate (this phase only)
@@ -28,7 +31,7 @@ node scripts/docs-lint.mjs
 
 If code changed after `/ship` → re-run `/ship`, not `/release` alone.
 
-See [AGENTS.md](../../AGENTS.md), [backend/ENV.md](../../backend/ENV.md), [backend/RUNBOOK.md](../../backend/RUNBOOK.md).
+See [CHANGELOG.md](../../CHANGELOG.md), [docs/releases/README.md](../../docs/releases/README.md), [backend/ENV.md](../../backend/ENV.md).
 
 ## Skip when
 
