@@ -1,34 +1,48 @@
 import { useEffect, useRef, useState } from "react";
 
-import dayjs from "dayjs";
-
 import { useSearchParams } from "@/navigation/compat";
 import type { InvoiceStatus } from "@/types/invoice";
 
-import { buildInvoiceListSearchParams, INVOICE_BRANCH_FILTER_ALL } from "../utils";
+import { buildInvoiceListSearchParams, parseInvoiceListSearchParams } from "../utils";
 
 export function useInvoiceListFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
   const setSearchParamsRef = useRef(setSearchParams);
   setSearchParamsRef.current = setSearchParams;
 
-  const [searchText, setSearchText] = useState(searchParams.get("search") ?? "");
-  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(() => {
-    const fromUrl = searchParams.get("branch_id");
-    if (!fromUrl || fromUrl === INVOICE_BRANCH_FILTER_ALL) return undefined;
-    return fromUrl;
-  });
-  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>(
-    (searchParams.get("status") as InvoiceStatus | null) ?? undefined,
-  );
-  const [billingMonth, setBillingMonth] = useState(
-    () => searchParams.get("billing_month") ?? dayjs().format("YYYY-MM"),
-  );
-  const [debouncedSearchText, setDebouncedSearchText] = useState(searchParams.get("search") ?? "");
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-  const [pageSize, setPageSize] = useState(Number(searchParams.get("page_size")) || 10);
+  const initial = parseInvoiceListSearchParams(searchParams);
+  const lastWrittenQueryRef = useRef(searchParams.toString());
+  const skipDebounceRef = useRef(false);
+
+  const [searchText, setSearchText] = useState(initial.searchText);
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(initial.selectedBranchId);
+  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | undefined>(initial.selectedStatus);
+  const [billingMonth, setBillingMonth] = useState(initial.billingMonth);
+  const [debouncedSearchText, setDebouncedSearchText] = useState(initial.searchText);
+  const [page, setPage] = useState(initial.page);
+  const [pageSize, setPageSize] = useState(initial.pageSize);
 
   useEffect(() => {
+    const currentQuery = searchParams.toString();
+    if (currentQuery === lastWrittenQueryRef.current) return;
+
+    const parsed = parseInvoiceListSearchParams(searchParams);
+    skipDebounceRef.current = true;
+    setSearchText(parsed.searchText);
+    setDebouncedSearchText(parsed.searchText);
+    setSelectedBranchId(parsed.selectedBranchId);
+    setSelectedStatus(parsed.selectedStatus);
+    setBillingMonth(parsed.billingMonth);
+    setPage(parsed.page);
+    setPageSize(parsed.pageSize);
+    lastWrittenQueryRef.current = currentQuery;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (skipDebounceRef.current) {
+      skipDebounceRef.current = false;
+      return;
+    }
     const timeoutId = window.setTimeout(() => setDebouncedSearchText(searchText), 300);
     return () => window.clearTimeout(timeoutId);
   }, [searchText]);
@@ -42,7 +56,12 @@ export function useInvoiceListFilters() {
       page,
       pageSize,
     });
-    if (next.toString() === searchParams.toString()) return;
+    const nextQuery = next.toString();
+    if (nextQuery === searchParams.toString()) {
+      lastWrittenQueryRef.current = nextQuery;
+      return;
+    }
+    lastWrittenQueryRef.current = nextQuery;
     setSearchParamsRef.current(next, { replace: true });
   }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, searchParams]);
 

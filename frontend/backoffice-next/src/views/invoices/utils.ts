@@ -1,3 +1,8 @@
+import type { VariantProps } from "class-variance-authority";
+import dayjs from "dayjs";
+
+import type { badgeVariants } from "@/components/ui/badge";
+
 import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
 
 export function formatMoney(val: number | null | undefined): string {
@@ -27,10 +32,6 @@ export function formatCategoryName(name: string | null | undefined): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
-
-import type { VariantProps } from "class-variance-authority";
-
-import type { badgeVariants } from "@/components/ui/badge";
 
 type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>;
 
@@ -63,6 +64,31 @@ export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): Inv
 /** Matches agent-invoice `ALL_BRANCHES_QUERY` — omit branch filter on list API. */
 export const INVOICE_BRANCH_FILTER_ALL = "all";
 
+export interface InvoiceListFilterState {
+  searchText: string;
+  selectedBranchId?: string;
+  selectedStatus?: InvoiceStatus;
+  billingMonth: string;
+  page: number;
+  pageSize: number;
+}
+
+export function parseInvoiceListSearchParams(searchParams: URLSearchParams): InvoiceListFilterState {
+  const branchId = searchParams.get("branch_id");
+  return {
+    searchText: searchParams.get("search") ?? "",
+    selectedBranchId: !branchId || branchId === INVOICE_BRANCH_FILTER_ALL ? undefined : branchId,
+    selectedStatus: (searchParams.get("status") as InvoiceStatus | null) ?? undefined,
+    billingMonth: searchParams.get("billing_month") ?? dayjs().format("YYYY-MM"),
+    page: Number(searchParams.get("page")) || 1,
+    pageSize: Number(searchParams.get("page_size")) || 10,
+  };
+}
+
+export function invoiceListSearchParamsEqual(a: URLSearchParams, b: URLSearchParams): boolean {
+  return a.toString() === b.toString();
+}
+
 export function buildInvoiceListQuery(input: {
   page: number;
   limit: number;
@@ -76,7 +102,7 @@ export function buildInvoiceListQuery(input: {
     page: input.page,
     limit: input.limit,
     branch_id: input.branchId ?? INVOICE_BRANCH_FILTER_ALL,
-    billing_month: input.billingMonth || undefined,
+    billing_month: input.billingMonth ?? undefined,
     status: input.status,
   };
   if (ivNo) {

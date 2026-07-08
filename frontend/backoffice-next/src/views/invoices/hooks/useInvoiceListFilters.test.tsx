@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MemoryRouter } from "@/navigation/compat";
+import { MemoryRouter, useNavigate } from "@/navigation/compat";
 import { testNavigation } from "@/test/mockNavigation";
 
 import { useInvoiceListFilters } from "./useInvoiceListFilters";
@@ -58,5 +58,31 @@ describe("useInvoiceListFilters", () => {
     });
 
     expect(testNavigation.replace).not.toHaveBeenCalled();
+  });
+
+  it("hydrates state immediately when URL changes externally", () => {
+    let navigate: ReturnType<typeof useNavigate> | null = null;
+
+    function NavigationBridge() {
+      navigate = useNavigate();
+      return null;
+    }
+
+    const { result } = renderHook(() => useInvoiceListFilters(), {
+      wrapper: ({ children }) => (
+        <MemoryRouter initialEntries={["/invoices?search=INV-1&page=2&branch_id=all&billing_month=2026-07"]}>
+          <NavigationBridge />
+          {children}
+        </MemoryRouter>
+      ),
+    });
+
+    act(() => {
+      navigate?.("/invoices?search=INV-2&page=3&branch_id=all&billing_month=2026-07", { replace: true });
+    });
+
+    expect(result.current.searchText).toBe("INV-2");
+    expect(result.current.debouncedSearchText).toBe("INV-2");
+    expect(result.current.page).toBe(3);
   });
 });
