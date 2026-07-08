@@ -22,7 +22,7 @@ export function useAgents() {
       if (data.total !== undefined) setTotal(data.total);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Failed to fetch agents");
+      toast.error(err.response?.data?.message ?? "Failed to fetch agents");
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export function useAgents() {
       setUnsyncedBranches(data.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Failed to fetch unsynced branches");
+      toast.error(err.response?.data?.message ?? "Failed to fetch unsynced branches");
     } finally {
       setLoadingUnsynced(false);
     }
@@ -49,7 +49,7 @@ export function useAgents() {
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Failed to sync agent");
+      toast.error(err.response?.data?.message ?? "Failed to sync agent");
       return false;
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ export function useAgents() {
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Failed to update agent");
+      toast.error(err.response?.data?.message ?? "Failed to update agent");
       return false;
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ export function useAgents() {
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Failed to delete agent");
+      toast.error(err.response?.data?.message ?? "Failed to delete agent");
       return false;
     } finally {
       setLoading(false);

@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!decoded) return;
     setUser(decoded);
     setAccessToken(data.access_token);
-    setPermissions(data.permissions || []);
+    setPermissions(data.permissions ?? []);
   }, []);
 
   const clearSession = useCallback(() => {
@@ -118,7 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const permissionsKey = useMemo(() => [...permissions].sort().join("\u0001"), [permissions]);
 
   // Load menus when session or effective permissions change. Use a stable permissionsKey
-  // (not the array reference) so token refresh does not spam GET /auth/me/menus.
+  // (not the array reference) so identical permission sets do not refetch menus.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: permissionsKey intentionally triggers refetch when permissions change
   useEffect(() => {
     if (!user?.sub) return;
 
@@ -157,7 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-    // permissionsKey captures permission changes without refetching on branch switch or token refresh.
+    // permissionsKey refetches menus when the effective permission set changes.
   }, [user?.sub, permissionsKey]);
 
   const login = useCallback(

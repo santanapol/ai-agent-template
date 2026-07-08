@@ -44,7 +44,11 @@ export function getDisplayInitials(input: DisplayInitialsInput): string | null {
   if (displayName) {
     const parts = displayName.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
-      return `${firstGrapheme(parts[0]!)}${firstGrapheme(parts[1]!)}`.toUpperCase();
+      const first = parts[0];
+      const second = parts[1];
+      if (first && second) {
+        return `${firstGrapheme(first)}${firstGrapheme(second)}`.toUpperCase();
+      }
     }
     return firstTwoGraphemes(displayName).toUpperCase();
   }

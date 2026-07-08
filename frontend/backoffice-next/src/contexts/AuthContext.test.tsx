@@ -46,7 +46,9 @@ const TestComponent = () => {
       <div data-testid="user-id">{user ? user.sub : "no-user"}</div>
       <div data-testid="permissions">{permissions.join(",")}</div>
       <div data-testid="menus">{menus.length}</div>
-      <button onClick={() => login("test", "password")}>Login</button>
+      <button type="button" onClick={() => login("test", "password")}>
+        Login
+      </button>
     </div>
   );
 };

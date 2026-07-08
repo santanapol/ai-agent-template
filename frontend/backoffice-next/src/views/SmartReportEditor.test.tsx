@@ -101,7 +101,9 @@ describe("SmartReportEditor", () => {
     const { onCancelTestRun } = renderEditor({ isTestRunning: true });
 
     const cancelButtons = screen.getAllByRole("button", { name: /^cancel$/i });
-    await user.click(cancelButtons[cancelButtons.length - 1]!);
+    const cancelButton = cancelButtons.at(-1);
+    if (!cancelButton) throw new Error("Expected cancel button");
+    await user.click(cancelButton);
     expect(onCancelTestRun).toHaveBeenCalledTimes(1);
   });
 

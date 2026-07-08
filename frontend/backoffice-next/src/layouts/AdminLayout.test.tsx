@@ -218,7 +218,7 @@ describe("AdminLayout component", () => {
       switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     renderWithProviders(<AdminLayout />);
 
@@ -280,7 +280,7 @@ describe("AdminLayout component", () => {
       switchBranch: vi.fn(),
     } as unknown as AuthContextValue);
 
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     renderWithProviders(<AdminLayout />);
 

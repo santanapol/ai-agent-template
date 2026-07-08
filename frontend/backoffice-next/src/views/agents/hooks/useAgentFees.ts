@@ -19,12 +19,12 @@ export function useAgentFees(agentId: string) {
       try {
         const data = await api.listAgentFees(agentId, params, signal);
         if (signal?.aborted) return;
-        setFees(data.data || []);
-        setTotal(data.total || 0);
+        setFees(data.data ?? []);
+        setTotal(data.total ?? 0);
       } catch (err: unknown) {
         if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
         message.error(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
             "Failed to fetch agent fees",
         );
       } finally {
@@ -42,12 +42,12 @@ export function useAgentFees(agentId: string) {
           api.getGameCategories(ou_id, signal),
         ]);
         if (signal?.aborted) return;
-        setCompanies(comps || []);
-        setCategories(cats || []);
+        setCompanies(comps ?? []);
+        setCategories(cats ?? []);
       } catch (err: unknown) {
         if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
         message.error(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
             "Failed to fetch master data",
         );
       }
@@ -68,7 +68,7 @@ export function useAgentFees(agentId: string) {
         if (errorResponse?.status === 409) {
           message.error("Fee override for this company and category already exists.");
         } else {
-          message.error(errorResponse?.data?.message || "Failed to create agent fee");
+          message.error(errorResponse?.data?.message ?? "Failed to create agent fee");
         }
         return false;
       } finally {
@@ -91,7 +91,7 @@ export function useAgentFees(agentId: string) {
         if (errorResponse?.status === 412) {
           message.warning("This record was modified by someone else. Please refresh and try again.");
         } else {
-          message.error(errorResponse?.data?.message || "Failed to update fee");
+          message.error(errorResponse?.data?.message ?? "Failed to update fee");
         }
         return false;
       } finally {
@@ -114,7 +114,7 @@ export function useAgentFees(agentId: string) {
         if (errorResponse?.status === 412) {
           message.warning("This record was modified by someone else. Please refresh and try again.");
         } else {
-          message.error(errorResponse?.data?.message || "Failed to delete fee");
+          message.error(errorResponse?.data?.message ?? "Failed to delete fee");
         }
         return false;
       } finally {
@@ -157,7 +157,7 @@ export function useAgentFees(agentId: string) {
         } else if (has412) {
           message.warning("Records were modified by someone else. Please refresh and try again.");
         } else {
-          message.error(failed[0].reason?.response?.data?.message || "Failed to save fee updates");
+          message.error(failed[0].reason?.response?.data?.message ?? "Failed to save fee updates");
         }
         return false;
       } finally {

@@ -46,13 +46,13 @@ export function SiteHeader({
           ) : (
             <>
               <SidebarTrigger className="-ml-1" />
-              {showSearch ? (
+              {menuTree && onNavigate ? (
                 <>
                   <Separator
                     orientation="vertical"
                     className="mx-2 h-4 self-center data-vertical:h-4 data-vertical:self-center"
                   />
-                  <SearchDialog menuTree={menuTree!} onNavigate={onNavigate!} />
+                  <SearchDialog menuTree={menuTree} onNavigate={onNavigate} />
                 </>
               ) : null}
             </>
@@ -64,7 +64,9 @@ export function SiteHeader({
               {mobileBranchLabel}
             </p>
           ) : null}
-          {isMobile && showSearch ? <SearchDialog menuTree={menuTree!} onNavigate={onNavigate!} mobile /> : null}
+          {isMobile && showSearch && menuTree && onNavigate ? (
+            <SearchDialog menuTree={menuTree} onNavigate={onNavigate} mobile />
+          ) : null}
           <LayoutControls />
           <ThemeSwitcher />
         </div>

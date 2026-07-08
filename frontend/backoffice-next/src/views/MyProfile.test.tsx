@@ -40,7 +40,7 @@ describe("MyProfile", () => {
   });
 
   it("shows loading skeleton before profile loads", () => {
-    vi.mocked(staffApi.getProfileByUserId).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(staffApi.getProfileByUserId).mockImplementation(() => new Promise(() => undefined));
 
     renderWithRouter(<MyProfile />);
     expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument();

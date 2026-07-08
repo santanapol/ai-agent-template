@@ -68,5 +68,6 @@ export function ThemeBootScript() {
     })();
   `;
 
+  // biome-ignore lint/security/noDangerouslySetInnerHtml: inline boot script must run before paint to prevent theme flash
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }

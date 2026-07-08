@@ -170,7 +170,7 @@ function MenuTree({
   return (
     <div role={depth === 0 ? "tree" : undefined} className={depth === 0 ? "flex flex-col gap-0.5" : undefined}>
       {nodes.map((node) => (
-        <div key={node.key} role="treeitem" aria-expanded={node.children?.length ? true : undefined}>
+        <div key={node.key} role="treeitem" tabIndex={-1} aria-expanded={node.children?.length ? true : undefined}>
           <MenuTreeNodeRow
             node={node}
             depth={depth}

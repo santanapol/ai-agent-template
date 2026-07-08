@@ -12,5 +12,7 @@ export function subscribeProfileRefresh(listener: ProfileRefreshListener): () =>
 
 /** Notify layout/header to reload profile display name and avatar initials. */
 export function notifyProfileRefresh(): void {
-  listeners.forEach((listener) => listener());
+  listeners.forEach((listener) => {
+    listener();
+  });
 }

@@ -209,18 +209,21 @@ const StaffManagement: React.FC = () => {
   const showAdminResetPassword =
     drawerMode === "edit" && editingUserId !== null && user?.sub !== undefined && editingUserId !== user.sub;
 
-  const validateForm = (isCreate: boolean): boolean => {
-    const fields: (keyof DrawerFormValues)[] = isCreate
-      ? ["code", "firstname", "lastname", "email", "tel", "username", "password", "confirmPassword"]
-      : ["firstname", "lastname", "email", "tel"];
-    const errors: Partial<Record<keyof DrawerFormValues, string>> = {};
-    fields.forEach((f) => {
-      const err = validateField(f, formValues);
-      if (err) errors[f] = err;
-    });
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const validateForm = useCallback(
+    (isCreate: boolean): boolean => {
+      const fields: (keyof DrawerFormValues)[] = isCreate
+        ? ["code", "firstname", "lastname", "email", "tel", "username", "password", "confirmPassword"]
+        : ["firstname", "lastname", "email", "tel"];
+      const errors: Partial<Record<keyof DrawerFormValues, string>> = {};
+      fields.forEach((f) => {
+        const err = validateField(f, formValues);
+        if (err) errors[f] = err;
+      });
+      setFormErrors(errors);
+      return Object.keys(errors).length === 0;
+    },
+    [formValues],
+  );
 
   const handleUpdatePassword = useCallback(async () => {
     if (!editingId) return;
@@ -261,14 +264,16 @@ const StaffManagement: React.FC = () => {
     setIsSaving(true);
     try {
       if (isCreate) {
+        const { code, firstname, lastname, email, tel, username, password } = formValues;
+        if (!code || !firstname || !lastname || !email || !tel || !username || !password) return;
         await staffApi.createProfile({
-          code: formValues.code!,
-          firstname: formValues.firstname!,
-          lastname: formValues.lastname!,
-          email: formValues.email!,
-          tel: formatTelephoneToE164(formValues.tel!),
-          username: formValues.username!,
-          password: formValues.password!,
+          code,
+          firstname,
+          lastname,
+          email,
+          tel: formatTelephoneToE164(tel),
+          username,
+          password,
           ...(canAssignRole && formValues.role ? { role: formValues.role } : {}),
         });
         message.success("Profile created");
@@ -279,11 +284,13 @@ const StaffManagement: React.FC = () => {
       }
 
       if (editingId && currentEtag.current) {
+        const { firstname, lastname, email, tel } = formValues;
+        if (!firstname || !lastname || !email || !tel) return;
         const payload: PatchProfilePayload = {
-          firstname: formValues.firstname!,
-          lastname: formValues.lastname!,
-          email: formValues.email!,
-          tel: formatTelephoneToE164(formValues.tel!),
+          firstname,
+          lastname,
+          email,
+          tel: formatTelephoneToE164(tel),
         };
         await staffApi.patchProfile(editingId, payload, currentEtag.current);
         const existingRecord = profiles.find((p) => p.id === editingId);

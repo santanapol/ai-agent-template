@@ -84,7 +84,13 @@
         "noParameterAssign": "error",
         "noInferrableTypes": "error",
         "noUselessElse": "error",
-        "useFilenamingConvention": "error"
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "filenameCases": ["camelCase", "kebab-case", "PascalCase", "export"]
+          }
+        }
       },
       "suspicious": {
         "noArrayIndexKey": "warn",

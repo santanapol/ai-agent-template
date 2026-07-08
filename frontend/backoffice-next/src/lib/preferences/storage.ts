@@ -4,6 +4,7 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function setClientCookie(name: string, value: string): void {
   if (typeof document === "undefined") return;
+  // biome-ignore lint/suspicious/noDocumentCookie: client-side theme/layout preferences mirror to cookie for SSR flash prevention
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 

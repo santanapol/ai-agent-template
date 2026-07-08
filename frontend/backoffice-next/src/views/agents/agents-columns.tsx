@@ -10,8 +10,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { Agent } from "@/types/agents";
 
 function normalizeRefFeeBranchId(refId: unknown): string {
-  if (typeof refId === "object" && refId !== null && (refId as { $oid?: string }).$oid) {
-    return (refId as { $oid?: string }).$oid!;
+  if (typeof refId === "object" && refId !== null) {
+    const oid = (refId as { $oid?: string }).$oid;
+    if (oid) return oid;
   }
   return String(refId);
 }

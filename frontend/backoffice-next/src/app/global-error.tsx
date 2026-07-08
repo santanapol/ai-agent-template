@@ -9,7 +9,13 @@ function isChunkError(error: unknown): boolean {
   return /ChunkLoadError|Loading chunk [\d]+ failed|failed to fetch dynamically imported module/i.test(error.message);
 }
 
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset: _reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
       console.error("App error:", error);

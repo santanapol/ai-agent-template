@@ -79,11 +79,11 @@ const AgentsList: React.FC = () => {
   const { current: currentPage, pageSize } = paginationConfig;
 
   const refreshAgents = useCallback(() => {
-    fetchAgents({ page: currentPage, limit: pageSize, search: debouncedSearch || undefined });
+    void fetchAgents({ page: currentPage, limit: pageSize, search: debouncedSearch || undefined });
   }, [fetchAgents, currentPage, pageSize, debouncedSearch]);
 
   useEffect(() => {
-    refreshAgents();
+    void refreshAgents();
   }, [refreshAgents]);
 
   useEffect(() => {
@@ -94,7 +94,7 @@ const AgentsList: React.FC = () => {
     setIsSyncModalOpen(true);
     setBranchId(undefined);
     setBranchError(undefined);
-    fetchUnsyncedBranches(showInactive);
+    void fetchUnsyncedBranches(showInactive);
   };
 
   const handleSync = async () => {
@@ -187,7 +187,7 @@ const AgentsList: React.FC = () => {
               onCheckedChange={(checked) => {
                 const next = checked === true;
                 setShowInactive(next);
-                fetchUnsyncedBranches(next);
+                void fetchUnsyncedBranches(next);
               }}
             />
             <FieldLabel htmlFor="agents-show-inactive">Show inactive branches</FieldLabel>

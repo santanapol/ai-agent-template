@@ -298,9 +298,11 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     itemMap.forEach((val) => {
       const { item, parentKey } = val;
       if (parentKey && itemMap.has(parentKey)) {
-        const parentVal = itemMap.get(parentKey)!;
-        if (!parentVal.item.children) parentVal.item.children = [];
-        parentVal.item.children.push(item);
+        const parentVal = itemMap.get(parentKey);
+        if (parentVal) {
+          if (!parentVal.item.children) parentVal.item.children = [];
+          parentVal.item.children.push(item);
+        }
       } else {
         rootItems.push(item);
       }
@@ -311,7 +313,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return;
       }
       items.sort((a, b) => a.sort_order - b.sort_order);
-      items.forEach((i) => i.children && sortItems(i.children, depth + 1));
+      items.forEach((i) => {
+        if (i.children) sortItems(i.children, depth + 1);
+      });
     };
     sortItems(rootItems);
     return {

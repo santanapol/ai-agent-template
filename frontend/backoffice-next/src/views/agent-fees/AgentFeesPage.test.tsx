@@ -81,7 +81,7 @@ describe("AgentFeesPage", () => {
   });
 
   it("shows loading skeleton while agent loads", () => {
-    getAgentById.mockImplementation(() => new Promise(() => {}));
+    getAgentById.mockImplementation(() => new Promise(() => undefined));
 
     renderAgentFees();
 

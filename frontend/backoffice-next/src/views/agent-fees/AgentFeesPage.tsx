@@ -62,7 +62,7 @@ const AgentFeesPage: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    (async () => {
+    void (async () => {
       try {
         setAgentLoading(true);
         const data = await getAgentById(id, controller.signal);
@@ -87,21 +87,21 @@ const AgentFeesPage: React.FC = () => {
       .then((data) => {
         if (!controller.signal.aborted) setAllAgents(data.data || []);
       })
-      .catch(() => {});
+      .catch(() => undefined);
     return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    fetchFees({ page: 1, limit: 100 }, controller.signal);
+    void fetchFees({ page: 1, limit: 100 }, controller.signal);
     return () => controller.abort();
   }, [id, fetchFees]);
 
   useEffect(() => {
     if (!agent?.ou_id) return;
     const controller = new AbortController();
-    fetchMasterData(agent.ou_id, controller.signal);
+    void fetchMasterData(agent.ou_id, controller.signal);
     return () => controller.abort();
   }, [agent?.ou_id, fetchMasterData]);
 
@@ -166,7 +166,7 @@ const AgentFeesPage: React.FC = () => {
       message.success("Agent updated successfully");
     } catch (err: unknown) {
       message.error(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update agent",
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update agent",
       );
     } finally {
       setSavingAgent(false);
@@ -176,7 +176,7 @@ const AgentFeesPage: React.FC = () => {
   const handleRefChange = useCallback(
     (newRefId: string | undefined) => {
       if (!agent || !id) return;
-      const normalized = newRefId || null;
+      const normalized = newRefId ?? null;
       const refAgent = normalized ? allAgents.find((a) => a.branch_id === normalized) : null;
 
       void confirm({
@@ -210,7 +210,7 @@ const AgentFeesPage: React.FC = () => {
             );
           } catch (err: unknown) {
             message.error(
-              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
                 "Failed to update reference",
             );
             throw err;
@@ -346,7 +346,7 @@ const AgentFeesPage: React.FC = () => {
 
     const doSave = async () => {
       const success = await bulkSave(creates, updates, deletes);
-      if (success) fetchFees({ page: 1, limit: 100 });
+      if (success) await fetchFees({ page: 1, limit: 100 });
     };
 
     if (deletes.length > 0) {
@@ -384,7 +384,7 @@ const AgentFeesPage: React.FC = () => {
   if (agentLoading) {
     return (
       <DetailContainer title="Agent Fees" onBack={handleBack} description="Loading agent details...">
-        <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading agent fees">
+        <div className="flex flex-col gap-6" role="status" aria-busy="true" aria-label="Loading agent fees">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full rounded-xl" />
           <Skeleton className="h-96 w-full rounded-xl" />
@@ -556,13 +556,16 @@ const AgentFeesPage: React.FC = () => {
         }
         extra={
           <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2 text-sm">
+            <Field orientation="horizontal" className="items-center gap-2">
               <Checkbox
+                id="hide-empty-providers"
                 checked={hideEmptyProviders}
                 onCheckedChange={(value) => setHideEmptyProviders(value === true)}
               />
-              Hide providers without fees
-            </label>
+              <FieldLabel htmlFor="hide-empty-providers" className="font-normal text-sm">
+                Hide providers without fees
+              </FieldLabel>
+            </Field>
             <p className="flex items-center gap-1.5 text-muted-foreground text-xs sm:hidden" role="note">
               <ArrowLeftRight className="size-3.5 shrink-0" aria-hidden="true" />
               Swipe sideways to view all categories
@@ -573,7 +576,7 @@ const AgentFeesPage: React.FC = () => {
       >
         <div className="p-0">
           {tableLoading ? (
-            <Skeleton className="m-4 h-64 w-[calc(100%-2rem)]" aria-busy="true" />
+            <Skeleton className="m-4 h-64 w-[calc(100%-2rem)]" role="status" aria-busy="true" />
           ) : filteredCompanies.length === 0 ? (
             <Empty className="py-12">
               <EmptyHeader>
@@ -582,7 +585,7 @@ const AgentFeesPage: React.FC = () => {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div
+            <section
               className="max-h-[600px] overflow-x-auto overflow-y-auto"
               aria-label="Agent fee matrix by provider and category"
             >
@@ -620,7 +623,7 @@ const AgentFeesPage: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </section>
           )}
         </div>
       </PageContentCard>

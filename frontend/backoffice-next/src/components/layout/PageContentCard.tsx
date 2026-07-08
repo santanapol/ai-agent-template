@@ -11,7 +11,7 @@ interface PageContentCardProps {
 }
 
 export function PageContentCard({ children, title, description, extra, footer, className }: PageContentCardProps) {
-  const hasHeader = Boolean(title || description || extra);
+  const hasHeader = Boolean(title ?? description ?? extra);
 
   return (
     <Card className={cn("shadow-sm", className)}>

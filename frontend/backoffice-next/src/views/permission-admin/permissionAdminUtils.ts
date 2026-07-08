@@ -11,7 +11,8 @@ export function buildMenuTree(flat: AdminMenuNode[]): MenuTreeNode[] {
   const roots: MenuTreeNode[] = [];
 
   for (const item of flat) {
-    const current = byKey.get(item.key)!;
+    const current = byKey.get(item.key);
+    if (!current) continue;
     const parentKey = item.parent_key;
     if (parentKey && byKey.has(parentKey)) {
       byKey.get(parentKey)?.children?.push(current);

@@ -27,7 +27,7 @@ describe("MenuTree", () => {
   });
 
   test("renders checkboxes when checkable", () => {
-    render(<MenuTree nodes={nodes} checkable checkedKeys={[]} onCheckedChange={() => {}} />);
+    render(<MenuTree nodes={nodes} checkable checkedKeys={[]} onCheckedChange={() => undefined} />);
     expect(screen.getAllByRole("checkbox").length).toBeGreaterThan(0);
   });
 });

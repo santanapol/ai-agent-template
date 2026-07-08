@@ -214,21 +214,21 @@ export function useParams<T extends Record<string, string | undefined> = Record<
 export function Navigate({ to, replace = true }: { to: string; replace?: boolean }) {
   const ctx = useNavContext();
   const router = useRouter();
-
-  if (isVitest && !ctx) {
-    return <div data-testid="navigate" data-to={to} />;
-  }
-  if (ctx?.testMode) {
-    return <div data-testid="navigate" data-to={to} />;
-  }
+  const isTestStub = isVitest && !ctx;
+  const isMemoryTest = Boolean(ctx?.testMode);
 
   useEffect(() => {
+    if (isTestStub || isMemoryTest) return;
     if (replace) {
       router.replace(to);
     } else {
       router.push(to);
     }
-  }, [router, to, replace]);
+  }, [router, to, replace, isTestStub, isMemoryTest]);
+
+  if (isTestStub || isMemoryTest) {
+    return <div data-testid="navigate" data-to={to} />;
+  }
 
   return null;
 }
@@ -278,9 +278,7 @@ export function useSearchParams(): [
             : new URLSearchParams(next);
       const query = resolved.toString();
       const href = query ? `${currentPathname}?${query}` : currentPathname;
-      const currentHref = currentParams.toString()
-        ? `${currentPathname}?${currentParams.toString()}`
-        : currentPathname;
+      const currentHref = currentParams.toString() ? `${currentPathname}?${currentParams.toString()}` : currentPathname;
       if (href === currentHref) return;
       if (options?.replace) {
         router.replace(href);
