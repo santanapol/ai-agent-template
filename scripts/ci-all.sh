@@ -193,27 +193,27 @@ run_backend_ci() {
 
 run_frontend_ci() {
   echo ""
-  echo "==> Frontend CI (backoffice)"
-  local dir="$ROOT/frontend/backoffice"
+  echo "==> Frontend CI (backoffice-next)"
+  local dir="$ROOT/frontend/backoffice-next"
   local failed=false
 
   if ! (cd "$dir" && npm run lint); then
-    record_failure "frontend/backoffice (lint)"
+    record_failure "frontend/backoffice-next (lint)"
     failed=true
   fi
-  if ! (cd "$dir" && npm run test); then
-    record_failure "frontend/backoffice (test)"
+  if ! (cd "$dir" && npm test); then
+    record_failure "frontend/backoffice-next (test)"
     failed=true
   fi
   if ! (cd "$dir" && npm run build); then
-    record_failure "frontend/backoffice (build)"
+    record_failure "frontend/backoffice-next (build)"
     failed=true
   fi
 
   if [[ "$failed" == false ]]; then
-    echo "  ✓ frontend/backoffice passed"
+    echo "  ✓ frontend/backoffice-next passed"
   else
-    echo "  ✗ frontend/backoffice failed" >&2
+    echo "  ✗ frontend/backoffice-next failed" >&2
   fi
 }
 

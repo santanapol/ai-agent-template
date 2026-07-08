@@ -22,7 +22,7 @@ fi
 echo "Staging smoke: $STAGING_URL (user=$SMOKE_USERNAME)"
 
 HTML=$(curl -sf "$STAGING_URL/")
-if ! echo "$HTML" | grep -qi '<div id="root">'; then
+if ! echo "$HTML" | grep -qi 'data-app="zero-backoffice"'; then
   echo "  ✗ frontend — missing app shell" >&2
   exit 1
 fi

@@ -11,7 +11,7 @@ Server access: [credential.md](./credential.md)
 
 ```
 Cloudflare → Nginx (80/443)
-               ├─ /          → frontend/backoffice/dist
+               ├─ /          → PM2 zero-backoffice (Next.js :3005)
                └─ /api,/auth → gateway:3000 → PM2 services
                                       ↓
                     Docker: MongoDB + Redis (127.0.0.1 only)
@@ -180,7 +180,7 @@ bash scripts/staging-init-env.sh   # skip ถ้ามี .env.staging แล้
 Frontend:
 
 ```bash
-cp frontend/backoffice/.env.staging.example frontend/backoffice/.env.staging
+cp frontend/backoffice-next/.env.staging.example frontend/backoffice-next/.env.staging
 ```
 
 ---
@@ -205,7 +205,7 @@ bash backend/scripts/install-all-deps.sh
 # Bootstrap MongoDB + example data (uses .env.staging — NOT seed-all.sh)
 bash scripts/staging-seed-all.sh
 
-npm run build:staging --prefix frontend/backoffice
+npm run build:staging --prefix frontend/backoffice-next
 ```
 
 `staging-seed-all.sh` = `init-db` + seed ทุก service (reuse scripts เดิมกับ `--env-file=.env.staging`).  
@@ -239,11 +239,11 @@ server {
     listen 80;
     server_name zero-staging.168bits.com;
 
-    root /var/www/zero-platform/frontend/backoffice/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
     location /api/ {
@@ -257,6 +257,15 @@ server {
 
     location /auth/ {
         proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

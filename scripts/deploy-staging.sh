@@ -8,7 +8,7 @@ BACKEND="$ROOT/backend"
 
 echo "==> deploy-staging"
 bash "$BACKEND/scripts/install-all-deps.sh"
-npm run build:staging --prefix "$ROOT/frontend/backoffice"
+npm run build:staging --prefix "$ROOT/frontend/backoffice-next"
 pm2 reload "$BACKEND/ecosystem.staging.config.js"
 
 echo "==> post-deploy health"

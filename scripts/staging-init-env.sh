@@ -41,8 +41,8 @@ if [[ -f "$BR_REPORT_ENV" ]]; then
   echo "patched: $BR_REPORT_ENV PORT=3104"
 fi
 
-fe_src="$ROOT/frontend/backoffice/.env.staging.example"
-fe_dest="$ROOT/frontend/backoffice/.env.staging"
+fe_src="$ROOT/frontend/backoffice-next/.env.staging.example"
+fe_dest="$ROOT/frontend/backoffice-next/.env.staging"
 if [[ -f "$fe_src" && ! -f "$fe_dest" ]]; then
   cp "$fe_src" "$fe_dest"
   echo "created: $fe_dest"

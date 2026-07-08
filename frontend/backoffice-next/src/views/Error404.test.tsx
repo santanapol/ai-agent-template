@@ -1,0 +1,26 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { testNavigation } from "../test/mockNavigation";
+import { renderWithRouter } from "../test/renderWithRouter";
+import Error404 from "./Error404";
+
+describe("Error404", () => {
+  beforeEach(() => {
+    testNavigation.reset();
+  });
+
+  it("shows title and subtitle", () => {
+    renderWithRouter(<Error404 />, { initialEntries: ["/404"] });
+    expect(screen.getByText("404 Not Found")).toBeInTheDocument();
+    expect(screen.getByText(/page you are looking for does not exist/i)).toBeInTheDocument();
+  });
+
+  it("navigates to dashboard on primary action", async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Error404 />, { initialEntries: ["/404"] });
+    await user.click(screen.getByRole("button", { name: /go to dashboard/i }));
+    expect(testNavigation.push).toHaveBeenCalledWith("/", undefined);
+  });
+});

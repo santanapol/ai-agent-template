@@ -31,7 +31,7 @@ const ports = {
   invoice: 3102 + offset,
   smartReport: 3103 + offset,
   branchReport: 3104 + offset,
-  backoffice: 5175 + offset,
+  backoffice: 3005 + offset,
 };
 
 const redisDb = offset % 16;
@@ -233,7 +233,7 @@ patchHarnessExample('service/branch-report', {
   MONGODB_DB_BRANCH: 'gpp_777ww',
 }, 'branch-report');
 
-const backofficePath = harnessOutPath('frontend/backoffice', 'backoffice.env.harness');
+const backofficePath = harnessOutPath('frontend/backoffice-next', 'backoffice.env.harness');
 const backofficeContent = `# Generated / refreshed by dev-generate-env.mjs
 BACKOFFICE_PORT=${ports.backoffice}
 AUTH_PROXY_TARGET=${authBase}
@@ -241,5 +241,5 @@ GATEWAY_PROXY_TARGET=http://127.0.0.1:${ports.gateway}
 `;
 writeFileSync(backofficePath, backofficeContent, { mode: 0o600 });
 
-const harnessLabel = offset === 0 ? 'backend/*/ & frontend/backoffice/.env.harness' : `${runDir}/harness/*.env.harness`;
+const harnessLabel = offset === 0 ? 'backend/*/ & frontend/backoffice-next/.env.harness' : `${runDir}/harness/*.env.harness`;
 console.log(`Refreshed harness env → ${harnessLabel} (offset=${offset})`);

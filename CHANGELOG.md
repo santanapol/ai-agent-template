@@ -12,6 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **`frontend/backoffice-next/`** — Next.js 16 backoffice (studio-admin shell + ported Vite business logic); PM2 `zero-backoffice` on port **3005**; route parity with legacy app.
+
+### Changed
+- Harness, CI (`frontend-next-checks`), deploy/smoke scripts, and nginx docs now target **Next.js** instead of Vite `dist/`.
+- **`frontend/backoffice/`** marked deprecated (reference only until archive).
+
 ## [0.4.0] - 2026-07-07
 
 Repository snapshot: **auth-owned branch list**, backoffice switcher migration, **`.env.harness`** harness refactor, env naming (`GATEWAY_SHARED_SECRET`, `MONGODB_URI_READ`), staging deploy/smoke tooling, `/release` versioning workflow.

@@ -2,6 +2,14 @@
 
 มาตรฐานสำหรับการพัฒนาโปรเจกต์ฝั่ง **Frontend (Web Applications)** ทั้งหมดในองค์กร
 
+## Reference apps (not production)
+
+| Path | Use |
+|------|-----|
+| [`live-demo-shadcn/`](./live-demo-shadcn/) | Minimal Vite + shadcn starter aligned with org stack |
+| [`reference/studio-admin/`](./reference/studio-admin/) | Next.js admin UI/layout patterns — **local-only (gitignored)**; see [`reference/REFERENCE-PINS.md`](./reference/REFERENCE-PINS.md) |
+| Production app | [`frontend/backoffice-next`](../../../frontend/backoffice-next/) — Next.js backoffice (studio shell + domain views) |
+
 ---
 
 ## 📂 โครงสร้างไฟล์ 10 หมายเลขสากล (Universal Numbering)

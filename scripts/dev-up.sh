@@ -54,7 +54,7 @@ HARNESS_STAFF="$(dev_harness_env backend/service/staff)"
 HARNESS_INVOICE="$(dev_harness_env backend/service/agent-invoice)"
 HARNESS_SMART="$(dev_harness_env backend/service/smart-report)"
 HARNESS_BRANCH="$(dev_harness_env backend/service/branch-report)"
-HARNESS_BACKOFFICE="$(dev_harness_env frontend/backoffice)"
+HARNESS_BACKOFFICE="$(dev_harness_env frontend/backoffice-next)"
 
 echo "3. Initialize auth database"
 cd "$ROOT/backend/auth"
@@ -93,8 +93,8 @@ dev_wait_http "http://127.0.0.1:${BRANCH_REPORT_PORT}/healthz" "branch-report"
 
 if [[ "$WITH_FRONTEND" == true ]]; then
   echo "4b. Frontend (backoffice)"
-  dev_ensure_service_deps frontend/backoffice vite
-  dev_start_frontend backoffice frontend/backoffice "$HARNESS_BACKOFFICE"
+  dev_ensure_service_deps frontend/backoffice-next next
+  dev_start_frontend backoffice frontend/backoffice-next "$HARNESS_BACKOFFICE"
   dev_wait_http "http://127.0.0.1:${BACKOFFICE_PORT}/" "backoffice"
 fi
 

@@ -124,18 +124,18 @@ cd backend/service/demo-service && cp .env.example .env && npm ci && npm run dev
 ### C. Manual frontend — ต้องมี backend รันอยู่แล้ว
 
 ```bash
-cd frontend/backoffice
-npm ci
+cd frontend/backoffice-next
+npm ci --legacy-peer-deps
 cp .env.local.example .env.local   # optional — mesh bypass headers
 npm run dev
 ```
 
-| Vite path | Target |
+| Next rewrite | Target |
 |-----------|--------|
 | `/auth` | `http://127.0.0.1:3001` |
 | `/api` | `http://127.0.0.1:3000` |
 
-UI: `http://localhost:5175` · Troubleshooting: [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md)
+UI: `http://localhost:3005` · Legacy Vite app: [frontend/backoffice/DEPRECATED.md](./frontend/backoffice/DEPRECATED.md)
 
 ---
 
@@ -221,7 +221,7 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 
 | อาการ | วิธีแก้ |
 |-------|---------|
-| `:5175` เปิดไม่ได้ | รัน `./scripts/dev-up.sh --with-frontend` หรือ `cd frontend/backoffice && npm run dev` |
+| `:3005` เปิดไม่ได้ | รัน `./scripts/dev-up.sh --with-frontend` หรือ `cd frontend/backoffice-next && npm run dev` |
 | Login ไม่ผ่าน | ลอง `1234` · รัน `./scripts/seed-all.sh` · ตรวจ `backend/auth/.env.harness` (`DATABASE_URI`) |
 | 502 จาก Vite proxy | auth (:3001) หรือ gateway (:3000) ยังไม่รัน |
 | 401 ที่ gateway | Token หมดอายุ / `token_gen` revoked — login ใหม่ |
@@ -236,7 +236,7 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 ## Frontend verification
 
 ```bash
-cd frontend/backoffice && npm run lint && npm run test && npm run build
+cd frontend/backoffice-next && npm run lint && npm test && npm run build
 ./scripts/dev-up.sh --with-frontend && ./scripts/smoke.sh
 ```
 

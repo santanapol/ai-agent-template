@@ -124,7 +124,7 @@ else
 fi
 
 log "Frontend build (staging)"
-npm run build:staging --prefix "$ROOT/frontend/backoffice"
+npm run build:staging --prefix "$ROOT/frontend/backoffice-next"
 
 log "PM2 — ecosystem.staging.config.js"
 if pm2 describe zero-auth >/dev/null 2>&1; then
@@ -142,11 +142,11 @@ server {
     listen 80;
     server_name ${STAGING_DOMAIN};
 
-    root ${ROOT}/frontend/backoffice/dist;
-    index index.html;
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
     location /api/ {
@@ -160,6 +160,15 @@ server {
 
     location /auth/ {
         proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;

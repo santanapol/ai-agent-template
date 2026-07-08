@@ -73,7 +73,7 @@ echo "  ✓ gateway GET /auth/me/branches"
 # Frontend dev server — checked only when booted (dev-up.sh --with-frontend)
 if [[ -n "${BACKOFFICE_PORT:-}" ]] && [[ -f "$DEV_RUN_DIR/pids/backoffice.pid" ]]; then
   HTML=$(curl -sf "http://127.0.0.1:${BACKOFFICE_PORT}/")
-  if ! echo "$HTML" | grep -qi '<div id="root">'; then
+  if ! echo "$HTML" | grep -qi 'data-app="zero-backoffice"'; then
     echo "  ✗ backoffice served unexpected HTML" >&2
     exit 1
   fi

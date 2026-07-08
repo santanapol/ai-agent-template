@@ -61,7 +61,7 @@ jobs:
         run: npm run ci
 
   frontend-checks:
-    name: Frontend CI Checks
+    name: Frontend CI Checks (Vite legacy)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -88,6 +88,36 @@ jobs:
 
       - name: Dry Run Build
         working-directory: frontend/backoffice
+        run: npm run build
+
+  frontend-next-checks:
+    name: Frontend CI Checks (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/backoffice-next/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend/backoffice-next
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Lint
+        working-directory: frontend/backoffice-next
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: frontend/backoffice-next
+        run: npm test
+
+      - name: Dry Run Build
+        working-directory: frontend/backoffice-next
         run: npm run build
 
   docs-checks:

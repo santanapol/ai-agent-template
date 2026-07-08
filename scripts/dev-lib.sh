@@ -75,8 +75,7 @@ dev_start_service() {
   )
 }
 
-# Start a Vite dev server (frontend). Unlike backend services, Vite is
-# launched via its bin with env vars exported from the generated env file.
+# Start Next.js dev server (frontend/backoffice-next).
 dev_start_frontend() {
   local name="$1"
   local workdir="$2"
@@ -96,8 +95,7 @@ dev_start_frontend() {
     # shellcheck disable=SC1090
     source "$envfile"
     set +a
-    nohup node node_modules/vite/bin/vite.js --strictPort \
-      >>"$logfile" 2>&1 &
+    nohup npm run dev >>"$logfile" 2>&1 &
     echo $! >"$pidfile"
   )
 }
@@ -124,7 +122,7 @@ dev_load_ports() {
   export INVOICE_PORT=$((3102 + PORT_OFFSET))
   export SMART_REPORT_PORT=$((3103 + PORT_OFFSET))
   export BRANCH_REPORT_PORT=$((3104 + PORT_OFFSET))
-  export BACKOFFICE_PORT=$((5175 + PORT_OFFSET))
+  export BACKOFFICE_PORT=$((3005 + PORT_OFFSET))
   export REDIS_DB=$((PORT_OFFSET % 16))
   export MONGO_AUTH_DB="auth_login_${PORT_OFFSET}"
   export GATEWAY_SECRET="${GATEWAY_SECRET:-test-gateway-secret-32-chars-minimum!!}"

@@ -74,9 +74,9 @@ nano backend/gateway/.env.prod
 ```bash
 cd /var/www/zero-platform
 
-# 1. ติดตั้งไลบรารีและบิลด์ Frontend
-npm ci --prefix frontend/backoffice
-npm run build --prefix frontend/backoffice
+# 1. ติดตั้งไลบรารีและบิลด์ Frontend (Next.js)
+npm ci --legacy-peer-deps --prefix frontend/backoffice-next
+npm run build --prefix frontend/backoffice-next
 
 # 2. ติดตั้งไลบรารี Backend และ Frontend (แยก service — ไม่มี root workspace)
 bash backend/scripts/install-all-deps.sh
@@ -139,12 +139,21 @@ server {
     listen 80;
     server_name zero.168bits.com; # โดเมนสำหรับระบบ
 
-    # 1. ให้ Nginx โฮสต์ไฟล์ Frontend (React/Vite)
-    root /var/www/zero-platform/frontend/backoffice/dist;
-    index index.html;
+    # 1. Reverse proxy Frontend (Next.js on PM2 zero-backoffice :3005)
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
 
     location / {
-        try_files $uri $uri/ /index.html;
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     # 2. Reverse Proxy ให้ /api และ /auth ไปหา Gateway

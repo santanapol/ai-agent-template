@@ -20,5 +20,5 @@ for rel in "${BACKEND_DIRS[@]}"; do
   (cd "$BACKEND/$rel" && npm ci)
 done
 
-echo "==> npm ci in frontend/backoffice"
-(cd "$REPO/frontend/backoffice" && npm ci)
+echo "==> npm ci in frontend/backoffice-next"
+(cd "$REPO/frontend/backoffice-next" && npm ci --legacy-peer-deps)
