@@ -9,21 +9,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Execute deployment commands via SSH
+      - name: Deploy staging (backoffice-next + backend)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USERNAME }}
           key: ${{ secrets.DO_SSH_KEY }}
+          # install-all-deps + Next.js build can exceed 10m on the staging droplet
+          command_timeout: 45m
           script: |
+            set -euo pipefail
             cd /var/www/zero-platform
             git pull origin main
-
-            # Backend + frontend — npm ci per package (no root workspace)
-            bash backend/scripts/install-all-deps.sh
-
-            pm2 startOrReload backend/ecosystem.config.js --update-env
-
-            npm run build --prefix frontend/backoffice
-
-            echo "Deployment Successful! 🚀"
+            bash scripts/staging-verify-env.sh
+            bash scripts/deploy-staging.sh

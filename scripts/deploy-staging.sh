@@ -5,10 +5,41 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND="$ROOT/backend"
+FRONTEND="$ROOT/frontend/backoffice-next"
+LOCK_HASH_FILE="$ROOT/.staging-package-lock.sha256"
 
 echo "==> deploy-staging"
-bash "$BACKEND/scripts/install-all-deps.sh"
-npm run build:staging --prefix "$ROOT/frontend/backoffice-next"
+bash "$SCRIPT_DIR/ensure-staging-swap.sh"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
+
+hash_lockfiles() {
+  {
+    for rel in auth gateway service/staff service/agent-invoice service/smart-report service/demo-service service/branch-report; do
+      cat "$BACKEND/$rel/package-lock.json" 2>/dev/null || true
+    done
+    cat "$FRONTEND/package-lock.json" 2>/dev/null || true
+  } | sha256sum | awk '{print $1}'
+}
+
+CURRENT_HASH="$(hash_lockfiles)"
+PREVIOUS_HASH=""
+if [[ -f "$LOCK_HASH_FILE" ]]; then
+  PREVIOUS_HASH="$(cat "$LOCK_HASH_FILE")"
+fi
+
+if [[ "$CURRENT_HASH" != "$PREVIOUS_HASH" ]]; then
+  echo "==> package-lock changed — running install-all-deps"
+  bash "$BACKEND/scripts/install-all-deps.sh"
+  echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
+else
+  echo "==> package-lock unchanged — skipping install-all-deps"
+  if [[ ! -d "$FRONTEND/node_modules/next" ]]; then
+    echo "==> frontend node_modules incomplete — npm ci backoffice-next only"
+    (cd "$FRONTEND" && npm ci --legacy-peer-deps)
+  fi
+fi
+
+npm run build:staging --prefix "$FRONTEND"
 pm2 reload "$BACKEND/ecosystem.staging.config.js"
 
 echo "==> post-deploy health"
@@ -16,6 +47,8 @@ curl -sf "http://127.0.0.1:3000/healthz" >/dev/null
 echo "  ✓ gateway /healthz"
 curl -sf "http://127.0.0.1:3001/healthz" >/dev/null
 echo "  ✓ auth /healthz"
+curl -sf "http://127.0.0.1:3005/" | head -c 200 >/dev/null
+echo "  ✓ backoffice / :3005"
 pm2 jlist | node -e "
   const apps = JSON.parse(require('fs').readFileSync(0,'utf8'));
   const bad = apps.filter((a) => a.pm2_env?.status !== 'online');
