@@ -13,8 +13,8 @@
 | **Production** PM2 | `backend/<service>/.env.prod` | `cp .env.example .env.prod` บน prod server |
 | **Staging** PM2 | `backend/<service>/.env.staging` | `./scripts/staging-init-env.sh` แล้วแก้บน staging server |
 | **Tests / CI** | `.env.test` → copy เป็น `.env` | `scripts/ci-all.sh` |
-| **Frontend** Vite | `frontend/backoffice/.env.local` | `cp .env.local.example .env.local` |
-| **Frontend staging build** | `frontend/backoffice/.env.staging` | `cp .env.staging.example .env.staging` |
+| **Frontend** Next.js | `frontend/backoffice-next/.env.local` | `cp .env.local.example .env.local` |
+| **Frontend staging build** | `frontend/backoffice-next/.env.staging` | `cp .env.staging.example .env.staging` |
 
 ตรวจสถานะ: `node scripts/env-status.mjs`
 

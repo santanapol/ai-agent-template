@@ -112,6 +112,17 @@ describe("InvoiceList page", () => {
     expect(screen.queryByRole("button", { name: /create invoice/i })).not.toBeInTheDocument();
   });
 
+  it("hides toolbar CSV export when read permission is missing", async () => {
+    mockUsePermission.mockImplementation((permission: string) => permission !== "invoices:read");
+
+    renderWithRouter(<InvoiceList />);
+
+    await waitFor(() => {
+      expect(screen.getByText("INV-001")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /export visible rows/i })).not.toBeInTheDocument();
+  });
+
   it("shows bulk action bar when export permission granted", async () => {
     mockUsePermission.mockImplementation((permission: string) => {
       if (permission === "invoices:read") return true;

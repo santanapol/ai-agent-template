@@ -3,7 +3,7 @@
 | ID | Domain | Priority | Description | Status |
 |----|--------|----------|-------------|--------|
 | TD-001 | CI | P2 | `spec:consistency` behavioral blind spots — integration tests + `/gc` quarterly re-audit (see `SPEC-CODE-AUDIT-2026-07-03.md`) | mitigated |
-| TD-002 | CI | P3 | Frontend GHA only targets `frontend/backoffice` — acceptable while single frontend app exists | wontfix |
+| TD-002 | CI | P3 | Frontend GHA only targets `frontend/backoffice-next` — legacy `frontend/backoffice` (Vite) removed 2026-07-08, single frontend app by design | closed |
 | TD-003 | Docs | P3 | Vendored `coding-standard/` drift — `scripts/check-coding-standard-sync.sh` + `/gc` checklist | closed |
 | TD-004 | Harness | P2 | Observability stack wired for all harness-booted services (`/metrics`, scrape, JSON logs staff) | closed |
 | TD-005 | Harness | P2 | ESLint golden-principle rules promoted to `error` per service (auth/staff split included) | closed |

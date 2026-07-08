@@ -6,7 +6,7 @@
 
 | Zone | Paths | Purpose |
 |------|-------|---------|
-| **Code** | `backend/`, `frontend/backoffice-next/` | Runnable applications (`frontend/backoffice` Vite — deprecated) |
+| **Code** | `backend/`, `frontend/backoffice-next/` | Runnable applications |
 | **Product docs** | `docs/specs/` | What to build (per-service specs) |
 | **Execution plans** | `docs/exec-plans/` | Active/completed work, tech debt |
 | **Domain standards** | `coding-standard/` | How to build (org rules) |

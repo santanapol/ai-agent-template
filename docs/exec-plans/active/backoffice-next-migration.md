@@ -9,7 +9,9 @@ services: [backoffice, auth, gateway, staff, agent-invoice, smart-report, branch
 
 **Status:** Implemented — `frontend/backoffice-next`  
 **Template:** `coding-standard/frontend/backoffice/reference/studio-admin` v2.2.0  
-**Legacy:** `frontend/backoffice` (Vite) — retained for reference; deploy uses Next.js
+**Legacy:** `frontend/backoffice` (Vite) — **removed 2026-07-08** (was: retained for reference). Decision: keep the `backoffice-next` name as-is, no rename to `backoffice` now that the old app is gone.
+
+Remaining open gates below (staging nginx applied, manual UAT) still need human sign-off before this plan moves to `completed/`.
 
 ## Route parity checklist
 

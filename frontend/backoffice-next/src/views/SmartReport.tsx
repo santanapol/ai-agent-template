@@ -46,6 +46,7 @@ import {
   DEFAULT_QUERY_EXAMPLE,
   deriveReportStatusFromHistory,
   formatDateTime,
+  indexLatestHistoryByReportId,
   type ReportRow,
   scheduleToUiValue,
 } from "./smart-report/formatters";
@@ -143,16 +144,21 @@ const SmartReport: React.FC = () => {
     return { formValues: form, script: form.query };
   }, [form]);
 
+  const fetchEnrichmentHistory = useCallback(async () => {
+    try {
+      const enrichRes = await listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT });
+      setEnrichmentHistory(enrichRes.data);
+    } catch (err) {
+      message.error(apiErrorMessage(err, "Failed to load report run history"));
+    }
+  }, [message]);
+
   const fetchReports = useCallback(async () => {
     setReportsLoading(true);
     try {
-      const [reportsRes, enrichRes] = await Promise.all([
-        listReports({ page: reportsPage, limit: reportsPageSize }),
-        listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT }),
-      ]);
+      const reportsRes = await listReports({ page: reportsPage, limit: reportsPageSize });
       setReports(reportsRes.data);
       setReportsTotal(reportsRes.pagination.total);
-      setEnrichmentHistory(enrichRes.data);
     } catch (err) {
       message.error(apiErrorMessage(err, "Failed to load reports"));
     } finally {
@@ -174,11 +180,16 @@ const SmartReport: React.FC = () => {
   }, [historyPage, historyPageSize, message]);
 
   const refresh = useCallback(() => {
+    void fetchEnrichmentHistory();
     void fetchReports();
     if (activeTab === "history") {
       void fetchHistory();
     }
-  }, [activeTab, fetchReports, fetchHistory]);
+  }, [activeTab, fetchEnrichmentHistory, fetchReports, fetchHistory]);
+
+  useEffect(() => {
+    void fetchEnrichmentHistory();
+  }, [fetchEnrichmentHistory]);
 
   useEffect(() => {
     void fetchReports();
@@ -223,9 +234,11 @@ const SmartReport: React.FC = () => {
     notification.info({ message: "Template loaded" });
   };
 
+  const latestRunByReportId = useMemo(() => indexLatestHistoryByReportId(enrichmentHistory), [enrichmentHistory]);
+
   const reportRows: ReportRow[] = useMemo(() => {
     return reports.map((report) => {
-      const latest = enrichmentHistory.find((historyRecord) => historyRecord.reportId === report.id);
+      const latest = latestRunByReportId.get(report.id);
       if (!latest) {
         return { ...report, derivedStatus: "idle", lastRun: "—" };
       }
@@ -235,7 +248,7 @@ const SmartReport: React.FC = () => {
         lastRun: formatDateTime(latest.finishedAt ?? latest.startedAt),
       };
     });
-  }, [reports, enrichmentHistory]);
+  }, [reports, latestRunByReportId]);
 
   useEffect(() => {
     if (validationErrors.length > 0) {
@@ -252,7 +265,7 @@ const SmartReport: React.FC = () => {
       if (record.status === "success") {
         toast.success(`Report "${report.name}" generated and saved successfully`, { id: toastId });
       } else {
-        toast.error(`Failed to run report "${report.name}": ${record.error ?? "Unknown error"}`, { id: toastId });
+        toast.error(`Failed to run report "${report.name}". Please try again or contact support.`, { id: toastId });
       }
     } catch (err) {
       toast.error(apiErrorMessage(err, "Failed to run report"), { id: toastId });

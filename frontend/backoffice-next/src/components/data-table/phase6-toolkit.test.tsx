@@ -88,4 +88,55 @@ describe("Phase 6A toolkit", () => {
     render(<ExportHarness />);
     expect(triggerBlobDownload).toHaveBeenCalledWith(expect.any(Blob), "staff.csv");
   });
+
+  it("exportVisibleRowsToCsv escapes commas and quotes", async () => {
+    const { triggerBlobDownload } = await import("@/lib/downloadBlob");
+
+    const wideColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", id: "name" },
+      { accessorKey: "note", header: "Note", id: "note" },
+    ];
+
+    function ExportHarness() {
+      const table = useReactTable({
+        data: [{ id: "1", name: 'Alice "A"', note: "line1\nline2" }],
+        columns: wideColumns,
+        getCoreRowModel: getCoreRowModel(),
+      });
+      exportVisibleRowsToCsv(table, "staff");
+      return null;
+    }
+
+    render(<ExportHarness />);
+    const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+    const text = await blob.text();
+    expect(text).toContain('"Alice ""A"""');
+    expect(text).toContain('"line1\nline2"');
+  });
+
+  it("exportVisibleRowsToCsv skips select column and hidden columns", async () => {
+    const { triggerBlobDownload } = await import("@/lib/downloadBlob");
+
+    const wideColumns: ColumnDef<Row>[] = [
+      { id: "select", header: "Select", cell: () => null },
+      { accessorKey: "name", header: "Name", id: "name" },
+      { accessorKey: "hidden", header: "Hidden", id: "hidden" },
+    ];
+
+    function ExportHarness() {
+      const table = useReactTable({
+        data: [{ id: "1", name: "Alice", hidden: "secret" }],
+        columns: wideColumns,
+        getCoreRowModel: getCoreRowModel(),
+        state: { columnVisibility: { hidden: false } },
+      });
+      exportVisibleRowsToCsv(table, "staff");
+      return null;
+    }
+
+    render(<ExportHarness />);
+    const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+    const text = await blob.text();
+    expect(text).toBe("Name\nAlice");
+  });
 });

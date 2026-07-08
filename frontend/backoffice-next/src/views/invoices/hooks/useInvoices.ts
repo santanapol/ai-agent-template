@@ -19,8 +19,6 @@ import { buildInvoiceEtag } from "../bulk/invoiceEtag";
 export function useInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -56,8 +54,6 @@ export function useInvoices() {
       const pagination = res.data?.pagination;
       setInvoices(items);
       setTotal(pagination?.total ?? items.length);
-      if (pagination?.page) setPage(pagination.page);
-      if (pagination?.limit) setLimit(pagination.limit);
     } catch (error: unknown) {
       if (signal?.aborted) return;
       toast.error(apiErrorMessage(error, "Failed to fetch invoices"));
@@ -71,7 +67,7 @@ export function useInvoices() {
     try {
       const res = await api.generateInvoices(payload);
       const count = res.data?.generated_count ?? 0;
-      toast.success(res.message || `Generated ${count} invoice(s) successfully`);
+      toast.success(`Generated ${count} invoice(s) successfully`);
       return true;
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.data?.code === "PARTIAL_FAILURE") {
@@ -151,8 +147,6 @@ export function useInvoices() {
   return {
     invoices,
     total,
-    page,
-    limit,
     loading,
     generating,
     invoice,

@@ -78,6 +78,14 @@ vi.mock("../lib/smartReportApiClient", () => ({
   testRunReport: vi.fn(),
 }));
 
+vi.mock("sonner", () => ({
+  toast: {
+    loading: vi.fn(() => "toast-id"),
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 import { getReport, listHistory, listReports } from "../lib/smartReportApiClient";
 
 function renderSmartReport() {
@@ -171,6 +179,95 @@ describe("SmartReport (list mode)", () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
+    });
+  });
+
+  it("refetches reports on page 2 without re-fetching enrichment history", async () => {
+    const pageOneReports = Array.from({ length: 20 }, (_, index) => ({
+      ...sampleReport,
+      id: `report-${index + 1}`,
+      name: `Report ${index + 1}`,
+    }));
+    vi.mocked(listReports).mockImplementation(async (params) => {
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 20;
+      if (page === 1) {
+        return {
+          data: pageOneReports,
+          pagination: { page: 1, limit, total: 45, totalPages: 3 },
+        };
+      }
+      return {
+        data: [{ ...sampleReport, id: `report-page-${page}`, name: `Page ${page} Report` }],
+        pagination: { page, limit, total: 45, totalPages: 3 },
+      };
+    });
+
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
+    });
+
+    const enrichmentCalls = vi.mocked(listHistory).mock.calls.length;
+    vi.mocked(listReports).mockClear();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "2" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => {
+      expect(listReports).toHaveBeenCalledWith({ page: 2, limit: 20 });
+    });
+    expect(vi.mocked(listHistory).mock.calls.length).toBe(enrichmentCalls);
+  });
+
+  it("shows fixed toast when report run returns a failed status", async () => {
+    const { runReport } = await import("../lib/smartReportApiClient");
+    const { toast } = await import("sonner");
+
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    vi.mocked(runReport).mockResolvedValue({
+      id: "hist-1",
+      reportId: sampleReport.id,
+      status: "failed",
+      error: "raw database error should not appear",
+      fileName: null,
+      fileId: null,
+      recordCount: 0,
+      durationMs: 10,
+      cr_date: "2026-07-01",
+    } as never);
+
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/run report/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText(/run report/i));
+    await user.click(screen.getByRole("button", { name: /^run$/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringMatching(/failed to run report/i),
+        expect.objectContaining({ id: expect.any(String) }),
+      );
+    });
+    expect(toast.error).not.toHaveBeenCalledWith(expect.stringContaining("raw database error"), expect.anything());
+  });
+
+  it("shows user-friendly toast when report list load fails", async () => {
+    vi.mocked(listReports).mockRejectedValueOnce(new Error("network down"));
+
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to load reports");
     });
   });
 });

@@ -116,7 +116,7 @@ const QUALITY_DOMAINS = [
   'smart-report',
   'branch-report',
   'demo-service',
-  'backoffice',
+  'backoffice-next',
 ];
 
 function checkQualityScore() {

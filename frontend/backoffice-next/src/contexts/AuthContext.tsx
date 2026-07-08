@@ -144,11 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .catch(() => {
         if (cancelled) return;
         setMenuError(true);
-        // Fallback to minimal menus on error
-        setMenus([
-          { key: "dashboard", label: "Dashboard", type: "action", parent_key: null, sort_order: 0 },
-          { key: "my_profile", label: "My Profile", type: "action", parent_key: null, sort_order: 100 },
-        ]);
+        setMenus([]);
       })
       .finally(() => {
         if (cancelled) return;
@@ -187,7 +183,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLastBranchSwitchAt(Date.now());
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.data?.code === "AUTH_NOT_READY") {
-          await authApi.refresh();
+          const token = await refreshFn();
+          if (!token) throw err;
           const data = await authApi.switchActiveBranch(branchId);
           applyToken(data);
           setLastBranchSwitchAt(Date.now());
@@ -198,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setBranchSwitching(false);
       }
     },
-    [applyToken],
+    [applyToken, refreshFn],
   );
 
   return (

@@ -24,6 +24,13 @@
 - Phase 3 บรรทัด "root เหลือ..." ต้องรวม `CLAUDE.md` ด้วย (เป็นไฟล์ตั้งใจ ไม่ใช่ของค้าง)
 - Zone table "Agent tooling" ใน README.md/AGENTS.md ได้อัปเดตให้รวม `.claude/` แล้ว (ทำนอกแผนนี้ ระหว่าง session เดียวกัน) — ไม่ต้องทำซ้ำใน Phase 3
 
+**อัปเดต 2026-07-08 (รอบสอง — คำสั่งชัดเจน "ลบ backoffice เดิมได้เลย, ใช้ชื่อ backoffice-next ไปก่อน"):** ทำ Phase 4 บางส่วนไปแล้วนอกลำดับเดิม (ไม่รอ staging UAT) เพราะ user สั่งลบ legacy ตรง ๆ:
+- ลบ `frontend/backoffice` ทั้งก้อนแล้ว (304 ไฟล์ tracked, ไม่มีงานค้างข้างใน) — Phase 4 บรรทัดแรกเสร็จแล้ว
+- **ตัดสินใจ: ไม่ rename `backoffice-next` → `backoffice`** — ใช้ชื่อ `backoffice-next` ต่อไปตามที่ user สั่งชัดเจน (ย้าย Phase 4 บรรทัดที่สองไปอยู่ใน "ตัดสินใจแล้ว — ไม่ทำ" แทน)
+- แก้ README/AGENTS/RUNBOOK/backend docs/.github/workflows/ci-check.yml/coding-standard App paths ให้ตรง `backoffice-next` แล้ว (Phase 3 บรรทัด "อัปเดต README/AGENTS.md" เสร็จแล้ว)
+- เปิด `docs/specs/frontend/backoffice-next/` แล้ว (Phase 3 บรรทัด "เปิด docs/specs/frontend/" เสร็จแล้ว)
+- **`docs/exec-plans/active/backoffice-next-migration.md` ยังไม่ย้ายไป `completed/`** — เหลือ 2 gate ที่เป็น human action จริง (staging nginx applied on server, manual UAT) ยังปิดไม่ได้จนกว่าจะมีคนยืนยัน — ห้าม mark เสร็จเองแทนคน
+
 ## Phase 0 — เซฟงานค้าง (ทำก่อนขยับอะไรทั้งนั้น)
 
 - [ ] เพิ่ม `.next/` และ `coding-standard/**/reference/` ลง root `.gitignore`
@@ -34,7 +41,7 @@
 - [ ] **เก็บ `studio-admin` ไว้เป็น design reference** (ตัดสินใจ 2026-07-08) แต่ slim ลง: ลบเฉพาะ `node_modules/` (716MB) + `.next/` (1.7GB) ซึ่ง rebuild ได้ — เหลือ source ไม่กี่ MB; คง gitignore ไว้ (local-only, ไม่ commit เข้า repo) — เลิกใช้เมื่อไหร่ค่อยลบทั้งก้อน
 - [ ] บันทึก provenance ใน `coding-standard/frontend/backoffice/README.md` (ไฟล์ tracked ที่ลิงก์ไป `reference/studio-admin/` อยู่แล้ว บรรทัด 10): ระบุว่า dir นี้ **local-only (gitignored)** + upstream URL + v2.2.0 + คำสั่ง re-clone สำหรับเครื่องใหม่ — กันลิงก์เสียสำหรับคนที่ clone repo ใหม่
 - [ ] ลบเศษ template ใน `backoffice-next`: `repo.md`, `CONTRIBUTING.md`, `media/`; เขียน README ของโปรเจกต์เอง (**เก็บ `LICENSE`** — derive จาก MIT upstream)
-- [ ] ลบ `frontend/backoffice/node_modules` บนเครื่อง (ไม่กระทบ git)
+- [x] ลบ `frontend/backoffice/node_modules` บนเครื่อง — เป็นส่วนหนึ่งของการลบทั้งโฟลเดอร์ (ดูอัปเดตรอบสองด้านบน)
 
 ## Phase 2 — จัด `scripts/` เป็นหมวด
 
@@ -58,17 +65,18 @@ scripts/
 - [ ] **Plans อยู่ใน `docs/` ต่อ (ตัดสินใจแล้ว — ไม่แยกเป็น top-level):** ให้ `docs/exec-plans/` เป็นบ้านเดียวของ plan ทุกระดับ ใช้ front-matter `services: [...]` แยก scope แทนโฟลเดอร์ต่อ service
 - [ ] ย้าย `confidence-map.md` จาก `docs/specs/backend/<service>/plans/` → ไปอยู่ข้าง spec (`docs/specs/backend/<service>/confidence-map.md`) แล้วลบโฟลเดอร์ `plans/` ต่อ service — แก้ `WORKFLOW.md` แต่ละ service + `docs/exec-plans/README.md` บรรทัดที่อ้างถึง
 - [ ] ลบ `docs/specs/backend/plans/` (ว่างเปล่า)
-- [ ] เปิด `docs/specs/frontend/` สำหรับ backoffice-next
+- [x] เปิด `docs/specs/frontend/` สำหรับ backoffice-next — `docs/specs/frontend/backoffice-next/backoffice-next-spec.md`
 - [ ] จัด `harness-engineering/openai-com-index-harness-engineering.md` ให้ชัดว่าเป็น source material — ย้ายเข้า `harness-engineering/sources/` (**ห้ามย้ายเข้า `references/`** — โฟลเดอร์นั้นเป็น sync target ของ `sync-agent-skills.sh` ถูก rsync ทับจาก upstream, do not edit by hand)
-- [ ] อัปเดต README/AGENTS.md ที่ยังพูดถึง `frontend/backoffice` (Vite) เป็นแอปหลัก (README บรรทัด 6, 43, layout diagram)
+- [x] อัปเดต README/AGENTS.md ที่ยังพูดถึง `frontend/backoffice` (Vite) เป็นแอปหลัก — รวมถึง RUNBOOK.md, backend/README.md, backend/ENV.md, `.github/workflows/ci-check.yml` (ลบ job `frontend-checks` legacy), `docs/QUALITY_SCORE.md`, `docs/exec-plans/tech-debt-tracker.md` (TD-002 closed)
 
-## Phase 4 — หลังผ่าน staging UAT (gate สุดท้ายของ migration)
+## Phase 4 — cutover เสร็จบางส่วน (2026-07-08, ก่อนกำหนดเดิม)
 
-- [ ] `git rm frontend/backoffice` ทั้งก้อน + ย้าย `backoffice-next-migration.md` ไป `completed/`
-- [ ] ค่อยพิจารณา rename `backoffice-next` → `backoffice` (หลังลบตัวเก่าเท่านั้น)
+- [x] `git rm frontend/backoffice` ทั้งก้อน — ทำแล้วตามคำสั่ง user (ไม่รอ staging UAT)
+- [ ] ย้าย `backoffice-next-migration.md` ไป `completed/` — **ยังทำไม่ได้** เหลือ 2 gate ที่ต้องให้คนยืนยันจริง: staging nginx applied on server, manual UAT — plan ยังอยู่ที่ `active/` จนกว่าจะปิดครบ
 
 ## ตัดสินใจแล้ว — ไม่ทำ
 
+- **ไม่ rename `frontend/backoffice-next` → `frontend/backoffice`** (ตัดสินใจ 2026-07-08 หลังลบ legacy แล้ว) — user สั่งให้ใช้ชื่อ `backoffice-next` ต่อไปก่อน แม้ตัวเก่าจะถูกลบแล้วก็ตาม
 - **ไม่รวม `backend/` + `frontend/` เข้าโฟลเดอร์ `code-base/`** — blast radius ใหญ่สุด (scripts, CI, PM2, เอกสารทุกชั้น), zone table ใน README/AGENTS.md จัดกลุ่มเชิง logic ให้อยู่แล้ว, path ยาวขึ้นถาวร ถ้าอยากจัดกลุ่มจริง ๆ ให้ทำหลัง Phase 4 ด้วย convention `apps/` (turborepo/nx) ไม่ใช่ชื่อ custom
 - **ไม่ทำ npm workspaces ที่ backend root** — โครง per-package standalone ตั้งใจไว้ สอดคล้อง coding-standard และ CI ต่อ package
 - **ไม่แตะโครง `backend/`** — สะอาดดีอยู่แล้ว

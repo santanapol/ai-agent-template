@@ -23,11 +23,10 @@
 | App | Path | Status |
 | :--- | :--- | :--- |
 | **backoffice-next** | `frontend/backoffice-next` | **Production** — Next.js, studio shell + domain views |
-| **backoffice** | `frontend/backoffice` | Deprecated — Vite + React Router, frozen (see `DEPRECATED.md`) |
 | **live-demo-shadcn** (template) | `coding-standard/frontend/backoffice/live-demo-shadcn` | Reference scaffold for new shadcn pages |
 | **studio-admin** (reference) | `coding-standard/frontend/backoffice/reference/studio-admin` | Local-only, gitignored — upstream layout/design reference |
 
-New frontend work targets **`frontend/backoffice-next`** unless explicitly maintaining the legacy app.
+Legacy `frontend/backoffice` (Vite + React Router) removed 2026-07-08 — all frontend work targets **`frontend/backoffice-next`**.
 
 ## 📦 Package Management
 * บังคับให้ใช้คำสั่งที่อ่านจาก Lockfile (`npm ci`) เมื่ออยู่บนระบบ CI/CD

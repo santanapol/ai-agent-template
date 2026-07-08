@@ -85,4 +85,34 @@ describe("useInvoiceListFilters", () => {
     expect(result.current.debouncedSearchText).toBe("INV-2");
     expect(result.current.page).toBe(3);
   });
+
+  it("syncs status and billing month to URL", () => {
+    const { result } = renderHook(() => useInvoiceListFilters(), {
+      wrapper: ({ children }) => <MemoryRouter initialEntries={["/invoices"]}>{children}</MemoryRouter>,
+    });
+
+    act(() => {
+      result.current.setSelectedStatus("READY");
+      result.current.setBillingMonth("2026-06");
+    });
+
+    expect(result.current.searchParams.get("status")).toBe("READY");
+    expect(result.current.searchParams.get("billing_month")).toBe("2026-06");
+  });
+
+  it("writes debounced search text to URL after debounce", () => {
+    const { result } = renderHook(() => useInvoiceListFilters(), {
+      wrapper: ({ children }) => <MemoryRouter initialEntries={["/invoices"]}>{children}</MemoryRouter>,
+    });
+
+    act(() => {
+      result.current.setSearchText("INV-NEW");
+    });
+    expect(result.current.searchParams.get("search")).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.searchParams.get("search")).toBe("INV-NEW");
+  });
 });

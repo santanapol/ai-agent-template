@@ -15,7 +15,7 @@ dev_ensure_dirs() {
   fi
 }
 
-# Resolve harness env file for a service workdir (e.g. backend/auth, frontend/backoffice).
+# Resolve harness env file for a service workdir (e.g. backend/auth, frontend/backoffice-next).
 dev_harness_env() {
   local workdir="$1"
   if [[ "$PORT_OFFSET" == "0" ]]; then

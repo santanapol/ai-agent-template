@@ -6,10 +6,20 @@
 
 ## Pre-deploy (local)
 
-- [x] `npm test` in `frontend/backoffice-next` (396 tests)
+- [x] `npm test` in `frontend/backoffice-next` (403+ tests)
+- [x] `npm run lint` in `frontend/backoffice-next` (0 errors)
 - [x] `npm run build` in `frontend/backoffice-next`
-- [ ] `./scripts/ci-all.sh` (optional full harness)
+- [x] Next.js security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) in `next.config.mjs`
+- [x] SmartReport server pagination + enrichment history split (automated tests)
+- [x] Invoice URL filter validation + debounced search sync (automated tests)
+- [x] Branch report / API error message hardening (automated tests)
+- [ ] `./scripts/ci-all.sh` full harness (optional if Docker unavailable locally)
 - [ ] `git push` after migration commit
+
+## Known accepted risks (documented)
+
+- **`xlsx` audit exception** — see [DEPENDENCY-AUDIT-EXCEPTIONS.md](./DEPENDENCY-AUDIT-EXCEPTIONS.md)
+- **Nginx edge headers** — verify on staging host; app-level headers are set in Next.js
 
 ## Server deploy
 
@@ -25,6 +35,14 @@ curl -sf http://127.0.0.1:3005/ | head -c 200
 ## Nginx (once / verify)
 
 `/etc/nginx/sites-available/zero-staging` — `location /` and `/_next/static/` → `127.0.0.1:3005`; `/api/` and `/auth/` → gateway `:3000`.
+
+Recommended edge headers (in addition to Next.js):
+
+```nginx
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+```
 
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
@@ -49,9 +67,9 @@ Credentials: `server-environment/staging/credential.md` (not committed).
 | `/staff` | | | List/Grid, Customize, Export, pagination |
 | `/agents` | | | Sync modal, inactive filter |
 | `/agents/:id/fees` | | | Matrix scroll, dirty guard |
-| `/invoices` | | | Selection bar, bulk bar safe-area |
+| `/invoices` | | | Selection bar, bulk bar safe-area, URL filters |
 | `/invoices/:id` | | | Back preserves list filters |
-| `/smart-reports` | | | History tab search/filter |
+| `/smart-reports` | | | Server pagination; list search disabled (future) |
 | `/branch-report/marketing/channel-performance` | | | Royalty21 + result table |
 | `/permissions` | | | Tabs, menu tree |
 | `/profile` | | | Form cards, refresh |

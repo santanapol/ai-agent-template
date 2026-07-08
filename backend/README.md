@@ -16,7 +16,7 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 
 Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
 
-Frontend ที่ใช้ platform นี้อยู่ที่ [`../frontend/backoffice/`](../frontend/backoffice/)
+Frontend ที่ใช้ platform นี้อยู่ที่ [`../frontend/backoffice-next/`](../frontend/backoffice-next/)
 
 ## Request flow
 

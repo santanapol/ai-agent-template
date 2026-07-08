@@ -3,7 +3,7 @@
 Reference implementation ของ **zero-platform**: API backend (auth + gateway + internal services) และ back-office frontend ที่เรียกผ่าน gateway
 
 > [!TIP]
-> **TL;DR:** Login ที่ **auth** → เรียก API ผ่าน **gateway** ด้วย JWT → internal services รับ trusted headers เท่านั้น · UI อยู่ที่ **frontend/backoffice** (Vite proxy `/auth` → auth, `/api` → gateway)
+> **TL;DR:** Login ที่ **auth** → เรียก API ผ่าน **gateway** ด้วย JWT → internal services รับ trusted headers เท่านั้น · UI อยู่ที่ **frontend/backoffice-next** (Next.js rewrites `/auth` → auth, `/api` → gateway)
 
 ## Repository zones
 
@@ -40,7 +40,7 @@ zero-platform/
 │   ├── docker-compose.yml        # MongoDB + Redis (local)
 │   └── RUNBOOK.md
 ├── frontend/
-│   └── backoffice/               # React admin UI
+│   └── backoffice-next/          # Next.js admin UI
 ├── docs/
 │   └── specs/                    # Service specs — [docs/README.md](./docs/README.md)
 ├── harness-engineering/          # How we work — [harness-engineering/README.md](./harness-engineering/README.md)
@@ -59,7 +59,7 @@ zero-platform/
 ```mermaid
 flowchart LR
   subgraph client["Browser"]
-    UI["backoffice\n(Vite)"]
+    UI["backoffice-next\n(Next.js)"]
   end
 
   subgraph edge["Public / dev proxy"]
@@ -93,9 +93,8 @@ flowchart LR
 | **Backend** | [backend/README.md](./backend/README.md) | Services, ports, gateway routes, quick start |
 | **Backend ops (deep)** | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Docker, seed DB, deploy checklist |
 | **Deployment** | [DEPLOY_DIGITALOCEAN.md](./DEPLOY_DIGITALOCEAN.md) | GitHub Actions CI/CD to DigitalOcean |
-| **Frontend** | [frontend/backoffice/README.md](./frontend/backoffice/README.md) | UX docs, API mapping, scripts |
-| **Frontend ops** | [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md) | Proxy routing, dev setup, troubleshooting |
-| **Frontend API** | [frontend/backoffice/docs/api-mapping.md](./frontend/backoffice/docs/api-mapping.md) | UI actions → HTTP endpoints |
+| **Frontend** | [frontend/backoffice-next/README.md](./frontend/backoffice-next/README.md) | Setup, conventions, scripts |
+| **Frontend coding standard** | [coding-standard/frontend/backoffice/](./coding-standard/frontend/backoffice/) | Stack, routing, state, auth, styling — kept in sync with `backoffice-next` |
 | **Agent map** | [AGENTS.md](./AGENTS.md) | Table of contents for agents — start here |
 | **Claude Code orchestration** | [CLAUDE.md](./CLAUDE.md) | Auto-loaded — skill/command routing (generated) |
 | **Golden principles** | [docs/golden-principles.md](./docs/golden-principles.md) | Mechanical invariants |
@@ -113,14 +112,14 @@ flowchart LR
 
 | Component | Port | Notes |
 | :--- | :---: | :--- |
-| **gateway** | 3000 | Client / Vite proxy target สำหรับ `/api` |
+| **gateway** | 3000 | Client / Next.js rewrite target สำหรับ `/api` |
 | **auth** | 3001 | JWKS, login, refresh |
 | **demo-service** | 3002 | `/api/v1/me`, `/api/v1/items` |
 | **staff** | 3101 | Profile management API |
 | **agent-invoice** | 3102 | Invoices and fees management API |
 | **MongoDB** | 27017 | `backend/docker compose` |
 | **Redis** | 6379 | Session revoke (`token_gen`) |
-| **backoffice (Vite)** | 5175 | Vite; proxy ไป auth/gateway |
+| **backoffice-next (Next.js)** | 3005 | Next.js; rewrites ไป auth/gateway |
 
 ## Full-stack quick start
 
@@ -136,14 +135,14 @@ Re-seed: `./scripts/seed-all.sh` · CI baseline: `./scripts/ci-all.sh --skip-ins
 
 ### Manual fallback (แยก terminal)
 
-ดู [RUNBOOK.md § วิธีรัน](./RUNBOOK.md#วิธีรัน--เลือกแบบที่เหมาะ) หรือ [backend/RUNBOOK.md](./backend/RUNBOOK.md) + [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md)
+ดู [RUNBOOK.md § วิธีรัน](./RUNBOOK.md#วิธีรัน--เลือกแบบที่เหมาะ) หรือ [backend/RUNBOOK.md](./backend/RUNBOOK.md)
 
 ## Prerequisites
 
 | Layer | Requirement |
 | :--- | :--- |
 | Backend (auth, gateway, demo-service) | Node.js `>=24 <25`, Docker |
-| Frontend | Node.js (ดู `frontend/backoffice/package.json`) |
+| Frontend | Node.js (ดู `frontend/backoffice-next/package.json`) |
 | **Standards** | Vendored [`coding-standard/`](./coding-standard/) in repo — self-contained for CI |
 
 ## Quality gates

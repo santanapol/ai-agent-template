@@ -340,7 +340,7 @@ const InvoiceList: React.FC = () => {
                 setPage(1);
               }}
             />
-            <DataTableToolbarActions table={table} exportFileName="invoices" />
+            {canExport ? <DataTableToolbarActions table={table} exportFileName="invoices" /> : null}
             {canWrite ? (
               <Button onClick={() => setIsModalVisible(true)}>
                 <Plus data-icon="inline-start" aria-hidden="true" />

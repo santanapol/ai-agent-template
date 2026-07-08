@@ -349,4 +349,47 @@ describe("AuthContext", () => {
       expect(screen.getByTestId("branch-id").textContent).toBe(activeBranch);
     });
   });
+
+  test("sets menuError and clears menus when getMyMenus fails", async () => {
+    const mockedLogin = authApi.login as Mock;
+    const mockedGetMyMenus = authApi.getMyMenus as Mock;
+    const mockedRefresh = authApi.refresh as Mock;
+
+    mockedRefresh.mockRejectedValue(new Error("No session"));
+    mockedLogin.mockResolvedValue({
+      access_token: mockToken,
+      permissions: ["profiles:lookup"],
+    });
+    mockedGetMyMenus.mockRejectedValue(new Error("menu service down"));
+
+    const MenuProbe = () => {
+      const { menus, menuError } = useAuth();
+      return (
+        <div>
+          <div data-testid="menu-count">{menus.length}</div>
+          <div data-testid="menu-error">{menuError ? "yes" : "no"}</div>
+        </div>
+      );
+    };
+
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+        <MenuProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-id").textContent).toBe("no-user");
+    });
+
+    await user.click(screen.getByText("Login"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("menu-count").textContent).toBe("0");
+      expect(screen.getByTestId("menu-error").textContent).toBe("yes");
+    });
+  });
 });

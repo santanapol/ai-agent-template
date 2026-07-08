@@ -24,7 +24,7 @@ const DETAIL_CODE_FALLBACKS: Record<string, string> = {
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof BranchReportApiError) {
-    return err.message || fallback;
+    return err.message;
   }
 
   if (axios.isAxiosError(err)) {

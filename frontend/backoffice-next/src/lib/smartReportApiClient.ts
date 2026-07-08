@@ -85,12 +85,18 @@ export function buildEtagFromUpdDate(updDate: string): string {
   return `W/"${btoa(updDate)}"`;
 }
 
+/** Sanitize a server-provided download filename for use in the browser. */
+function sanitizeDownloadFilename(fileName: string): string {
+  const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+  return sanitized || "download";
+}
+
 export async function downloadReportFile(fileId: string, fileName: string): Promise<void> {
   const res = await client.get(`${BASE_PATH}/download/${fileId}`, { responseType: "blob" });
   const url = URL.createObjectURL(res.data as Blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = fileName;
+  link.download = sanitizeDownloadFilename(fileName);
   document.body.appendChild(link);
   link.click();
   link.remove();

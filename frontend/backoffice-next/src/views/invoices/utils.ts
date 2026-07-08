@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import type { badgeVariants } from "@/components/ui/badge";
 
 import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
+import { INVOICE_STATUSES } from "../../types/invoice";
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return "-";
@@ -75,10 +76,13 @@ export interface InvoiceListFilterState {
 
 export function parseInvoiceListSearchParams(searchParams: URLSearchParams): InvoiceListFilterState {
   const branchId = searchParams.get("branch_id");
+  const rawStatus = searchParams.get("status");
+  const selectedStatus =
+    rawStatus && (INVOICE_STATUSES as readonly string[]).includes(rawStatus) ? (rawStatus as InvoiceStatus) : undefined;
   return {
     searchText: searchParams.get("search") ?? "",
     selectedBranchId: !branchId || branchId === INVOICE_BRANCH_FILTER_ALL ? undefined : branchId,
-    selectedStatus: (searchParams.get("status") as InvoiceStatus | null) ?? undefined,
+    selectedStatus,
     billingMonth: searchParams.get("billing_month") ?? dayjs().format("YYYY-MM"),
     page: Number(searchParams.get("page")) || 1,
     pageSize: Number(searchParams.get("page_size")) || 10,

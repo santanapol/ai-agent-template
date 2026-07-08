@@ -43,7 +43,7 @@ describe("branchReportApiClient", () => {
     await expect(getInviteLinks()).rejects.toMatchObject({
       name: "BranchReportApiError",
       code: "INVALID_PARAM",
-      message: "Invalid channel",
+      message: "Invalid report parameters. Check your filters and try again.",
     });
   });
 

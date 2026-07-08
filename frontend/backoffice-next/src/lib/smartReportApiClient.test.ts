@@ -104,4 +104,22 @@ describe("smartReportApiClient", () => {
     expect(mockGet).toHaveBeenCalledWith("/api/v1/smart-reports/abc123");
     expect(report.script).toBe("find()");
   });
+
+  it("downloadReportFile sanitizes unsafe filenames", async () => {
+    const { downloadReportFile } = await import("./smartReportApiClient");
+    const createObjectURL = vi.fn(() => "blob:mock");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+    const link = document.createElement("a");
+    const click = vi.spyOn(link, "click").mockImplementation(() => undefined);
+    vi.spyOn(document, "createElement").mockReturnValue(link);
+    mockGet.mockResolvedValueOnce({ data: new Blob(["csv"]) });
+
+    await downloadReportFile("file-1", '../../etc/passwd<script>.csv');
+
+    expect(link.download).toBe(".._.._etc_passwd_script_.csv");
+    expect(click).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock");
+    vi.unstubAllGlobals();
+  });
 });

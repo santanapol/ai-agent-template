@@ -72,6 +72,6 @@ API menu keys verified for all 5 roles via `GET /auth/me/menus`.
 ## Verification
 
 ```bash
-cd frontend/backoffice && npm run lint && npm run test && npm run build
+cd frontend/backoffice-next && npm run lint && npm test && npm run build
 ./scripts/ci-all.sh --skip-install --with-frontend --only smoke
 ```

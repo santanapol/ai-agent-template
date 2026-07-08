@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInvoiceListQuery, buildInvoiceListSearchParams } from "./utils";
+import { buildInvoiceListQuery, buildInvoiceListSearchParams, parseInvoiceListSearchParams } from "./utils";
 
 describe("buildInvoiceListQuery", () => {
   const base = {
@@ -52,5 +52,24 @@ describe("buildInvoiceListSearchParams", () => {
       pageSize: 10,
     });
     expect(params.toString()).toBe("branch_id=all&billing_month=2026-07");
+  });
+});
+
+describe("parseInvoiceListSearchParams", () => {
+  it("ignores invalid status values", () => {
+    const parsed = parseInvoiceListSearchParams(new URLSearchParams("status=NOT_A_STATUS&page=2"));
+    expect(parsed.selectedStatus).toBeUndefined();
+    expect(parsed.page).toBe(2);
+  });
+
+  it("accepts known invoice statuses", () => {
+    const parsed = parseInvoiceListSearchParams(new URLSearchParams("status=READY"));
+    expect(parsed.selectedStatus).toBe("READY");
+  });
+
+  it("defaults page and page size when params are missing or invalid", () => {
+    const parsed = parseInvoiceListSearchParams(new URLSearchParams("page=0&page_size=abc"));
+    expect(parsed.page).toBe(1);
+    expect(parsed.pageSize).toBe(10);
   });
 });

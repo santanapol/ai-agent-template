@@ -67,10 +67,10 @@ if (offset !== 0) {
   console.log(`  .dev-run/${offset}/harness/   ${existsSync(isoDir) ? '✓' : '·'}`);
 }
 
-const feHarness = path.join(ROOT, 'frontend/backoffice/.env.harness');
-const feLocal = path.join(ROOT, 'frontend/backoffice/.env.local');
-console.log('\nFrontend backoffice:');
-console.log(`  .env.harness.example  ${mark(path.join(ROOT, 'frontend/backoffice/.env.harness.example'))}`);
+const feHarness = path.join(ROOT, 'frontend/backoffice-next/.env.harness');
+const feLocal = path.join(ROOT, 'frontend/backoffice-next/.env.local');
+console.log('\nFrontend backoffice-next:');
+console.log(`  .env.harness.example  ${mark(path.join(ROOT, 'frontend/backoffice-next/.env.harness.example'))}`);
 console.log(`  .env.harness          ${mark(feHarness)}`);
 console.log(`  .env.local            ${mark(feLocal)}`);
 

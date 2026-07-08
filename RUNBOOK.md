@@ -8,7 +8,7 @@
 |-----------|---------|
 | [**backend/ENV.md**](./backend/ENV.md) | **ไฟล์ env** — `.env.harness` / `.env` / `.env.prod` |
 | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Manual backend, deploy checklist |
-| [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md) | Vite proxy, `.env.local`, UI troubleshooting |
+| [frontend/backoffice-next/README.md](./frontend/backoffice-next/README.md) | Next.js rewrites, `.env.local`, UI conventions |
 | [harness-engineering/workflows.md](./harness-engineering/workflows.md) | SDLC, `PORT_OFFSET`, observability, browser testing |
 | [scripts/README.md](./scripts/README.md) | สคริปต์ harness ทั้งหมด |
 | [DEPLOY_DIGITALOCEAN.md](./DEPLOY_DIGITALOCEAN.md) | Production CI/CD |
@@ -21,7 +21,7 @@
 | Layer | Requirement |
 |-------|-------------|
 | Backend | Node.js `>=24 <25`, Docker (MongoDB + Redis) |
-| Frontend | Node.js (ดู `frontend/backoffice/package.json`) |
+| Frontend | Node.js (ดู `frontend/backoffice-next/package.json`) |
 | Harness scripts | Bash, repo root as cwd |
 
 ---
@@ -135,7 +135,7 @@ npm run dev
 | `/auth` | `http://127.0.0.1:3001` |
 | `/api` | `http://127.0.0.1:3000` |
 
-UI: `http://localhost:3005` · Legacy Vite app: [frontend/backoffice/DEPRECATED.md](./frontend/backoffice/DEPRECATED.md)
+UI: `http://localhost:3005`
 
 ---
 
@@ -223,13 +223,13 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 |-------|---------|
 | `:3005` เปิดไม่ได้ | รัน `./scripts/dev-up.sh --with-frontend` หรือ `cd frontend/backoffice-next && npm run dev` |
 | Login ไม่ผ่าน | ลอง `1234` · รัน `./scripts/seed-all.sh` · ตรวจ `backend/auth/.env.harness` (`DATABASE_URI`) |
-| 502 จาก Vite proxy | auth (:3001) หรือ gateway (:3000) ยังไม่รัน |
+| 502 จาก Next.js rewrite | auth (:3001) หรือ gateway (:3000) ยังไม่รัน |
 | 401 ที่ gateway | Token หมดอายุ / `token_gen` revoked — login ใหม่ |
 | 403 ที่ upstream | `GATEWAY_SECRET` ไม่ตรงหรือสั้นกว่า 32 ตัว |
 | `E11000 duplicate key` | username ซ้ำใน Mongo — re-seed หรือลบ user เก่า |
 | `503 /readyz` | Redis ไม่ขึ้น — `cd backend && docker compose ps` |
 
-รายละเอียด: [backend/RUNBOOK.md](./backend/RUNBOOK.md) · [frontend/backoffice/RUNBOOK.md](./frontend/backoffice/RUNBOOK.md)
+รายละเอียด: [backend/RUNBOOK.md](./backend/RUNBOOK.md)
 
 ---
 

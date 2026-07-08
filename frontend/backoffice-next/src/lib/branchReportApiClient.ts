@@ -6,6 +6,7 @@ import type {
   Royalty21Row,
 } from "../types/branchReport";
 import { baseClient as client } from "./baseApiClient";
+import { branchReportUserMessage } from "./branchReportMessages";
 
 const BASE_PATH = "/api/v1/branch-report";
 
@@ -21,7 +22,7 @@ export class BranchReportApiError extends Error {
 
 function unwrapEnvelope<T>(envelope: BranchReportEnvelope<T>): T {
   if (!envelope.success) {
-    throw new BranchReportApiError(envelope.code, envelope.message ?? "Request failed");
+    throw new BranchReportApiError(envelope.code, branchReportUserMessage(envelope.code));
   }
   return envelope.data;
 }
@@ -43,11 +44,11 @@ export async function getRoyalty21Times(
   );
 
   if (!res.data.success) {
-    throw new BranchReportApiError(res.data.code, res.data.message ?? "Request failed");
+    throw new BranchReportApiError(res.data.code, branchReportUserMessage(res.data.code));
   }
 
   if (!res.data.pagination) {
-    throw new BranchReportApiError("INVALID_RESPONSE", "Missing pagination in report response");
+    throw new BranchReportApiError("INVALID_RESPONSE", branchReportUserMessage("INVALID_RESPONSE"));
   }
 
   return { data: res.data.data, pagination: res.data.pagination };

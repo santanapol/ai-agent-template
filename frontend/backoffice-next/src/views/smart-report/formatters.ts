@@ -1,6 +1,12 @@
 import dayjs from "dayjs";
 
-import type { DownloadHistoryStatus, Report, ReportSchedule, ValidationStatus } from "../../types/smartReport";
+import type {
+  DownloadHistoryRecord,
+  DownloadHistoryStatus,
+  Report,
+  ReportSchedule,
+  ValidationStatus,
+} from "../../types/smartReport";
 
 export type ScheduleOption = "manual" | "daily" | "weekly" | "monthly";
 export type ReportStatus = "completed" | "running" | "failed" | "idle";
@@ -90,4 +96,23 @@ export function deriveReportStatusFromHistory(status: DownloadHistoryStatus): Re
   if (status === "running") return "running";
   if (status === "success") return "completed";
   return "failed";
+}
+
+export function indexLatestHistoryByReportId(
+  history: DownloadHistoryRecord[],
+): Map<string, DownloadHistoryRecord> {
+  const latestByReportId = new Map<string, DownloadHistoryRecord>();
+  for (const record of history) {
+    const existing = latestByReportId.get(record.reportId);
+    if (!existing) {
+      latestByReportId.set(record.reportId, record);
+      continue;
+    }
+    const recordTime = record.startedAt ?? record.finishedAt ?? "";
+    const existingTime = existing.startedAt ?? existing.finishedAt ?? "";
+    if (recordTime > existingTime) {
+      latestByReportId.set(record.reportId, record);
+    }
+  }
+  return latestByReportId;
 }

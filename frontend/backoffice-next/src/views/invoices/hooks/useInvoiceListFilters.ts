@@ -49,7 +49,7 @@ export function useInvoiceListFilters() {
 
   useEffect(() => {
     const next = buildInvoiceListSearchParams({
-      searchText,
+      searchText: debouncedSearchText,
       selectedBranchId,
       selectedStatus,
       billingMonth,
@@ -61,7 +61,7 @@ export function useInvoiceListFilters() {
     if (nextQuery !== searchParams.toString()) {
       setSearchParamsRef.current(next, { replace: true });
     }
-  }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, searchParams]);
+  }, [debouncedSearchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, searchParams]);
 
   return {
     searchParams,

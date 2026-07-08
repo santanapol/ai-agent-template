@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { apiErrorMessage } from "./apiError";
 import { BranchReportApiError } from "./branchReportApiClient";
+import { branchReportUserMessage } from "./branchReportMessages";
 
 function makeAxiosError(data: { code?: string; detail?: string; message?: string }) {
   const err = new Error("request failed") as AxiosError;
@@ -53,8 +54,21 @@ describe("apiErrorMessage", () => {
   });
 
   it("returns BranchReportApiError message", () => {
-    const err = new BranchReportApiError("INVALID_PARAM", "Invalid inviteLinkId");
-    expect(apiErrorMessage(err, "fallback")).toBe("Invalid inviteLinkId");
+    const err = new BranchReportApiError(
+      "INVALID_PARAM",
+      "Invalid report parameters. Check your filters and try again.",
+    );
+    expect(apiErrorMessage(err, "fallback")).toBe("Invalid report parameters. Check your filters and try again.");
+  });
+
+  it("maps DUPLICATE to fixed message", () => {
+    const err = makeAxiosError({ code: "DUPLICATE", detail: "duplicate key" });
+    expect(apiErrorMessage(err, "fallback")).toMatch(/staff code or user already exists/i);
+  });
+
+  it("maps STAFF_AUTH_REVOKE_PENDING to fixed message", () => {
+    const err = makeAxiosError({ code: "STAFF_AUTH_REVOKE_PENDING" });
+    expect(apiErrorMessage(err, "fallback")).toMatch(/revocation is still pending/i);
   });
 
   it("returns fallback for unknown errors", () => {

@@ -367,7 +367,7 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 
 Agent ตรวจงาน UI ได้เองโดยไม่ต้องพึ่งมนุษย์ screenshot ให้ — boot frontend ผ่าน harness แล้วขับ browser ด้วย skill
 
-**Production app คือ `frontend/backoffice-next` (Next.js)** — `frontend/backoffice` (Vite) frozen แล้ว (ดู `frontend/backoffice/DEPRECATED.md`) งานใหม่ทั้งหมดทำที่ `backoffice-next`
+**Production app คือ `frontend/backoffice-next` (Next.js)** — legacy `frontend/backoffice` (Vite) ถูกลบออกจาก repo แล้ว (2026-07-08) งานใหม่ทั้งหมดทำที่ `backoffice-next`
 
 ### Boot frontend พร้อม backend
 
@@ -403,7 +403,7 @@ npm run lint && npm test && npm run build   # biome + vitest + next build
 
 Coding standard ของ frontend (stack, folder structure, state, auth, styling) อยู่ที่ [`coding-standard/frontend/backoffice/`](../coding-standard/frontend/backoffice/) — อัปเดตให้ตรงกับ `backoffice-next` แล้ว
 
-**ยังเป็น gap:** ยังไม่มี E2E suite สำหรับ `backoffice-next`; `.github/workflows/ci-check.yml` ยังรัน job `frontend-checks` (legacy Vite) คู่กับ `frontend-next-checks` ระหว่าง migration — ถอด legacy job หลัง Phase 4 ของ migration exec-plan เท่านั้น
+**ยังเป็น gap:** ยังไม่มี E2E suite สำหรับ `backoffice-next` — `frontend-checks` (legacy Vite) ถูกถอดออกจาก `.github/workflows/ci-check.yml` แล้ว (2026-07-08) เหลือแค่ `frontend-next-checks`
 
 ---
 
