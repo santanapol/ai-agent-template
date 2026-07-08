@@ -1,11 +1,11 @@
----
-description: Agent Skills lifecycle — map user intent to skills and slash commands. Use when starting work or choosing a workflow phase.
-alwaysApply: true
----
+# CLAUDE.md
 
-# Agent Skills orchestration
+Auto-loaded by Claude Code at the start of every session in this repo. This is the
+orchestration layer — which skill/command to reach for. **Repo map (start here):** [AGENTS.md](AGENTS.md).
 
-This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for Cursor. **Do not improvise workflows** when a matching skill exists — read the skill's `SKILL.md` and follow it completely.
+This repo vendors [agent-skills](https://github.com/addyosmani/agent-skills). **Do not
+improvise workflows** when a matching skill exists — read the skill's `SKILL.md`
+(`.claude/skills/<name>/SKILL.md`) and follow it completely.
 
 ## Slash commands (manual invoke)
 
@@ -22,10 +22,6 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Release | `/release` | release-notes-and-handoff |
 | GC | `/gc` | code-simplification + golden principles |
 
-## Agent map
-
-Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [harness-engineering/README.md](../../harness-engineering/README.md).
-
 ## Intent → skill (auto)
 
 - Vague ask → `interview-me` or `idea-refine`
@@ -38,7 +34,7 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 - Session start / which skill? → `using-agent-skills`
 - After `/ship` GO → `/release` → `release-notes-and-handoff`
 
-## Subagents (`.cursor/agents/`)
+## Subagents (`.claude/agents/`)
 
 - `code-reviewer`, `security-auditor`, `test-engineer` — invoke directly or via `/ship` fan-out
 - `web-performance-auditor` — invoke via `/webperf`
@@ -46,8 +42,11 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 
 ## References
 
-- Skills: `.cursor/skills/<name>/SKILL.md`
+- Skills: `.claude/skills/<name>/SKILL.md`
 - Checklists: `references/`
 - Command standards: `scripts/agent-skills-standards/`
-- Team guide: `.cursor/USAGE.md`
-- Vendor pin: `.cursor/VENDOR.md`
+- Team guide: `.claude/USAGE.md`
+- Vendor pin: `.claude/VENDOR.md`
+- How we work: [harness-engineering/README.md](harness-engineering/README.md)
+
+Cursor gets the same orchestration via [`.cursor/rules/agent-skills.mdc`](.cursor/rules/agent-skills.mdc).

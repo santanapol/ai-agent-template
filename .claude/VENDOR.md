@@ -1,4 +1,4 @@
-# agent-skills vendor pin
+# agent-skills vendor pin (Claude Code)
 
 | Field | Value |
 |-------|-------|
@@ -9,6 +9,11 @@
 | Commands | 8 + code-build alias |
 | Agents | 4 |
 
+Vendored directly (not installed as a Claude Code plugin) so the repo stays self-contained
+and pinned to one commit — same reasoning as `.cursor/VENDOR.md`. Command bodies have the
+`agent-skills:` plugin-namespace prefix stripped since skills live unprefixed under
+`.claude/skills/<name>/SKILL.md`.
+
 ## Local overrides (not overwritten by sync)
 
 | Path | Role |
@@ -17,10 +22,10 @@
 | `scripts/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
 | `scripts/local-commands/` | Local slash commands (`/gc`, `/release`) |
 | `scripts/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
-| `.cursor/commands/` | Generated — upstream + standards + local |
-| `.cursor/rules/agent-skills.mdc` | Orchestration (regenerated each sync) |
+| `.claude/commands/` | Generated — upstream + standards + local (index: `.claude/COMMANDS.md`, kept outside this dir so it isn't picked up as a phantom command) |
+| `.claude/settings.local.json` | Per-developer permissions — never touched by sync |
 
-See also `.claude/VENDOR.md` for the Claude Code counterpart.
+See also `.cursor/VENDOR.md` for the Cursor counterpart.
 
 ## Sync
 

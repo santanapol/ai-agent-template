@@ -1,10 +1,10 @@
 # Scripts
 
-## Agent-skills (Cursor)
+## Agent-skills (Cursor + Claude Code)
 
 | Script / path | Role |
 |---------------|------|
-| [`sync-agent-skills.sh`](./sync-agent-skills.sh) | Sync [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) into `.cursor/` and `references/` |
+| [`sync-agent-skills.sh`](./sync-agent-skills.sh) | Sync [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) into `.cursor/`, `.claude/`, and `references/` |
 | [`agent-skills-standards/`](./agent-skills-standards/) | **Related Coding Standards** per slash command — **you edit this** |
 
 ```bash
@@ -15,13 +15,15 @@
 ./scripts/sync-agent-skills.sh /path/to/agent-skills
 ```
 
-**What sync overwrites:** `.cursor/skills/` (upstream), `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `references/`, `.cursor/VENDOR.md` — then **restores** `scripts/local-skills/` via `sync-local-agent-skills.sh`
+**What sync overwrites:** `.cursor/skills/`, `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `.cursor/VENDOR.md`, `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, `.claude/VENDOR.md`, `references/` — then **restores** `scripts/local-skills/` into both via `sync-local-agent-skills.sh`
 
-**What sync never touches:** `scripts/agent-skills-standards/`, `scripts/local-skills/`, `scripts/local-commands/`, `coding-standard/`, `backend/`, `frontend/`
+**What sync never touches:** `scripts/agent-skills-standards/`, `scripts/local-skills/`, `scripts/local-commands/`, `.claude/settings.local.json`, `coding-standard/`, `backend/`, `frontend/`
 
-Edit standards in `agent-skills-standards/<command>.md`, then re-run sync to append them to `.cursor/commands/`.
+Both variants are vendored in-repo (not installed via `git clone`/plugin marketplace) so they stay self-contained, pinned to one upstream commit, and work offline/in CI — same reasoning as everything else vendored in this repo. `.claude/commands/*.md` keep upstream's native Claude Code format; the only rewrite is stripping the `agent-skills:` plugin-namespace prefix from skill references, since skills live unprefixed under `.claude/skills/<name>/`. `.cursor/commands/*.md` get the fuller rewrite Cursor needs (no Skill-invocation tool, so it must point at the file to read).
 
-Local-only commands (`/gc`, `/release`) live in `scripts/local-commands/` and are copied on sync.
+Edit standards in `agent-skills-standards/<command>.md`, then re-run sync to append them to both `.cursor/commands/` and `.claude/commands/`.
+
+Local-only commands (`/gc`, `/release`) live in `scripts/local-commands/` and are copied to both on sync.
 
 Local-only skills (`release-notes-and-handoff`) live in `scripts/local-skills/` — install with:
 

@@ -19,6 +19,11 @@
 
 หมายเหตุ: `server-environment/**/credential.md` ถูก gitignore แล้ว ✓
 
+**อัปเดต 2026-07-08 (หลังบันทึกแผนนี้):** เพิ่ม Claude Code support เข้า `sync-agent-skills.sh` — ตอนนี้ script สร้าง `.claude/` (skills/agents/commands, คู่ขนานกับ `.cursor/`) และ root `CLAUDE.md` (generated, auto-load ทุก session — เทียบเท่า `.cursor/rules/agent-skills.mdc`) ผลกระทบต่อแผนนี้:
+- Phase 2 (จัด `scripts/`) ต้องระวังเพิ่ม — ดู sub-note ใน Phase 2
+- Phase 3 บรรทัด "root เหลือ..." ต้องรวม `CLAUDE.md` ด้วย (เป็นไฟล์ตั้งใจ ไม่ใช่ของค้าง)
+- Zone table "Agent tooling" ใน README.md/AGENTS.md ได้อัปเดตให้รวม `.claude/` แล้ว (ทำนอกแผนนี้ ระหว่าง session เดียวกัน) — ไม่ต้องทำซ้ำใน Phase 3
+
 ## Phase 0 — เซฟงานค้าง (ทำก่อนขยับอะไรทั้งนั้น)
 
 - [ ] เพิ่ม `.next/` และ `coding-standard/**/reference/` ลง root `.gitignore`
@@ -42,12 +47,13 @@ scripts/
 └── agent/      sync-agent-skills*, agent-skills-standards/, local-commands/, local-skills/
 ```
 
-- [ ] ย้าย + grep แก้ทุกจุดอ้างอิงใน commit เดียว: `.github/workflows/ci-check.yml`, README, RUNBOOK ทุกชั้น, AGENTS.md, `.cursor/skills`, `docs-lint.mjs`
+- [ ] ย้าย + grep แก้ทุกจุดอ้างอิงใน commit เดียว: `.github/workflows/ci-check.yml`, README, RUNBOOK ทุกชั้น, AGENTS.md, `docs-lint.mjs`, และ generated content ทั้ง `.cursor/` (VENDOR.md, USAGE.md, commands/README.md) และ `.claude/` (VENDOR.md, USAGE.md, COMMANDS.md, root `CLAUDE.md`) ที่ hard-code path `scripts/agent-skills-standards/`, `scripts/local-skills/`, `scripts/local-commands/`
 - [ ] วาง shim ส่งต่อที่ path เดิม (`scripts/dev-up.sh` → `exec scripts/dev/dev-up.sh`) ไว้ 1 release แล้วค่อยถอน
+- [ ] **ระวัง path depth ของ `sync-agent-skills.sh` + `sync-local-agent-skills.sh`:** ทั้งสองไฟล์คำนวณ `ROOT="$(cd "$(dirname "$0")/.." && pwd)"` — สมมติว่าตัวเองอยู่ลึกจาก repo root แค่ 1 ชั้น (`scripts/<file>.sh`) ถ้าย้ายลงไปอยู่ใต้ `scripts/agent/` (ลึกขึ้นอีก 1 ชั้น) ต้องแก้เป็น `.. /..` ไม่งั้น `ROOT` จะเพี้ยนเป็น `scripts/` แทน repo root แล้วเขียนทับผิดที่แบบเงียบ ๆ (กระทบทั้ง `.cursor/` และ `.claude/` เพราะ script เดียวดูแลทั้งคู่แล้ว) — ทดสอบด้วย `./scripts/agent/sync-agent-skills.sh --help` หรือ dry-run หลังย้ายทุกครั้ง
 
 ## Phase 3 — จัดชั้นเอกสาร + ยุบ plans เหลือที่เดียว
 
-- [ ] ย้าย `DEPLOY_DIGITALOCEAN.md` → `docs/deploy/digitalocean.md` — root เหลือ `README`, `AGENTS.md`, `CHANGELOG`, `RUNBOOK`
+- [ ] ย้าย `DEPLOY_DIGITALOCEAN.md` → `docs/deploy/digitalocean.md` — root เหลือ `README`, `AGENTS.md`, `CLAUDE.md` (generated, ต้องอยู่ root — Claude Code auto-load เฉพาะตำแหน่งนี้), `CHANGELOG`, `RUNBOOK`
 - [ ] นิยามลำดับชั้น RUNBOOK ใน `docs/README.md` (root = local dev รวม / `backend/` = deep ops / `server-environment/staging/` = server จริง) แล้วตัดเนื้อหาซ้ำ
 - [ ] **Plans อยู่ใน `docs/` ต่อ (ตัดสินใจแล้ว — ไม่แยกเป็น top-level):** ให้ `docs/exec-plans/` เป็นบ้านเดียวของ plan ทุกระดับ ใช้ front-matter `services: [...]` แยก scope แทนโฟลเดอร์ต่อ service
 - [ ] ย้าย `confidence-map.md` จาก `docs/specs/backend/<service>/plans/` → ไปอยู่ข้าง spec (`docs/specs/backend/<service>/confidence-map.md`) แล้วลบโฟลเดอร์ `plans/` ต่อ service — แก้ `WORKFLOW.md` แต่ละ service + `docs/exec-plans/README.md` บรรทัดที่อ้างถึง

@@ -11,7 +11,7 @@
 | **Execution plans** | `docs/exec-plans/` | Active/completed work, tech debt |
 | **Domain standards** | `coding-standard/` | How to build (org rules) |
 | **Harness** | `harness-engineering/` | Working philosophy — beliefs, skills integration, tooling |
-| **Agent tooling** | `scripts/`, `.cursor/`, `references/` | Skills, commands, checklists |
+| **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Skills, commands, checklists (Cursor + Claude Code) |
 
 ## Document map
 
@@ -27,6 +27,8 @@
 | **Observability** | [docs/observability.md](docs/observability.md) | Logs/metrics query for agents |
 | **Harness (how we work)** | [harness-engineering/README.md](harness-engineering/README.md) | Beliefs, agent-skills ↔ harness, boot/smoke |
 | **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | `/spec` … `/ship`, subagents |
+| **Claude Code SDLC** | [.claude/USAGE.md](.claude/USAGE.md) | Same skills/commands, native Claude Code format |
+| **Claude Code orchestration** | [CLAUDE.md](CLAUDE.md) | Auto-loaded every session — skill/command routing (generated) |
 | **Coding standards** | [coding-standard/](coding-standard/) | Auth, gateway, backend, frontend, testing |
 
 ## Agent workflow (SDLC)
@@ -39,7 +41,7 @@
 
 Garbage collection: `/gc` — scan drift, update quality score, open small fixes.
 
-Do **not** improvise workflows when a matching skill exists — read `.cursor/skills/<name>/SKILL.md` completely.
+Do **not** improvise workflows when a matching skill exists — read `.claude/skills/<name>/SKILL.md` (or `.cursor/skills/<name>/SKILL.md` in Cursor) completely.
 
 ## Boot and verify (local)
 

@@ -30,3 +30,4 @@ Active/completed work and tech debt — see [exec-plans/README.md](./exec-plans/
 - [Root README](../README.md) — repository zones and quick start
 - [scripts/README.md](../scripts/README.md) — sync workflows
 - [.cursor/USAGE.md](../.cursor/USAGE.md) — Cursor agent-skills SDLC
+- [.claude/USAGE.md](../.claude/USAGE.md) — Claude Code agent-skills SDLC
