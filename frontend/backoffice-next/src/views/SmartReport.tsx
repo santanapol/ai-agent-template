@@ -63,6 +63,8 @@ const INITIAL_FORM: ReportFormValues = {
   query: DEFAULT_QUERY_EXAMPLE,
 };
 
+const SMART_REPORT_PAGE_SIZE = 20;
+
 const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
   const { message, notification } = useAppFeedback();
@@ -71,8 +73,16 @@ const SmartReport: React.FC = () => {
 
   const [reports, setReports] = useState<Report[]>([]);
   const [history, setHistory] = useState<DownloadHistoryRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [_refreshToken, setRefreshToken] = useState(0);
+  const [enrichmentHistory, setEnrichmentHistory] = useState<DownloadHistoryRecord[]>([]);
+  const [drawerDownloads, setDrawerDownloads] = useState<DownloadHistoryRecord[]>([]);
+  const [reportsPage, setReportsPage] = useState(1);
+  const [reportsPageSize, setReportsPageSize] = useState(SMART_REPORT_PAGE_SIZE);
+  const [reportsTotal, setReportsTotal] = useState(0);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(SMART_REPORT_PAGE_SIZE);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
 
@@ -132,28 +142,61 @@ const SmartReport: React.FC = () => {
     return { formValues: form, script: form.query };
   }, [form]);
 
-  const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
+  const fetchReports = useCallback(async () => {
+    setReportsLoading(true);
+    try {
+      const [reportsRes, enrichRes] = await Promise.all([
+        listReports({ page: reportsPage, limit: reportsPageSize }),
+        listHistory({ page: 1, limit: 100 }),
+      ]);
+      setReports(reportsRes.data);
+      setReportsTotal(reportsRes.pagination.total);
+      setEnrichmentHistory(enrichRes.data);
+    } catch (err) {
+      message.error(apiErrorMessage(err, "Failed to load reports"));
+    } finally {
+      setReportsLoading(false);
+    }
+  }, [reportsPage, reportsPageSize, message]);
+
+  const fetchHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const historyRes = await listHistory({ page: historyPage, limit: historyPageSize });
+      setHistory(historyRes.data);
+      setHistoryTotal(historyRes.pagination.total);
+    } catch (err) {
+      message.error(apiErrorMessage(err, "Failed to load download history"));
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [historyPage, historyPageSize, message]);
+
+  const refresh = useCallback(() => {
+    void fetchReports();
+    if (activeTab === "history") {
+      void fetchHistory();
+    }
+  }, [activeTab, fetchReports, fetchHistory]);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [reportsRes, historyRes] = await Promise.all([listReports({ limit: 200 }), listHistory({ limit: 200 })]);
-        if (cancelled) return;
-        setReports(reportsRes.data);
-        setHistory(historyRes.data);
-      } catch (err) {
-        if (!cancelled) message.error(apiErrorMessage(err, "Failed to load report data"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [message]);
+    void fetchReports();
+  }, [fetchReports]);
+
+  useEffect(() => {
+    if (activeTab !== "history") return;
+    void fetchHistory();
+  }, [activeTab, fetchHistory]);
+
+  const handleReportsPaginationChange = useCallback((pageIndex: number, pageSize: number) => {
+    setReportsPage(pageIndex + 1);
+    setReportsPageSize(pageSize);
+  }, []);
+
+  const handleHistoryPaginationChange = useCallback((pageIndex: number, pageSize: number) => {
+    setHistoryPage(pageIndex + 1);
+    setHistoryPageSize(pageSize);
+  }, []);
 
   const handleQueryScriptChange = (value: string) => {
     setField("query", value);
@@ -181,7 +224,7 @@ const SmartReport: React.FC = () => {
 
   const reportRows: ReportRow[] = useMemo(() => {
     return reports.map((report) => {
-      const latest = history.find((h) => h.reportId === report.id);
+      const latest = enrichmentHistory.find((h) => h.reportId === report.id);
       if (!latest) {
         return { ...report, derivedStatus: "idle", lastRun: "—" };
       }
@@ -190,7 +233,7 @@ const SmartReport: React.FC = () => {
         latest.status === "running" ? "running" : latest.status === "success" ? "completed" : "failed";
       return { ...report, derivedStatus, lastRun };
     });
-  }, [reports, history]);
+  }, [reports, enrichmentHistory]);
 
   useEffect(() => {
     if (validationErrors.length > 0) {
@@ -461,6 +504,9 @@ const SmartReport: React.FC = () => {
   const handleViewFiles = (reportId: string) => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
+    void listHistory({ page: 1, limit: 100 })
+      .then((res) => setDrawerDownloads(res.data.filter((record) => record.reportId === reportId)))
+      .catch((err) => message.error(apiErrorMessage(err, "Failed to load report history")));
   };
 
   const handleDownload = async (record: DownloadHistoryRecord) => {
@@ -472,7 +518,6 @@ const SmartReport: React.FC = () => {
     }
   };
 
-  const selectedReportDownloads = history.filter((d) => d.reportId === selectedReportId);
   const selectedReportName = reports.find((r) => r.id === selectedReportId)?.name || "";
 
   if (viewMode === "edit") {
@@ -518,13 +563,22 @@ const SmartReport: React.FC = () => {
       onActiveTabChange={setActiveTab}
       reportRows={reportRows}
       history={history}
-      loading={loading}
+      reportsPage={reportsPage}
+      reportsPageSize={reportsPageSize}
+      reportsTotal={reportsTotal}
+      onReportsPaginationChange={handleReportsPaginationChange}
+      historyPage={historyPage}
+      historyPageSize={historyPageSize}
+      historyTotal={historyTotal}
+      onHistoryPaginationChange={handleHistoryPaginationChange}
+      reportsLoading={reportsLoading}
+      historyLoading={historyLoading}
       runningId={runningId}
       loadingEditId={loadingEditId}
       isDrawerOpen={isDrawerOpen}
       onDrawerOpenChange={setIsDrawerOpen}
       selectedReportName={selectedReportName}
-      selectedReportDownloads={selectedReportDownloads}
+      selectedReportDownloads={drawerDownloads}
       onCreateNew={handleCreateNew}
       onRunReport={(report) => void handleRunReport(report)}
       onEditReport={(report) => void handleEditReport(report)}

@@ -10,26 +10,19 @@ import {
   DataTableToolbarActions,
   DataTableView,
   useClientDataTable,
+  useServerDataTable,
 } from "@/components/data-table";
 import { ListPageCard } from "@/components/layout";
-import { InlineFilterSelect, ListPageSearch } from "@/components/list-page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DownloadHistoryRecord, DownloadHistoryStatus, Report } from "@/types/smartReport";
+import type { DownloadHistoryRecord, Report } from "@/types/smartReport";
 
 import { createDownloadHistoryColumns } from "./smart-report/downloadHistoryColumns";
 import type { ReportRow } from "./smart-report/formatters";
 import { createReportColumns } from "./smart-report/report-columns";
-
-const HISTORY_STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
-  { value: "success", label: "Success" },
-  { value: "failed", label: "Failed" },
-  { value: "running", label: "Running" },
-];
 
 export interface SmartReportListProps {
   isMobile: boolean;
@@ -37,7 +30,16 @@ export interface SmartReportListProps {
   onActiveTabChange: (tab: string) => void;
   reportRows: ReportRow[];
   history: DownloadHistoryRecord[];
-  loading: boolean;
+  reportsPage: number;
+  reportsPageSize: number;
+  reportsTotal: number;
+  onReportsPaginationChange: (pageIndex: number, pageSize: number) => void;
+  historyPage: number;
+  historyPageSize: number;
+  historyTotal: number;
+  onHistoryPaginationChange: (pageIndex: number, pageSize: number) => void;
+  reportsLoading: boolean;
+  historyLoading: boolean;
   runningId: string | null;
   loadingEditId: string | null;
   isDrawerOpen: boolean;
@@ -58,7 +60,16 @@ export function SmartReportList({
   onActiveTabChange,
   reportRows,
   history,
-  loading,
+  reportsPage,
+  reportsPageSize,
+  reportsTotal,
+  onReportsPaginationChange,
+  historyPage,
+  historyPageSize,
+  historyTotal,
+  onHistoryPaginationChange,
+  reportsLoading,
+  historyLoading,
   runningId,
   loadingEditId,
   isDrawerOpen,
@@ -72,31 +83,8 @@ export function SmartReportList({
   onDeleteReport,
   onDownload,
 }: SmartReportListProps) {
-  const [reportSearch, setReportSearch] = useState("");
-  const [historySearch, setHistorySearch] = useState("");
-  const [historyStatusFilter, setHistoryStatusFilter] = useState<DownloadHistoryStatus | "all">("all");
   const [reportColumnVisibility, setReportColumnVisibility] = useState<VisibilityState>({});
   const [historyColumnVisibility, setHistoryColumnVisibility] = useState<VisibilityState>({});
-
-  const filteredReportRows = useMemo(() => {
-    const query = reportSearch.trim().toLowerCase();
-    if (!query) return reportRows;
-    return reportRows.filter(
-      (row) => row.name.toLowerCase().includes(query) || (row.description?.toLowerCase().includes(query) ?? false),
-    );
-  }, [reportRows, reportSearch]);
-
-  const filteredHistory = useMemo(() => {
-    const query = historySearch.trim().toLowerCase();
-    return history.filter((record) => {
-      const matchesSearch =
-        !query ||
-        record.reportName.toLowerCase().includes(query) ||
-        (record.fileName?.toLowerCase().includes(query) ?? false);
-      const matchesStatus = historyStatusFilter === "all" || record.status === historyStatusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [history, historySearch, historyStatusFilter]);
 
   const reportColumnHandlers = useMemo(
     () => ({
@@ -120,19 +108,28 @@ export function SmartReportList({
 
   const drawerColumns = useMemo(() => createDownloadHistoryColumns(onDownload), [onDownload]);
 
-  const reportsTable = useClientDataTable({
-    data: filteredReportRows,
+  const reportsPageCount = Math.max(1, Math.ceil(reportsTotal / reportsPageSize));
+  const historyPageCount = Math.max(1, Math.ceil(historyTotal / historyPageSize));
+
+  const reportsTable = useServerDataTable({
+    data: reportRows,
     columns: reportColumns,
-    initialPageSize: 10,
+    pageIndex: reportsPage - 1,
+    pageSize: reportsPageSize,
+    pageCount: reportsPageCount,
+    onPaginationChange: (pagination) => onReportsPaginationChange(pagination.pageIndex, pagination.pageSize),
     columnVisibility: reportColumnVisibility,
     onColumnVisibilityChange: setReportColumnVisibility,
     getRowId: (row) => row.id,
   });
 
-  const historyTable = useClientDataTable({
-    data: filteredHistory,
+  const historyTable = useServerDataTable({
+    data: history,
     columns: historyColumns,
-    initialPageSize: 10,
+    pageIndex: historyPage - 1,
+    pageSize: historyPageSize,
+    pageCount: historyPageCount,
+    onPaginationChange: (pagination) => onHistoryPaginationChange(pagination.pageIndex, pagination.pageSize),
     columnVisibility: historyColumnVisibility,
     onColumnVisibilityChange: setHistoryColumnVisibility,
     getRowId: (row) => row.id,
@@ -152,21 +149,7 @@ export function SmartReportList({
         description="Automated reporting and scheduling system. Fetches data directly via a read-only database replica."
         toolbar={
           <>
-            {activeTab === "reports" ? (
-              <ListPageSearch
-                id="smart-report-search"
-                placeholder="Search reports..."
-                value={reportSearch}
-                onChange={setReportSearch}
-              />
-            ) : (
-              <ListPageSearch
-                id="smart-report-history-search"
-                placeholder="Search history..."
-                value={historySearch}
-                onChange={setHistorySearch}
-              />
-            )}
+            <p className="text-muted-foreground text-sm">Search will be available in a future update.</p>
             {activeTab === "reports" ? (
               <DataTableToolbarActions table={reportsTable} exportFileName="smart-reports" />
             ) : (
@@ -177,17 +160,6 @@ export function SmartReportList({
               Create report
             </Button>
           </>
-        }
-        filterRow={
-          activeTab === "history" ? (
-            <InlineFilterSelect
-              id="smart-report-history-status"
-              prefix="Status:"
-              value={historyStatusFilter}
-              options={HISTORY_STATUS_OPTIONS}
-              onChange={(value) => setHistoryStatusFilter(value as DownloadHistoryStatus | "all")}
-            />
-          ) : null
         }
         headerAddon={
           <Alert>
@@ -212,17 +184,17 @@ export function SmartReportList({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="reports" className="mt-4">
-            <DataTableView table={reportsTable} loading={loading} />
-            <DataTablePagination table={reportsTable} pageSizeOptions={[10, 20, 50]} />
+            <DataTableView table={reportsTable} loading={reportsLoading} />
+            <DataTablePagination table={reportsTable} pageSizeOptions={[10, 20, 50]} total={reportsTotal} />
           </TabsContent>
           <TabsContent value="history" className="mt-4">
             <DataTableView
               table={historyTable}
-              loading={loading}
+              loading={historyLoading}
               emptyTitle="No download history"
               emptyDescription="Run a report to see execution history here."
             />
-            <DataTablePagination table={historyTable} pageSizeOptions={[10, 20, 50]} />
+            <DataTablePagination table={historyTable} pageSizeOptions={[10, 20, 50]} total={historyTotal} />
           </TabsContent>
         </Tabs>
       </ListPageCard>

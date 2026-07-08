@@ -97,7 +97,29 @@ describe("SmartReport (list mode)", () => {
     expect(screen.getByText("Smart Report")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create report/i })).toBeInTheDocument();
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalled();
+      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+    });
+  });
+
+  it("shows search unavailable hint", async () => {
+    renderSmartReport();
+
+    expect(screen.getByText(/search will be available in a future update/i)).toBeInTheDocument();
+  });
+
+  it("lazy-loads paginated history when history tab is selected", async () => {
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+    });
+
+    vi.mocked(listHistory).mockClear();
+    await user.click(screen.getByRole("tab", { name: /download history/i }));
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 20 });
     });
   });
 
@@ -110,7 +132,7 @@ describe("SmartReport (list mode)", () => {
   });
 
   it("shows loading skeleton while fetching", () => {
-    vi.mocked(listReports).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(listReports).mockImplementation(() => new Promise(() => undefined));
 
     renderSmartReport();
     expect(document.querySelector('[aria-busy="true"], .animate-pulse')).toBeTruthy();

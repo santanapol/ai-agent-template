@@ -36,7 +36,7 @@ services: [backoffice, auth, gateway, staff, agent-invoice, smart-report, branch
 - [x] CI job `frontend-next-checks`
 - [x] Staging nginx config documented (`server-environment/staging/RUNBOOK.md` §6 → `:3005`)
 - [ ] Staging nginx applied on server (verify after deploy)
-- [ ] Manual UAT — [`STAGING-UAT-2026-07-08.md`](../../frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md)
+- [ ] Manual UAT — [`STAGING-UAT-2026-07-08.md`](../../../frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md)
 
 ## Phase 6 polish checklist (2026-07-08)
 
@@ -46,7 +46,7 @@ services: [backoffice, auth, gateway, staff, agent-invoice, smart-report, branch
 - [x] 6C — Agent fees + Invoice detail polish
 - [x] 6D — Non-list pages off legacy `PageContainer` double chrome (Permissions, Profile, Editor, Dashboard)
 - [x] 6E — UI-UX-REVIEW §3/§4 update; removed `FiltersContainer` + unused `demo/data-table.tsx`; exec plan front matter
-- [x] 6F — `npm test` (396) + `npm run build`; harness smoke via `ci-all` (Biome lint debt pre-existing)
+- [x] 6F — `npm test` (403) + `npm run build` + Biome lint 0 errors; harness `ci-all` (package CI)
 
 ## Architecture
 
