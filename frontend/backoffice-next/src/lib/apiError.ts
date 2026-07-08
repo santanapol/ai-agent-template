@@ -2,10 +2,20 @@ import axios from "axios";
 
 import { BranchReportApiError } from "./branchReportApiClient";
 
+const KNOWN_CODE_MESSAGES: Record<string, string> = {
+  VERSION_CONFLICT: "This record was modified by another session. Please refresh and try again.",
+  STAFF_AUTH_REVOKE_PENDING: "Profile archived, but session revocation is still pending.",
+  DUPLICATE: "A profile with this staff code or user already exists.",
+  AUTH_PRECONDITION_FAILED: "This record was modified by another session. Please refresh and try again.",
+  AUTH_MENU_NOT_FOUND: "Menu node not found. Refresh the catalog and try again.",
+  AUTH_ROLE_PERMISSION_NOT_FOUND: "Role permission mapping not found.",
+};
+
+const DETAIL_ALLOWED_CODES = new Set(["AUTH_MENU_IN_USE", "AUTH_ROLE_PERMISSION_IN_USE"]);
+
 /**
  * Extracts a user-friendly error message from an Axios error response.
- * Checks for known API `code` values first, then falls back to the response
- * `message` field, and finally to the provided `fallback` string.
+ * Known API codes map to fixed copy; only allowlisted codes may echo server detail.
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof BranchReportApiError) {
@@ -14,42 +24,16 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
 
   if (axios.isAxiosError(err)) {
     const code = err.response?.data?.code as string | undefined;
-    if (code === "VERSION_CONFLICT") {
-      return "This record was modified by another session. Please refresh and try again.";
+    if (code && KNOWN_CODE_MESSAGES[code]) {
+      return KNOWN_CODE_MESSAGES[code];
     }
-    if (code === "STAFF_AUTH_REVOKE_PENDING") {
-      return "Profile archived, but session revocation is still pending.";
-    }
-    if (code === "DUPLICATE") {
-      return "A profile with this staff code or user already exists.";
-    }
-    if (code === "AUTH_PRECONDITION_FAILED") {
-      return "This record was modified by another session. Please refresh and try again.";
-    }
-    if (code === "AUTH_MENU_IN_USE") {
+    if (code && DETAIL_ALLOWED_CODES.has(code)) {
       const detail = err.response?.data?.detail as string | undefined;
-      return detail ?? "This menu key cannot be deleted because it is still in use.";
-    }
-    if (code === "AUTH_ROLE_PERMISSION_IN_USE") {
-      const detail = err.response?.data?.detail as string | undefined;
+      if (code === "AUTH_MENU_IN_USE") {
+        return detail ?? "This menu key cannot be deleted because it is still in use.";
+      }
       return detail ?? "Cannot delete role mapping while active users exist. Confirm to proceed.";
     }
-    if (code === "AUTH_INVALID_REQUEST") {
-      const detail = err.response?.data?.detail as string | undefined;
-      if (detail) return detail;
-    }
-    if (code === "AUTH_MENU_NOT_FOUND") {
-      const detail = err.response?.data?.detail as string | undefined;
-      return detail ?? "Menu node not found. Refresh the catalog and try again.";
-    }
-    if (code === "AUTH_ROLE_PERMISSION_NOT_FOUND") {
-      const detail = err.response?.data?.detail as string | undefined;
-      return detail ?? "Role permission mapping not found.";
-    }
-    const detail = err.response?.data?.detail as string | undefined;
-    if (detail) return detail;
-    const msg = err.response?.data?.message as string | undefined;
-    if (msg) return msg;
   }
   return fallback;
 }

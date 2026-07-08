@@ -211,7 +211,7 @@ describe("MenuCatalogTab", () => {
     await user.click(within(dialog).getByRole("button", { name: /^create$/i }));
 
     await waitFor(() => {
-      expect(mockFeedback.message.error).toHaveBeenCalledWith("Menu validation failed: duplicate key");
+      expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to save menu node");
     });
   });
 

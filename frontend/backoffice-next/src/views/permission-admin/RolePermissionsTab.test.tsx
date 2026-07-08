@@ -360,7 +360,7 @@ describe("RolePermissionsTab", () => {
     await user.click(screen.getByRole("button", { name: /^save$/i }));
 
     await waitFor(() => {
-      expect(mockFeedback.message.error).toHaveBeenCalledWith("Cannot remove permissions:manage from platform_admin");
+      expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to save role permissions");
     });
   });
 });

@@ -39,15 +39,15 @@ describe("apiErrorMessage", () => {
     expect(apiErrorMessage(err, "fallback")).toContain("active users");
   });
 
-  it("maps AUTH_INVALID_REQUEST from detail string", () => {
+  it("does not pass through AUTH_INVALID_REQUEST detail", () => {
     const err = makeAxiosError({
       code: "AUTH_INVALID_REQUEST",
       detail: "Menu validation failed: duplicate key",
     });
-    expect(apiErrorMessage(err, "fallback")).toBe("Menu validation failed: duplicate key");
+    expect(apiErrorMessage(err, "fallback")).toBe("fallback");
   });
 
-  it("still maps VERSION_CONFLICT for staff", () => {
+  it("maps VERSION_CONFLICT for staff", () => {
     const err = makeAxiosError({ code: "VERSION_CONFLICT" });
     expect(apiErrorMessage(err, "fallback")).toMatch(/modified by another session/i);
   });
@@ -61,12 +61,21 @@ describe("apiErrorMessage", () => {
     expect(apiErrorMessage(new Error("nope"), "fallback")).toBe("fallback");
   });
 
-  it("maps AUTH_MENU_NOT_FOUND", () => {
+  it("does not pass through raw detail for unknown codes", () => {
+    const err = makeAxiosError({
+      code: "UNKNOWN_CODE",
+      detail: "<script>alert(1)</script>",
+      message: "raw message",
+    });
+    expect(apiErrorMessage(err, "fallback")).toBe("fallback");
+  });
+
+  it("maps AUTH_MENU_NOT_FOUND to fixed message", () => {
     const err = makeAxiosError({
       code: "AUTH_MENU_NOT_FOUND",
       detail: "Menu key missing",
     });
-    expect(apiErrorMessage(err, "fallback")).toBe("Menu key missing");
+    expect(apiErrorMessage(err, "fallback")).toBe("Menu node not found. Refresh the catalog and try again.");
   });
 
   it("maps AUTH_ROLE_PERMISSION_NOT_FOUND with default message", () => {
