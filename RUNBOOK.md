@@ -11,7 +11,7 @@
 | [frontend/backoffice-next/README.md](./frontend/backoffice-next/README.md) | Next.js rewrites, `.env.local`, UI conventions |
 | [harness-engineering/workflows.md](./harness-engineering/workflows.md) | SDLC, `PORT_OFFSET`, observability, browser testing |
 | [scripts/README.md](./scripts/README.md) | สคริปต์ harness ทั้งหมด |
-| [DEPLOY_DIGITALOCEAN.md](./DEPLOY_DIGITALOCEAN.md) | Production CI/CD |
+| [docs/deploy/digitalocean.md](./docs/deploy/digitalocean.md) | Production CI/CD |
 | [docs/observability.md](./docs/observability.md) | Query logs/metrics |
 
 ---
@@ -30,14 +30,14 @@
 
 | Component | Port | Notes |
 |-----------|:----:|-------|
-| gateway | 3000 | Client / Vite `/api` proxy |
+| gateway | 3000 | Client / Next.js `/api` rewrite target |
 | auth | 3001 | Login, JWKS, refresh |
 | demo-service | 3002 | `/api/v1/me`, `/api/v1/items` |
 | staff | 3101 | Profiles API |
 | agent-invoice | 3102 | Invoices & fees |
 | smart-report | 3103 | Reports |
 | branch-report | 3104 | Branch marketing reports |
-| backoffice (Vite) | 5175 | ต้อง `--with-frontend` หรือรัน manual |
+| backoffice-next | 3005 | ต้อง `--with-frontend` หรือรัน manual |
 | MongoDB | 27017 | `backend/docker compose` |
 | Redis | 6379 | `token_gen` revoke channel |
 
@@ -50,28 +50,28 @@
 ### A. Harness (แนะนำ) — คำสั่งเดียว boot ทั้ง stack
 
 ```bash
-./scripts/dev-up.sh --with-frontend   # backend + UI + seed
-./scripts/smoke.sh                    # healthz + login + gateway
+./scripts/dev/dev-up.sh --with-frontend   # backend + UI + seed
+./scripts/dev/smoke.sh                    # healthz + login + gateway
 ```
 
 | Flag | ผล |
 |------|-----|
-| `--with-frontend` | เปิด backoffice ที่ `:5175` (ไม่ใส่ = backend อย่างเดียว) |
+| `--with-frontend` | เปิด backoffice-next ที่ `:3005` (ไม่ใส่ = backend อย่างเดียว) |
 | `--skip-seed` | boot เร็วขึ้น ไม่ re-seed |
 | `--no-obs` | ไม่ boot VictoriaLogs/Metrics |
 
 ```bash
-./scripts/seed-all.sh      # re-seed โดยไม่ restart services
-./scripts/dev-down.sh      # หยุดทุกอย่าง (รวม frontend + obs)
+./scripts/dev/seed-all.sh      # re-seed โดยไม่ restart services
+./scripts/dev/dev-down.sh      # หยุดทุกอย่าง (รวม frontend + obs)
 ```
 
 #### หยุด stack (teardown)
 
 ```bash
-./scripts/dev-down.sh
+./scripts/dev/dev-down.sh
 ```
 
-หยุด **Node services ทั้งหมด** ที่ harness เปิด: auth, gateway, demo, staff, agent-invoice, smart-report, branch-report, backoffice (Vite), observability (ถ้าเปิด)
+หยุด **Node services ทั้งหมด** ที่ harness เปิด: auth, gateway, demo, staff, agent-invoice, smart-report, branch-report, backoffice-next, observability (ถ้าเปิด)
 
 | หยุด | ยังรันอยู่ |
 |------|-----------|
@@ -89,7 +89,7 @@ cd backend && docker compose down
 rm -rf .dev-run/0
 ```
 
-`PORT_OFFSET` ต้องส่งตอน down ด้วย: `PORT_OFFSET=100 ./scripts/dev-down.sh`
+`PORT_OFFSET` ต้องส่งตอน down ด้วย: `PORT_OFFSET=100 ./scripts/dev/dev-down.sh`
 
 **Manual mode:** `Ctrl+C` ในแต่ละ terminal ที่รัน `npm run dev`
 
@@ -166,18 +166,18 @@ curl -s -X POST http://127.0.0.1:3001/auth/login \
 curl -s http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>"
 ```
 
-หรือใช้ `./scripts/smoke.sh` (คำนวณพอร์ตจาก `PORT_OFFSET` อัตโนมัติ)
+หรือใช้ `./scripts/dev/smoke.sh` (คำนวณพอร์ตจาก `PORT_OFFSET` อัตโนมัติ)
 
 ---
 
 ## ทดสอบก่อน PR / CI
 
 ```bash
-./scripts/ci-all.sh                  # backend CI ×7 + frontend + docs + smoke
-./scripts/ci-all.sh --skip-install   # ข้าม npm ci
-./scripts/ci-all.sh --skip-smoke     # ไม่ boot stack
-./scripts/ci-all.sh --with-frontend  # smoke รวม Vite proxy
-./scripts/ci-all.sh --only backend   # เฉพาะ phase ที่ต้องการ
+./scripts/ci/ci-all.sh                  # backend CI ×7 + frontend + docs + smoke
+./scripts/ci/ci-all.sh --skip-install   # ข้าม npm ci
+./scripts/ci/ci-all.sh --skip-smoke     # ไม่ boot stack
+./scripts/ci/ci-all.sh --with-frontend  # smoke รวม backoffice-next
+./scripts/ci/ci-all.sh --only backend   # เฉพาะ phase ที่ต้องการ
 ```
 
 Per-package: `npm run ci` ใน directory ของ service นั้น
@@ -187,8 +187,8 @@ Per-package: `npm run ci` ใน directory ของ service นั้น
 ## Observability (optional)
 
 ```bash
-./scripts/dev-obs-up.sh    # VictoriaLogs :9428, VictoriaMetrics :8428
-./scripts/dev-obs-down.sh
+./scripts/dev/dev-obs-up.sh    # VictoriaLogs :9428, VictoriaMetrics :8428
+./scripts/dev/dev-obs-down.sh
 ```
 
 ดู query ตัวอย่าง: [docs/observability.md](./docs/observability.md)
@@ -199,19 +199,19 @@ Per-package: `npm run ci` ใน directory ของ service นั้น
 
 ```bash
 # Instance หลัก
-./scripts/dev-up.sh
+./scripts/dev/dev-up.sh
 
 # Worktree อื่น — ไม่ชน port/DB
-PORT_OFFSET=100 ./scripts/dev-up.sh --with-frontend
-PORT_OFFSET=100 ./scripts/smoke.sh
-PORT_OFFSET=100 ./scripts/dev-down.sh
+PORT_OFFSET=100 ./scripts/dev/dev-up.sh --with-frontend
+PORT_OFFSET=100 ./scripts/dev/smoke.sh
+PORT_OFFSET=100 ./scripts/dev/dev-down.sh
 ```
 
 | ทรัพยากร | offset 0 | offset 100 |
 |----------|----------|------------|
 | gateway | :3000 | :3100 |
 | auth | :3001 | :3101 |
-| backoffice | :5175 | :5275 |
+| backoffice-next | :3005 | :3105 |
 | Mongo DB | `auth_login_0` | `auth_login_100` |
 | Runtime | `.dev-run/0/` | `.dev-run/100/` |
 
@@ -221,8 +221,8 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 
 | อาการ | วิธีแก้ |
 |-------|---------|
-| `:3005` เปิดไม่ได้ | รัน `./scripts/dev-up.sh --with-frontend` หรือ `cd frontend/backoffice-next && npm run dev` |
-| Login ไม่ผ่าน | ลอง `1234` · รัน `./scripts/seed-all.sh` · ตรวจ `backend/auth/.env.harness` (`DATABASE_URI`) |
+| `:3005` เปิดไม่ได้ | รัน `./scripts/dev/dev-up.sh --with-frontend` หรือ `cd frontend/backoffice-next && npm run dev` |
+| Login ไม่ผ่าน | ลอง `1234` · รัน `./scripts/dev/seed-all.sh` · ตรวจ `backend/auth/.env.harness` (`DATABASE_URI`) |
 | 502 จาก Next.js rewrite | auth (:3001) หรือ gateway (:3000) ยังไม่รัน |
 | 401 ที่ gateway | Token หมดอายุ / `token_gen` revoked — login ใหม่ |
 | 403 ที่ upstream | `GATEWAY_SECRET` ไม่ตรงหรือสั้นกว่า 32 ตัว |
@@ -237,7 +237,7 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 
 ```bash
 cd frontend/backoffice-next && npm run lint && npm test && npm run build
-./scripts/dev-up.sh --with-frontend && ./scripts/smoke.sh
+./scripts/dev/dev-up.sh --with-frontend && ./scripts/dev/smoke.sh
 ```
 
 Audit checklist: [docs/exec-plans/active/frontend-ui-audit-2026-07.md](./docs/exec-plans/active/frontend-ui-audit-2026-07.md)

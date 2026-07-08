@@ -19,7 +19,7 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 | HTTP contract | `backend/auth/openapi.yaml` |
 | Schema / indexes | `database-erd.md`, `backend/auth/scripts/init-db.mjs` |
 | Acceptance criteria | `auth-spec.md` (AC table) |
-| ฟีเจอร์ใหม่หลายขั้น | plan file ใน `plans/` |
+| ฟีเจอร์ใหม่หลายขั้น | [`docs/exec-plans/active/`](../../../exec-plans/active/) (front-matter `services: [auth]`) |
 
 ## last-verified policy
 
@@ -37,6 +37,6 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 ## Related
 
 - [auth-spec.md](./auth-spec.md)
-- [plans/README.md](./plans/README.md)
+- [docs/exec-plans/README.md](../../../exec-plans/README.md) — plan file convention
 - Skill: `spec-driven-development` — `/spec`
 - Bootstrap: `backend-service-spec-bootstrap` — `/spec-bootstrap-backend`

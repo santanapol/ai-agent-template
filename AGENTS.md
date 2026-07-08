@@ -37,7 +37,7 @@
 /spec → /plan → /build → /test → /review → /code-simplify → /ship → /release
 ```
 
-`/release` — after ship GO: user + deploy notes in `docs/releases/`, confirm, docs-lint, PR ([local skill](scripts/local-skills/release-notes-and-handoff/SKILL.md)). Does not re-run `ci-all` (`/ship` already did).
+`/release` — after ship GO: user + deploy notes in `docs/releases/`, confirm, docs-lint, PR ([local skill](scripts/agent/local-skills/release-notes-and-handoff/SKILL.md)). Does not re-run `ci-all` (`/ship` already did).
 
 Garbage collection: `/gc` — scan drift, update quality score, open small fixes.
 
@@ -47,12 +47,12 @@ Do **not** improvise workflows when a matching skill exists — read `.claude/sk
 
 ```bash
 # One-command stack — boot + seed all services + smoke
-./scripts/dev-up.sh
-./scripts/smoke.sh
-./scripts/dev-down.sh
+./scripts/dev/dev-up.sh
+./scripts/dev/smoke.sh
+./scripts/dev/dev-down.sh
 
 # Re-seed without restarting services
-./scripts/seed-all.sh
+./scripts/dev/seed-all.sh
 ```
 
 Manual fallback: [RUNBOOK.md](RUNBOOK.md).
@@ -61,8 +61,8 @@ Manual fallback: [RUNBOOK.md](RUNBOOK.md).
 
 | Gate | Command |
 |------|---------|
-| All services (local) | `./scripts/ci-all.sh` |
-| Docs structure | `node scripts/docs-lint.mjs` |
+| All services (local) | `./scripts/ci/ci-all.sh` |
+| Docs structure | `node scripts/ci/docs-lint.mjs` |
 | Per-service CI | `npm run ci` in each package directory |
 | GitHub Actions | `.github/workflows/ci-check.yml` |
 

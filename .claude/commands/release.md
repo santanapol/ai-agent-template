@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 Read and follow **release-notes-and-handoff** (`.claude/skills/release-notes-and-handoff/SKILL.md`) **completely**.
 
-Prerequisite: **`/ship` GO**. Do **not** re-run `./scripts/ci-all.sh` here.
+Prerequisite: **`/ship` GO**. Do **not** re-run `./scripts/ci/ci-all.sh` here.
 
 ## Quick flow
 
@@ -17,16 +17,16 @@ Prerequisite: **`/ship` GO**. Do **not** re-run `./scripts/ci-all.sh` here.
       2. docs/releases/YYYY-MM-DD-user.md + *-deploy.md (title includes version)
       3. Update CHANGELOG.md [Unreleased] → [X.Y.Z]
       4. Human confirm
-      5. node scripts/docs-lint.mjs
+      5. node scripts/ci/docs-lint.mjs
       6. commit → push → update PR
       7. merge → deploy → smoke
-      8. ./scripts/release-tag.sh vX.Y.Z   ← after smoke only
+      8. ./scripts/release/release-tag.sh vX.Y.Z   ← after smoke only
 ```
 
 ## Harness gate (this phase only)
 
 ```bash
-node scripts/docs-lint.mjs
+node scripts/ci/docs-lint.mjs
 ```
 
 If code changed after `/ship` → re-run `/ship`, not `/release` alone.

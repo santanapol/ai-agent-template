@@ -44,7 +44,7 @@ improvise workflows** when a matching skill exists — read the skill's `SKILL.m
 
 - Skills: `.claude/skills/<name>/SKILL.md`
 - Checklists: `references/`
-- Command standards: `scripts/agent-skills-standards/`
+- Command standards: `scripts/agent/agent-skills-standards/`
 - Team guide: `.claude/USAGE.md`
 - Vendor pin: `.claude/VENDOR.md`
 - How we work: [harness-engineering/README.md](harness-engineering/README.md)

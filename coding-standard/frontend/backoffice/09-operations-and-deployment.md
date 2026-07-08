@@ -12,4 +12,4 @@
 - Production build: `next build` (script `npm run build`) — มี `build:staging` แยกสำหรับ staging config
 - Dev server รันที่ port คงที่ **3005** (`next dev -p 3005`), production ก็ `next start -p 3005`
 - **[Required]** TypeScript strict mode ต้องผ่านก่อน build เสมอ ห้าม suppress type error
-- Deploy จริงรันผ่าน PM2 (`ecosystem.factory.js` / `ecosystem.staging.config.js`) ไม่ใช่ static export — ดู [backend/RUNBOOK.md](../../../backend/RUNBOOK.md) และ [DEPLOY_DIGITALOCEAN.md](../../../DEPLOY_DIGITALOCEAN.md)
+- Deploy จริงรันผ่าน PM2 (`ecosystem.factory.js` / `ecosystem.staging.config.js`) ไม่ใช่ static export — ดู [backend/RUNBOOK.md](../../../backend/RUNBOOK.md) และ [docs/deploy/digitalocean.md](../../../docs/deploy/digitalocean.md)

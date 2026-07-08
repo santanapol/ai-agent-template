@@ -9,7 +9,7 @@
 | **README.md** (ไฟล์นี้) | ภาพรวม + การผสาน skills ↔ harness |
 | [core-beliefs.md](./core-beliefs.md) | หลักการที่ไม่ควรฝ่าฝืน |
 | [workflows.md](./workflows.md) | ตัวอย่างขั้นตอนการทำงาน — onboarding, SDLC, ทดสอบ, debug, deploy |
-| [openai-com-index-harness-engineering.md](./openai-com-index-harness-engineering.md) | บทความอ้างอิง OpenAI |
+| [openai-com-index-harness-engineering.md](./sources/openai-com-index-harness-engineering.md) | บทความอ้างอิง OpenAI |
 
 สารบัญสั้น: [AGENTS.md](../AGENTS.md) · กฎเชิงกลไก: [golden-principles.md](../docs/golden-principles.md)
 
@@ -73,7 +73,7 @@ flowchart TB
 |------------|---------|------|
 | Skills | วิธีทำแต่ละ phase ครบถ้วน | `.claude/skills/<name>/SKILL.md` (Cursor: `.cursor/skills/`) |
 | Slash commands | จุด invoke ด้วยมือ | `.claude/commands/` (Cursor: `.cursor/commands/`) |
-| Standards map |  skill ต้องอ่าน coding-standard ไหน | `scripts/agent-skills-standards/` |
+| Standards map |  skill ต้องอ่าน coding-standard ไหน | `scripts/agent/agent-skills-standards/` |
 | Subagents | review แบบ fan-out | `.claude/agents/` (Cursor: `.cursor/agents/`) |
 | Checklists | DoD, security, perf | `references/` |
 
@@ -102,7 +102,7 @@ Sync ทั้งสอง target พร้อมกันด้วยสคร�
 | Release | `/release` | release-notes-and-handoff (local) | `docs/releases/`, **docs-lint** (ci-all ทำแล้วที่ `/ship`), PR |
 | GC | `/gc` | code-simplification | QUALITY_SCORE, tech-debt-tracker, docs-lint |
 
-คำสั่ง `/test` และ `/ship` มี **Harness verification** ฝังใน `scripts/agent-skills-standards/` — sync แล้วไปที่ `.claude/commands/` และ `.cursor/commands/`
+คำสั่ง `/test` และ `/ship` มี **Harness verification** ฝังใน `scripts/agent/agent-skills-standards/` — sync แล้วไปที่ `.claude/commands/` และ `.cursor/commands/`
 
 ---
 
@@ -132,8 +132,8 @@ Sync ทั้งสอง target พร้อมกันด้วยสคร�
 
 Harness ที่ `/ship` ต้องรันก่อน GO (นอกเหนือจากรายงาน persona):
 
-1. `./scripts/dev-up.sh && ./scripts/smoke.sh`
-2. `node scripts/docs-lint.mjs`
+1. `./scripts/dev/dev-up.sh && ./scripts/dev/smoke.sh`
+2. `node scripts/ci/docs-lint.mjs`
 3. `npm run ci` ใน package ที่แก้
 
 Persona **ไม่เรียก persona อื่น** — มีแค่ user หรือ `/ship` ที่ orchestrate
@@ -153,13 +153,13 @@ Persona **ไม่เรียก persona อื่น** — มีแค่ us
 ## 7. Sync และ local overrides
 
 ```bash
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 ```
 
 | Sync ทับ | ไม่ทับ (แก้ใน repo นี้) |
 |----------|-------------------------|
-| `.claude/skills`, `commands`, `agents` | `scripts/agent-skills-standards/` |
-| `.cursor/skills`, `commands`, `rules`, `agents` | `scripts/local-commands/` (เช่น `/gc`) |
+| `.claude/skills`, `commands`, `agents` | `scripts/agent/agent-skills-standards/` |
+| `.cursor/skills`, `commands`, `rules`, `agents` | `scripts/agent/local-commands/` (เช่น `/gc`) |
 | `references/`, root `CLAUDE.md` | `harness-engineering/` (แนวคิดนี้) |
 | | `docs/golden-principles.md` |
 
@@ -174,7 +174,7 @@ AGENTS.md                    ← สารบัญ (agent เริ่มที
 harness-engineering/         ← แนวคิดการทำงาน (โฟลเดอร์นี้)
 ├── core-beliefs.md          ← หลักการ
 ├── workflows.md             ← ตัวอย่างขั้นตอนการทำงาน
-└── openai-com-index-…md     ← บทความอ้างอิง
+└── sources/                 ← เอกสารอ้างอิงภายนอก (เช่น openai-com-index-…md)
 docs/specs/                  ← what to build
 docs/exec-plans/             ← multi-PR work
 docs/golden-principles.md    ← mechanical invariants
@@ -192,18 +192,18 @@ CLAUDE.md                    ← orchestration (auto-loaded, generated)
 ### Boot + verify
 
 ```bash
-./scripts/dev-up.sh                  # backend stack
-./scripts/dev-up.sh --with-frontend  # + backoffice (Vite) สำหรับงาน UI
-./scripts/smoke.sh
-./scripts/dev-down.sh
+./scripts/dev/dev-up.sh                  # backend stack
+./scripts/dev/dev-up.sh --with-frontend  # + backoffice (Vite) สำหรับงาน UI
+./scripts/dev/smoke.sh
+./scripts/dev/dev-down.sh
 ```
 
-Worktree แยก: `PORT_OFFSET=100 ./scripts/dev-up.sh` (port + DB + Redis + frontend แยก)
+Worktree แยก: `PORT_OFFSET=100 ./scripts/dev/dev-up.sh` (port + DB + Redis + frontend แยก)
 
 ### Observability
 
 ```bash
-./scripts/dev-obs-up.sh   # หลัง dev-up
+./scripts/dev/dev-obs-up.sh   # หลัง dev-up
 ```
 
 ดู [docs/observability.md](../docs/observability.md)
@@ -212,9 +212,9 @@ Worktree แยก: `PORT_OFFSET=100 ./scripts/dev-up.sh` (port + DB + Redis + f
 
 | Gate | Command |
 |------|---------|
-| Docs | `node scripts/docs-lint.mjs` |
+| Docs | `node scripts/ci/docs-lint.mjs` |
 | Package | `npm run ci` |
-| Smoke | `./scripts/smoke.sh` |
+| Smoke | `./scripts/dev/smoke.sh` |
 
 รายละเอียด script: [scripts/README.md](../scripts/README.md)
 
@@ -230,7 +230,7 @@ Worktree แยก: `PORT_OFFSET=100 ./scripts/dev-up.sh` (port + DB + Redis + f
 | Agent map | [AGENTS.md](../AGENTS.md) |
 | Claude Code SDLC | [.claude/USAGE.md](../.claude/USAGE.md) |
 | Cursor SDLC | [.cursor/USAGE.md](../.cursor/USAGE.md) |
-| บทความ OpenAI | [openai-com-index-harness-engineering.md](./openai-com-index-harness-engineering.md) |
+| บทความ OpenAI | [openai-com-index-harness-engineering.md](./sources/openai-com-index-harness-engineering.md) |
 
 ---
 

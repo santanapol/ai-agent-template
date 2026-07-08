@@ -26,9 +26,9 @@ Services run on host; Vector tails log files from `.dev-run/<offset>/logs/`; Vic
 ## Boot
 
 ```bash
-./scripts/dev-up.sh          # includes observability when compose file exists
+./scripts/dev/dev-up.sh          # includes observability when compose file exists
 # or after dev-up:
-PORT_OFFSET=0 ./scripts/dev-obs-up.sh
+PORT_OFFSET=0 ./scripts/dev/dev-obs-up.sh
 ```
 
 ## Query examples (agent)
@@ -65,7 +65,7 @@ curl -sG 'http://127.0.0.1:9428/select/logsql/query' \
 ## Teardown
 
 ```bash
-./scripts/dev-down.sh
+./scripts/dev/dev-down.sh
 ```
 
 ## Related

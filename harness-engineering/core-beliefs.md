@@ -2,7 +2,7 @@
 
 หลักการที่กำหนด **วิธีทำงาน** ของ repo นี้ — อ่านก่อน implement หรือออกแบบ workflow ใหม่
 
-อ้างอิงแนวคิดจาก [openai-com-index-harness-engineering.md](./openai-com-index-harness-engineering.md)
+อ้างอิงแนวคิดจาก [openai-com-index-harness-engineering.md](./sources/openai-com-index-harness-engineering.md)
 
 ---
 
@@ -44,8 +44,8 @@
 
 Agent ต้อง **เห็นผล** ของงานตัวเองโดยไม่พึ่ง copy-paste จากมนุษย์:
 
-- Boot stack: `./scripts/dev-up.sh`
-- Smoke: `./scripts/smoke.sh`
+- Boot stack: `./scripts/dev/dev-up.sh`
+- Smoke: `./scripts/dev/smoke.sh`
 - CI: `npm run ci`
 - Observability: query logs/metrics (ดู [docs/observability.md](../docs/observability.md))
 

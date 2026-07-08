@@ -13,10 +13,10 @@
 
 | Path | Role |
 |------|------|
-| `scripts/agent-skills-standards/` | Related Coding Standards per command |
-| `scripts/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
-| `scripts/local-commands/` | Local slash commands (`/gc`, `/release`) |
-| `scripts/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
+| `scripts/agent/agent-skills-standards/` | Related Coding Standards per command |
+| `scripts/agent/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
+| `scripts/agent/local-commands/` | Local slash commands (`/gc`, `/release`) |
+| `scripts/agent/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
 | `.cursor/commands/` | Generated — upstream + standards + local |
 | `.cursor/rules/agent-skills.mdc` | Orchestration (regenerated each sync) |
 
@@ -25,5 +25,5 @@ See also `.claude/VENDOR.md` for the Claude Code counterpart.
 ## Sync
 
 ```bash
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 ```

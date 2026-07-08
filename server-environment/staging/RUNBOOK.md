@@ -40,7 +40,7 @@ sudo ufw enable
 
 Private repo — server ต้องมี **Deploy key** (read-only) บน GitHub ก่อน `git clone` / `git pull`
 
-> **อย่าสลับกับ GitHub Actions secret `DO_SSH_KEY`** — คนละกุญแจ (ดู [DEPLOY_DIGITALOCEAN.md](../../DEPLOY_DIGITALOCEAN.md) §2)
+> **อย่าสลับกับ GitHub Actions secret `DO_SSH_KEY`** — คนละกุญแจ (ดู [docs/deploy/digitalocean.md](../../docs/deploy/digitalocean.md) §2)
 
 | ทิศทาง | Private key | Public key | ใช้ทำอะไร |
 |--------|-------------|------------|-----------|
@@ -119,7 +119,7 @@ while IFS= read -r f; do
   mkdir -p "$(dirname "$dest")" && cp "$f" "$dest"
 done < <(find "$BACKUP" -name '.env.staging')
 
-cd /var/www/zero-platform && bash scripts/deploy-staging.sh
+cd /var/www/zero-platform && bash scripts/staging/deploy-staging.sh
 ```
 
 Deploy key ที่ตั้งไว้แล้วบน server นี้: ชื่อ `zero-staging (143.198.213.26)` ใน GitHub Deploy keys
@@ -131,13 +131,13 @@ Deploy key ที่ตั้งไว้แล้วบน server นี้: �
 ```bash
 cd /var/www/zero-platform
 # เครื่องใหม่ทั้งหมด (apt + node + pm2 + nginx + ufw + app):
-bash scripts/setup-staging.sh --host --nginx
+bash scripts/staging/setup-staging.sh --host --nginx
 
 # มี OS packages แล้ว:
-bash scripts/setup-staging.sh --nginx
+bash scripts/staging/setup-staging.sh --nginx
 ```
 
-Re-deploy หลัง `git pull`: `bash scripts/deploy-staging.sh` · smoke จาก local: `SMOKE_PASSWORD='…' bash scripts/smoke-staging.sh`
+Re-deploy หลัง `git pull`: `bash scripts/staging/deploy-staging.sh` · smoke จาก local: `SMOKE_PASSWORD='…' bash scripts/staging/smoke-staging.sh`
 
 ---
 
@@ -160,7 +160,7 @@ Re-deploy หลัง `git pull`: `bash scripts/deploy-staging.sh` · smoke จ
 
 ```bash
 # บน staging server หลัง clone
-bash scripts/staging-init-env.sh   # skip ถ้ามี .env.staging แล้ว
+bash scripts/staging/staging-init-env.sh   # skip ถ้ามี .env.staging แล้ว
 ```
 
 ค่าหลักที่ตั้งไว้แล้ว:
@@ -203,15 +203,15 @@ cd /var/www/zero-platform
 bash backend/scripts/install-all-deps.sh
 
 # Bootstrap MongoDB + example data (uses .env.staging — NOT seed-all.sh)
-bash scripts/staging-seed-all.sh
+bash scripts/staging/staging-seed-all.sh
 
 npm run build:staging --prefix frontend/backoffice-next
 ```
 
 `staging-seed-all.sh` = `init-db` + seed ทุก service (reuse scripts เดิมกับ `--env-file=.env.staging`).  
-ห้ามใช้ `./scripts/seed-all.sh` — มันอ่าน `.env.harness` สำหรับ local dev เท่านั้น
+ห้ามใช้ `./scripts/dev/seed-all.sh` — มันอ่าน `.env.harness` สำหรับ local dev เท่านั้น
 
-ตรวจความสมบูรณ์: `bash scripts/staging-verify-seed.sh` — ดูรายละเอียด users/DB ใน [credential.md](./credential.md)
+ตรวจความสมบูรณ์: `bash scripts/staging/staging-verify-seed.sh` — ดูรายละเอียด users/DB ใน [credential.md](./credential.md)
 
 ---
 
@@ -302,7 +302,7 @@ Login smoke: use credentials from `init:db` / seed (not local `admin/1234` unles
 **บนเครื่อง local (ก่อน push):**
 
 ```bash
-./scripts/ci-all.sh          # หรือ npm run ci ต่อ service
+./scripts/ci/ci-all.sh          # หรือ npm run ci ต่อ service
 git push
 ```
 
@@ -311,15 +311,15 @@ git push
 ```bash
 cd /var/www/zero-platform
 git pull
-bash scripts/deploy-staging.sh
+bash scripts/staging/deploy-staging.sh
 ```
 
 **กลับมาที่ local — smoke ผ่าน HTTPS (แนะนำ):**
 
 ```bash
-SMOKE_PASSWORD='…' bash scripts/smoke-staging.sh
+SMOKE_PASSWORD='…' bash scripts/staging/smoke-staging.sh
 # หรือ
-SMOKE_PASSWORD='…' STAGING_URL=https://zero-staging.168bits.com bash scripts/smoke-staging.sh
+SMOKE_PASSWORD='…' STAGING_URL=https://zero-staging.168bits.com bash scripts/staging/smoke-staging.sh
 ```
 
 รหัสผ่านดูใน [credential.md](./credential.md) (`platform_admin` / `EXAMPLE_*_PASSWORD`)  

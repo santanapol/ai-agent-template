@@ -8,15 +8,15 @@
 
 | วิธีรัน | ไฟล์ที่ process โหลดจริง | สร้างยังไง |
 |---------|--------------------------|------------|
-| **Harness** `./scripts/dev-up.sh` | `backend/<service>/.env.harness` | `dev-up` refresh จาก `.env.harness.example` |
+| **Harness** `./scripts/dev/dev-up.sh` | `backend/<service>/.env.harness` | `dev-up` refresh จาก `.env.harness.example` |
 | **Manual** `npm run dev` | `backend/<service>/.env` | `cp .env.example .env` หรือ auth: `npm run create-env` |
 | **Production** PM2 | `backend/<service>/.env.prod` | `cp .env.example .env.prod` บน prod server |
-| **Staging** PM2 | `backend/<service>/.env.staging` | `./scripts/staging-init-env.sh` แล้วแก้บน staging server |
-| **Tests / CI** | `.env.test` → copy เป็น `.env` | `scripts/ci-all.sh` |
+| **Staging** PM2 | `backend/<service>/.env.staging` | `./scripts/staging/staging-init-env.sh` แล้วแก้บน staging server |
+| **Tests / CI** | `.env.test` → copy เป็น `.env` | `scripts/ci/ci-all.sh` |
 | **Frontend** Next.js | `frontend/backoffice-next/.env.local` | `cp .env.local.example .env.local` |
 | **Frontend staging build** | `frontend/backoffice-next/.env.staging` | `cp .env.staging.example .env.staging` |
 
-ตรวจสถานะ: `node scripts/env-status.mjs`
+ตรวจสถานะ: `node scripts/ci/env-status.mjs`
 
 ---
 

@@ -2,4 +2,4 @@
 
 Entry: [agent-invoice-spec.md](./agent-invoice-spec.md)
 
-แก้ `business-domain.md` / `openapi.yaml` ก่อน implement ฟีเจอร์ใหม่. Plans ใน `plans/`.
+แก้ `business-domain.md` / `openapi.yaml` ก่อน implement ฟีเจอร์ใหม่. Plan ฟีเจอร์ใหม่หลายขั้น → [`docs/exec-plans/active/`](../../../exec-plans/active/) (front-matter `services: [agent-invoice]`).

@@ -19,7 +19,7 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 | Error codes | `backend/service/staff/codes.yaml`, `error-codes.js` |
 | Schema / indexes | `database-erd.md` (this folder), `backend/service/staff/scripts/init-db.mjs` |
 | Acceptance criteria | `staff-spec.md` (AC table) in this folder |
-| ฟีเจอร์ใหม่หลายขั้น | plan file ใน `plans/` |
+| ฟีเจอร์ใหม่หลายขั้น | [`docs/exec-plans/active/`](../../../exec-plans/active/) (front-matter `services: [staff]`) |
 
 ## last-verified policy
 
@@ -45,9 +45,16 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 
 ## Plan file template
 
-เก็บที่ `plans/YYYY-MM-DD-<feature>.md`:
+งานฟีเจอร์ใหม่หลายขั้นเก็บที่ [`docs/exec-plans/active/`](../../../exec-plans/active/) — front-matter `services: [staff]` ตามรูปแบบใน [docs/exec-plans/README.md](../../../exec-plans/README.md):
 
 ```markdown
+---
+status: active
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+services: [staff]
+---
+
 # Plan: <feature name>
 
 ## Objective
@@ -56,6 +63,9 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 ## Spec changes
 - business-domain.md: §X
 - openapi.yaml: <operationId>
+
+## Progress log
+- YYYY-MM-DD: <what happened>
 
 ## Tasks
 1. ...
@@ -77,5 +87,5 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 ## Related
 
 - [staff-spec.md](./staff-spec.md) — central spec + AC-01–AC-10
-- [plans/README.md](./plans/README.md) — plan folder convention
-- Skill: `spec-driven-development` (repo `.cursor/skills/`)
+- [docs/exec-plans/README.md](../../../exec-plans/README.md) — plan file convention
+- Skill: `spec-driven-development` (repo `.claude/skills/` or `.cursor/skills/`)

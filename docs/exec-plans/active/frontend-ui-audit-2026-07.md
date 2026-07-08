@@ -62,7 +62,7 @@ API menu keys verified for all 5 roles via `GET /auth/me/menus`.
 - 2026-07-07: L0 Vitest — 412 tests passed, lint warnings only, build OK
 - 2026-07-07: L1 browser audit — all routes load without JS errors
 - 2026-07-07: L2 role matrix — API menus + browser 403 spot-checks
-- 2026-07-07: Fixed FE-001, FE-002; re-ran tests + `./scripts/ci-all.sh --skip-install --with-frontend --only smoke`
+- 2026-07-07: Fixed FE-001, FE-002; re-ran tests + `./scripts/ci/ci-all.sh --skip-install --with-frontend --only smoke`
 
 ## Decision log
 
@@ -73,5 +73,5 @@ API menu keys verified for all 5 roles via `GET /auth/me/menus`.
 
 ```bash
 cd frontend/backoffice-next && npm run lint && npm test && npm run build
-./scripts/ci-all.sh --skip-install --with-frontend --only smoke
+./scripts/ci/ci-all.sh --skip-install --with-frontend --only smoke
 ```

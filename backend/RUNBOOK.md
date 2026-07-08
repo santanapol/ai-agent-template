@@ -81,10 +81,7 @@ curl -X GET http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_to
 
 ## 5. 🛠️ Troubleshooting (ปัญหาพบบ่อย)
 
-- **`E11000 duplicate key error`:** Username ซ้ำ (ลบข้อมูลเก่า หรือใช้ชื่ออื่น)
-- **`401 Unauthorized` (ที่ Gateway):** JWT หมดอายุ, `token_gen` ถูก Revoke, หรือลืมใส่ `Bearer`
-- **`403 Forbidden` (ที่ Upstream):** `GATEWAY_SECRET` ไม่ตรงกัน หรือสั้นกว่า 32 ตัวอักษร
-- **`503 GET /readyz`:** เชื่อมต่อ Redis ไม่ได้เช็ค `REDIS_URL` หรือ `docker compose ps`
+ตารางเดียวกับ [root RUNBOOK.md § Troubleshooting](../RUNBOOK.md#troubleshooting-สรุป) ครอบคลุมกรณีนี้แล้ว (E11000, 401, 403, 503 readyz) — ไม่ทำซ้ำที่นี่ ดูที่นั่นแทน
 
 ---
 

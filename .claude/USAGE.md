@@ -4,7 +4,7 @@
 
 | Layer | Location |
 |-------|----------|
-| Standards (edit) | `scripts/agent-skills-standards/` |
+| Standards (edit) | `scripts/agent/agent-skills-standards/` |
 | Commands (generated) | `.claude/commands/` |
 | Skills | `.claude/skills/` |
 | Agents | `.claude/agents/` |
@@ -17,7 +17,7 @@ as a Claude Code plugin.
 ## Sync
 
 ```bash
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 ```
 
 ## SDLC

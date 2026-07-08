@@ -24,16 +24,16 @@
 
 ```bash
 # 1. Sync agent-skills → .claude/ + .cursor/ + references/
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 
 # 2. Boot stack ครั้งแรก (จะ npm ci + init DB ให้อัตโนมัติ)
-./scripts/dev-up.sh
+./scripts/dev/dev-up.sh
 
 # 3. ยืนยันว่าทุกอย่างทำงาน
-./scripts/smoke.sh
+./scripts/dev/smoke.sh
 
 # 4. ปิดเมื่อเสร็จ
-./scripts/dev-down.sh
+./scripts/dev/dev-down.sh
 ```
 
 ลำดับการอ่านเอกสาร:
@@ -49,14 +49,14 @@
 
 ## 2. การ sync agent-skills
 
-รันเมื่อ: clone ใหม่, upstream agent-skills อัปเดต, หรือแก้ `scripts/agent-skills-standards/`
+รันเมื่อ: clone ใหม่, upstream agent-skills อัปเดต, หรือแก้ `scripts/agent/agent-skills-standards/`
 
 ```bash
 # ดึงจาก GitHub upstream
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 
 # หรือใช้ local clone (เร็วกว่า ตอน dev standards)
-./scripts/sync-agent-skills.sh /path/to/agent-skills
+./scripts/agent/sync-agent-skills.sh /path/to/agent-skills
 ```
 
 สิ่งที่เกิดขึ้น:
@@ -64,11 +64,11 @@
 | ขั้น | ผลลัพธ์ |
 |------|---------|
 | Sync skills/agents/references | `.claude/skills/`, `.claude/agents/`, `.cursor/skills/`, `.cursor/agents/`, `references/` ถูกทับ |
-| แปลง commands | upstream `.claude/commands/` (ต้นทาง) → `.claude/commands/` (native, strip prefix `agent-skills:`) + `.cursor/commands/` (Cursor format) — ทั้งคู่ต่อท้าย Related Coding Standards จาก `scripts/agent-skills-standards/<cmd>.md` |
-| Copy local commands | `scripts/local-commands/*.md` (เช่น `/gc`) → `.claude/commands/` และ `.cursor/commands/` |
+| แปลง commands | upstream `.claude/commands/` (ต้นทาง) → `.claude/commands/` (native, strip prefix `agent-skills:`) + `.cursor/commands/` (Cursor format) — ทั้งคู่ต่อท้าย Related Coding Standards จาก `scripts/agent/agent-skills-standards/<cmd>.md` |
+| Copy local commands | `scripts/agent/local-commands/*.md` (เช่น `/gc`) → `.claude/commands/` และ `.cursor/commands/` |
 | Regenerate meta | root `CLAUDE.md`, `.cursor/rules/agent-skills.mdc`, `VENDOR.md`, `USAGE.md` (ทั้งสอง target) |
 
-**ต้องการแก้พฤติกรรม command?** แก้ที่ `scripts/agent-skills-standards/<cmd>.md` (source) แล้ว sync ใหม่ — **อย่าแก้** `.claude/commands/` หรือ `.cursor/commands/` ตรง ๆ เพราะถูกทับ
+**ต้องการแก้พฤติกรรม command?** แก้ที่ `scripts/agent/agent-skills-standards/<cmd>.md` (source) แล้ว sync ใหม่ — **อย่าแก้** `.claude/commands/` หรือ `.cursor/commands/` ตรง ๆ เพราะถูกทับ
 
 รายละเอียดว่าทำไม vendor เข้า repo แทนที่จะติดตั้งผ่าน Claude Code plugin marketplace: [`.claude/VENDOR.md`](../.claude/VENDOR.md)
 
@@ -77,16 +77,16 @@
 ## 3. การใช้ scripts ประจำวัน
 
 ```bash
-./scripts/dev-up.sh                  # boot: Mongo/Redis + auth/gateway/demo/staff/agent-invoice/smart-report/branch-report (+ seed-all)
-./scripts/dev-up.sh --skip-seed      # boot without re-seeding (faster restart)
-./scripts/dev-up.sh --with-frontend  # + backoffice (Vite) ที่ :5175+offset
-./scripts/dev-up.sh --no-obs         # boot โดยไม่เอา observability
-./scripts/seed-all.sh                # re-seed example data (uses backend/*/.env.harness)
-./scripts/smoke.sh                   # login + proxy ผ่าน gateway (+ frontend ถ้ารันอยู่)
-./scripts/dev-obs-up.sh              # VictoriaLogs :9428 + VictoriaMetrics :8428
-./scripts/dev-down.sh                # teardown ทั้งหมด (รวม obs + frontend)
-node scripts/docs-lint.mjs           # ตรวจ knowledge base (ลิงก์, spec ครบ, front-matter)
-node scripts/generate-db-schema.mjs   # dump schema จาก Mongo จริง (อ่าน backend/auth/.env.harness)
+./scripts/dev/dev-up.sh                  # boot: Mongo/Redis + auth/gateway/demo/staff/agent-invoice/smart-report/branch-report (+ seed-all)
+./scripts/dev/dev-up.sh --skip-seed      # boot without re-seeding (faster restart)
+./scripts/dev/dev-up.sh --with-frontend  # + backoffice-next ที่ :3005+offset
+./scripts/dev/dev-up.sh --no-obs         # boot โดยไม่เอา observability
+./scripts/dev/seed-all.sh                # re-seed example data (uses backend/*/.env.harness)
+./scripts/dev/smoke.sh                   # login + proxy ผ่าน gateway (+ frontend ถ้ารันอยู่)
+./scripts/dev/dev-obs-up.sh              # VictoriaLogs :9428 + VictoriaMetrics :8428
+./scripts/dev/dev-down.sh                # teardown ทั้งหมด (รวม obs + frontend)
+node scripts/ci/docs-lint.mjs           # ตรวจ knowledge base (ลิงก์, spec ครบ, front-matter)
+node scripts/ci/generate-db-schema.mjs   # dump schema จาก Mongo จริง (อ่าน backend/auth/.env.harness)
 ```
 
 ไฟล์ runtime ต่อ instance อยู่ที่ `.dev-run/<offset>/`:
@@ -97,7 +97,7 @@ node scripts/generate-db-schema.mjs   # dump schema จาก Mongo จริง
 └── pids/         # PID files
 ```
 
-พอร์ต + smoke creds คำนวณใน `scripts/dev-lib.sh` (`dev_load_ports`) จาก `PORT_OFFSET`
+พอร์ต + smoke creds คำนวณใน `scripts/dev/dev-lib.sh` (`dev_load_ports`) จาก `PORT_OFFSET`
 
 ดู log สด: `tail -f .dev-run/0/logs/gateway.log`
 
@@ -145,10 +145,10 @@ Agent implement แบบ incremental: schema → repository → service → rou
 Command นี้มี Harness verification ฝังอยู่:
 
 ```bash
-./scripts/dev-up.sh
-./scripts/smoke.sh
+./scripts/dev/dev-up.sh
+./scripts/dev/smoke.sh
 cd backend/service/agent-invoice && npm run ci
-./scripts/dev-down.sh
+./scripts/dev/dev-down.sh
 ```
 
 ### Phase 5 — Review + Simplify
@@ -172,11 +172,11 @@ Fan-out 3 subagents คู่ขนาน (code-reviewer, security-auditor, test
 /release
 ```
 
-หลัง **GO** เท่านั้น — skill `release-notes-and-handoff` (source: `scripts/local-skills/`):
+หลัง **GO** เท่านั้น — skill `release-notes-and-handoff` (source: `scripts/agent/local-skills/`):
 
 1. เขียน `docs/releases/YYYY-MM-DD-user.md` + `*-deploy.md`
 2. คนยืนยัน
-3. `node scripts/docs-lint.mjs` เท่านั้น — **ไม่รัน ci-all ซ้ำ** (`/ship` รันแล้ว)
+3. `node scripts/ci/docs-lint.mjs` เท่านั้น — **ไม่รัน ci-all ซ้ำ** (`/ship` รันแล้ว)
 4. commit → เปิด PR ใหม่ หรืออัปเดต PR ที่มีอยู่
 5. ย้าย exec plan → `docs/exec-plans/completed/` ถ้ามี
 
@@ -220,7 +220,7 @@ npm run ci        # lint + format + spec gates + test + audit
 ### ระดับ stack (smoke / E2E)
 
 ```bash
-./scripts/dev-up.sh && ./scripts/smoke.sh
+./scripts/dev/dev-up.sh && ./scripts/dev/smoke.sh
 ```
 
 ### ทดสอบทุก service (CI + Smoke)
@@ -228,11 +228,11 @@ npm run ci        # lint + format + spec gates + test + audit
 รัน baseline ก่อนเริ่มงานหรือก่อน PR — mirror GitHub Actions + smoke stack ในคำสั่งเดียว:
 
 ```bash
-./scripts/ci-all.sh                  # ครบ: backend CI ×7 + frontend + docs + smoke
-./scripts/ci-all.sh --skip-install   # ข้าม npm ci (deps พร้อมแล้ว)
-./scripts/ci-all.sh --skip-smoke     # package CI + docs เท่านั้น
-./scripts/ci-all.sh --with-frontend  # smoke รวม backoffice Vite proxy
-./scripts/ci-all.sh --only backend   # รันเฉพาะ phase ที่ต้องการ
+./scripts/ci/ci-all.sh                  # ครบ: backend CI ×7 + frontend + docs + smoke
+./scripts/ci/ci-all.sh --skip-install   # ข้าม npm ci (deps พร้อมแล้ว)
+./scripts/ci/ci-all.sh --skip-smoke     # package CI + docs เท่านั้น
+./scripts/ci/ci-all.sh --with-frontend  # smoke รวม backoffice-next
+./scripts/ci/ci-all.sh --only backend   # รันเฉพาะ phase ที่ต้องการ
 ```
 
 สคริปต์ stash `.env` dev ของทุก service ก่อนรัน (mirror CI) และ restore อัตโนมัติเมื่อจบ — service ที่มี `.env.test` (agent-invoice, smart-report, branch-report) ใช้ test env ระหว่างรัน
@@ -246,7 +246,7 @@ Bruno collections อยู่ที่ `backend/_bruno/` (auth, gateway, staff-
 ### ตรวจด้วย observability
 
 ```bash
-./scripts/dev-obs-up.sh
+./scripts/dev/dev-obs-up.sh
 
 # ยิง request แล้วดู log
 curl -sG 'http://127.0.0.1:9428/select/logsql/query' \
@@ -269,7 +269,7 @@ curl -sG 'http://127.0.0.1:9428/select/logsql/query' \
 1. **Reproduce บน stack จริง**
 
 ```bash
-./scripts/dev-up.sh
+./scripts/dev/dev-up.sh
 curl -s -X POST http://127.0.0.1:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ไทย","password":"x","client_kind":"native"}'
@@ -312,7 +312,7 @@ merge PR → main
 2. Merge PR เข้า `main` — deploy รันเอง
 3. ตรวจหลัง deploy: ดู Actions log + smoke test production ตาม [backend/RUNBOOK.md](../backend/RUNBOOK.md)
 
-Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.env.prod`, deploy keys): [DEPLOY_DIGITALOCEAN.md](../DEPLOY_DIGITALOCEAN.md)
+Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.env.prod`, deploy keys): [docs/deploy/digitalocean.md](../docs/deploy/digitalocean.md)
 
 > `.env.prod` ไม่อยู่ใน Git — สร้างบนเซิร์ฟเวอร์จาก `.env.example` แล้วใส่ secret จริง
 
@@ -326,10 +326,10 @@ Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.e
 /gc
 ```
 
-สิ่งที่เกิดขึ้น (ดู [scripts/local-commands/gc.md](../scripts/local-commands/gc.md)):
+สิ่งที่เกิดขึ้น (ดู [scripts/agent/local-commands/gc.md](../scripts/agent/local-commands/gc.md)):
 
 1. โหลด context: golden-principles, QUALITY_SCORE, tech-debt-tracker, plans ค้าง
-2. `node scripts/docs-lint.mjs` — แก้ error ก่อน
+2. `node scripts/ci/docs-lint.mjs` — แก้ error ก่อน
 3. Scan drift: ESLint warnings (`no-console`, `max-lines`), docs stale เทียบโค้ด, plan ใน `active/` เกิน 30 วัน
 4. แก้เป็น fix เล็ก ๆ — ห้าม refactor ใหญ่ใน `/gc`
 5. อัปเดตเกรดใน QUALITY_SCORE + ปิด/เพิ่มแถว tech-debt-tracker
@@ -343,13 +343,13 @@ Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.e
 
 ```bash
 # Worktree A (main) — offset 0
-./scripts/dev-up.sh
+./scripts/dev/dev-up.sh
 
 # Worktree B (feature branch) — offset 100
 cd ../zero-platform-feature-x
-PORT_OFFSET=100 ./scripts/dev-up.sh
-PORT_OFFSET=100 ./scripts/smoke.sh     # gateway :3100, auth :3101
-PORT_OFFSET=100 ./scripts/dev-down.sh
+PORT_OFFSET=100 ./scripts/dev/dev-up.sh
+PORT_OFFSET=100 ./scripts/dev/smoke.sh     # gateway :3100, auth :3101
+PORT_OFFSET=100 ./scripts/dev/dev-down.sh
 ```
 
 | ทรัพยากร | offset 0 | offset 100 |
@@ -358,7 +358,7 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 | auth | :3001 | :3101 |
 | Mongo DB | `auth_login_0` | `auth_login_100` |
 | Redis DB | 0 | 4 (100 % 16) |
-| backoffice | :5175 | :5275 |
+| backoffice-next | :3005 | :3105 |
 | Runtime dir | `.dev-run/0/` | `.dev-run/100/` |
 
 ---
@@ -372,9 +372,9 @@ Agent ตรวจงาน UI ได้เองโดยไม่ต้อง�
 ### Boot frontend พร้อม backend
 
 ```bash
-./scripts/dev-up.sh --with-frontend
+./scripts/dev/dev-up.sh --with-frontend
 # backoffice-next → http://127.0.0.1:3005 (+ PORT_OFFSET)
-./scripts/smoke.sh   # เพิ่ม check: app shell + login ผ่าน Next.js rewrite
+./scripts/dev/smoke.sh   # เพิ่ม check: app shell + login ผ่าน Next.js rewrite
 ```
 
 Next.js `rewrites()` (`frontend/backoffice-next/next.config.mjs`) proxy ตาม `AUTH_PROXY_TARGET`/`GATEWAY_PROXY_TARGET` ต่อ offset:
@@ -415,7 +415,7 @@ Coding standard ของ frontend (stack, folder structure, state, auth, stylin
 | หลักการ | [core-beliefs.md](./core-beliefs.md) |
 | กฎเชิงกลไก | [golden-principles.md](../docs/golden-principles.md) |
 | Slash commands ทั้งหมด | [.claude/USAGE.md](../.claude/USAGE.md) (Cursor: [.cursor/USAGE.md](../.cursor/USAGE.md)) |
-| Deploy ละเอียด | [DEPLOY_DIGITALOCEAN.md](../DEPLOY_DIGITALOCEAN.md) |
+| Deploy ละเอียด | [docs/deploy/digitalocean.md](../docs/deploy/digitalocean.md) |
 
 ---
 

@@ -18,10 +18,10 @@ and pinned to one commit — same reasoning as `.cursor/VENDOR.md`. Command bodi
 
 | Path | Role |
 |------|------|
-| `scripts/agent-skills-standards/` | Related Coding Standards per command |
-| `scripts/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
-| `scripts/local-commands/` | Local slash commands (`/gc`, `/release`) |
-| `scripts/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
+| `scripts/agent/agent-skills-standards/` | Related Coding Standards per command |
+| `scripts/agent/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
+| `scripts/agent/local-commands/` | Local slash commands (`/gc`, `/release`) |
+| `scripts/agent/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
 | `.claude/commands/` | Generated — upstream + standards + local (index: `.claude/COMMANDS.md`, kept outside this dir so it isn't picked up as a phantom command) |
 | `.claude/settings.local.json` | Per-developer permissions — never touched by sync |
 
@@ -30,5 +30,5 @@ See also `.cursor/VENDOR.md` for the Cursor counterpart.
 ## Sync
 
 ```bash
-./scripts/sync-agent-skills.sh
+./scripts/agent/sync-agent-skills.sh
 ```

@@ -23,17 +23,17 @@ For browser-related issues, also invoke browser-testing-with-devtools to verify 
 **Baseline before work (all services):**
 
 ```bash
-./scripts/ci-all.sh                  # backend CI ×7 + frontend + docs + smoke
-./scripts/ci-all.sh --skip-install   # faster when deps are already installed
+./scripts/ci/ci-all.sh                  # backend CI ×7 + frontend + docs + smoke
+./scripts/ci/ci-all.sh --skip-install   # faster when deps are already installed
 ```
 
 When verifying a specific change (affected packages only):
 
 1. Run package CI: `npm run ci` in affected service directories
-2. Boot isolated stack: `./scripts/dev-up.sh` (supports `PORT_OFFSET` for worktree isolation)
-3. Run smoke: `./scripts/smoke.sh`
-4. Optional: regenerate schema snapshot — `node scripts/generate-db-schema.mjs`
-5. Teardown: `./scripts/dev-down.sh`
+2. Boot isolated stack: `./scripts/dev/dev-up.sh` (supports `PORT_OFFSET` for worktree isolation)
+3. Run smoke: `./scripts/dev/smoke.sh`
+4. Optional: regenerate schema snapshot — `node scripts/ci/generate-db-schema.mjs`
+5. Teardown: `./scripts/dev/dev-down.sh`
 
 See [AGENTS.md](../../AGENTS.md) and [docs/observability.md](../../docs/observability.md).
 

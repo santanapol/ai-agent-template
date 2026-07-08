@@ -18,7 +18,7 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 | Edge HTTP contract | `backend/gateway/openapi.yaml` |
 | Problem codes | `coding-standard/gateway/codes.yaml` |
 | AC | `gateway-spec.md` |
-| ฟีเจอร์ใหม่ | `plans/YYYY-MM-DD-<slug>.md` |
+| ฟีเจอร์ใหม่ | [`docs/exec-plans/active/`](../../../exec-plans/active/) (front-matter `services: [gateway]`) |
 
 ## PR checklist
 

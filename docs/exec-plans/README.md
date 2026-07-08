@@ -10,7 +10,7 @@ First-class artifacts for multi-step work. Agents should check `active/` before 
 | `completed/` | Finished plans (archive) |
 | `tech-debt-tracker.md` | Known debt with priority and owner |
 
-Service-scoped feature plans remain under `docs/specs/backend/<service>/plans/` (see each service `WORKFLOW.md`).
+Service-scoped feature plans also live here (not in a per-service `plans/` folder) — use the `services: [...]` front-matter field to scope a plan to one or more services. Each service `WORKFLOW.md` links back here.
 
 ## Plan file format
 

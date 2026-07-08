@@ -18,8 +18,8 @@ Harness garbage collection for zero-platform. Run periodically or after large ag
 ## Phase 2 — Mechanical checks
 
 ```bash
-node scripts/docs-lint.mjs
-./scripts/check-coding-standard-sync.sh   # optional — vendored vs upstream
+node scripts/ci/docs-lint.mjs
+./scripts/ci/check-coding-standard-sync.sh   # optional — vendored vs upstream
 ```
 
 Fix any errors before continuing.
@@ -33,7 +33,7 @@ Fix any errors before continuing.
 | `spec:consistency` coverage | When touching OpenAPI, add integration test per service `TESTING.md`; re-audit quarterly (see `docs/exec-plans/completed/SPEC-CODE-AUDIT-2026-07-03.md`) |
 | Active plans > 30 days | Update or move to `completed/` |
 | Tech debt tracker | Add/close rows with PR links |
-| `coding-standard/` drift | Run `scripts/check-coding-standard-sync.sh` after upstream edits |
+| `coding-standard/` drift | Run `scripts/ci/check-coding-standard-sync.sh` after upstream edits |
 
 Prefer **small fixes** (one concern per change). Do not large refactors in `/gc`.
 

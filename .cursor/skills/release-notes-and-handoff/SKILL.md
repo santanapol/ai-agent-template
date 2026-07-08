@@ -9,7 +9,7 @@ description: After ship GO — version bump, CHANGELOG, user/deploy release note
 
 Bridge between **quality gate** (`/ship` GO) and **merge/deploy**. Produce versioned handoff: platform semver in [CHANGELOG.md](../../../CHANGELOG.md), two notes in `docs/releases/`, then **git tag after deploy smoke passes**.
 
-**Does not replace** `shipping-and-launch` or production deploy. **Does not** auto-deploy. **Does not re-run** `./scripts/ci-all.sh`.
+**Does not replace** `shipping-and-launch` or production deploy. **Does not** auto-deploy. **Does not re-run** `./scripts/ci/ci-all.sh`.
 
 ## Version model (this monorepo)
 
@@ -104,7 +104,7 @@ If a pair exists for that date, use `-2` suffix on the stem.
 ...
 
 ## Rollback
-git fetch origin && git reset --hard <previous-tag-or-sha> && bash scripts/deploy-staging.sh
+git fetch origin && git reset --hard <previous-tag-or-sha> && bash scripts/staging/deploy-staging.sh
 ```
 
 ### CHANGELOG.md
@@ -141,7 +141,7 @@ Present version choice, CHANGELOG entry, and both notes. **Stop** until approved
 ## Phase 5 — Docs validation
 
 ```bash
-node scripts/docs-lint.mjs
+node scripts/ci/docs-lint.mjs
 ```
 
 Do **not** re-run `ci-all` unless code changed after `/ship`.
@@ -177,14 +177,14 @@ Platform release after ship GO. Tag v0.4.0 after staging smoke passes.
 
 ## Test plan
 - [x] `/ship` (ci-all + smoke)
-- [x] `node scripts/docs-lint.mjs`
+- [x] `node scripts/ci/docs-lint.mjs`
 ```
 
 ---
 
 ## Phase 7 — Post-deploy git tag (after smoke)
 
-**Only after** target environment smoke passes (e.g. `bash scripts/smoke-staging.sh`). Do not tag at PR open time.
+**Only after** target environment smoke passes (e.g. `bash scripts/staging/smoke-staging.sh`). Do not tag at PR open time.
 
 ```bash
 # On merge commit (main)
@@ -200,7 +200,7 @@ git push origin v0.4.0
 Or use helper:
 
 ```bash
-./scripts/release-tag.sh v0.4.0
+./scripts/release/release-tag.sh v0.4.0
 ```
 
 Update deploy note with final `Merge commit:` SHA if not filled earlier.
@@ -226,7 +226,7 @@ Move `docs/exec-plans/active/<plan>.md` → `completed/`, `status: completed`.
 - [ ] Platform version chosen (semver) and in both release notes + CHANGELOG
 - [ ] Per-service bumps only where API changed
 - [ ] Human approved
-- [ ] `node scripts/docs-lint.mjs` pass
+- [ ] `node scripts/ci/docs-lint.mjs` pass
 - [ ] PR links version + notes + CHANGELOG
 - [ ] After deploy smoke: `git tag vX.Y.Z` pushed
 - [ ] Deploy note records merge SHA and previous tag

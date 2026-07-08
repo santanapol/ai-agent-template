@@ -48,6 +48,6 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 
 - Skills: `.cursor/skills/<name>/SKILL.md`
 - Checklists: `references/`
-- Command standards: `scripts/agent-skills-standards/`
+- Command standards: `scripts/agent/agent-skills-standards/`
 - Team guide: `.cursor/USAGE.md`
 - Vendor pin: `.cursor/VENDOR.md`

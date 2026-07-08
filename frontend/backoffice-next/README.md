@@ -31,4 +31,4 @@ Staging: `.env.staging.example` → `.env.staging` on server.
 - PM2 app: `zero-backoffice` (`next start -p 3005`)
 - nginx: proxy `/` → `:3005`; `/api`, `/auth` → gateway `:3000`
 
-See [docs/exec-plans/active/backoffice-next-migration.md](../../docs/exec-plans/active/backoffice-next-migration.md).
+See [docs/exec-plans/completed/backoffice-next-migration.md](../../docs/exec-plans/completed/backoffice-next-migration.md) and [docs/specs/frontend/backoffice-next/backoffice-next-spec.md](../../docs/specs/frontend/backoffice-next/backoffice-next-spec.md).

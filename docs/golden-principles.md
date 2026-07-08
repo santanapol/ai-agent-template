@@ -59,5 +59,5 @@ See [backend/ARCHITECTURE.md](../backend/ARCHITECTURE.md).
 | Response envelope | spectral `spec:lint` |
 | Structured logging | ESLint custom rule (`warn` → `error` per service) |
 | Shared utilities | Code review, `/gc` scans |
-| Repository knowledge | `scripts/docs-lint.mjs` in CI |
+| Repository knowledge | `scripts/ci/docs-lint.mjs` in CI |
 | Spec alignment | `npm run ci` per package |

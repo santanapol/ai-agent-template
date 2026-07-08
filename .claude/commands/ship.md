@@ -75,10 +75,10 @@ Produce a single output:
 
 Before GO decision on backend/full-stack changes:
 
-1. `./scripts/dev-up.sh && ./scripts/smoke.sh` — stack must pass smoke
-2. `node scripts/docs-lint.mjs` — knowledge base valid
+1. `./scripts/dev/dev-up.sh && ./scripts/dev/smoke.sh` — stack must pass smoke
+2. `node scripts/ci/docs-lint.mjs` — knowledge base valid
 3. `npm run ci` in all touched packages
-4. `./scripts/dev-down.sh` after verification
+4. `./scripts/dev/dev-down.sh` after verification
 
 See [AGENTS.md](../../AGENTS.md).
 
