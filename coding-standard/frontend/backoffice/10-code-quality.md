@@ -1,16 +1,18 @@
 # 10. Code Quality & Formatting
 
-มาตรฐานการรักษาความสะอาดและรูปแบบโค้ด (Linting)
+## 🧹 Biome (lint + format ในเครื่องมือเดียว)
 
-## 🧹 ESLint & TypeScript
-- บังคับใช้ **ESLint v10+** ร่วมกับ `typescript-eslint` 
-- เปิดใช้งานปลั๊กอิน `eslint-plugin-react-hooks` เพื่อบังคับกฎเรื่อง Dependency Array ของ `useEffect` และ `useCallback` อย่างเคร่งครัด
-- **TypeScript Rules:** บังคับให้ใช้ Strict Mode เสมอ ห้ามใช้ `any` พร่ำเพรื่อเด็ดขาด ให้ระบุ Type ให้ชัดเจน (เช่น `DecodedUser`, `TokenResponse`)
+- ใช้ **Biome** (`@biomejs/biome`) แทน ESLint + Prettier — คำสั่งหลัก: `npm run lint` (`biome lint`), `npm run check` / `npm run check:fix` (`biome check`)
+- Import ต้องเรียงตามกลุ่มที่ตั้งค่าไว้ใน `biome.json` (`assist.actions.source.organizeImports`): `react` → `next/**` → package ภายนอก → alias (`@/...`) → relative path — ให้ `biome check --write` จัดให้ ไม่เรียงมือ
+- **TypeScript rules:** Strict mode เสมอ ห้ามใช้ `any` พร่ำเพรื่อ ระบุ type ให้ชัดเจน (เช่น `DecodedUser`, `TokenResponse`)
 
-## 🎨 Prettier
-- ใช้สำหรับการทำ Formatting ให้ตรงกันทั้งทีม
-- กฎพื้นฐาน:
-  - ใช้ Single Quote (`'`) แทน Double Quote (`"`) ในโค้ด TS/JS
-  - ใช้ Double Quote (`"`) ปกติสำหรับการส่ง Props ใน JSX (`<div className="flex" />`)
-  - เว้นวรรคแบบ 2 เคาะ (2 Spaces)
-  - จบบรรทัดด้วย Semicolon เสมอ (`;`)
+## 🎨 Format
+
+- Double quotes, semicolon, 2-space indent, บรรทัดยาวไม่เกิน 120 ตัวอักษร — ตามค่า default ของ Biome ใน `biome.json` (ไม่ตั้งซ้ำมือ)
+- `eslint-disable`/`biome-ignore` ต้องมี comment อธิบายเหตุผลกำกับเสมอ (ดูตัวอย่างใน `AuthContext.tsx` — `biome-ignore lint/correctness/useExhaustiveDependencies`)
+
+## 🧪 Testing
+
+- `vitest run` (script `npm test`) — environment `jsdom`, setup ที่ `src/setupTests.ts` (mock `next/navigation`, `matchMedia`, `ResizeObserver`)
+- Test อยู่ co-located กับไฟล์ที่ทดสอบ (`Foo.tsx` คู่กับ `Foo.test.tsx`) ไม่แยกโฟลเดอร์ `__tests__/`
+- Mock ที่ใช้ร่วมหลาย suite (เช่น font mock, geist mock) เก็บที่ `src/test/mocks/`

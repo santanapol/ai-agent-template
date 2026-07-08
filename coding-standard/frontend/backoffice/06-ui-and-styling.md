@@ -1,30 +1,27 @@
 # 6. UI & Styling
 
-เรามีสอง UI stack ตาม variant ของแอป — เลือกแนวทางที่ตรงกับโปรเจกต์ที่กำลังแก้ไข
+**`frontend/backoffice-next`** ใช้ **shadcn/ui** (style `radix-nova`) + **Tailwind CSS v4** เป็น UI stack เดียว — ไม่มี Ant Design
 
----
+## 🎨 Design tokens (CSS variables)
 
-## shadcn variant (`backoffice/`)
+- โทนสีและ radius อยู่ที่ `src/app/globals.css` ผ่าน CSS custom properties — กำหนดค่าใน `components.json` (`baseColor: neutral`, `cssVariables: true`)
+- Theme presets เพิ่มเติมอยู่ที่ `src/styles/presets/`
+- Light/dark mode + preset สลับผ่าน `next-themes` ร่วมกับ Zustand preferences store (`src/stores/preferences/`) และ `ThemeSwitcher` (`src/components/layout/ThemeSwitcher.tsx`) — **ไม่มี** React Context `ThemeProvider` แยกต่างหาก
 
-แอป backoffice ใช้ **shadcn/ui** + **Tailwind CSS v4** เป็น UI stack หลัก
+## 📐 Layout & spacing
 
-แอปที่ migrate แล้วใช้ **shadcn/ui** + **Tailwind CSS v4** แทน Ant Design โดยอ้างอิง scaffold จาก `live-demo-shadcn/`
+- ใช้ Tailwind utility classes และ layout template ใน `src/components/layout/` (`PageContainer`, `DetailContainer`, `AppSidebar`, `SiteHeader`, …)
+- ตาราง: `@tanstack/react-table` ผ่าน `src/components/data-table/`
+- Toast/feedback: `sonner`
+- Confirm dialogs: `AlertDialog` (shadcn) แทน imperative confirm
 
-### 🎨 Design Tokens (CSS variables)
-- โทนสีและ radius อยู่ที่ `src/index.css` ผ่าน CSS custom properties (`--primary`, `--destructive`, `--radius`, …)
-- TypeScript mirror สำหรับค่าที่ใช้ใน logic อยู่ที่ `src/theme/tokens.ts`
-- ธีม light/dark สลับผ่าน `ThemeProvider` (`src/components/theme-provider.tsx`) — **ไม่ใช้** AntD `ConfigProvider`
+## 🧩 เพิ่ม component
 
-### 📐 Layout & spacing
-- ใช้ Tailwind utility classes และ layout templates ใน `src/components/layout/` (`PageContainer`, `DetailContainer`, …)
-- ตาราง: `@tanstack/react-table` ผ่าน `src/components/data-table.tsx`
-- Toast / feedback: `sonner` ผ่าน `useAppFeedback` และ `<Toaster />` ใน `App.tsx`
-- Confirm dialogs: `useConfirmDialog` + `AlertDialog` (แทน `Modal.confirm`)
+- ใช้ shadcn CLI ตาม `components.json` — ดูสิ่งที่มีอยู่ใน `src/components/ui/` ก่อนเพิ่มใหม่เสมอ
+- **ห้ามแก้ไข** ไฟล์ใน `src/components/ui/` โดยตรง — ปรับแต่งที่จุดใช้งานผ่าน `cn()`/variants/tokens
+- ใช้ Tailwind default palette named color เท่านั้นถ้า token ที่มีอยู่ไม่พอ — **ห้าม** ใช้ hex/RGB/HSL/OKLCH ตรงๆ
 
-### 🧩 เพิ่ม component
-- ใช้ shadcn CLI / MCP ตาม `components.json`
-- Component พื้นฐานอยู่ใน `src/components/ui/` — ห้าม duplicate ไปที่ path อื่น
+## 🚫 ห้าม
 
-### 🚫 ห้าม
-- **[Forbidden]** นำ `antd` กลับเข้า `backoffice` ยกเว้น migration ชั่วคราวที่มี ticket ชัดเจน
-- **[Forbidden]** override shadcn ด้วย global CSS แทนการใช้ variants / `cn()` / tokens
+- **[Forbidden]** เพิ่ม `antd` หรือ CSS-in-JS library อื่นเข้า `backoffice-next`
+- **[Forbidden]** override shadcn ด้วย global CSS แทนการใช้ variants/`cn()`/tokens
