@@ -25,7 +25,7 @@ Back-office admin UI for zero-platform — login, staff/permission management, a
 
 ## Related
 
-- Migration plan (active — staging UAT gate still open): [`docs/exec-plans/active/backoffice-next-migration.md`](../../../exec-plans/active/backoffice-next-migration.md)
+- Migration plan (completed — v0.5.0; post-deploy UAT still open): [`docs/exec-plans/completed/backoffice-next-migration.md`](../../../exec-plans/completed/backoffice-next-migration.md)
 - UI/UX review: [`frontend/backoffice-next/docs/UI-UX-REVIEW-2026-07-07.md`](../../../../frontend/backoffice-next/docs/UI-UX-REVIEW-2026-07-07.md)
 - Staging UAT: [`frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md`](../../../../frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md)
 
