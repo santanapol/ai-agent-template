@@ -30,7 +30,7 @@
 
 ## 1. MongoDB database design (normative)
 
-**ชื่อ database:** กำหนดผ่าน `DATABASE_URI` (เช่น `auth_login` — ชื่อจริงขึ้นกับ env)
+**ชื่อ database:** กำหนดผ่าน `DATABASE_URI` (เช่น `zero-platform` — harness ใช้ `zero-platform_0`)
 
 **ชื่อ collection:** ใช้ prefix **`auth_*`** (`auth_users`, `auth_refresh_tokens`, `auth_credential_throttle`, `auth_audit_events`) — ค่าจริงอยู่ที่ [`mongo-collections.js`](../../src/config/mongo-collections.js)
 
@@ -183,11 +183,11 @@ erDiagram
 
 **แนะนำ:** รัน **`npm run init:db`** แทน copy-paste ด้วยมือ (สร้าง index + seed admin)
 
-**Placeholder:** database **`auth_login`**
+**Placeholder:** database **`zero-platform`**
 
 ```javascript
 // mongosh — สร้าง indexes ตาม section 2 (เทียบ init-db.mjs)
-use auth_login;
+use zero-platform;
 
 db.auth_users.createIndex(
   { username: 1 },

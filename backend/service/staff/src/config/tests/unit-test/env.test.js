@@ -20,8 +20,8 @@ describe("readEnv production secret guards", () => {
         withEnv(
           {
             NODE_ENV: "production",
-            MONGODB_URI: "mongodb://127.0.0.1:27017/auth_login",
-            DB_NAME: "auth_login",
+            MONGODB_URI: "mongodb://127.0.0.1:27017/zero-platform",
+            DB_NAME: "zero-platform",
             AUTH_INTERNAL_BASE_URL: "http://127.0.0.1:3001",
             AUTH_INTERNAL_SERVICE_SECRET:
               "prod-internal-secret-that-is-long-enough",
@@ -39,8 +39,8 @@ describe("readEnv production secret guards", () => {
         withEnv(
           {
             NODE_ENV: "production",
-            MONGODB_URI: "mongodb://127.0.0.1:27017/auth_login",
-            DB_NAME: "auth_login",
+            MONGODB_URI: "mongodb://127.0.0.1:27017/zero-platform",
+            DB_NAME: "zero-platform",
             AUTH_INTERNAL_BASE_URL: "http://127.0.0.1:3001",
             AUTH_INTERNAL_SERVICE_SECRET: "too-short",
             GATEWAY_SHARED_SECRET: "prod-gateway-secret-that-is-long-enough",

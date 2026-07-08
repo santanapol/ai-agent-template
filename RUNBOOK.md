@@ -41,7 +41,7 @@
 | MongoDB | 27017 | `backend/docker compose` (`127.0.0.1`, project `zero-platform`) |
 | Redis | 6379 | `token_gen` revoke channel |
 
-`PORT_OFFSET=N` เลื่อนทุกพอร์ต + แยก Mongo DB (`auth_login_N`) — ดู [§ หลาย worktree](#หลาย-worktree-port_offset)
+`PORT_OFFSET=N` เลื่อนทุกพอร์ต + แยก Mongo DB (`zero-platform_N`) — ดู [§ หลาย worktree](#หลาย-worktree-port_offset)
 
 ---
 
@@ -216,7 +216,7 @@ PORT_OFFSET=100 ./scripts/dev/dev-down.sh
 | gateway | :3000 | :3100 |
 | auth | :3001 | :3101 |
 | backoffice-next | :3005 | :3105 |
-| Mongo DB | `auth_login_0` | `auth_login_100` |
+| Mongo DB | `zero-platform_0` | `zero-platform_100` |
 | Runtime | `.dev-run/0/` | `.dev-run/100/` |
 
 ---

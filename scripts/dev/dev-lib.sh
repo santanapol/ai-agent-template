@@ -124,7 +124,7 @@ dev_load_ports() {
   export BRANCH_REPORT_PORT=$((3104 + PORT_OFFSET))
   export BACKOFFICE_PORT=$((3005 + PORT_OFFSET))
   export REDIS_DB=$((PORT_OFFSET % 16))
-  export MONGO_AUTH_DB="auth_login_${PORT_OFFSET}"
+  export MONGO_PLATFORM_DB="zero-platform_${PORT_OFFSET}"
   export GATEWAY_SECRET="${GATEWAY_SECRET:-test-gateway-secret-32-chars-minimum!!}"
   export AUTH_URL="http://127.0.0.1:${AUTH_PORT}"
   export GATEWAY_URL="http://127.0.0.1:${GATEWAY_PORT}"

@@ -48,7 +48,7 @@ source-scan: 2026-07-03 — src 62/62 files
 
 - **Runtime:** Node.js v24 (ESM)
 - **Framework:** Fastify v5
-- **Database:** MongoDB v7 (native driver, shared DB กับ auth `auth_login`)
+- **Database:** MongoDB v7 (native driver, shared DB กับ auth `zero-platform`)
 - **HTTP Client:** Axios (เรียก Auth internal API)
 - **Metrics:** prom-client v15
 - **Security:** @fastify/helmet, @fastify/rate-limit
@@ -133,7 +133,7 @@ Prefix ผ่าน gateway: `/api/v1/staff`
   - `gateway` — trusted headers (user identity, role, branch, permissions)
   - `auth` — internal API สำหรับ provision, revoke sessions, set password, assign role
   - `@zero-platform/roles` — role-based access control
-  - MongoDB — shared DB กับ auth (`auth_login`)
+  - MongoDB — shared DB กับ auth (`zero-platform`)
 - **ถูกเรียกใช้โดย (Consumed by):**
   - `backoffice` — UI สำหรับจัดการพนักงาน + My Profile
 
@@ -149,8 +149,8 @@ Prefix ผ่าน gateway: `/api/v1/staff`
 |------|----------|------------|
 | `PORT` | Port ที่ server listen | `3101` |
 | `GATEWAY_SHARED_SECRET` | Shared secret สำหรับ verify gateway headers | — (ต้องตั้ง) |
-| `MONGODB_URI` | MongoDB connection string (shared กับ auth) | `mongodb://127.0.0.1:27017/auth_login` |
-| `DB_NAME` | Database name | `auth_login` |
+| `MONGODB_URI` | MongoDB connection string (shared กับ auth) | `mongodb://127.0.0.1:27017/zero-platform` |
+| `DB_NAME` | Database name | `zero-platform` |
 | `AUTH_INTERNAL_BASE_URL` | Auth service base URL | `http://127.0.0.1:3001` |
 | `AUTH_INTERNAL_SERVICE_SECRET` | Secret สำหรับเรียก Auth internal API | — (ต้องตั้ง) |
 | `STAFF_PROVISION_DEFAULT_ROLE` | Default role ตอน provision | `staff` |

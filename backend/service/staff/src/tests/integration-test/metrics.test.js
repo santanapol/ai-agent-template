@@ -49,7 +49,7 @@ if (!RUN) {
       appName: "staff-service",
       nodeEnv: "test",
       port: 3101,
-      dbName: initialEnv.dbName || "auth_login",
+      dbName: initialEnv.dbName || "zero-platform",
       mongoUri: initialEnv.mongoUri || "",
       gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
       authInternalServiceSecret: "internal-secret",

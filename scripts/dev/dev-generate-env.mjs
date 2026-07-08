@@ -35,9 +35,12 @@ const ports = {
 };
 
 const redisDb = offset % 16;
-const mongoAuthDb = `auth_login_${offset}`;
-const mongoDemoDb = `demo_service_${offset}`;
-const mongoSmartReportDb = `smart_report_${offset}`;
+/** Harness DB = production name + _${PORT_OFFSET} (see backend/ENV.md) */
+const harnessDb = (prodName) => `${prodName}_${offset}`;
+const mongoPlatformDb = harnessDb('zero-platform');
+const mongoDemoDb = harnessDb('demo-service');
+const mongoSmartReportDb = harnessDb('zero-smart-report');
+const mongoAgentInvoiceDb = harnessDb('zero-agent-invoice');
 const gatewaySecret = 'test-gateway-secret-32-chars-minimum!!';
 const harnessDevPassword = '1234';
 
@@ -155,7 +158,7 @@ const authBase = `http://127.0.0.1:${ports.auth}`;
 const authPath = patchHarnessExample('auth', {
   PORT: ports.auth,
   LOG_PRETTY: 'false',
-  DATABASE_URI: `mongodb://127.0.0.1:27017/${mongoAuthDb}`,
+  DATABASE_URI: `mongodb://127.0.0.1:27017/${mongoPlatformDb}`,
   REDIS_URL: `redis://127.0.0.1:6379/${redisDb}`,
   JWKS_PUBLIC_URL: `${authBase}/.well-known/jwks.json`,
   JWT_ISSUER: authBase,
@@ -200,8 +203,8 @@ patchHarnessExample('service/demo-service', {
 patchHarnessExample('service/staff', {
   PORT: ports.staff,
   GATEWAY_SHARED_SECRET: gatewaySecret,
-  MONGODB_URI: `mongodb://127.0.0.1:27017/${mongoAuthDb}`,
-  DB_NAME: mongoAuthDb,
+  MONGODB_URI: `mongodb://127.0.0.1:27017/${mongoPlatformDb}`,
+  DB_NAME: mongoPlatformDb,
   AUTH_INTERNAL_BASE_URL: authBase,
   AUTH_INTERNAL_SERVICE_SECRET: 'staff-internal-secret-32-chars-min!!',
   METRICS_ENABLED: 'true',
@@ -211,9 +214,9 @@ patchHarnessExample('service/staff', {
 patchHarnessExample('service/agent-invoice', {
   PORT: ports.invoice,
   GATEWAY_SHARED_SECRET: gatewaySecret,
-  MONGODB_URI: `mongodb://127.0.0.1:27017/${mongoAuthDb}`,
-  DB_NAME: `agent_invoice_${offset}`,
-  MONGODB_URI_READ: `mongodb://127.0.0.1:27017/${mongoAuthDb}`,
+  MONGODB_URI: `mongodb://127.0.0.1:27017/${mongoAgentInvoiceDb}`,
+  DB_NAME: mongoAgentInvoiceDb,
+  MONGODB_URI_READ: `mongodb://127.0.0.1:27017/${mongoAgentInvoiceDb}`,
   MONGODB_DB_BRANCH: 'gpp_777ww',
   MONGODB_DB_ORG_DATA: 'gpp_org_data',
 }, 'agent-invoice');

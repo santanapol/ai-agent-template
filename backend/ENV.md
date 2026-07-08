@@ -83,6 +83,26 @@ Staging bootstrap: [server-environment/staging/RUNBOOK.md](../server-environment
 
 ---
 
+## Database name mapping
+
+**กฎ:** Staging และ Production ใช้ชื่อเดียวกัน · Harness = ชื่อ production + `_` + `PORT_OFFSET`
+
+| Service | Harness (`PORT_OFFSET=0`) | Staging / Production |
+|---------|---------------------------|---------------------|
+| auth | `zero-platform_0` | `zero-platform` |
+| staff | `zero-platform_0` (shared กับ auth) | `zero-platform` |
+| agent-invoice | `zero-agent-invoice_0` | `zero-agent-invoice` |
+| smart-report | `zero-smart-report_0` | `zero-smart-report` |
+| demo-service | `demo-service_0` | `demo-service` |
+
+หมายเหตุ:
+
+- Service ที่มี `DB_NAME`: path ใน `MONGODB_URI` ต้องตรงกับ `DB_NAME` เสมอ
+- `PORT_OFFSET=100` → `zero-platform_100`, `zero-agent-invoice_100`, …
+- Read DB (`gpp_777ww`, `gpp_org_data`) เหมือนกันทุก environment
+
+---
+
 ## อย่าทำ
 
 - ❌ commit `.env`, `.env.harness`, `.env.prod`, `.env.staging`

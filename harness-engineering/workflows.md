@@ -356,7 +356,7 @@ PORT_OFFSET=100 ./scripts/dev/dev-down.sh
 |----------|----------|------------|
 | gateway | :3000 | :3100 |
 | auth | :3001 | :3101 |
-| Mongo DB | `auth_login_0` | `auth_login_100` |
+| Mongo DB | `zero-platform_0` | `zero-platform_100` |
 | Redis DB | 0 | 4 (100 % 16) |
 | backoffice-next | :3005 | :3105 |
 | Runtime dir | `.dev-run/0/` | `.dev-run/100/` |

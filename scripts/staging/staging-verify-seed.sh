@@ -42,17 +42,17 @@ echo "Staging seed verification"
 echo ""
 
 echo "==> Local MongoDB (write)"
-auth_users="$(count_in_db auth_login auth_users)"
-check "auth_login.auth_users ≥ 5" "$([[ "${auth_users:-0}" -ge 5 ]] && echo ok || echo "count=${auth_users:-0}")"
+auth_users="$(count_in_db zero-platform auth_users)"
+check "zero-platform.auth_users ≥ 5" "$([[ "${auth_users:-0}" -ge 5 ]] && echo ok || echo "count=${auth_users:-0}")"
 
-menus="$(count_in_db auth_login auth_menus)"
-check "auth_login.auth_menus > 0" "$([[ "${menus:-0}" -gt 0 ]] && echo ok || echo "count=${menus:-0}")"
+menus="$(count_in_db zero-platform auth_menus)"
+check "zero-platform.auth_menus > 0" "$([[ "${menus:-0}" -gt 0 ]] && echo ok || echo "count=${menus:-0}")"
 
-roles="$(count_in_db auth_login auth_role_permissions)"
-check "auth_login.auth_role_permissions > 0" "$([[ "${roles:-0}" -gt 0 ]] && echo ok || echo "count=${roles:-0}")"
+roles="$(count_in_db zero-platform auth_role_permissions)"
+check "zero-platform.auth_role_permissions > 0" "$([[ "${roles:-0}" -gt 0 ]] && echo ok || echo "count=${roles:-0}")"
 
-hq="$(mgo auth_login --eval 'db.getCollectionNames().includes("platform_branches") ? db.platform_branches.countDocuments({ branch_code: "ZERO" }) : 0' 2>/dev/null | tail -1)"
-check "auth_login.platform_branches (Zero HQ)" "$([[ "${hq:-0}" -ge 1 ]] && echo ok || echo "count=${hq:-0}")"
+hq="$(mgo zero-platform --eval 'db.getCollectionNames().includes("platform_branches") ? db.platform_branches.countDocuments({ branch_code: "ZERO" }) : 0' 2>/dev/null | tail -1)"
+check "zero-platform.platform_branches (Zero HQ)" "$([[ "${hq:-0}" -ge 1 ]] && echo ok || echo "count=${hq:-0}")"
 
 staff_profiles="$(count_in_db zero-platform staff_profiles)"
 check "zero-platform.staff_profiles ≥ 3" "$([[ "${staff_profiles:-0}" -ge 3 ]] && echo ok || echo "count=${staff_profiles:-0}")"
@@ -63,7 +63,7 @@ check "zero-agent-invoice.agents > 0" "$([[ "${agents:-0}" -gt 0 ]] && echo ok |
 reports="$(count_in_db zero-smart-report reports)"
 check "zero-smart-report.reports > 0" "$([[ "${reports:-0}" -gt 0 ]] && echo ok || echo "count=${reports:-0}")"
 
-auth_idx="$(index_count auth_login auth_users)"
+auth_idx="$(index_count zero-platform auth_users)"
 check "auth_users indexes" "$([[ "${auth_idx:-0}" -ge 2 ]] && echo ok || echo "indexes=${auth_idx:-0}")"
 
 staff_idx="$(index_count zero-platform staff_profiles)"

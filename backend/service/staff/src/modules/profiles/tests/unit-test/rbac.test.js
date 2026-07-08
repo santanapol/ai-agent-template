@@ -27,7 +27,7 @@ const baseEnv = {
   appName: "staff-service",
   nodeEnv: "test",
   port: 3101,
-  dbName: "auth_login",
+  dbName: "zero-platform",
   mongoUri: "",
   gatewaySharedSecret: "test-gateway-secret-32-chars-minimum!!",
   authInternalBaseUrl: "http://127.0.0.1:3001",
