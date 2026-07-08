@@ -44,7 +44,15 @@ export function DataTablePagination<TData>({
         <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
           <div className="flex items-center gap-2">
             <span>Rows per page</span>
-            <Select value={rowsPerPage} onValueChange={(value) => value && table.setPageSize(Number(value))}>
+            <Select
+              value={rowsPerPage}
+              onValueChange={(value) => {
+                if (!value) return;
+                const nextSize = Number(value);
+                if (nextSize === table.getState().pagination.pageSize) return;
+                table.setPageSize(nextSize);
+              }}
+            >
               <SelectTrigger size="sm" className="w-20" aria-label="Rows per page">
                 <SelectValue placeholder={rowsPerPage} />
               </SelectTrigger>

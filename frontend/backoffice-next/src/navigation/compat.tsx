@@ -246,6 +246,10 @@ export function useSearchParams(): [
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const params = useSearchParamsNext();
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   const searchParams = useMemo(() => {
     if (ctx) {
@@ -264,21 +268,27 @@ export function useSearchParams(): [
         activeCtx.setSearchParams(next, options);
         return;
       }
+      const currentParams = paramsRef.current;
+      const currentPathname = pathnameRef.current;
       const resolved =
         typeof next === "function"
-          ? next(new URLSearchParams(params.toString()))
+          ? next(new URLSearchParams(currentParams.toString()))
           : next instanceof URLSearchParams
             ? next
             : new URLSearchParams(next);
       const query = resolved.toString();
-      const href = query ? `${pathname}?${query}` : pathname;
+      const href = query ? `${currentPathname}?${query}` : currentPathname;
+      const currentHref = currentParams.toString()
+        ? `${currentPathname}?${currentParams.toString()}`
+        : currentPathname;
+      if (href === currentHref) return;
       if (options?.replace) {
         router.replace(href);
       } else {
         router.push(href);
       }
     },
-    [params, pathname, router],
+    [router],
   );
 
   return [searchParams, setSearchParams];

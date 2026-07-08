@@ -70,7 +70,7 @@ describe("useInvoices", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.invoices).toEqual(mockItems);
     expect(result.current.total).toBe(1);
-    expect(api.listInvoices).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(api.listInvoices).toHaveBeenCalledWith({ page: 1, limit: 10 }, undefined);
   });
 
   it("should fetch invoice detail and transactions", async () => {

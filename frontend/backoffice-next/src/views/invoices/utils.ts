@@ -84,3 +84,27 @@ export function buildInvoiceListQuery(input: {
   }
   return params;
 }
+
+/** Stable URLSearchParams for invoice list filters (used for URL sync + list navigation state). */
+export function buildInvoiceListSearchParams(input: {
+  searchText: string;
+  selectedBranchId?: string;
+  selectedStatus?: string;
+  billingMonth: string;
+  page: number;
+  pageSize: number;
+}): URLSearchParams {
+  const params = new URLSearchParams();
+  const trimmed = input.searchText.trim();
+  if (trimmed) params.set("search", trimmed);
+  params.set("branch_id", input.selectedBranchId ?? INVOICE_BRANCH_FILTER_ALL);
+  if (input.selectedStatus) params.set("status", input.selectedStatus);
+  if (input.billingMonth) params.set("billing_month", input.billingMonth);
+  if (input.page !== 1) params.set("page", String(input.page));
+  if (input.pageSize !== 10) params.set("page_size", String(input.pageSize));
+  return params;
+}
+
+export function serializeInvoiceListQuery(params: ListInvoicesParams): string {
+  return JSON.stringify(params);
+}

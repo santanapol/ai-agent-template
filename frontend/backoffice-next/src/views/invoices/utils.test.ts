@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInvoiceListQuery } from "./utils";
+import { buildInvoiceListQuery, buildInvoiceListSearchParams } from "./utils";
 
 describe("buildInvoiceListQuery", () => {
   const base = {
@@ -40,5 +40,17 @@ describe("buildInvoiceListQuery", () => {
     const result = buildInvoiceListQuery({ ...base, ivNo: "   " });
     expect(result.iv_no).toBeUndefined();
     expect(result.page).toBe(2);
+  });
+});
+
+describe("buildInvoiceListSearchParams", () => {
+  it("serializes default invoice list URL filters", () => {
+    const params = buildInvoiceListSearchParams({
+      searchText: "",
+      billingMonth: "2026-07",
+      page: 1,
+      pageSize: 10,
+    });
+    expect(params.toString()).toBe("branch_id=all&billing_month=2026-07");
   });
 });

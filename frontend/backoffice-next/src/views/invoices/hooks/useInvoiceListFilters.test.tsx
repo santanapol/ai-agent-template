@@ -49,4 +49,14 @@ describe("useInvoiceListFilters", () => {
 
     expect(result.current.searchParams.get("branch_id")).toBe("all");
   });
+
+  it("does not replace URL when filters already match search params", () => {
+    renderHook(() => useInvoiceListFilters(), {
+      wrapper: ({ children }) => (
+        <MemoryRouter initialEntries={["/invoices?branch_id=all&billing_month=2026-07"]}>{children}</MemoryRouter>
+      ),
+    });
+
+    expect(testNavigation.replace).not.toHaveBeenCalled();
+  });
 });

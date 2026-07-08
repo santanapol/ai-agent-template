@@ -60,7 +60,7 @@ import { useInvoiceListFilters } from "./hooks/useInvoiceListFilters";
 import { useInvoices } from "./hooks/useInvoices";
 import { createInvoiceColumns } from "./invoice-columns";
 import type { BulkStatusAction } from "./status/types";
-import { buildInvoiceListQuery, INVOICE_BRANCH_FILTER_ALL } from "./utils";
+import { buildInvoiceListQuery, buildInvoiceListSearchParams, INVOICE_BRANCH_FILTER_ALL, serializeInvoiceListQuery } from "./utils";
 
 interface ExportJobState {
   ids: string[];
@@ -111,7 +111,6 @@ const InvoiceList: React.FC = () => {
   } = useInvoices();
 
   const {
-    searchParams,
     searchText,
     setSearchText,
     selectedBranchId,
@@ -155,9 +154,13 @@ const InvoiceList: React.FC = () => {
     [page, pageSize, debouncedSearchText, selectedBranchId, billingMonth, selectedStatus],
   );
 
+  const invoiceListQueryKey = useMemo(() => serializeInvoiceListQuery(invoiceListQuery), [invoiceListQuery]);
+
   useEffect(() => {
-    void fetchInvoices(invoiceListQuery);
-  }, [fetchInvoices, invoiceListQuery]);
+    const controller = new AbortController();
+    void fetchInvoices(invoiceListQuery, controller.signal);
+    return () => controller.abort();
+  }, [fetchInvoices, invoiceListQueryKey, invoiceListQuery]);
 
   useEffect(() => {
     void fetchInvoiceAgents();
@@ -251,7 +254,18 @@ const InvoiceList: React.FC = () => {
     [branchOptions],
   );
 
-  const listSearch = searchParams.toString();
+  const listSearch = useMemo(
+    () =>
+      buildInvoiceListSearchParams({
+        searchText,
+        selectedBranchId,
+        selectedStatus,
+        billingMonth,
+        page,
+        pageSize,
+      }).toString(),
+    [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize],
+  );
 
   const columnHandlers = useMemo(
     () => ({
@@ -276,8 +290,9 @@ const InvoiceList: React.FC = () => {
     pageSize,
     pageCount,
     onPaginationChange: ({ pageIndex, pageSize: nextPageSize }) => {
-      setPage(pageIndex + 1);
-      setPageSize(nextPageSize);
+      const nextPage = pageIndex + 1;
+      setPage((prev) => (prev === nextPage ? prev : nextPage));
+      setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
     },
     columnVisibility,
     onColumnVisibilityChange: setColumnVisibility,

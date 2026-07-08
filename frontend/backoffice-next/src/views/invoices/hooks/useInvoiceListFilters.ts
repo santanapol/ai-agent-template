@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import dayjs from "dayjs";
 
 import { useSearchParams } from "@/navigation/compat";
 import type { InvoiceStatus } from "@/types/invoice";
 
-import { INVOICE_BRANCH_FILTER_ALL } from "../utils";
+import { buildInvoiceListSearchParams, INVOICE_BRANCH_FILTER_ALL } from "../utils";
 
 export function useInvoiceListFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const setSearchParamsRef = useRef(setSearchParams);
+  setSearchParamsRef.current = setSearchParams;
+
   const [searchText, setSearchText] = useState(searchParams.get("search") ?? "");
   const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(() => {
     const fromUrl = searchParams.get("branch_id");
@@ -31,15 +34,17 @@ export function useInvoiceListFilters() {
   }, [searchText]);
 
   useEffect(() => {
-    const params: Record<string, string> = {};
-    if (searchText) params.search = searchText;
-    params.branch_id = selectedBranchId ?? INVOICE_BRANCH_FILTER_ALL;
-    if (selectedStatus) params.status = selectedStatus;
-    if (billingMonth) params.billing_month = billingMonth;
-    if (page !== 1) params.page = String(page);
-    if (pageSize !== 10) params.page_size = String(pageSize);
-    setSearchParams(params, { replace: true });
-  }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, setSearchParams]);
+    const next = buildInvoiceListSearchParams({
+      searchText,
+      selectedBranchId,
+      selectedStatus,
+      billingMonth,
+      page,
+      pageSize,
+    });
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParamsRef.current(next, { replace: true });
+  }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, searchParams]);
 
   return {
     searchParams,

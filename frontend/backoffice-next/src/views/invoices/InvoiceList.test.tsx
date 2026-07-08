@@ -159,4 +159,18 @@ describe("InvoiceList page", () => {
       expect(fetchInvoices).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("calls fetchInvoices once for branch_id=all and billing_month URL", async () => {
+    renderWithRouter(<InvoiceList />, {
+      initialEntries: ["/invoices?branch_id=all&billing_month=2026-07"],
+    });
+
+    await waitFor(() => {
+      expect(fetchInvoices).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(fetchInvoices).toHaveBeenCalledTimes(1);
+    }, { timeout: 500 });
+  });
 });

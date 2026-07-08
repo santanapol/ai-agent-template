@@ -47,10 +47,11 @@ export function useInvoices() {
     }
   }, []);
 
-  const fetchInvoices = useCallback(async (params: ListInvoicesParams = {}) => {
+  const fetchInvoices = useCallback(async (params: ListInvoicesParams = {}, signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const res = await api.listInvoices(params);
+      const res = await api.listInvoices(params, signal);
+      if (signal?.aborted) return;
       const items = res.data?.items ?? [];
       const pagination = res.data?.pagination;
       setInvoices(items);
@@ -58,9 +59,10 @@ export function useInvoices() {
       if (pagination?.page) setPage(pagination.page);
       if (pagination?.limit) setLimit(pagination.limit);
     } catch (error: unknown) {
+      if (signal?.aborted) return;
       toast.error(apiErrorMessage(error, "Failed to fetch invoices"));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
