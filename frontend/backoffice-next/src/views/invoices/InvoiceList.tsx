@@ -45,9 +45,11 @@ import {
   canSwitchActiveBranch,
   formatBranchOptionLabel,
   getCachedInvoiceAgentBranches,
+  isZeroHqBranchId,
   resolveInvoiceFilterBranches,
   setCachedInvoiceAgentBranches,
 } from "@/lib/branchOptions";
+import { resolveBranchScopedEmptyState } from "@/lib/branchScopedEmptyState";
 import { formatDisplayMonth } from "@/lib/dateUtils";
 import { fieldErrorIds } from "@/lib/fieldA11y";
 import { useNavigate } from "@/navigation/compat";
@@ -322,6 +324,17 @@ const InvoiceList: React.FC = () => {
     [branchOptions],
   );
 
+  const branchScopedEmpty = useMemo(
+    () =>
+      resolveBranchScopedEmptyState({
+        activeBranchId: user?.branch_id,
+        resource: "invoices",
+        scopedToActiveBranch: !canFilterBranch,
+        hasNoRows: !loading && total === 0,
+      }),
+    [user?.branch_id, canFilterBranch, loading, total],
+  );
+
   const billingMonthOptions = useMemo(() => buildBillingMonthOptions(billingMonth), [billingMonth]);
 
   return (
@@ -387,7 +400,12 @@ const InvoiceList: React.FC = () => {
         }
         selectionBar={<DataTableSelectionBar table={table} />}
       >
-        <DataTableView table={table} loading={loading} />
+        <DataTableView
+          table={table}
+          loading={loading}
+          emptyTitle={branchScopedEmpty?.emptyTitle}
+          emptyDescription={branchScopedEmpty?.emptyDescription}
+        />
         <DataTablePagination table={table} total={total} pageSizeOptions={[10, 20, 50]} />
       </ListPageCard>
 

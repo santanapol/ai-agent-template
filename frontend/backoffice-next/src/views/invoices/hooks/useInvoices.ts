@@ -119,7 +119,12 @@ export function useInvoices() {
     async (id: string, nextStatus: "PAID" | "VOID", successMsg: string, errorMsg: string) => {
       setUpdatingStatus(true);
       try {
-        const etag = buildInvoiceEtag(invoice?.upd_date);
+        let currentInvoice = invoice?._id === id ? invoice : null;
+        if (!currentInvoice) {
+          const detailRes = await api.getInvoiceById(id);
+          currentInvoice = detailRes.data;
+        }
+        const etag = buildInvoiceEtag(currentInvoice?.upd_date);
         const res = await api.updateInvoiceStatus(id, nextStatus, etag);
         setInvoice(res.data);
         toast.success(successMsg);

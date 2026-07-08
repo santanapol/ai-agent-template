@@ -14,9 +14,11 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
+import { isZeroHqBranchId } from "@/lib/branchOptions";
 import { triggerBlobDownload } from "@/lib/downloadBlob";
 import { useLocation, useNavigate, useParams } from "@/navigation/compat";
 
@@ -43,6 +45,7 @@ function InvoiceDetailSkeleton() {
 }
 
 const InvoiceDetail: React.FC = () => {
+  const { user } = useAuth();
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
   const { id } = useParams<{ id: string }>();
@@ -102,6 +105,9 @@ const InvoiceDetail: React.FC = () => {
             <EmptyTitle>Invoice not found</EmptyTitle>
             <EmptyDescription>
               The invoice may have been removed or you may not have access to view it.
+              {isZeroHqBranchId(user?.branch_id)
+                ? " Billing seed data is on customer branches — switch to 777WW in the branch switcher and try again."
+                : null}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

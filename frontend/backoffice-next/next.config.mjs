@@ -9,6 +9,7 @@ const rolesEntry = path.join(__dirname, "../../backend/shared/platform-roles/ind
 
 const nextConfig = {
   reactCompiler: true,
+  allowedDevOrigins: ["127.0.0.1"],
   experimental: {
     externalDir: true,
   },

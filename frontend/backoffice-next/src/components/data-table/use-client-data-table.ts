@@ -33,6 +33,8 @@ export function useClientDataTable<TData>({
   onRowSelectionChange,
   getRowId,
 }: UseClientDataTableOptions<TData>) {
+  "use no memo";
+
   return useReactTable({
     data,
     columns,

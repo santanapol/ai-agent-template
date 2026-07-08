@@ -22,6 +22,7 @@ export function DataTableView<TData>({
   className,
 }: DataTableViewProps<TData>) {
   const columnCount = table.getVisibleLeafColumns().length;
+  const rows = table.getRowModel().rows;
 
   if (loading) {
     return (
@@ -48,8 +49,8 @@ export function DataTableView<TData>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
+          {rows.length ? (
+            rows.map((row) => (
               <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="py-3 align-middle">

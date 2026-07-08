@@ -25,6 +25,10 @@ vi.mock("@/hooks/useConfirmDialog", async (importOriginal) => {
   };
 });
 
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { branch_id: "branch-1" } }),
+}));
+
 vi.mock("./hooks/useInvoices", () => ({
   useInvoices: () => mockUseInvoices(),
 }));

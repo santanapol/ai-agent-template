@@ -86,7 +86,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { getReport, listHistory, listReports } from "../lib/smartReportApiClient";
+import { getReport, listHistory, listReports, createReport, validateReport, testRunReport } from "../lib/smartReportApiClient";
 
 function renderSmartReport() {
   return renderWithRouter(<SmartReport />);
@@ -268,6 +268,75 @@ describe("SmartReport (list mode)", () => {
 
     await waitFor(() => {
       expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to load reports");
+    });
+  });
+});
+
+describe("SmartReport (create flow)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([]));
+    vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
+    vi.mocked(validateReport).mockResolvedValue({
+      valid: true,
+      compiledScript: "compiled-script",
+      errors: [],
+    });
+    vi.mocked(testRunReport).mockResolvedValue({
+      success: true,
+      recordCount: 1,
+      durationMs: 12,
+      sample: [{ id: "1" }],
+      testRunToken: "test-token",
+      errors: [],
+    });
+    vi.mocked(createReport).mockResolvedValue({
+      ...sampleReport,
+      id: "report-new",
+      name: "AUDIT-report-001",
+    });
+  });
+
+  it("completes validate → test-run → save for a new report", async () => {
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await user.click(screen.getByRole("button", { name: /create report/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/report name/i), "AUDIT-report-001");
+    await user.click(screen.getByRole("button", { name: /^validate$/i }));
+
+    await waitFor(() => {
+      expect(validateReport).toHaveBeenCalled();
+      expect(mockFeedback.message.success).toHaveBeenCalledWith("Script validated successfully");
+    });
+
+    await user.click(screen.getByRole("button", { name: /test run/i }));
+
+    await waitFor(() => {
+      expect(testRunReport).toHaveBeenCalled();
+    });
+
+    const saveButton = screen.getByRole("button", { name: /save report script/i });
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(createReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "AUDIT-report-001",
+          compiledScript: "compiled-script",
+          testRunToken: "test-token",
+        }),
+      );
+      expect(mockFeedback.message.success).toHaveBeenCalledWith("Report created successfully");
     });
   });
 });

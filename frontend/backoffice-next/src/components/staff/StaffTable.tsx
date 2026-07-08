@@ -22,9 +22,30 @@ interface StaffTableProps {
   pagination: StaffTablePagination;
   viewMode: ListViewMode;
   handlers: StaffColumnHandlers;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
-function StaffGrid({ profiles, handlers }: { profiles: StaffProfile[]; handlers: StaffColumnHandlers }) {
+function StaffGrid({
+  profiles,
+  handlers,
+  emptyTitle,
+  emptyDescription,
+}: {
+  profiles: StaffProfile[];
+  handlers: StaffColumnHandlers;
+  emptyTitle?: string;
+  emptyDescription?: string;
+}) {
+  if (profiles.length === 0) {
+    return (
+      <div className="px-4 py-12 text-center">
+        <p className="font-medium">{emptyTitle ?? "No data found"}</p>
+        <p className="mt-1 text-muted-foreground text-sm">{emptyDescription ?? "Try adjusting your filters."}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-3 px-4 sm:grid-cols-2 xl:grid-cols-3">
       {profiles.map((profile) => (
@@ -55,15 +76,33 @@ function StaffGrid({ profiles, handlers }: { profiles: StaffProfile[]; handlers:
   );
 }
 
-const StaffTable: React.FC<StaffTableProps> = ({ table, loading, pagination, viewMode, handlers }) => {
+const StaffTable: React.FC<StaffTableProps> = ({
+  table,
+  loading,
+  pagination,
+  viewMode,
+  handlers,
+  emptyTitle,
+  emptyDescription,
+}) => {
   return (
     <>
       {viewMode === "list" ? (
-        <DataTableView table={table} loading={loading} />
+        <DataTableView
+          table={table}
+          loading={loading}
+          emptyTitle={emptyTitle}
+          emptyDescription={emptyDescription}
+        />
       ) : loading ? (
         <DataTableView table={table} loading />
       ) : (
-        <StaffGrid profiles={table.getRowModel().rows.map((row) => row.original)} handlers={handlers} />
+        <StaffGrid
+          profiles={table.getRowModel().rows.map((row) => row.original)}
+          handlers={handlers}
+          emptyTitle={emptyTitle}
+          emptyDescription={emptyDescription}
+        />
       )}
       <DataTablePagination table={table} total={pagination.total} pageSizeOptions={[10, 20, 50]} />
     </>

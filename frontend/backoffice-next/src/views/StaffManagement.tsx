@@ -21,6 +21,7 @@ import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
 import { apiErrorMessage } from "@/lib/apiError";
+import { resolveBranchScopedEmptyState } from "@/lib/branchScopedEmptyState";
 import { passwordFieldRules } from "@/lib/passwordPolicy";
 import * as staffApi from "@/lib/staffApiClient";
 import { formatTelephoneToE164 } from "@/lib/telephone";
@@ -98,7 +99,7 @@ const StaffManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<ProfileStatus | "all">("active");
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [viewMode, setViewMode] = useState<ListViewMode>("list");
-  const [_refreshToken, setRefreshToken] = useState(0);
+  const [refreshToken, setRefreshToken] = useState(0);
   const currentEtag = useRef<string | null>(null);
   const canCreate = usePermission("profiles:create");
   const canEdit = usePermission("profiles:edit");
@@ -114,6 +115,7 @@ const StaffManagement: React.FC = () => {
 
   const { current: currentPage, pageSize } = paginationConfig;
   useEffect(() => {
+    void refreshToken;
     let cancelled = false;
     const load = async () => {
       setTableLoading(true);
@@ -126,7 +128,7 @@ const StaffManagement: React.FC = () => {
           sort: "-upd_date",
         });
         if (cancelled) return;
-        setProfiles(res.data);
+        setProfiles(Array.isArray(res.data) ? res.data : []);
         setPaginationConfig((prev) => ({ ...prev, total: res.pagination?.total ?? prev.total }));
       } catch (err) {
         if (!cancelled) message.error(apiErrorMessage(err, "Failed to load profiles"));
@@ -138,7 +140,7 @@ const StaffManagement: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, message, statusFilter, currentPage, pageSize]);
+  }, [debouncedSearch, message, statusFilter, currentPage, pageSize, refreshToken]);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
@@ -376,6 +378,17 @@ const StaffManagement: React.FC = () => {
     getRowId: (row) => row.id,
   });
 
+  const branchScopedEmpty = useMemo(
+    () =>
+      resolveBranchScopedEmptyState({
+        activeBranchId: user?.branch_id,
+        resource: "staff",
+        scopedToActiveBranch: true,
+        hasNoRows: !tableLoading && paginationConfig.total === 0,
+      }),
+    [user?.branch_id, tableLoading, paginationConfig.total],
+  );
+
   return (
     <>
       <ListPageCard
@@ -420,6 +433,8 @@ const StaffManagement: React.FC = () => {
           pagination={paginationConfig}
           viewMode={viewMode}
           handlers={columnHandlers}
+          emptyTitle={branchScopedEmpty?.emptyTitle}
+          emptyDescription={branchScopedEmpty?.emptyDescription}
         />
       </ListPageCard>
 

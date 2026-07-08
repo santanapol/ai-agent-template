@@ -26,6 +26,11 @@ interface UseServerDataTableOptions<TData> {
   getRowId?: (row: TData, index: number) => string;
 }
 
+/**
+ * Server-paginated table: `data` is already the current page from the API.
+ * Pagination chrome uses `pageCount`; rows render from core row model only
+ * (no client-side slice — matches legacy DataTable server mode).
+ */
 export function useServerDataTable<TData>({
   data,
   columns,
@@ -40,6 +45,8 @@ export function useServerDataTable<TData>({
   enableRowSelection,
   getRowId,
 }: UseServerDataTableOptions<TData>) {
+  "use no memo";
+
   return useReactTable({
     data,
     columns,
@@ -57,7 +64,6 @@ export function useServerDataTable<TData>({
     onRowSelectionChange,
     enableRowSelection,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
     getRowId,
   });
 }

@@ -36,7 +36,7 @@ const AgentFeesPage: React.FC = () => {
 
   const [agent, setAgent] = useState<Agent | null>(null);
   const [agentLoading, setAgentLoading] = useState(true);
-  const [hideEmptyProviders, setHideEmptyProviders] = useState(true);
+  const [hideEmptyProviders, setHideEmptyProviders] = useState(false);
   const agentEtagRef = useRef<string | null>(null);
 
   const [editingRate, setEditingRate] = useState(false);

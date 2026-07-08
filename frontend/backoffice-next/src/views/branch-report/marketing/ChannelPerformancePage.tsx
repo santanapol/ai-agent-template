@@ -149,6 +149,7 @@ const ChannelPerformancePage: React.FC = () => {
   const handleTableChange = useCallback(
     (nextPage: number, nextPageSize: number) => {
       if (!searchParams) return;
+      if (searchParams.page === nextPage && searchParams.pageSize === nextPageSize) return;
       const params: Royalty21QueryParams = { ...searchParams, page: nextPage, pageSize: nextPageSize };
       setSearchParams(params);
       void fetchReport(params);

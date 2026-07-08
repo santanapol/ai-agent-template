@@ -4,7 +4,9 @@ import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { usePermission } from "../hooks/usePermission";
+import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
 import * as staffApi from "../lib/staffApiClient";
+import { useAuth } from "../contexts/AuthContext";
 import { renderWithProviders } from "../test/renderWithProviders";
 import type { StaffProfile } from "../types/staff";
 import StaffManagement from "./StaffManagement";
@@ -18,7 +20,7 @@ const mockFeedback = vi.hoisted(() => ({
 vi.mock("../hooks/usePermission");
 vi.mock("../lib/staffApiClient");
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "u1" } }),
+  useAuth: vi.fn(() => ({ user: { id: "u1", branch_id: "branch-1" } })),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock("../hooks/useAppFeedback", () => ({
@@ -183,6 +185,19 @@ describe("StaffManagement", () => {
 
     await waitFor(() => {
       expect(screen.getByText("No data found")).toBeInTheDocument();
+    });
+  });
+
+  test("shows Zero HQ branch guidance when staff list is empty on Zero HQ", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: "u1", branch_id: ZERO_HQ_BRANCH_ID },
+    } as never);
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No staff profiles at Zero HQ/i)).toBeInTheDocument();
+      expect(screen.getByText(/branch switcher/i)).toBeInTheDocument();
     });
   });
 
