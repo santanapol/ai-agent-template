@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-import type { Report, ReportSchedule, ValidationStatus } from "../../types/smartReport";
+import type { DownloadHistoryStatus, Report, ReportSchedule, ValidationStatus } from "../../types/smartReport";
 
 export type ScheduleOption = "manual" | "daily" | "weekly" | "monthly";
 export type ReportStatus = "completed" | "running" | "failed" | "idle";
@@ -84,4 +84,10 @@ export function formatDateTime(iso: string | null): string {
   const d = dayjs(iso);
   if (!d.isValid()) return "—";
   return d.format("YYYY-MM-DD HH:mm:ss");
+}
+
+export function deriveReportStatusFromHistory(status: DownloadHistoryStatus): ReportStatus {
+  if (status === "running") return "running";
+  if (status === "success") return "completed";
+  return "failed";
 }

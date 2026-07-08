@@ -85,10 +85,6 @@ export function parseInvoiceListSearchParams(searchParams: URLSearchParams): Inv
   };
 }
 
-export function invoiceListSearchParamsEqual(a: URLSearchParams, b: URLSearchParams): boolean {
-  return a.toString() === b.toString();
-}
-
 export function buildInvoiceListQuery(input: {
   page: number;
   limit: number;
@@ -129,8 +125,4 @@ export function buildInvoiceListSearchParams(input: {
   if (input.page !== 1) params.set("page", String(input.page));
   if (input.pageSize !== 10) params.set("page_size", String(input.pageSize));
   return params;
-}
-
-export function serializeInvoiceListQuery(params: ListInvoicesParams): string {
-  return JSON.stringify(params);
 }

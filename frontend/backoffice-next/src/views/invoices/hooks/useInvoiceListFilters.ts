@@ -57,12 +57,10 @@ export function useInvoiceListFilters() {
       pageSize,
     });
     const nextQuery = next.toString();
-    if (nextQuery === searchParams.toString()) {
-      lastWrittenQueryRef.current = nextQuery;
-      return;
-    }
     lastWrittenQueryRef.current = nextQuery;
-    setSearchParamsRef.current(next, { replace: true });
+    if (nextQuery !== searchParams.toString()) {
+      setSearchParamsRef.current(next, { replace: true });
+    }
   }, [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize, searchParams]);
 
   return {

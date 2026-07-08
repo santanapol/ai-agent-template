@@ -44,9 +44,9 @@ import { type ReportFormValues, SmartReportEditor } from "./SmartReportEditor";
 import { SmartReportList } from "./SmartReportList";
 import {
   DEFAULT_QUERY_EXAMPLE,
+  deriveReportStatusFromHistory,
   formatDateTime,
   type ReportRow,
-  type ReportStatus,
   scheduleToUiValue,
 } from "./smart-report/formatters";
 
@@ -64,6 +64,7 @@ const INITIAL_FORM: ReportFormValues = {
 };
 
 const SMART_REPORT_PAGE_SIZE = 20;
+const REPORT_HISTORY_ENRICHMENT_LIMIT = 100;
 
 const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
@@ -147,7 +148,7 @@ const SmartReport: React.FC = () => {
     try {
       const [reportsRes, enrichRes] = await Promise.all([
         listReports({ page: reportsPage, limit: reportsPageSize }),
-        listHistory({ page: 1, limit: 100 }),
+        listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT }),
       ]);
       setReports(reportsRes.data);
       setReportsTotal(reportsRes.pagination.total);
@@ -224,14 +225,15 @@ const SmartReport: React.FC = () => {
 
   const reportRows: ReportRow[] = useMemo(() => {
     return reports.map((report) => {
-      const latest = enrichmentHistory.find((h) => h.reportId === report.id);
+      const latest = enrichmentHistory.find((historyRecord) => historyRecord.reportId === report.id);
       if (!latest) {
         return { ...report, derivedStatus: "idle", lastRun: "—" };
       }
-      const lastRun = formatDateTime(latest.finishedAt ?? latest.startedAt);
-      const derivedStatus: ReportStatus =
-        latest.status === "running" ? "running" : latest.status === "success" ? "completed" : "failed";
-      return { ...report, derivedStatus, lastRun };
+      return {
+        ...report,
+        derivedStatus: deriveReportStatusFromHistory(latest.status),
+        lastRun: formatDateTime(latest.finishedAt ?? latest.startedAt),
+      };
     });
   }, [reports, enrichmentHistory]);
 
@@ -501,12 +503,15 @@ const SmartReport: React.FC = () => {
     });
   };
 
-  const handleViewFiles = (reportId: string) => {
+  const handleViewFiles = async (reportId: string) => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
-    void listHistory({ page: 1, limit: 100 })
-      .then((res) => setDrawerDownloads(res.data.filter((record) => record.reportId === reportId)))
-      .catch((err) => message.error(apiErrorMessage(err, "Failed to load report history")));
+    try {
+      const response = await listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT });
+      setDrawerDownloads(response.data.filter((record) => record.reportId === reportId));
+    } catch (err) {
+      message.error(apiErrorMessage(err, "Failed to load report history"));
+    }
   };
 
   const handleDownload = async (record: DownloadHistoryRecord) => {
