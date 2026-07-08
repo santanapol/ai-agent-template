@@ -1,0 +1,140 @@
+import React, { useState } from 'react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from '../../test/renderWithProviders';
+import StaffDrawer, { type DrawerMode } from './StaffDrawer';
+
+interface WrapperProps {
+  mode: DrawerMode;
+  isSaving?: boolean;
+  showAdminResetPassword?: boolean;
+  canAssignRole?: boolean;
+  errors?: Partial<Record<'code' | 'firstname' | 'lastname' | 'email' | 'tel' | 'username' | 'password' | 'confirmPassword' | 'newPassword' | 'confirmNewPassword', string>>;
+}
+
+const Wrapper: React.FC<WrapperProps> = ({
+  mode,
+  isSaving = false,
+  showAdminResetPassword = false,
+  canAssignRole = false,
+  errors = {},
+}) => {
+  const [values, setValues] = useState({
+    code: '',
+    firstname: '',
+    lastname: '',
+    email: '',
+    tel: '',
+    role: 'staff',
+  });
+
+  return (
+    <StaffDrawer
+      open={true}
+      mode={mode}
+      loading={false}
+      isSaving={isSaving}
+      updatingPassword={false}
+      showAdminResetPassword={showAdminResetPassword}
+      canAssignRole={canAssignRole}
+      values={values}
+      errors={errors}
+      onChange={(field, value) => setValues((prev) => ({ ...prev, [field]: value }))}
+      onClose={vi.fn()}
+      onSave={vi.fn()}
+      onSwitchToEdit={vi.fn()}
+      onUpdatePassword={vi.fn()}
+    />
+  );
+};
+
+describe('StaffDrawer', () => {
+  describe('mode: create', () => {
+    it('renders Username and Password fields', () => {
+      renderWithProviders(<Wrapper mode="create" />);
+      expect(screen.getByText('Username')).toBeInTheDocument();
+      expect(screen.getByText('Password')).toBeInTheDocument();
+    });
+
+    it('shows Create Profile button', () => {
+      renderWithProviders(<Wrapper mode="create" />);
+      expect(screen.getByRole('button', { name: /create profile/i })).toBeInTheDocument();
+    });
+
+    it('shows System Role when canAssignRole is true', () => {
+      renderWithProviders(<Wrapper mode="create" canAssignRole={true} />);
+      expect(screen.getByText('System Role')).toBeInTheDocument();
+    });
+
+    it('hides System Role when canAssignRole is false', () => {
+      renderWithProviders(<Wrapper mode="create" />);
+      expect(screen.queryByText('System Role')).not.toBeInTheDocument();
+    });
+
+    it('links validation errors to the matching inputs', () => {
+      renderWithProviders(
+        <Wrapper
+          mode="create"
+          errors={{
+            code: 'Code is required',
+            email: 'Email is invalid',
+            password: 'Password is too short',
+          }}
+        />,
+      );
+
+      expect(screen.getByLabelText('Staff Code')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Staff Code')).toHaveAttribute('aria-describedby', 'staff-code-error');
+      expect(screen.getByText('Code is required')).toHaveAttribute('id', 'staff-code-error');
+
+      expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Email')).toHaveAttribute('aria-describedby', 'staff-email-error');
+      expect(screen.getByText('Email is invalid')).toHaveAttribute('id', 'staff-email-error');
+
+      expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText('Password')).toHaveAttribute('aria-describedby', 'staff-password-error');
+      expect(screen.getByText('Password is too short')).toHaveAttribute('id', 'staff-password-error');
+    });
+
+    it('disables Create Profile button while saving', () => {
+      renderWithProviders(<Wrapper mode="create" isSaving={true} />);
+      expect(screen.getByRole('button', { name: /create profile/i })).toBeDisabled();
+    });
+  });
+
+  describe('mode: edit', () => {
+    it('does not render Username field', () => {
+      renderWithProviders(<Wrapper mode="edit" />);
+      expect(screen.queryByText('Username')).not.toBeInTheDocument();
+    });
+
+    it('shows Save Changes button', () => {
+      renderWithProviders(<Wrapper mode="edit" />);
+      expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    });
+
+    it('disables Save Changes button while saving', () => {
+      renderWithProviders(<Wrapper mode="edit" isSaving={true} />);
+      expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
+    });
+
+    it('renders admin reset password section when showAdminResetPassword=true', () => {
+      renderWithProviders(<Wrapper mode="edit" showAdminResetPassword={true} />);
+      expect(screen.getByText(/reset password/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /update password/i })).toBeInTheDocument();
+    });
+
+    it('does not render admin reset password section by default', () => {
+      renderWithProviders(<Wrapper mode="edit" />);
+      expect(screen.queryByRole('button', { name: /update password/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('mode: view', () => {
+    it('shows Edit Profile button instead of Save', () => {
+      renderWithProviders(<Wrapper mode="view" />);
+      expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument();
+    });
+  });
+});
