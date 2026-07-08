@@ -79,7 +79,7 @@ if [[ -n "${BACKOFFICE_PORT:-}" ]] && [[ -f "$DEV_RUN_DIR/pids/backoffice.pid" ]
   fi
   echo "  ✓ backoffice serves app shell"
 
-  # Vite proxy must reach auth through the frontend origin (same path the browser uses)
+  # Next.js rewrite must reach auth through the frontend origin (same path the browser uses)
   PROXY_LOGIN=$(curl -sf -X POST "http://127.0.0.1:${BACKOFFICE_PORT}/auth/login" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"${SMOKE_USERNAME}\",\"password\":\"${SMOKE_PASSWORD}\",\"client_kind\":\"native\"}")

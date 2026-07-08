@@ -23,7 +23,7 @@
 ทำครั้งเดียวหลัง clone repo:
 
 ```bash
-# 1. Sync agent-skills → .cursor/ + references/
+# 1. Sync agent-skills → .claude/ + .cursor/ + references/
 ./scripts/sync-agent-skills.sh
 
 # 2. Boot stack ครั้งแรก (จะ npm ci + init DB ให้อัตโนมัติ)
@@ -63,12 +63,14 @@
 
 | ขั้น | ผลลัพธ์ |
 |------|---------|
-| Sync skills/agents/references | `.cursor/skills/`, `.cursor/agents/`, `references/` ถูกทับ |
-| แปลง commands | upstream `.claude/commands/` → `.cursor/commands/` + ต่อท้าย Related Coding Standards จาก `scripts/agent-skills-standards/<cmd>.md` |
-| Copy local commands | `scripts/local-commands/*.md` (เช่น `/gc`) → `.cursor/commands/` |
-| Regenerate meta | `.cursor/rules/agent-skills.mdc`, `VENDOR.md`, `USAGE.md` |
+| Sync skills/agents/references | `.claude/skills/`, `.claude/agents/`, `.cursor/skills/`, `.cursor/agents/`, `references/` ถูกทับ |
+| แปลง commands | upstream `.claude/commands/` (ต้นทาง) → `.claude/commands/` (native, strip prefix `agent-skills:`) + `.cursor/commands/` (Cursor format) — ทั้งคู่ต่อท้าย Related Coding Standards จาก `scripts/agent-skills-standards/<cmd>.md` |
+| Copy local commands | `scripts/local-commands/*.md` (เช่น `/gc`) → `.claude/commands/` และ `.cursor/commands/` |
+| Regenerate meta | root `CLAUDE.md`, `.cursor/rules/agent-skills.mdc`, `VENDOR.md`, `USAGE.md` (ทั้งสอง target) |
 
-**ต้องการแก้พฤติกรรม command?** แก้ที่ `scripts/agent-skills-standards/<cmd>.md` (source) แล้ว sync ใหม่ — **อย่าแก้** `.cursor/commands/` ตรง ๆ เพราะถูกทับ
+**ต้องการแก้พฤติกรรม command?** แก้ที่ `scripts/agent-skills-standards/<cmd>.md` (source) แล้ว sync ใหม่ — **อย่าแก้** `.claude/commands/` หรือ `.cursor/commands/` ตรง ๆ เพราะถูกทับ
+
+รายละเอียดว่าทำไม vendor เข้า repo แทนที่จะติดตั้งผ่าน Claude Code plugin marketplace: [`.claude/VENDOR.md`](../.claude/VENDOR.md)
 
 ---
 
@@ -365,39 +367,43 @@ PORT_OFFSET=100 ./scripts/dev-down.sh
 
 Agent ตรวจงาน UI ได้เองโดยไม่ต้องพึ่งมนุษย์ screenshot ให้ — boot frontend ผ่าน harness แล้วขับ browser ด้วย skill
 
+**Production app คือ `frontend/backoffice-next` (Next.js)** — `frontend/backoffice` (Vite) frozen แล้ว (ดู `frontend/backoffice/DEPRECATED.md`) งานใหม่ทั้งหมดทำที่ `backoffice-next`
+
 ### Boot frontend พร้อม backend
 
 ```bash
 ./scripts/dev-up.sh --with-frontend
-# backoffice → http://127.0.0.1:5175 (+ PORT_OFFSET)
-./scripts/smoke.sh   # เพิ่ม check: app shell + login ผ่าน Vite proxy
+# backoffice-next → http://127.0.0.1:3005 (+ PORT_OFFSET)
+./scripts/smoke.sh   # เพิ่ม check: app shell + login ผ่าน Next.js rewrite
 ```
 
-Vite proxy ถูก refresh ต่อ offset (`frontend/backoffice/.env.harness` หรือ `.dev-run/<offset>/harness/backoffice.env.harness`):
+Next.js `rewrites()` (`frontend/backoffice-next/next.config.mjs`) proxy ตาม `AUTH_PROXY_TARGET`/`GATEWAY_PROXY_TARGET` ต่อ offset:
 
 - `/auth/*` → auth instance ของ offset นั้น
 - `/api/*` → gateway instance ของ offset นั้น
 
-ดังนั้น browser คุยกับ frontend origin เดียว — เหมือน production topology
+ดังนั้น browser คุยกับ frontend origin เดียว — เหมือน production topology (ไม่มี dev-server proxy แบบ Vite เดิมแล้ว)
 
 ### ขับ UI ตรวจงานด้วย browser
 
 ใช้ skill `browser-testing-with-devtools` — ตัวอย่างงานที่ agent ทำเองได้:
 
-1. เปิด `http://127.0.0.1:5175` → snapshot DOM
-2. Login ผ่านฟอร์มจริง (`platform_admin`) → ตรวจ redirect
+1. เปิด `http://127.0.0.1:3005` → snapshot DOM
+2. Login ผ่านฟอร์มจริง (`platform_admin`) → ตรวจ redirect (route guard อยู่ที่ `src/app/(main)/main-layout-client.tsx`)
 3. ทำ user journey ที่ feature แตะ → screenshot ก่อน/หลังแก้
 4. ดู console error + network request ผ่าน DevTools Protocol
-5. Fail → อ่าน log backend คู่กัน (`.dev-run/0/logs/*.log`) หา root cause ข้าม stack
+5. Fail → อ่าน log backend คู่กัน (`.dev-run/0/logs/*.log`) หา root cause ข้ามสแตก
 
 ### Verify ระดับ package
 
 ```bash
-cd frontend/backoffice
-npm run lint && npm test && npm run build   # vitest + tsc + vite build
+cd frontend/backoffice-next
+npm run lint && npm test && npm run build   # biome + vitest + next build
 ```
 
-**ยังเป็น gap:** frontend GHA ครอบแค่ backoffice (TD-002) และยังไม่มี E2E suite ใน `frontend/backoffice/e2e/`
+Coding standard ของ frontend (stack, folder structure, state, auth, styling) อยู่ที่ [`coding-standard/frontend/backoffice/`](../coding-standard/frontend/backoffice/) — อัปเดตให้ตรงกับ `backoffice-next` แล้ว
+
+**ยังเป็น gap:** ยังไม่มี E2E suite สำหรับ `backoffice-next`; `.github/workflows/ci-check.yml` ยังรัน job `frontend-checks` (legacy Vite) คู่กับ `frontend-next-checks` ระหว่าง migration — ถอด legacy job หลัง Phase 4 ของ migration exec-plan เท่านั้น
 
 ---
 
@@ -408,9 +414,9 @@ npm run lint && npm test && npm run build   # vitest + tsc + vite build
 | แนวคิด + skills ↔ harness | [README.md](./README.md) |
 | หลักการ | [core-beliefs.md](./core-beliefs.md) |
 | กฎเชิงกลไก | [golden-principles.md](../docs/golden-principles.md) |
-| Slash commands ทั้งหมด | [.cursor/USAGE.md](../.cursor/USAGE.md) |
+| Slash commands ทั้งหมด | [.claude/USAGE.md](../.claude/USAGE.md) (Cursor: [.cursor/USAGE.md](../.cursor/USAGE.md)) |
 | Deploy ละเอียด | [DEPLOY_DIGITALOCEAN.md](../DEPLOY_DIGITALOCEAN.md) |
 
 ---
 
-*อัปเดต: 2026-07-06*
+*อัปเดต: 2026-07-08 — §11 ย้ายไปอ้างอิง `backoffice-next` (Next.js), เพิ่ม `.claude/` คู่กับ `.cursor/`*

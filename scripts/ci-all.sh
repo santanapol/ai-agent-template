@@ -25,7 +25,7 @@ Run package CI for all backend services, frontend, and docs — then smoke the d
 Options:
   --skip-install     Skip npm ci (deps already installed)
   --skip-smoke       Run package CI + docs only (no dev-up/smoke)
-  --with-frontend    Boot backoffice Vite during smoke phase
+  --with-frontend    Boot backoffice-next (Next.js) during smoke phase
   --no-obs           Skip observability stack during dev-up
   --only <phase>     Run one phase: backend | frontend | docs | smoke
   -h, --help         Show this help

@@ -26,7 +26,7 @@ flowchart TB
 
   subgraph skills ["Agent Skills — กระบวนการ"]
     cmd["Slash commands /spec … /ship"]
-    skill[".cursor/skills/*.md"]
+    skill[".claude/skills/*.md (or .cursor/)"]
     persona["Subagents code-reviewer, …"]
   end
 
@@ -71,13 +71,15 @@ flowchart TB
 
 | องค์ประกอบ | หน้าที่ | Path |
 |------------|---------|------|
-| Skills | วิธีทำแต่ละ phase ครบถ้วน | `.cursor/skills/<name>/SKILL.md` |
-| Slash commands | จุด invoke ด้วยมือ | `.cursor/commands/` |
+| Skills | วิธีทำแต่ละ phase ครบถ้วน | `.claude/skills/<name>/SKILL.md` (Cursor: `.cursor/skills/`) |
+| Slash commands | จุด invoke ด้วยมือ | `.claude/commands/` (Cursor: `.cursor/commands/`) |
 | Standards map |  skill ต้องอ่าน coding-standard ไหน | `scripts/agent-skills-standards/` |
-| Subagents | review แบบ fan-out | `.cursor/agents/` |
+| Subagents | review แบบ fan-out | `.claude/agents/` (Cursor: `.cursor/agents/`) |
 | Checklists | DoD, security, perf | `references/` |
 
-**กฎสำคัญ:** มี skill ตรง → อ่าน `SKILL.md` ให้ครบ ห้าม improvise workflow (ดู [.cursor/rules/agent-skills.mdc](../.cursor/rules/agent-skills.mdc))
+Sync ทั้งสอง target พร้อมกันด้วยสคริปต์เดียว — ดู [scripts/README.md](../scripts/README.md)
+
+**กฎสำคัญ:** มี skill ตรง → อ่าน `SKILL.md` ให้ครบ ห้าม improvise workflow (ดู [CLAUDE.md](../CLAUDE.md) หรือ [.cursor/rules/agent-skills.mdc](../.cursor/rules/agent-skills.mdc))
 
 ---
 
@@ -100,7 +102,7 @@ flowchart TB
 | Release | `/release` | release-notes-and-handoff (local) | `docs/releases/`, **docs-lint** (ci-all ทำแล้วที่ `/ship`), PR |
 | GC | `/gc` | code-simplification | QUALITY_SCORE, tech-debt-tracker, docs-lint |
 
-คำสั่ง `/test` และ `/ship` มี **Harness verification** ฝังใน `scripts/agent-skills-standards/` — sync แล้วไปที่ `.cursor/commands/`
+คำสั่ง `/test` และ `/ship` มี **Harness verification** ฝังใน `scripts/agent-skills-standards/` — sync แล้วไปที่ `.claude/commands/` และ `.cursor/commands/`
 
 ---
 
@@ -156,9 +158,9 @@ Persona **ไม่เรียก persona อื่น** — มีแค่ us
 
 | Sync ทับ | ไม่ทับ (แก้ใน repo นี้) |
 |----------|-------------------------|
-| `.cursor/skills`, `commands`, `rules` | `scripts/agent-skills-standards/` |
-| `references/` | `scripts/local-commands/` (เช่น `/gc`) |
-| | `harness-engineering/` (แนวคิดนี้) |
+| `.claude/skills`, `commands`, `agents` | `scripts/agent-skills-standards/` |
+| `.cursor/skills`, `commands`, `rules`, `agents` | `scripts/local-commands/` (เช่น `/gc`) |
+| `references/`, root `CLAUDE.md` | `harness-engineering/` (แนวคิดนี้) |
 | | `docs/golden-principles.md` |
 
 **ลำดับความสำคัญเมื่อ conflict:** `core-beliefs` → `golden-principles` → `coding-standard` → skill → โค้ดเดิมใน service
@@ -178,7 +180,9 @@ docs/exec-plans/             ← multi-PR work
 docs/golden-principles.md    ← mechanical invariants
 coding-standard/             ← org rules
 scripts/                     ← harness tooling
-.cursor/                     ← agent-skills runtime
+CLAUDE.md                    ← orchestration (auto-loaded, generated)
+.claude/                     ← agent-skills runtime (Claude Code)
+.cursor/                     ← agent-skills runtime (Cursor)
 ```
 
 ---
@@ -224,9 +228,10 @@ Worktree แยก: `PORT_OFFSET=100 ./scripts/dev-up.sh` (port + DB + Redis + f
 | ตัวอย่างขั้นตอนการทำงาน | [workflows.md](./workflows.md) |
 | กฎเชิงกลไก | [golden-principles.md](../docs/golden-principles.md) |
 | Agent map | [AGENTS.md](../AGENTS.md) |
+| Claude Code SDLC | [.claude/USAGE.md](../.claude/USAGE.md) |
 | Cursor SDLC | [.cursor/USAGE.md](../.cursor/USAGE.md) |
 | บทความ OpenAI | [openai-com-index-harness-engineering.md](./openai-com-index-harness-engineering.md) |
 
 ---
 
-*อัปเดต: 2026-07-06 — เอกสารแนวคิดการทำงาน + agent-skills integration*
+*อัปเดต: 2026-07-08 — เพิ่ม `.claude/` (Claude Code) คู่กับ `.cursor/`*

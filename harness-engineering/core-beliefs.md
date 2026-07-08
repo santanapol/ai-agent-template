@@ -29,7 +29,7 @@
 | ชั้น | คืออะไร | อยู่ที่ไหน |
 |------|---------|-----------|
 | **Harness** | สภาพแวดล้อม, feedback loop, guardrails, tooling | `scripts/`, `docs/golden-principles.md`, CI, observability |
-| **Agent Skills** | กระบวนการ SDLC, วิธีคิดต่อ phase | `.cursor/skills/`, slash commands, subagents |
+| **Agent Skills** | กระบวนการ SDLC, วิธีคิดต่อ phase | `.claude/skills/` (Cursor: `.cursor/skills/`), slash commands, subagents |
 
 - Skill บอก **ทำอย่างไร** — harness ทำให้ **ทำได้จริงและตรวจได้**
 - ไม่มี skill ที่ตรง → อย่า improvise workflow ยาว ๆ — ใช้ `interview-me` / `idea-refine` หรือถามมนุษย์
