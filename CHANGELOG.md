@@ -12,12 +12,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-08
+
+Repository snapshot: **backoffice-next staging cutover** — Next.js backoffice on PM2 `zero-backoffice` (`:3005`), legacy Vite `frontend/backoffice` removed, ship hardening (API error copy, SmartReport server pagination, invoice URL filters, security headers, expanded tests).
+
+Handoff: [docs/releases/2026-07-08-user.md](docs/releases/2026-07-08-user.md), [docs/releases/2026-07-08-deploy.md](docs/releases/2026-07-08-deploy.md). Git tag: `v0.5.0` (after staging smoke).
+
 ### Added
-- **`frontend/backoffice-next/`** — Next.js 16 backoffice (studio-admin shell + ported Vite business logic); PM2 `zero-backoffice` on port **3005**; route parity with legacy app.
+
+- **`frontend/backoffice-next/`** — full route parity (staff, agents, invoices, smart-reports, permissions, branch-report, profile); Phase 6 list-page toolkit; 418 Vitest tests.
+- **`docs/specs/frontend/backoffice-next/backoffice-next-spec.md`** — product spec for Next app.
+- **`frontend/backoffice-next/docs/DEPENDENCY-AUDIT-EXCEPTIONS.md`** — documented `xlsx` audit exception.
+- **`src/lib/branchReportMessages.ts`** — fixed user-facing branch-report error copy.
+- Next.js **security headers** in `next.config.mjs`; cookie `SameSite=Lax` + `Secure` on HTTPS.
 
 ### Changed
-- Harness, CI (`frontend-next-checks`), deploy/smoke scripts, and nginx docs now target **Next.js** instead of Vite `dist/`.
-- **`frontend/backoffice/`** marked deprecated (reference only until archive).
+
+- Harness, CI, deploy/smoke scripts, coding standards, and docs target **backoffice-next** only; removed `frontend-checks` GHA job for Vite app.
+- SmartReport — enrichment history loaded once; reports/history paginated separately; list search disabled until API supports it.
+- Invoice list — bidirectional URL filter sync with debounced search; toolbar export gated on `invoices:read`.
+- Auth — menu fetch failure clears menus (`menuError`); `switchBranch` AUTH_NOT_READY uses shared `refreshFn`.
+
+### Fixed
+
+- Review/ship findings: Biome lint 0 errors, native CSV export, lazy bulk export modals, `apiErrorMessage` hardening, SmartReport pagination tests.
+- Smart report run failure — fixed toast (no raw `record.error`); download filename sanitization.
+
+### Removed
+
+- **`frontend/backoffice/`** — deprecated Vite backoffice (entire tree).
 
 ## [0.4.0] - 2026-07-07
 

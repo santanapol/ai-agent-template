@@ -1,17 +1,22 @@
 ---
-status: active
+status: completed
 created: 2026-07-06
 updated: 2026-07-08
-services: [backoffice, auth, gateway, staff, agent-invoice, smart-report, branch-report]
+completed: 2026-07-08
+release: v0.5.0
+services: [backoffice-next, auth, gateway, staff, agent-invoice, smart-report, branch-report]
 ---
 
-# Backoffice Next.js migration (active)
+# Backoffice Next.js migration (completed)
 
-**Status:** Implemented — `frontend/backoffice-next`  
+**Status:** Shipped to staging — platform **v0.5.0** (2026-07-08)  
 **Template:** `coding-standard/frontend/backoffice/reference/studio-admin` v2.2.0  
-**Legacy:** `frontend/backoffice` (Vite) — **removed 2026-07-08** (was: retained for reference). Decision: keep the `backoffice-next` name as-is, no rename to `backoffice` now that the old app is gone.
+**Legacy:** `frontend/backoffice` (Vite) — **removed 2026-07-08**
 
-Remaining open gates below (staging nginx applied, manual UAT) still need human sign-off before this plan moves to `completed/`.
+Post-release follow-up (ops, not blocking tag):
+
+- [ ] Staging nginx applied on server (verify after deploy)
+- [ ] Manual UAT sign-off — [`STAGING-UAT-2026-07-08.md`](../../../frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md)
 
 ## Route parity checklist
 
@@ -48,7 +53,7 @@ Remaining open gates below (staging nginx applied, manual UAT) still need human 
 - [x] 6C — Agent fees + Invoice detail polish
 - [x] 6D — Non-list pages off legacy `PageContainer` double chrome (Permissions, Profile, Editor, Dashboard)
 - [x] 6E — UI-UX-REVIEW §3/§4 update; removed `FiltersContainer` + unused `demo/data-table.tsx`; exec plan front matter
-- [x] 6F — `npm test` (403) + `npm run build` + Biome lint 0 errors; harness `ci-all` (package CI)
+- [x] 6F — `npm test` (418) + `npm run build` + Biome lint 0 errors; harness `ci-all`
 
 ## Architecture
 
