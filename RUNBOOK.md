@@ -38,7 +38,7 @@
 | smart-report | 3103 | Reports |
 | branch-report | 3104 | Branch marketing reports |
 | backoffice-next | 3005 | ต้อง `--with-frontend` หรือรัน manual |
-| MongoDB | 27017 | `backend/docker compose` |
+| MongoDB | 27017 | `backend/docker compose` (`127.0.0.1`, project `zero-platform`) |
 | Redis | 6379 | `token_gen` revoke channel |
 
 `PORT_OFFSET=N` เลื่อนทุกพอร์ต + แยก Mongo DB (`auth_login_N`) — ดู [§ หลาย worktree](#หลาย-worktree-port_offset)
@@ -81,7 +81,11 @@
 
 ```bash
 cd backend && docker compose down
+# ปิด observability ด้วย (ถ้าเปิดไว้):
+cd backend && docker compose -f docker-compose.observability.yml down
 ```
+
+Docker project name: **`zero-platform`** (deps + observability อยู่กลุ่มเดียวกันใน Docker Desktop). Shared DB stack: `backend/docker-compose.deps.yml`.
 
 ลบ state ของ instance (logs, pids, env):
 

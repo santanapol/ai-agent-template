@@ -1,6 +1,8 @@
 # Observability (local dev)
 
-Ephemeral observability stack per worktree instance. Agents query logs and metrics to validate behavior.
+Ephemeral observability stack per worktree instance. Agents query logs and metrics to validate behavior. **Not used on staging/production.**
+
+Docker: `backend/docker-compose.observability.yml` — project name `zero-platform` (same group as MongoDB/Redis from `docker-compose.deps.yml`).
 
 ## Ports (default offset 0)
 

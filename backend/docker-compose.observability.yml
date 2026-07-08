@@ -1,5 +1,8 @@
 # Ephemeral observability stack for harness dev (per PORT_OFFSET).
 # Started by scripts/dev/dev-obs-up.sh — not for production.
+# Project name matches docker-compose.deps.yml so Docker Desktop groups deps + obs together.
+
+name: zero-platform
 
 services:
   victoria-logs:

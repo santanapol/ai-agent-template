@@ -192,7 +192,8 @@ cd backend
 docker compose -f docker-compose.staging.yml up -d
 ```
 
-`docker-compose.staging.yml` — standalone (ไม่ merge กับ `docker-compose.yml` เพื่อหลีกเลี่ยงพอร์ตซ้ำ)
+MongoDB + Redis อยู่ใน [`docker-compose.deps.yml`](../../backend/docker-compose.deps.yml) (shared กับ local).  
+`docker-compose.staging.yml` และ `docker-compose.yml` (local) ทั้งคู่ `include` ไฟล์นี้ — พอร์ต bind `127.0.0.1:6379` / `127.0.0.1:27017`, project name `zero-platform`.
 
 ---
 
@@ -289,7 +290,7 @@ Cloudflare SSL mode: **Full (strict)** when origin has a cert.
 
 ```bash
 pm2 status
-docker compose -f backend/docker-compose.yml ps
+cd backend && docker compose -f docker-compose.staging.yml ps
 curl -sI https://zero-staging.168bits.com
 ```
 

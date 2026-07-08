@@ -14,7 +14,7 @@ Monorepo สำหรับ API platform: **auth** (IdP), **gateway** (JWT edge)
 | [`service/demo-service/`](./service/demo-service/) | ตัวอย่าง internal API — `/api/v1/me`, `/api/v1/items` | Fastify (ESM) | **3002** |
 | [`service/staff/`](./service/staff/) | Staff API (**spec only** — docs scaffold) | — | **3101** (reserved) |
 
-Infrastructure สำหรับ local dev: [`docker-compose.yml`](./docker-compose.yml) (MongoDB `27017`, Redis `6379`)
+Infrastructure สำหรับ local + staging DB: [`docker-compose.deps.yml`](./docker-compose.deps.yml) (MongoDB `127.0.0.1:27017`, Redis `127.0.0.1:6379`). Local entry: [`docker-compose.yml`](./docker-compose.yml); staging: [`docker-compose.staging.yml`](./docker-compose.staging.yml). Observability (local only): [`docker-compose.observability.yml`](./docker-compose.observability.yml).
 
 Frontend ที่ใช้ platform นี้อยู่ที่ [`../frontend/backoffice-next/`](../frontend/backoffice-next/)
 

@@ -37,7 +37,10 @@ zero-platform/
 │   │   ├── demo-service/         # Sample upstream (/api/v1/me, /api/v1/items)
 │   │   ├── smart-report/
 │   │   └── staff/
-│   ├── docker-compose.yml        # MongoDB + Redis (local)
+│   ├── docker-compose.deps.yml   # MongoDB + Redis (shared local + staging)
+│   ├── docker-compose.yml        # Local: include deps
+│   ├── docker-compose.staging.yml
+│   ├── docker-compose.observability.yml  # Local only (VictoriaLogs/Metrics)
 │   └── RUNBOOK.md
 ├── frontend/
 │   └── backoffice-next/          # Next.js admin UI
