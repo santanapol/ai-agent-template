@@ -13,9 +13,9 @@ export function buildInvoicePdf(invoice: Invoice, transactions: InvoiceTransacti
 
   doc.setFontSize(10);
   doc.text(`Invoice No: ${invoice.iv_no}`, 14, 32);
-  doc.text(`Billing Month: ${invoice.billing_month || "-"}`, 14, 38);
+  doc.text(`Billing Month: ${invoice.billing_month ?? "-"}`, 14, 38);
 
-  doc.text(`Bill To: ${invoice.branch_name || "-"}`, 120, 32);
+  doc.text(`Bill To: ${invoice.branch_name ?? "-"}`, 120, 32);
   doc.text(`Due Date: ${formatDate(invoice.due_date)}`, 120, 38);
 
   const tableBody = sortedTransactions.map((t) => [

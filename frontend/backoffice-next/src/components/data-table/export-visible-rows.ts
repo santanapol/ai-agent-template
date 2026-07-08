@@ -1,5 +1,6 @@
 import type { Table } from "@tanstack/react-table";
-import * as XLSX from "xlsx";
+
+import { triggerBlobDownload } from "@/lib/downloadBlob";
 
 function cellToExportValue(value: unknown): string {
   if (value == null) return "";
@@ -7,6 +8,13 @@ function cellToExportValue(value: unknown): string {
     return String(value);
   }
   return "";
+}
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 }
 
 export function exportVisibleRowsToCsv<TData>(table: Table<TData>, fileName: string) {
@@ -24,8 +32,7 @@ export function exportVisibleRowsToCsv<TData>(table: Table<TData>, fileName: str
     }),
   );
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  XLSX.writeFile(workbook, `${fileName}.csv`, { bookType: "csv" });
+  const csv = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  triggerBlobDownload(blob, `${fileName}.csv`);
 }

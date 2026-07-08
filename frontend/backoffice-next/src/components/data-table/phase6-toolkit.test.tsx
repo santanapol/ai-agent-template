@@ -9,13 +9,8 @@ import { ListPageCard } from "@/components/layout/ListPageCard";
 import { InlineFilterSelect } from "@/components/list-page/InlineFilterSelect";
 import { ListPageSearch } from "@/components/list-page/ListPageSearch";
 
-vi.mock("xlsx", () => ({
-  utils: {
-    aoa_to_sheet: vi.fn(() => ({})),
-    book_new: vi.fn(() => ({})),
-    book_append_sheet: vi.fn(),
-  },
-  writeFile: vi.fn(),
+vi.mock("@/lib/downloadBlob", () => ({
+  triggerBlobDownload: vi.fn(),
 }));
 
 type Row = { id: string; name: string };
@@ -77,8 +72,8 @@ describe("Phase 6A toolkit", () => {
     expect(screen.getByRole("button", { name: /customize visible columns/i })).toBeInTheDocument();
   });
 
-  it("exportVisibleRowsToCsv invokes xlsx writer", async () => {
-    const xlsx = await import("xlsx");
+  it("exportVisibleRowsToCsv downloads a CSV blob", async () => {
+    const { triggerBlobDownload } = await import("@/lib/downloadBlob");
 
     function ExportHarness() {
       const table = useReactTable({
@@ -91,6 +86,6 @@ describe("Phase 6A toolkit", () => {
     }
 
     render(<ExportHarness />);
-    expect(xlsx.writeFile).toHaveBeenCalled();
+    expect(triggerBlobDownload).toHaveBeenCalledWith(expect.any(Blob), "staff.csv");
   });
 });

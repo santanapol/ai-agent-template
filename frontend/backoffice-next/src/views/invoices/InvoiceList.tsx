@@ -1,6 +1,8 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import dynamic from "next/dynamic";
+
 import type { OnChangeFn, RowSelectionState, VisibilityState } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { Plus } from "lucide-react";
@@ -52,15 +54,22 @@ import { useNavigate } from "@/navigation/compat";
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from "@/types/invoice";
 
 import { MAX_BULK_INVOICE_SELECTION } from "./bulk/constants";
-import { BulkExportModal } from "./components/BulkExportModal";
 import { BulkInvoiceActionBar } from "./components/BulkInvoiceActionBar";
-import { BulkStatusModal } from "./components/BulkStatusModal";
 import type { BulkExportFormat } from "./export/types";
 import { useInvoiceListFilters } from "./hooks/useInvoiceListFilters";
 import { useInvoices } from "./hooks/useInvoices";
 import { createInvoiceColumns } from "./invoice-columns";
 import type { BulkStatusAction } from "./status/types";
-import { buildInvoiceListQuery, buildInvoiceListSearchParams, INVOICE_BRANCH_FILTER_ALL, serializeInvoiceListQuery } from "./utils";
+import { buildInvoiceListQuery, buildInvoiceListSearchParams, INVOICE_BRANCH_FILTER_ALL } from "./utils";
+
+const BulkExportModal = dynamic(
+  () => import("./components/BulkExportModal").then((module) => ({ default: module.BulkExportModal })),
+  { ssr: false },
+);
+const BulkStatusModal = dynamic(
+  () => import("./components/BulkStatusModal").then((module) => ({ default: module.BulkStatusModal })),
+  { ssr: false },
+);
 
 interface ExportJobState {
   ids: string[];
@@ -154,13 +163,11 @@ const InvoiceList: React.FC = () => {
     [page, pageSize, debouncedSearchText, selectedBranchId, billingMonth, selectedStatus],
   );
 
-  const invoiceListQueryKey = useMemo(() => serializeInvoiceListQuery(invoiceListQuery), [invoiceListQuery]);
-
   useEffect(() => {
     const controller = new AbortController();
     void fetchInvoices(invoiceListQuery, controller.signal);
     return () => controller.abort();
-  }, [fetchInvoices, invoiceListQueryKey, invoiceListQuery]);
+  }, [fetchInvoices, invoiceListQuery]);
 
   useEffect(() => {
     void fetchInvoiceAgents();

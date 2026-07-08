@@ -17,11 +17,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
+import { triggerBlobDownload } from "@/lib/downloadBlob";
 import { useLocation, useNavigate, useParams } from "@/navigation/compat";
 
-import { buildInvoicePdf } from "./export/buildInvoicePdf";
-import { buildInvoiceXlsx } from "./export/buildInvoiceXlsx";
-import { triggerBlobDownload } from "./export/downloadBlob";
 import { useInvoices } from "./hooks/useInvoices";
 import { invoiceTransactionColumns } from "./invoiceTransactionColumns";
 import { formatDate, formatMoney, sortInvoiceTransactions, statusTagColor } from "./utils";
@@ -71,8 +69,8 @@ const InvoiceDetail: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    fetchInvoiceDetail(id);
-    fetchTransactions(id);
+    void fetchInvoiceDetail(id);
+    void fetchTransactions(id);
   }, [id, fetchInvoiceDetail, fetchTransactions]);
 
   const sortedTransactions = useMemo(() => sortInvoiceTransactions(transactions), [transactions]);
@@ -119,13 +117,13 @@ const InvoiceDetail: React.FC = () => {
   const handleUpdateStatus = async () => {
     if (!id) return;
     const success = await markAsPaid(id);
-    if (success) fetchInvoiceDetail(id);
+    if (success) await fetchInvoiceDetail(id);
   };
 
   const handleCancelInvoice = async () => {
     if (!id) return;
     const success = await cancelInvoice(id);
-    if (success) fetchInvoiceDetail(id);
+    if (success) await fetchInvoiceDetail(id);
   };
 
   const confirmInvoiceAction = ({
@@ -166,13 +164,15 @@ const InvoiceDetail: React.FC = () => {
     });
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
+    const { buildInvoicePdf } = await import("./export/buildInvoicePdf");
     const blob = buildInvoicePdf(invoice, sortedTransactions);
     triggerBlobDownload(blob, `invoice_${invoice.iv_no}.pdf`);
     message.success("PDF exported successfully!");
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const { buildInvoiceXlsx } = await import("./export/buildInvoiceXlsx");
     const blob = buildInvoiceXlsx(invoice, sortedTransactions);
     triggerBlobDownload(blob, `invoice_${invoice.iv_no}.xlsx`);
     message.success("Excel exported successfully!");

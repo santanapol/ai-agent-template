@@ -169,8 +169,11 @@ describe("InvoiceList page", () => {
       expect(fetchInvoices).toHaveBeenCalledTimes(1);
     });
 
-    await waitFor(() => {
-      expect(fetchInvoices).toHaveBeenCalledTimes(1);
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(fetchInvoices).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 500 },
+    );
   });
 });

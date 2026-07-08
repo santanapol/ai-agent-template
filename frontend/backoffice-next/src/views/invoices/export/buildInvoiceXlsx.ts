@@ -9,8 +9,8 @@ export function buildInvoiceXlsx(invoice: Invoice, transactions: InvoiceTransact
   const sortedTransactions = sortInvoiceTransactions(transactions);
   const wsData: (string | number)[][] = [
     ["INVOICE"],
-    ["Invoice No:", invoice.iv_no, "", "Bill To:", invoice.branch_name || "-"],
-    ["Billing Month:", invoice.billing_month || "-", "", "Due Date:", formatDate(invoice.due_date)],
+    ["Invoice No:", invoice.iv_no, "", "Bill To:", invoice.branch_name ?? "-"],
+    ["Billing Month:", invoice.billing_month ?? "-", "", "Due Date:", formatDate(invoice.due_date)],
     [""],
     ["Game Provider", "Game Category", "Bet", "Net Win", "Fee (%)", "Amount"],
   ];
