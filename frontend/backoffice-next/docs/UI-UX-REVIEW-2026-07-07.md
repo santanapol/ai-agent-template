@@ -160,38 +160,38 @@ studio-admin shell  →  legacy page wrappers (PageContainer/FiltersContainer)  
 
 ### Wave 2 — P2
 
-| ID | Tag | Location | Issue | Suggested fix |
-|----|-----|----------|-------|---------------|
-| LOGIN-01 | studio-ref | `Login.tsx` | Centered card only; no auth/v2 split layout | Optional: adopt `auth/v2` split for brand parity |
-| LOGIN-02 | flow | `Login.tsx:41-43` | All API errors map to password field | Form-level `Alert` or field-specific mapping |
-| DASH-01 | state | `Dashboard.tsx` | Non-admin users see only placeholder | Role-specific shortcuts/widgets |
-| DASH-02 | copy | `Dashboard.tsx:72-77` | Hardcoded `—` stat with misleading suffix | Hide card until API exists |
-| STAFF-01 | a11y | `StaffDrawer.tsx` | `SheetTitle` only, no `SheetDescription` | Add mode-specific description |
-| FEES-01 | flow | `AgentFeesPage.tsx` | No dirty-state guard on back with unsaved matrix | Confirm dialog on navigate away |
-| FEES-02 | consistency | `AgentFeesPage.tsx` | Matrix in raw `Card` not `PageContentCard` | Wrap for visual parity |
-| INV-L-01 | a11y | `BulkProgressModal.tsx` | `DialogTitle` only | Add `DialogDescription` + `aria-live` on progress |
-| INV-L-02 | responsive | `BulkInvoiceActionBar.tsx` | Fixed `bottom-6` may overlap mobile safe area | Add safe-area padding |
-| SR-L-01 | a11y | `SmartReportList.tsx` | History `Sheet` missing description | Add `SheetDescription` |
-| SR-E-02 | a11y | `SmartReportEditor.tsx` | Gate steps lack `aria-current="step"` | Add to active `<li>` |
-| CP-01 | consistency | `ChannelPerformancePage.tsx` | `Royalty21SearchForm` not in `FiltersContainer` | Wrap in `FiltersContainer` |
-| CP-02 | a11y | `Royalty21SearchForm.tsx` | Form error not tied to fields via `aria-describedby` | Wire invalid state to controls |
-| THEME-01 | studio-ref | `ThemeContext.tsx` | Binary light/dark only; no system mode or presets | Optional: adopt studio preferences store |
-| TOKENS-01 | studio-ref | `globals.css` vs studio | No theme presets/font registry; different radius scale math | Align token strategy when rebranding |
-| COPY-01 | copy | `layouts/AdminLayout.tsx` | Sidebar brand shows "ZERO" in runtime but config says Studio Admin | Unify branding source |
+| ID | Status | Tag | Location | Issue | Resolution |
+|----|--------|-----|----------|-------|------------|
+| LOGIN-01 | ✓ Closed | studio-ref | `Login.tsx` | Centered card only; no auth/v2 split | `AuthSplitLayout` (Phase 5C-gamma); OAuth out of scope |
+| LOGIN-02 | ✓ Closed | flow | `Login.tsx` | API errors mapped to password field only | Form-level `Alert` + `loginFieldErrors()` (Phase 5B) |
+| DASH-01 | ✓ Closed | state | `Dashboard.tsx` | Non-admin placeholder only | `getDashboardShortcuts()` by role/permission (Phase 5B) |
+| DASH-02 | ✓ Closed | copy | `Dashboard.tsx` | Hardcoded `—` stat cards | Admin stats from API; non-admin skips stat grid (Phase 6D-full) |
+| STAFF-01 | ✓ Closed | a11y | `StaffDrawer.tsx` | No `SheetDescription` | Mode-specific `DESCRIPTIONS` on drawer (Phase 5B) |
+| FEES-01 | ✓ Closed | flow | `AgentFeesPage.tsx` | No dirty-state guard on back | `isDirty` + confirm + `beforeunload` (Phase 5B) |
+| FEES-02 | ✓ Closed | consistency | `AgentFeesPage.tsx` | Matrix in raw `Card` | Wrapped in `PageContentCard` (Phase 6C) |
+| INV-L-01 | ✓ Closed | a11y | `BulkProgressModal.tsx` | `DialogTitle` only | `DialogDescription` + `aria-live="polite"` (Phase 5B) |
+| INV-L-02 | ✓ Closed | responsive | `BulkInvoiceActionBar.tsx` | Fixed `bottom-6` safe-area overlap | `env(safe-area-inset-bottom)` (Phase 5B) |
+| SR-L-01 | ✓ Closed | a11y | `SmartReportList.tsx` | History `Sheet` missing description | `SheetDescription` on history drawer |
+| SR-E-02 | ✓ Closed | a11y | `SmartReportEditor.tsx` | Gate steps lack `aria-current` | `aria-current="step"` on active step |
+| CP-01 | ✓ Closed | consistency | `ChannelPerformancePage.tsx` | Not in `FiltersContainer` | Obsolete — `FiltersContainer` removed; inline filters in `filterRow` (Phase 6B5) |
+| CP-02 | ✓ Closed | a11y | `Royalty21SearchForm.tsx` | Errors not tied via `aria-describedby` | `aria-invalid` + `aria-describedby` on fields |
+| THEME-01 | ✓ Closed | studio-ref | preferences | Binary light/dark only | Preferences store + system mode + presets (Phase 5C-alpha/beta) |
+| TOKENS-01 | ✓ Closed | studio-ref | `globals.css` | No presets/font registry | Preset CSS + font registry + `ThemeBootScript` (Phase 5C) |
+| COPY-01 | ✓ Closed | copy | branding | Sidebar vs config mismatch | `APP_CONFIG` → Zero Platform; branch label via `BranchSwitcher` |
 
 ### Wave 3 — P3
 
-| ID | Tag | Location | Issue |
-|----|-----|----------|-------|
-| LOGIN-03 | a11y | `Login.tsx:18-23` | Bootstrap spinner lacks `role="status"` |
-| AGENTS-01 | studio-ref | `AgentsList.tsx` | Filters below title not in card header toolbar |
-| INV-D-01 | studio-ref | `InvoiceDetail.tsx` | Studio invoice = create flow; prod = read/export (intentional) |
-| PERM-01 | state | `MenuCatalogTab.tsx` | Empty state could use inline CTA in tree |
-| PROF-01 | consistency | `MyProfile.tsx` | Gold standard for `aria-invalid` pairing — reuse elsewhere |
-| OVL-02 | shadcn | `useConfirmDialog.tsx` | Non-string content uses `<div>` not `AlertDialogDescription` |
-| SR-L-02 | consistency | `SmartReportList.tsx` | No search/filter bar unlike other lists |
-| CP-03 | copy | `Royalty21Table.tsx` | `emptyDescription=""` before search |
-| P3-HEADER | studio-ref | All pages | No SearchDialog, LayoutControls, theme presets (nice-to-have) |
+| ID | Status | Tag | Location | Issue | Resolution |
+|----|--------|-----|----------|-------|------------|
+| LOGIN-03 | ✓ Closed | a11y | `Login.tsx` | Spinner lacks `role="status"` | `Spinner role="status" aria-label="Loading session"` |
+| AGENTS-01 | ✓ Closed | studio-ref | `AgentsList.tsx` | Filters not in card header toolbar | Phase 6B2 — `ListPageCard` + `ListPageToolbar` |
+| INV-D-01 | Won't fix | studio-ref | `InvoiceDetail.tsx` | Studio create flow vs prod read/export | Intentional prod domain — read/export/print only |
+| PERM-01 | ✓ Closed | state | `MenuCatalogTab.tsx` | Empty state lacks inline CTA | Empty + "Add menu node" button (Phase 5B) |
+| PROF-01 | ✓ Closed | consistency | `MyProfile.tsx` | `aria-invalid` gold standard | Pattern reused: profile, staff, login, invoices, permissions, smart report |
+| OVL-02 | ✓ Closed | shadcn | `useConfirmDialog.tsx` | Content not in `AlertDialogDescription` | `AlertDialogDescription` + `aria-describedby` (Phase 5B) |
+| SR-L-02 | ✓ Closed | consistency | `SmartReportList.tsx` | No search/filter on History | Phase 6B4 — History tab search + status filter |
+| CP-03 | ✓ Closed | copy | `Royalty21Table.tsx` | Empty copy before search | Contextual `emptyTitle` / `emptyDescription` by `hasSearched` |
+| P3-HEADER | ✓ Closed | studio-ref | All pages | Missing header controls | Phase 5C — SearchDialog ⌘J, LayoutControls, ThemeSwitcher |
 
 ---
 
@@ -326,6 +326,7 @@ Sidebar parity (2026-07-07 follow-up): collapsed-icon dropdown, `NavUser` stylin
 | **6E Docs/cleanup** | ✓ Done | This section; removed unused `FiltersContainer` export path |
 | **6F Verify** | ✓ Done | `npm test` (396), `npm run build`; staging UAT checklist added |
 | **P1 follow-up** | ✓ Done | FLOW-01 `invoicesBackUrl`; §6 P1 table closed |
+| **P2/P3 follow-up** | ✓ Done | §6 Wave 2 (16/16 closed) + Wave 3 (8 closed, INV-D-01 won't fix) — verified against codebase 2026-07-08 |
 
 ---
 
