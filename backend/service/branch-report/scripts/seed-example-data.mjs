@@ -63,7 +63,7 @@ const isLocalHarnessMongo =
 
 if (!isLocalHarnessMongo) {
   console.log(
-    "Skip branch-report seed — MONGODB_URI_READ is remote/read-only (runtime uses Atlas; local seed needs localhost)",
+    "Skip branch-report seed — MONGODB_URI_READ is remote/read-only (runtime may use Atlas). Local seed needs mongodb://127.0.0.1 or localhost; see backend/ENV.md § branch-report read DB.",
   );
   process.exit(0);
 }

@@ -1,6 +1,6 @@
-import { parseObjectId } from '../../lib/param-error.js';
+import { parseObjectId } from "../../lib/param-error.js";
 
-const COLLECTION = 'su_staff_invite_link';
+const COLLECTION = "su_staff_invite_link";
 
 /**
  * @param {import('mongodb').Document} doc
@@ -8,9 +8,9 @@ const COLLECTION = 'su_staff_invite_link';
 export function mapInviteLinkDoc(doc) {
   return {
     id: doc._id.toString(),
-    inviteCode: String(doc.invite_code ?? ''),
-    username: String(doc.username ?? ''),
-    description: String(doc.description ?? ''),
+    inviteCode: String(doc.invite_code ?? ""),
+    username: String(doc.username ?? ""),
+    description: String(doc.description ?? ""),
   };
 }
 
@@ -23,8 +23,8 @@ export function createInviteLinksRepository(getDb) {
      * @param {{ ouId: string; branchId: string }} tenant
      */
     async findByTenant(tenant) {
-      const ouId = parseObjectId(tenant.ouId, 'ou_id');
-      const branchId = parseObjectId(tenant.branchId, 'branch_id');
+      const ouId = parseObjectId(tenant.ouId, "ou_id");
+      const branchId = parseObjectId(tenant.branchId, "branch_id");
 
       const filter = {
         ou_id: ouId,
@@ -45,9 +45,9 @@ export function createInviteLinksRepository(getDb) {
      */
     async existsForTenant(tenant) {
       const filter = {
-        ou_id: parseObjectId(tenant.ouId, 'ou_id'),
-        branch_id: parseObjectId(tenant.branchId, 'branch_id'),
-        _id: parseObjectId(tenant.inviteLinkId, 'inviteLinkId'),
+        ou_id: parseObjectId(tenant.ouId, "ou_id"),
+        branch_id: parseObjectId(tenant.branchId, "branch_id"),
+        _id: parseObjectId(tenant.inviteLinkId, "inviteLinkId"),
       };
 
       const doc = await getDb()

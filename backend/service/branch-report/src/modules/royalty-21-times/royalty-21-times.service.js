@@ -1,7 +1,7 @@
-import { createParamError } from '../../lib/param-error.js';
-import { createEmptyMemberMetrics } from '../../lib/member-metrics.js';
-import { normalizePagination } from '../../lib/pagination.js';
-import { formatRegisterDate } from '../../lib/format-register.js';
+import { createParamError } from "../../lib/param-error.js";
+import { createEmptyMemberMetrics } from "../../lib/member-metrics.js";
+import { normalizePagination } from "../../lib/pagination.js";
+import { formatRegisterDate } from "../../lib/format-register.js";
 
 /**
  * @param {ReturnType<import('./royalty-21-times.repository.js').createRoyalty21TimesRepository>} repository
@@ -36,14 +36,14 @@ export function createRoyalty21TimesService(repository, inviteLinksRepository) {
         regDateTo: query.regDateTo,
       };
 
-      if (query.channelType === 'affiliate_link' && query.inviteLinkId) {
+      if (query.channelType === "affiliate_link" && query.inviteLinkId) {
         const exists = await inviteLinksRepository.existsForTenant({
           ouId: userContext.ouId,
           branchId: userContext.branchId,
           inviteLinkId: query.inviteLinkId,
         });
         if (!exists) {
-          throw createParamError(400, 'INVALID_PARAM', 'Invalid inviteLinkId');
+          throw createParamError(400, "INVALID_PARAM", "Invalid inviteLinkId");
         }
       }
 
@@ -68,7 +68,8 @@ export function createRoyalty21TimesService(repository, inviteLinksRepository) {
 
       const data = members.map((member) => {
         const metrics =
-          metricsByMemId.get(member._id.toString()) ?? createEmptyMemberMetrics();
+          metricsByMemId.get(member._id.toString()) ??
+          createEmptyMemberMetrics();
 
         return {
           username: member.username,

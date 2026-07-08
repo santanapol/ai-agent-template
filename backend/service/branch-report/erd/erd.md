@@ -163,40 +163,40 @@ detail_payment
 
 ### member
 
-| Index | Fields | Report use |
-|---|---|---|
-| `cr_date_-1` | cr_date ↓ | member created timeline |
+| Index                            | Fields                     | Report use                     |
+| -------------------------------- | -------------------------- | ------------------------------ |
+| `cr_date_-1`                     | cr_date ↓                  | member created timeline        |
 | `ou_id_1_branch_id_1_reg_date_1` | ou_id, branch_id, reg_date | register count by branch/month |
-| `referral_code_1_cr_date_-1` | referral_code, cr_date ↓ | affiliate code performance |
-| `referral_uid_1` | referral_uid | member referral tree |
-| `referral_staff_link_id_1` | referral_staff_link_id | affiliate link grouping |
-| `referral_staff_id_1` | referral_staff_id | staff affiliate |
+| `referral_code_1_cr_date_-1`     | referral_code, cr_date ↓   | affiliate code performance     |
+| `referral_uid_1`                 | referral_uid               | member referral tree           |
+| `referral_staff_link_id_1`       | referral_staff_link_id     | affiliate link grouping        |
+| `referral_staff_id_1`            | referral_staff_id          | staff affiliate                |
 
 ### dm_dm_tn_deposit
 
-| Index | Fields | Report use |
-|---|---|---|
-| `mem_id_1_bill_date_1_status_1` | mem_id, bill_date, status | per-member deposit history (**report date**) |
-| `mem_id_1_approve_date_1_status_1` | mem_id, approve_date, status | legacy index (report ใช้ `bill_date` แทน) |
-| `bill_date_1_status_1_status_wallet_1` | bill_date, status, status_wallet | **monthly bill-in aggregation** |
-| `ou_id_1_branch_id_1_bill_date_1__id_1` | ou_id, branch_id, bill_date | branch-level deposit by report date |
-| `ou_id_1_branch_id_1_status_1_approve_date_1_bank_acc_group_data.group_id_1_bank_acc_group_data.channel_id_1` | …channel_id | deposit by marketing channel |
+| Index                                                                                                         | Fields                           | Report use                                   |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
+| `mem_id_1_bill_date_1_status_1`                                                                               | mem_id, bill_date, status        | per-member deposit history (**report date**) |
+| `mem_id_1_approve_date_1_status_1`                                                                            | mem_id, approve_date, status     | legacy index (report ใช้ `bill_date` แทน)    |
+| `bill_date_1_status_1_status_wallet_1`                                                                        | bill_date, status, status_wallet | **monthly bill-in aggregation**              |
+| `ou_id_1_branch_id_1_bill_date_1__id_1`                                                                       | ou_id, branch_id, bill_date      | branch-level deposit by report date          |
+| `ou_id_1_branch_id_1_status_1_approve_date_1_bank_acc_group_data.group_id_1_bank_acc_group_data.channel_id_1` | …channel_id                      | deposit by marketing channel                 |
 
 ### wallet_withdraw
 
-| Index | Fields | Report use |
-|---|---|---|
-| `uid_1_approve_date_1_sub_doc_type_1_wd_status_1_amt_1` | uid, approve_date, wd_status, amt | per-member withdraw |
-| `approve_date_1_wd_status_1_sub_doc_type_1` | approve_date, wd_status | **monthly withdraw aggregation (UTC)** |
-| `ou_id_1_branch_id_1_approve_date_1_sub_doc_type_1_wd_status_1` | ou_id, branch_id, approve_date, wd_status | branch-level withdraw report |
-| `uid_1_doc_date_1_wd_status_1` | uid, doc_date, wd_status | member withdraw timeline |
+| Index                                                           | Fields                                    | Report use                             |
+| --------------------------------------------------------------- | ----------------------------------------- | -------------------------------------- |
+| `uid_1_approve_date_1_sub_doc_type_1_wd_status_1_amt_1`         | uid, approve_date, wd_status, amt         | per-member withdraw                    |
+| `approve_date_1_wd_status_1_sub_doc_type_1`                     | approve_date, wd_status                   | **monthly withdraw aggregation (UTC)** |
+| `ou_id_1_branch_id_1_approve_date_1_sub_doc_type_1_wd_status_1` | ou_id, branch_id, approve_date, wd_status | branch-level withdraw report           |
+| `uid_1_doc_date_1_wd_status_1`                                  | uid, doc_date, wd_status                  | member withdraw timeline               |
 
 ### su_staff_invite_link
 
-| Index | Fields | Report use |
-|---|---|---|
-| `invite_code_1` | invite_code | lookup affiliate code |
-| `staff_id_1_ou_id_1` | staff_id, ou_id | links per staff |
+| Index                 | Fields           | Report use                 |
+| --------------------- | ---------------- | -------------------------- |
+| `invite_code_1`       | invite_code      | lookup affiliate code      |
+| `staff_id_1_ou_id_1`  | staff_id, ou_id  | links per staff            |
 | `ou_id_1_branch_id_1` | ou_id, branch_id | branch-scoped invite links |
 
 > Join: `member.referral_staff_link_id = su_staff_invite_link._id` (index `referral_staff_link_id_1` on member)
@@ -208,23 +208,36 @@ detail_payment
 รายการฝากที่ถือว่า **สำเร็จ** สำหรับ Bill In / Member Bill In / Member Royalty:
 
 ```javascript
-const DEPOSIT_SUCCESS_STATUS = ["001", "002", "004", "006", "007", "008", "009", "010"];
+const DEPOSIT_SUCCESS_STATUS = [
+  "001",
+  "002",
+  "004",
+  "006",
+  "007",
+  "008",
+  "009",
+  "010",
+];
 
 // MongoDB filter
-{ status: { $in: DEPOSIT_SUCCESS_STATUS } }
+{
+  status: {
+    $in: DEPOSIT_SUCCESS_STATUS;
+  }
+}
 ```
 
-| Code | Report |
-|---|---|
-| `001` | สำเร็จ ✓ |
-| `002` | สำเร็จ ✓ |
-| `004` | สำเร็จ ✓ |
-| `006` | สำเร็จ ✓ |
-| `007` | สำเร็จ ✓ |
-| `008` | สำเร็จ ✓ |
-| `009` | สำเร็จ ✓ |
-| `010` | สำเร็จ ✓ |
-| อื่นๆ (e.g. `003`) | ไม่นับ |
+| Code               | Report   |
+| ------------------ | -------- |
+| `001`              | สำเร็จ ✓ |
+| `002`              | สำเร็จ ✓ |
+| `004`              | สำเร็จ ✓ |
+| `006`              | สำเร็จ ✓ |
+| `007`              | สำเร็จ ✓ |
+| `008`              | สำเร็จ ✓ |
+| `009`              | สำเร็จ ✓ |
+| `010`              | สำเร็จ ✓ |
+| อื่นๆ (e.g. `003`) | ไม่นับ   |
 
 > ไม่ใช้ `status_wallet` เป็นเงื่อนไขสำเร็จ — ใช้เฉพาะ `status` ตามรายการด้านบน
 
@@ -246,13 +259,15 @@ const DEPOSIT_SUCCESS_STATUS = ["001", "002", "004", "006", "007", "008", "009",
 const WITHDRAW_SUCCESS_STATUS = "200";
 
 // MongoDB filter
-{ wd_status: WITHDRAW_SUCCESS_STATUS }
+{
+  wd_status: WITHDRAW_SUCCESS_STATUS;
+}
 ```
 
-| Code | Report |
-|---|---|
+| Code  | Report   |
+| ----- | -------- |
 | `200` | สำเร็จ ✓ |
-| อื่นๆ | ไม่นับ |
+| อื่นๆ | ไม่นับ   |
 
 **วันที่ทำรายการสำเร็จ:** `approve_date` ใช้ตาม **UTC** ใน DB (ไม่ offset)
 
@@ -266,37 +281,51 @@ const WITHDRAW_SUCCESS_STATUS = "200";
 ```javascript
 // Bill In by month (bill_date = +7 stored)
 db.dm_dm_tn_deposit.aggregate([
-  { $match: {
-      status: { $in: ["001","002","004","006","007","008","009","010"] },
-      bill_date: { $gte: ISODate("2025-05-01T00:00:00Z"), $lt: ISODate("2025-06-01T00:00:00Z") },
-      mem_id: { $ne: null }
-  }},
-  { $group: {
+  {
+    $match: {
+      status: { $in: ["001", "002", "004", "006", "007", "008", "009", "010"] },
+      bill_date: {
+        $gte: ISODate("2025-05-01T00:00:00Z"),
+        $lt: ISODate("2025-06-01T00:00:00Z"),
+      },
+      mem_id: { $ne: null },
+    },
+  },
+  {
+    $group: {
       _id: { $dateToString: { format: "%Y-%m", date: "$bill_date" } },
       bill_in: { $sum: "$amt" },
-      deposit_count: { $sum: 1 }
-  }}
+      deposit_count: { $sum: 1 },
+    },
+  },
 ]);
 
 // Withdraw by month (approve_date UTC)
 db.wallet_withdraw.aggregate([
-  { $match: {
+  {
+    $match: {
       wd_status: "200",
-      approve_date: { $gte: ISODate("2025-05-01T00:00:00Z"), $lt: ISODate("2025-06-01T00:00:00Z") }
-  }},
-  { $group: {
+      approve_date: {
+        $gte: ISODate("2025-05-01T00:00:00Z"),
+        $lt: ISODate("2025-06-01T00:00:00Z"),
+      },
+    },
+  },
+  {
+    $group: {
       _id: { $dateToString: { format: "%Y-%m", date: "$approve_date" } },
-      withdraw: { $sum: "$amt" }
-  }}
+      withdraw: { $sum: "$amt" },
+    },
+  },
 ]);
 ```
 
 ## Other status reference
 
-| Collection | Field | Sample values | Notes |
-|---|---|---|---|
-| `member` | `status` | `1` | active member |
-| `member` | `referral` | `Branch` | direct / branch registration |
-| `dm_dm_tn_deposit` | `status_wallet` | `0`, `1` | wallet credited flag (ไม่ใช้ filter สำเร็จ) |
-| `dm_dm_tn_deposit` | `status_msg` | `1` | message/process flag |
-| `wallet_withdraw` | `status_msg` | `1` | message/process flag |
+| Collection         | Field           | Sample values | Notes                                       |
+| ------------------ | --------------- | ------------- | ------------------------------------------- |
+| `member`           | `status`        | `1`           | active member                               |
+| `member`           | `referral`      | `Branch`      | direct / branch registration                |
+| `dm_dm_tn_deposit` | `status_wallet` | `0`, `1`      | wallet credited flag (ไม่ใช้ filter สำเร็จ) |
+| `dm_dm_tn_deposit` | `status_msg`    | `1`           | message/process flag                        |
+| `wallet_withdraw`  | `status_msg`    | `1`           | message/process flag                        |

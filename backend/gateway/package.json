@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml --fail-severity=error",
     "spec:codes": "node scripts/validate-gateway-openapi-problem-codes.mjs",
     "spec:consistency": "node scripts/validate-spec-consistency.mjs",
     "audit:check": "npm audit --audit-level=high",

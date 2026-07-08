@@ -1,4 +1,4 @@
-import { mapInviteLinkDoc } from './invite-links.repository.js';
+import { mapInviteLinkDoc } from "./invite-links.repository.js";
 
 /**
  * @param {ReturnType<import('./invite-links.repository.js').createInviteLinksRepository>} repository

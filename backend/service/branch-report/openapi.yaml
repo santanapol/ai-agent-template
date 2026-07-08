@@ -28,12 +28,12 @@ paths:
       description: Returns service liveness status.
       security: []
       responses:
-        '200':
+        "200":
           description: Service is alive
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                $ref: "#/components/schemas/SuccessEnvelope"
 
   /readyz:
     get:
@@ -43,9 +43,9 @@ paths:
       description: Returns service readiness (database connectivity).
       security: []
       responses:
-        '200':
+        "200":
           description: Service is ready
-        '503':
+        "503":
           description: Service unavailable (e.g. database not connected)
 
   /api/v1/branch-report/invite-links:
@@ -75,29 +75,29 @@ paths:
         ```
       operationId: listInviteLinks
       parameters:
-        - $ref: '#/components/parameters/XUserOu'
-        - $ref: '#/components/parameters/XUserBranch'
-        - $ref: '#/components/parameters/XRequestId'
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XRequestId"
       responses:
-        '200':
+        "200":
           description: Invite links sorted by inviteCode ASC
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - $ref: "#/components/schemas/SuccessEnvelope"
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/InviteLinkItem'
-        '400':
-          $ref: '#/components/responses/InvalidHeader'
-        '401':
-          $ref: '#/components/responses/GatewaySecretRejected'
-        '403':
-          $ref: '#/components/responses/MissingUserContext'
+                          $ref: "#/components/schemas/InviteLinkItem"
+        "400":
+          $ref: "#/components/responses/InvalidHeader"
+        "401":
+          $ref: "#/components/responses/GatewaySecretRejected"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
 
   /api/v1/branch-report/royalty-21-times:
     get:
@@ -142,9 +142,9 @@ paths:
         ```
       operationId: getRoyalty21Times
       parameters:
-        - $ref: '#/components/parameters/XUserOu'
-        - $ref: '#/components/parameters/XUserBranch'
-        - $ref: '#/components/parameters/XRequestId'
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XRequestId"
         - name: channelType
           in: query
           required: true
@@ -158,7 +158,7 @@ paths:
           description: Required when channelType is affiliate_link (24-char hex ObjectId)
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: "^[0-9a-fA-F]{24}$"
         - name: regDateFrom
           in: query
           required: true
@@ -166,7 +166,7 @@ paths:
           schema:
             type: string
             pattern: '^\d{4}-\d{2}-\d{2}$'
-            example: '2024-06-01'
+            example: "2024-06-01"
         - name: regDateTo
           in: query
           required: true
@@ -174,7 +174,7 @@ paths:
           schema:
             type: string
             pattern: '^\d{4}-\d{2}-\d{2}$'
-            example: '2024-06-30'
+            example: "2024-06-30"
         - name: page
           in: query
           schema:
@@ -190,28 +190,28 @@ paths:
             default: 50
             description: Values above 100 are clamped to 100
       responses:
-        '200':
+        "200":
           description: Paginated report rows
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - $ref: "#/components/schemas/SuccessEnvelope"
                   - type: object
                     required: [pagination]
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Royalty21Row'
+                          $ref: "#/components/schemas/Royalty21Row"
                       pagination:
-                        $ref: '#/components/schemas/Pagination'
-        '400':
-          $ref: '#/components/responses/InvalidParam'
-        '401':
-          $ref: '#/components/responses/GatewaySecretRejected'
-        '403':
-          $ref: '#/components/responses/MissingUserContext'
+                        $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewaySecretRejected"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
 
 components:
   securitySchemes:
@@ -227,14 +227,14 @@ components:
       required: true
       schema:
         type: string
-        pattern: '^[0-9a-fA-F]{24}$'
+        pattern: "^[0-9a-fA-F]{24}$"
     XUserBranch:
       name: x-user-branch
       in: header
       required: true
       schema:
         type: string
-        pattern: '^[0-9a-fA-F]{24}$'
+        pattern: "^[0-9a-fA-F]{24}$"
     XRequestId:
       name: x-request-id
       in: header
@@ -342,25 +342,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            $ref: "#/components/schemas/ErrorEnvelope"
 
     MissingUserContext:
       description: Required x-user-ou or x-user-branch missing
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            $ref: "#/components/schemas/ErrorEnvelope"
 
     InvalidParam:
       description: Request validation failed (JSON Schema or channel filter)
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            $ref: "#/components/schemas/ErrorEnvelope"
 
     InvalidHeader:
       description: Duplicate critical gateway mesh header
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            $ref: "#/components/schemas/ErrorEnvelope"

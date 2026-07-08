@@ -1,4 +1,4 @@
-import { sendSuccess } from '../../lib/response.js';
+import { sendSuccess } from "../../lib/response.js";
 
 /**
  * @param {ReturnType<import('./royalty-21-times.service.js').createRoyalty21TimesService>} service

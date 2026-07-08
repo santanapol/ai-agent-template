@@ -8,7 +8,7 @@ Owner: Berlin. src 58/58 read (2026-07-03 re-harden).
 |-------|-------|
 | Package root | `backend/service/smart-report/` |
 | `src/` files | 58/58 |
-| OpenAPI | none (prose contract in technical-architecture) |
+| OpenAPI | [openapi.yaml](../../../../backend/service/smart-report/openapi.yaml) (skeleton; full CRUD later) |
 
 ## Section confidence
 

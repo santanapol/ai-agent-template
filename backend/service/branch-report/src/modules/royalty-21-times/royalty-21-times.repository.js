@@ -1,20 +1,20 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 
 import {
   DEPOSIT_SUCCESS_STATUS,
   WITHDRAW_SUCCESS_STATUS,
-} from '../../lib/constants.js';
-import { buildMemberReportFilter } from '../../lib/channel-filter.js';
+} from "../../lib/constants.js";
+import { buildMemberReportFilter } from "../../lib/channel-filter.js";
 import {
   createMetricsMap,
   DEPOSIT_COLLECTION,
   finalizeMemberMetrics,
   padDepositsTo21,
   WITHDRAW_COLLECTION,
-} from '../../lib/member-metrics.js';
-import { paginationSkip } from '../../lib/pagination.js';
+} from "../../lib/member-metrics.js";
+import { paginationSkip } from "../../lib/pagination.js";
 
-export const MEMBER_COLLECTION = 'member';
+export const MEMBER_COLLECTION = "member";
 
 /**
  * @param {() => import('mongodb').Db} getDb
@@ -175,8 +175,8 @@ async function aggregateBillin(getDb, scope) {
       },
       {
         $group: {
-          _id: '$mem_id',
-          billin: { $sum: '$amt' },
+          _id: "$mem_id",
+          billin: { $sum: "$amt" },
         },
       },
     ])
@@ -205,8 +205,8 @@ async function aggregateWithdraw(getDb, scope) {
       },
       {
         $group: {
-          _id: '$uid',
-          withdraw: { $sum: '$amt' },
+          _id: "$uid",
+          withdraw: { $sum: "$amt" },
         },
       },
     ])
@@ -235,12 +235,12 @@ async function aggregateDepositSlots(getDb, scope) {
       },
       {
         $group: {
-          _id: '$mem_id',
+          _id: "$mem_id",
           deposits: {
             $topN: {
               n: 21,
               sortBy: { bill_date: 1 },
-              output: '$amt',
+              output: "$amt",
             },
           },
         },

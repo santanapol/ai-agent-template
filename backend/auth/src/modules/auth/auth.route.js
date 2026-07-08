@@ -7,7 +7,7 @@ import {
   logoutBodySchema,
   changeOwnPasswordBodySchema,
   switchActiveBranchBodySchema
-} from './auth.validator.js'
+} from './auth.schema.js'
 /** Per-route caps (per IP) — สอดคล้อง `_coding-standards/auth/api.md` (default แนะนำ) */
 const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
 const RATE_LIMIT_REFRESH = { max: 120, timeWindow: '1 minute' }

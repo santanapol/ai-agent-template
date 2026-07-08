@@ -23,12 +23,19 @@ Usage: ./scripts/ci/ci-all.sh [options]
 Run package CI for all backend services, frontend, and docs — then smoke the dev stack.
 
 Options:
-  --skip-install     Skip npm ci (deps already installed)
+  --skip-install     Skip npm ci (deps already installed — use after a clean install)
   --skip-smoke       Run package CI + docs only (no dev-up/smoke)
   --with-frontend    Boot backoffice-next (Next.js) during smoke phase
   --no-obs           Skip observability stack during dev-up
   --only <phase>     Run one phase: backend | frontend | docs | smoke
   -h, --help         Show this help
+
+Install notes:
+  Default install runs backend/scripts/install-all-deps.sh which rm -rf node_modules
+  then npm ci per package, with one retry on TAR_ENTRY_ERROR / incomplete extract.
+  If install still flakes: rm -rf backend/*/node_modules backend/service/*/node_modules
+  frontend/backoffice-next/node_modules then re-run without --skip-install.
+  Do not make --skip-install the default — it hides install flakes.
 
 Phases (default: all except when --only is set):
   1. MongoDB (docker compose) — required for integration tests
@@ -143,11 +150,11 @@ run_backend_ci() {
   local entries=(
     "auth:auth:false"
     "gateway:gateway:false"
-    "staff:service/staff:false"
+    "staff:service/staff:true"
     "agent-invoice:service/agent-invoice:true"
     "smart-report:service/smart-report:true"
     "branch-report:service/branch-report:true"
-    "demo-service:service/demo-service:false"
+    "demo-service:service/demo-service:true"
   )
 
   echo ""

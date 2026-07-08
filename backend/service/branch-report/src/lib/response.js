@@ -12,7 +12,7 @@
 export function sendSuccess(reply, options) {
   const {
     statusCode = 200,
-    code = 'SUCCESS',
+    code = "SUCCESS",
     message = null,
     data,
     pagination,

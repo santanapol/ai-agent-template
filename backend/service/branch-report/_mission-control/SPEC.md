@@ -3,6 +3,7 @@
 > Phase: **SPECIFY** ✓ · **PLAN** ✓ · **SHIPPED** (2026-06-29)  
 > Date: 2026-06-29 · **Amended 2026-06-29** — registration date range filter  
 > Related docs:
+>
 > - [docs/royalty-21-times.md](../docs/royalty-21-times.md)
 > - [docs/design/royalty-21-times-ui.md](../docs/design/royalty-21-times-ui.md)
 > - [erd/README.md](../erd/README.md)
@@ -37,12 +38,12 @@ Per-member lifetime report: one row per member in the selected marketing channel
 
 ### User stories
 
-| ID | As a… | I want to… | So that… |
-|---|---|---|---|
+| ID   | As a…           | I want to…                                                                                   | So that…                                                                     |
+| ---- | --------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | US-1 | backoffice user | select channel type, registration date range, and (if affiliate) an invite link, then search | I see members attributed to that channel who registered in the chosen period |
-| US-2 | backoffice user | paginate through large member lists | I can browse without loading everything at once |
-| US-3 | backoffice user | see deposit #1–21 amounts per member | I can review royalty-style deposit patterns |
-| US-4 | backoffice user | switch branch in navbar | the report scope updates to the new branch (re-search required) |
+| US-2 | backoffice user | paginate through large member lists                                                          | I can browse without loading everything at once                              |
+| US-3 | backoffice user | see deposit #1–21 amounts per member                                                         | I can review royalty-style deposit patterns                                  |
+| US-4 | backoffice user | switch branch in navbar                                                                      | the report scope updates to the new branch (re-search required)              |
 
 ### Acceptance criteria
 
@@ -73,24 +74,24 @@ Per-member lifetime report: one row per member in the selected marketing channel
 
 ### Backend — `branch-report` service
 
-| Layer | Choice |
-|---|---|
-| Runtime | Node.js 24 LTS, ESM |
-| Framework | Fastify 5 |
-| Database | MongoDB 8 (`mongodb` driver 7) |
-| Validation | JSON Schema on routes |
-| Tests | `node --test` |
+| Layer      | Choice                         |
+| ---------- | ------------------------------ |
+| Runtime    | Node.js 24 LTS, ESM            |
+| Framework  | Fastify 5                      |
+| Database   | MongoDB 8 (`mongodb` driver 7) |
+| Validation | JSON Schema on routes          |
+| Tests      | `node --test`                  |
 
 ### Frontend — backoffice
 
-| Layer | Choice |
-|---|---|
-| Framework | React 19 + TypeScript (strict) |
-| Build | Vite 8 |
-| Router | react-router-dom 7 |
-| UI | Ant Design + `@ant-design/icons` |
-| HTTP | axios (domain client + interceptors) |
-| Tests | vitest |
+| Layer     | Choice                               |
+| --------- | ------------------------------------ |
+| Framework | React 19 + TypeScript (strict)       |
+| Build     | Vite 8                               |
+| Router    | react-router-dom 7                   |
+| UI        | Ant Design + `@ant-design/icons`     |
+| HTTP      | axios (domain client + interceptors) |
+| Tests     | vitest                               |
 
 ### Gateway
 
@@ -200,7 +201,7 @@ frontend/backoffice/src/
   "success": true,
   "code": "SUCCESS",
   "message": null,
-  "data": [ /* row objects */ ],
+  "data": [/* row objects */],
   "pagination": { "page": 1, "pageSize": 50, "total": 1234 },
   "requestId": "uuid"
 }
@@ -214,7 +215,12 @@ frontend/backoffice/src/
   "code": "SUCCESS",
   "message": null,
   "data": [
-    { "id": "…", "inviteCode": "3000001", "username": "BERLIN", "description": "line777ww7" }
+    {
+      "id": "…",
+      "inviteCode": "3000001",
+      "username": "BERLIN",
+      "description": "line777ww7"
+    }
   ],
   "requestId": "uuid"
 }
@@ -226,21 +232,21 @@ frontend/backoffice/src/
 
 ### Pagination
 
-| Param | Default | Max | Notes |
-|---|---|---|---|
-| `page` | `1` | — | min 1 |
-| `pageSize` | `50` | **`100`** | clamp if over max (do not error) |
+| Param      | Default | Max       | Notes                            |
+| ---------- | ------- | --------- | -------------------------------- |
+| `page`     | `1`     | —         | min 1                            |
+| `pageSize` | `50`    | **`100`** | clamp if over max (do not error) |
 
 Frontend page size options: `20`, `50`, `100`.
 
 ### Gateway routing
 
-| Item | Value |
-|---|---|
-| Public path | `/api/v1/branch-report/*` |
-| Upstream (K8s/Docker) | `http://branch-report:<PORT>` |
-| Dev port (draft) | assign in `.env.example` (e.g. `3015`) |
-| Config | `ROUTES_JSON` entry — mirror `smart-report` / `agent-invoice` pattern |
+| Item                  | Value                                                                 |
+| --------------------- | --------------------------------------------------------------------- |
+| Public path           | `/api/v1/branch-report/*`                                             |
+| Upstream (K8s/Docker) | `http://branch-report:<PORT>`                                         |
+| Dev port (draft)      | assign in `.env.example` (e.g. `3015`)                                |
+| Config                | `ROUTES_JSON` entry — mirror `smart-report` / `agent-invoice` pattern |
 
 ```json
 {
@@ -254,28 +260,28 @@ Browser calls **gateway only** — never branch-report directly.
 
 ### Permission
 
-| Item | Value |
-|---|---|
-| Key | `branch-report:marketing:channel-performance:read` |
+| Item      | Value                                                                      |
+| --------- | -------------------------------------------------------------------------- |
+| Key       | `branch-report:marketing:channel-performance:read`                         |
 | Auth seed | add to permission catalog; assign to roles that may view marketing reports |
-| Frontend | menu + `ProtectedRoute` guard |
-| Backend | optional `x-user-permissions` check if other services do |
+| Frontend  | menu + `ProtectedRoute` guard                                              |
+| Backend   | optional `x-user-permissions` check if other services do                   |
 
 ### OpenAPI
 
-| Item | Value |
-|---|---|
-| File | `backend/service/branch-report/openapi.yaml` (service root) |
-| Version | OpenAPI **3.1.0** |
-| Tags | `invite-links`, `royalty-21-times` |
-| Phase 2 | `openapi-via-gateway.yaml` (Bearer JWT) if needed |
+| Item    | Value                                                       |
+| ------- | ----------------------------------------------------------- |
+| File    | `backend/service/branch-report/openapi.yaml` (service root) |
+| Version | OpenAPI **3.1.0**                                           |
+| Tags    | `invite-links`, `royalty-21-times`                          |
+| Phase 2 | `openapi-via-gateway.yaml` (Bearer JWT) if needed           |
 
 ### Endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/branch-report/invite-links` | Affiliate link dropdown |
-| GET | `/api/v1/branch-report/royalty-21-times` | Paginated report |
+| Method | Path                                     | Description             |
+| ------ | ---------------------------------------- | ----------------------- |
+| GET    | `/api/v1/branch-report/invite-links`     | Affiliate link dropdown |
+| GET    | `/api/v1/branch-report/royalty-21-times` | Paginated report        |
 
 ### Royalty row shape
 
@@ -294,17 +300,26 @@ Browser calls **gateway only** — never branch-report directly.
 ### Business constants
 
 ```javascript
-const DEPOSIT_SUCCESS_STATUS = ["001","002","004","006","007","008","009","010"];
+const DEPOSIT_SUCCESS_STATUS = [
+  "001",
+  "002",
+  "004",
+  "006",
+  "007",
+  "008",
+  "009",
+  "010",
+];
 const WITHDRAW_SUCCESS_STATUS = "200";
 ```
 
 ### Channel filters (`member`)
 
-| channelType | Filter |
-|---|---|
-| `affiliate_link` | `{ referral_staff_link_id: ObjectId(inviteLinkId) }` |
-| `member_referral` | `{ referral: "Member" }` |
-| `direct` | `{ referral: "Branch" }` |
+| channelType       | Filter                                               |
+| ----------------- | ---------------------------------------------------- |
+| `affiliate_link`  | `{ referral_staff_link_id: ObjectId(inviteLinkId) }` |
+| `member_referral` | `{ referral: "Member" }`                             |
+| `direct`          | `{ referral: "Branch" }`                             |
 
 Every query includes `{ ou_id, branch_id }` from `userContext`, plus registration date bounds on `member.reg_date`:
 
@@ -317,10 +332,10 @@ reg_date: {
 
 ### Registration date query params
 
-| Param | Required | Format | Notes |
-|---|---|---|---|
-| `regDateFrom` | **yes** | `YYYY-MM-DD` | Inclusive start (UTC midnight) |
-| `regDateTo` | **yes** | `YYYY-MM-DD` | Inclusive end (UTC end-of-day) |
+| Param         | Required | Format       | Notes                          |
+| ------------- | -------- | ------------ | ------------------------------ |
+| `regDateFrom` | **yes**  | `YYYY-MM-DD` | Inclusive start (UTC midnight) |
+| `regDateTo`   | **yes**  | `YYYY-MM-DD` | Inclusive end (UTC end-of-day) |
 
 Validation:
 
@@ -354,11 +369,11 @@ Validation:
 - Default form values on mount / Clear / branch switch:
 
 ```typescript
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
 
 function currentMonthRegRange() {
-  const start = dayjs().startOf('month');
-  const end = dayjs().endOf('month');
+  const start = dayjs().startOf("month");
+  const end = dayjs().endOf("month");
   return { regDateFrom: start, regDateTo: end };
 }
 ```
@@ -368,13 +383,16 @@ function currentMonthRegRange() {
 
 ```typescript
 function formatSummary(n: number): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 function formatDeposit(n: number): string {
-  return n === 0 ? '-' : formatSummary(n);
+  return n === 0 ? "-" : formatSummary(n);
 }
 function formatPromotion(): string {
-  return '-';
+  return "-";
 }
 ```
 
@@ -388,11 +406,11 @@ function formatPromotion(): string {
 
 ### Backend
 
-| Level | Tool | Scope |
-|---|---|---|
-| Unit | `node --test` | `format-register`, channel filter builder, **`reg-date-range`**, envelope helpers |
-| Integration | `node --test` + test MongoDB or mocked repository | invite-links query scope; royalty aggregation with fixture members |
-| Manual | curl via gateway / Postman | end-to-end with JWT |
+| Level       | Tool                                              | Scope                                                                             |
+| ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Unit        | `node --test`                                     | `format-register`, channel filter builder, **`reg-date-range`**, envelope helpers |
+| Integration | `node --test` + test MongoDB or mocked repository | invite-links query scope; royalty aggregation with fixture members                |
+| Manual      | curl via gateway / Postman                        | end-to-end with JWT                                                               |
 
 - Tests live beside modules: `*.test.js` or `tests/` under service root
 - Mock `userContext` in controller/service tests
@@ -400,11 +418,11 @@ function formatPromotion(): string {
 
 ### Frontend
 
-| Level | Tool | Scope |
-|---|---|---|
-| Unit | vitest | column formatters, option label mapper |
+| Level     | Tool                           | Scope                                                                    |
+| --------- | ------------------------------ | ------------------------------------------------------------------------ |
+| Unit      | vitest                         | column formatters, option label mapper                                   |
 | Component | vitest + RTL (if project uses) | form validation (affiliate + **reg dates**), conditional affiliate field |
-| Manual | browser | search flow, pagination, branch switch reset |
+| Manual    | browser                        | search flow, pagination, branch switch reset                             |
 
 ### Definition of done (testing)
 
@@ -455,38 +473,38 @@ Implementation is complete when:
 
 ## Decisions log (approved)
 
-| ID | Decision |
-|---|---|
-| B1 | Separate `GET /invite-links`; fields `inviteCode`, `username`, `description` |
-| B2 | Active branch scope; sort `invite_code` ASC |
-| B3 | Standard service response envelope |
-| F1 | Menu: Branch Report → Marketing → Channel Performance |
-| F2 | Dropdown label: `{inviteCode} — {username}` |
-| F3 | Deposit col `0` → `-` |
-| F4 | antd default header |
-| F5 | Promotion → `-` |
-| F6 | Billin/Withdraw/Revenue → 2 decimals |
-| F7 | English UI |
-| R1 | Register format `DD/MM/YYYY` (UTC), server-formatted |
-| X1 | Promotion phase 1 = `-` |
-| X2 | Branch switch → reset + reload invite links |
-| X3 | Default channel = `affiliate_link` |
-| O1 | Gateway: `/api/v1/branch-report` → upstream `branch-report:PORT` |
-| O2 | Permission: `branch-report:marketing:channel-performance:read` + auth seed + menu guard |
-| O3 | `pageSize` default 50, max 100 (clamp), UI options `[20, 50, 100]` |
-| O4 | OpenAPI: `branch-report/openapi.yaml` (3.1.0) at service root |
-| D1 | **Register date range:** required `regDateFrom` + `regDateTo`; filter `member.reg_date` (UTC inclusive days) |
-| D2 | **UI default:** current calendar month (local) on mount, Clear, and branch switch |
-| D3 | **Metrics:** billin / withdraw / deposits remain lifetime; reg date filters member list only |
+| ID  | Decision                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------ |
+| B1  | Separate `GET /invite-links`; fields `inviteCode`, `username`, `description`                                 |
+| B2  | Active branch scope; sort `invite_code` ASC                                                                  |
+| B3  | Standard service response envelope                                                                           |
+| F1  | Menu: Branch Report → Marketing → Channel Performance                                                        |
+| F2  | Dropdown label: `{inviteCode} — {username}`                                                                  |
+| F3  | Deposit col `0` → `-`                                                                                        |
+| F4  | antd default header                                                                                          |
+| F5  | Promotion → `-`                                                                                              |
+| F6  | Billin/Withdraw/Revenue → 2 decimals                                                                         |
+| F7  | English UI                                                                                                   |
+| R1  | Register format `DD/MM/YYYY` (UTC), server-formatted                                                         |
+| X1  | Promotion phase 1 = `-`                                                                                      |
+| X2  | Branch switch → reset + reload invite links                                                                  |
+| X3  | Default channel = `affiliate_link`                                                                           |
+| O1  | Gateway: `/api/v1/branch-report` → upstream `branch-report:PORT`                                             |
+| O2  | Permission: `branch-report:marketing:channel-performance:read` + auth seed + menu guard                      |
+| O3  | `pageSize` default 50, max 100 (clamp), UI options `[20, 50, 100]`                                           |
+| O4  | OpenAPI: `branch-report/openapi.yaml` (3.1.0) at service root                                                |
+| D1  | **Register date range:** required `regDateFrom` + `regDateTo`; filter `member.reg_date` (UTC inclusive days) |
+| D2  | **UI default:** current calendar month (local) on mount, Clear, and branch switch                            |
+| D3  | **Metrics:** billin / withdraw / deposits remain lifetime; reg date filters member list only                 |
 
 ---
 
 ## Open Questions
 
-| ID | Question | Default if unanswered |
-|---|---|---|
-| Q1 | Max allowed reg-date range (e.g. 12 months)? | No cap in phase 1 |
-| Q2 | Should `regDateTo` allow future dates? | Yes — validate format only; empty result OK |
+| ID  | Question                                     | Default if unanswered                       |
+| --- | -------------------------------------------- | ------------------------------------------- |
+| Q1  | Max allowed reg-date range (e.g. 12 months)? | No cap in phase 1                           |
+| Q2  | Should `regDateTo` allow future dates?       | Yes — validate format only; empty result OK |
 
 **Assumptions confirmed by user 2026-06-29:** local-timezone current month default (A6); lifetime metrics with reg-date member filter only (A7).
 

@@ -11,6 +11,9 @@
 | TD-007 | Frontend | P3 | Rename to match `coding-standard/naming-conventions.md` (folders, pages, components) | closed |
 | TD-008 | Docs | P3 | Zero-pad numbered series in `coding-standard/` (`01-tech-stack.md` …) — upstream + vendored sync | closed |
 | TD-009 | Harness | P2 | `seed-all.sh` seeds all services incl. agent-invoice + branch-report gpp_777ww — wired into `dev-up` | closed |
+| TD-010 | CI | P1 | staff/demo `.env.test` missing from CI matrix — integration skipped silently | closed (2026-07-08; `.env.test` + GHA/ci-all + staff `init:db`) |
+| TD-011 | Spec | P2 | smart-report has no `openapi.yaml` / `spec:lint` — prose API table only (backend review 2026-07-08) | closed (2026-07-08; openapi.yaml skeleton + spec:lint in ci) |
+| TD-012 | Harness | P2 | Local sequential `npm ci` can corrupt `node_modules` (TAR_ENTRY_ERROR) — BE-001 | closed (2026-07-08; install-all-deps rm node_modules + retry + RUNBOOK) |
 
 ## How to use
 

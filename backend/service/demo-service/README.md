@@ -1,6 +1,6 @@
 # demo-service
 
-Sample internal API (Express) for `zero-platform` — **`GET /api/v1/me`** (trusted gateway headers) and **items** CRUD (MongoDB, tenant scope, std.min envelope).
+Sample internal API (Fastify 5) for `zero-platform` — **`GET /api/v1/me`** (trusted gateway headers) and **items** CRUD (MongoDB, tenant scope, std.min envelope).
 
 Path: **`services/.demo/demo-service/`** (demo / teaching).
 

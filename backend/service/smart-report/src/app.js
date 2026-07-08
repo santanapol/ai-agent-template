@@ -1,8 +1,6 @@
 import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
 
-import { pingDatabase } from "./config/database.js";
-import { pingReadDatabase } from "./config/database-read.js";
 import { registerErrorHandler } from "./lib/error-handler.js";
 import { errorEnvelope } from "./lib/envelope.js";
 import CODES from "./lib/error-codes.js";
@@ -11,6 +9,7 @@ import gatewaySecretGuard from "./plugins/gateway-secret.js";
 import userContextGuard from "./plugins/user-context.js";
 import reportsRoute from "./modules/reports/reports.route.js";
 import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
+import { registerHealthRoutes } from "./routes/health.route.js";
 
 const REDACT_PATHS = [
   'req.headers["x-gateway-secret"]',
@@ -59,33 +58,8 @@ export default async function buildApp(opts = {}) {
   await app.register(duplicateHeaderGuard);
   registerErrorHandler(app);
 
-  app.get("/healthz", async () => ({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
-  }));
-
+  await registerHealthRoutes(app);
   registerBasicMetrics(app, { startedAtMs, serviceName: "smart-report" });
-
-  app.get("/readyz", async (_request, reply) => {
-    const dependencies = await Promise.all([
-      pingDatabase()
-        .then(() => ({ name: "database", status: "ok" }))
-        .catch(() => ({ name: "database", status: "error" })),
-      pingReadDatabase()
-        .then(() => ({ name: "database-read", status: "ok" }))
-        .catch(() => ({ name: "database-read", status: "error" })),
-    ]);
-
-    const allOk = dependencies.every((dep) => dep.status === "ok");
-    if (!allOk) reply.code(503);
-
-    return {
-      status: allOk ? "ok" : "error",
-      timestamp: new Date().toISOString(),
-      dependencies,
-    };
-  });
 
   await app.register(
     async function (apiSmartReports) {

@@ -1,6 +1,6 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 
-export const CHANNEL_TYPES = ['affiliate_link', 'member_referral', 'direct'];
+export const CHANNEL_TYPES = ["affiliate_link", "member_referral", "direct"];
 
 /**
  * @param {number} statusCode
@@ -23,6 +23,6 @@ export function parseObjectId(value, field) {
   try {
     return new ObjectId(value);
   } catch {
-    throw createParamError(400, 'INVALID_PARAM', `Invalid ${field}`);
+    throw createParamError(400, "INVALID_PARAM", `Invalid ${field}`);
   }
 }

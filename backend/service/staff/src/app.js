@@ -12,10 +12,8 @@ import gatewaySecretGuard from "./plugins/gateway-secret.js";
 import userContextGuard from "./plugins/user-context.js";
 import errorHandler from "./plugins/error-handler.js";
 import metricsPlugin from "./plugins/metrics.js";
-import { pingDatabase } from "./config/database.js";
 import profileRoutes from "./modules/profiles/profiles.route.js";
-
-const PROBLEM_TYPE_BASE = "https://problems.zero-platform.internal/staff";
+import { registerHealthRoutes } from "./routes/health.route.js";
 
 function parseBodyLimitBytes(value) {
   const str = String(value ?? "1mb")
@@ -51,32 +49,9 @@ export default async function createApp(env) {
   await app.register(errorHandler);
   await app.register(metricsPlugin, { enabled: env.metricsEnabled });
 
-  app.get("/healthz", async () => ({
-    status: "ok",
-    service: env.appName,
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor((Date.now() - startedAtMs) / 1000),
-  }));
-
-  app.get("/readyz", async (_request, reply) => {
-    try {
-      await pingDatabase(1000);
-      return {
-        status: "ok",
-        dependencies: [{ name: "database", status: "ok" }],
-      };
-    } catch (_error) {
-      return reply
-        .code(503)
-        .type("application/problem+json")
-        .send({
-          type: `${PROBLEM_TYPE_BASE}/not-ready`,
-          title: "Service Unavailable",
-          status: 503,
-          detail: "Readiness check failed.",
-          code: "SERVICE_NOT_READY",
-        });
-    }
+  await registerHealthRoutes(app, {
+    appName: env.appName,
+    startedAtMs,
   });
 
   await app.register(

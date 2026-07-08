@@ -22,6 +22,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -29,6 +38,7 @@ jobs:
           - service: auth
           - service: gateway
           - service: service/staff
+            env_file: .env.test
           - service: service/agent-invoice
             env_file: .env.test
           - service: service/smart-report
@@ -36,6 +46,7 @@ jobs:
           - service: service/branch-report
             env_file: .env.test
           - service: service/demo-service
+            env_file: .env.test
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

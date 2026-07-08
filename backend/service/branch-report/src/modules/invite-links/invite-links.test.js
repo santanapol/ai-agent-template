@@ -1,34 +1,34 @@
-import assert from 'node:assert/strict';
-import { ObjectId } from 'mongodb';
-import { describe, it } from 'node:test';
+import assert from "node:assert/strict";
+import { ObjectId } from "mongodb";
+import { describe, it } from "node:test";
 
 import {
   createInviteLinksRepository,
   mapInviteLinkDoc,
-} from './invite-links.repository.js';
-import { createInviteLinksService } from './invite-links.service.js';
+} from "./invite-links.repository.js";
+import { createInviteLinksService } from "./invite-links.service.js";
 
-describe('mapInviteLinkDoc', () => {
-  it('maps MongoDB document to API shape', () => {
+describe("mapInviteLinkDoc", () => {
+  it("maps MongoDB document to API shape", () => {
     const id = new ObjectId();
     const mapped = mapInviteLinkDoc({
       _id: id,
-      invite_code: '3000001',
-      username: 'BERLIN',
-      description: 'line777ww7',
+      invite_code: "3000001",
+      username: "BERLIN",
+      description: "line777ww7",
     });
 
     assert.deepEqual(mapped, {
       id: id.toString(),
-      inviteCode: '3000001',
-      username: 'BERLIN',
-      description: 'line777ww7',
+      inviteCode: "3000001",
+      username: "BERLIN",
+      description: "line777ww7",
     });
   });
 });
 
-describe('createInviteLinksRepository', () => {
-  it('queries su_staff_invite_link scoped by ou_id and branch_id sorted by invite_code', async () => {
+describe("createInviteLinksRepository", () => {
+  it("queries su_staff_invite_link scoped by ou_id and branch_id sorted by invite_code", async () => {
     const ouId = new ObjectId();
     const branchId = new ObjectId();
     let capturedFilter;
@@ -45,15 +45,15 @@ describe('createInviteLinksRepository', () => {
                 return [
                   {
                     _id: new ObjectId(),
-                    invite_code: '3000002',
-                    username: 'ZULU',
-                    description: 'z',
+                    invite_code: "3000002",
+                    username: "ZULU",
+                    description: "z",
                   },
                   {
                     _id: new ObjectId(),
-                    invite_code: '3000001',
-                    username: 'BERLIN',
-                    description: 'line777ww7',
+                    invite_code: "3000001",
+                    username: "BERLIN",
+                    description: "line777ww7",
                   },
                 ];
               },
@@ -65,7 +65,7 @@ describe('createInviteLinksRepository', () => {
 
     const getDb = () => ({
       collection(name) {
-        assert.equal(name, 'su_staff_invite_link');
+        assert.equal(name, "su_staff_invite_link");
         return mockCollection;
       },
     });
@@ -84,28 +84,28 @@ describe('createInviteLinksRepository', () => {
     assert.deepEqual(capturedSort, { invite_code: 1 });
   });
 
-  it('rejects invalid tenant ObjectIds', async () => {
+  it("rejects invalid tenant ObjectIds", async () => {
     const repository = createInviteLinksRepository(() => ({
       collection() {
-        throw new Error('should not query');
+        throw new Error("should not query");
       },
     }));
 
     await assert.rejects(
       () =>
         repository.findByTenant({
-          ouId: 'not-valid',
+          ouId: "not-valid",
           branchId: new ObjectId().toString(),
         }),
       (error) => {
         assert.equal(error.statusCode, 400);
-        assert.equal(error.code, 'INVALID_PARAM');
+        assert.equal(error.code, "INVALID_PARAM");
         return true;
       },
     );
   });
 
-  it('existsForTenant returns true when invite link belongs to tenant', async () => {
+  it("existsForTenant returns true when invite link belongs to tenant", async () => {
     const ouId = new ObjectId();
     const branchId = new ObjectId();
     const inviteLinkId = new ObjectId();
@@ -113,7 +113,7 @@ describe('createInviteLinksRepository', () => {
 
     const getDb = () => ({
       collection(name) {
-        assert.equal(name, 'su_staff_invite_link');
+        assert.equal(name, "su_staff_invite_link");
         return {
           async findOne(filter) {
             capturedFilter = filter;
@@ -138,7 +138,7 @@ describe('createInviteLinksRepository', () => {
     });
   });
 
-  it('existsForTenant returns false when invite link is missing', async () => {
+  it("existsForTenant returns false when invite link is missing", async () => {
     const getDb = () => ({
       collection() {
         return {
@@ -160,8 +160,8 @@ describe('createInviteLinksRepository', () => {
   });
 });
 
-describe('createInviteLinksService', () => {
-  it('returns mapped invite links from repository', async () => {
+describe("createInviteLinksService", () => {
+  it("returns mapped invite links from repository", async () => {
     const id = new ObjectId();
     const repository = {
       async findByTenant() {
@@ -170,9 +170,9 @@ describe('createInviteLinksService', () => {
           docs: [
             {
               _id: id,
-              invite_code: '3000001',
-              username: 'BERLIN',
-              description: 'line777ww7',
+              invite_code: "3000001",
+              username: "BERLIN",
+              description: "line777ww7",
             },
           ],
         };
@@ -188,9 +188,9 @@ describe('createInviteLinksService', () => {
     assert.deepEqual(result, [
       {
         id: id.toString(),
-        inviteCode: '3000001',
-        username: 'BERLIN',
-        description: 'line777ww7',
+        inviteCode: "3000001",
+        username: "BERLIN",
+        description: "line777ww7",
       },
     ]);
   });

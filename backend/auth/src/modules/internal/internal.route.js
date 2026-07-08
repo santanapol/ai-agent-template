@@ -8,7 +8,7 @@ import {
   setPasswordBodySchema,
   setRoleBodySchema,
   userIdParamSchema
-} from './internal.validator.js'
+} from './internal.schema.js'
 
 const RATE_LIMIT_INTERNAL = { max: 60, timeWindow: '1 minute' }
 

@@ -1,4 +1,4 @@
-import { createParamError } from './param-error.js';
+import { createParamError } from "./param-error.js";
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -12,13 +12,16 @@ export const MAX_REG_DATE_RANGE_DAYS = 366;
  * @returns {Date}
  */
 function parseUtcDateOnly(value, field) {
-  if (!value || typeof value !== 'string' || !DATE_ONLY_RE.test(value)) {
-    throw createParamError(400, 'INVALID_PARAM', `Invalid ${field}`);
+  if (!value || typeof value !== "string" || !DATE_ONLY_RE.test(value)) {
+    throw createParamError(400, "INVALID_PARAM", `Invalid ${field}`);
   }
 
   const date = new Date(`${value}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
-    throw createParamError(400, 'INVALID_PARAM', `Invalid ${field}`);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+  ) {
+    throw createParamError(400, "INVALID_PARAM", `Invalid ${field}`);
   }
 
   return date;
@@ -35,13 +38,13 @@ export function parseRegDateRange(regDateFrom, regDateTo) {
   if (!regDateFrom || !regDateTo) {
     throw createParamError(
       400,
-      'INVALID_PARAM',
-      'regDateFrom and regDateTo are required',
+      "INVALID_PARAM",
+      "regDateFrom and regDateTo are required",
     );
   }
 
-  const from = parseUtcDateOnly(regDateFrom, 'regDateFrom');
-  const toStart = parseUtcDateOnly(regDateTo, 'regDateTo');
+  const from = parseUtcDateOnly(regDateFrom, "regDateFrom");
+  const toStart = parseUtcDateOnly(regDateTo, "regDateTo");
   assertValidRegRange(from, toStart);
 
   return {
@@ -60,8 +63,8 @@ function assertValidRegRange(from, toStart) {
   if (from > toStart) {
     throw createParamError(
       400,
-      'INVALID_PARAM',
-      'regDateFrom must be on or before regDateTo',
+      "INVALID_PARAM",
+      "regDateFrom must be on or before regDateTo",
     );
   }
 
@@ -70,7 +73,7 @@ function assertValidRegRange(from, toStart) {
   if (inclusiveDays > MAX_REG_DATE_RANGE_DAYS) {
     throw createParamError(
       400,
-      'INVALID_PARAM',
+      "INVALID_PARAM",
       `reg date range must not exceed ${MAX_REG_DATE_RANGE_DAYS} days`,
     );
   }

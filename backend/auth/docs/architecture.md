@@ -278,7 +278,7 @@ auth/
         auth.controller.js
         auth.service.js
         auth.repository.js
-        auth.validator.js
+        auth.schema.js
     config/
     plugins/
     app.js

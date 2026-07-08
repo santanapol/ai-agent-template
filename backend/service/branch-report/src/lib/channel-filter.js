@@ -1,5 +1,9 @@
-import { CHANNEL_TYPES, createParamError, parseObjectId } from './param-error.js';
-import { parseRegDateRange } from './reg-date-range.js';
+import {
+  CHANNEL_TYPES,
+  createParamError,
+  parseObjectId,
+} from "./param-error.js";
+import { parseRegDateRange } from "./reg-date-range.js";
 
 export { CHANNEL_TYPES, createParamError };
 
@@ -37,38 +41,38 @@ export function buildMemberChannelFilter(input) {
   const { ouId, branchId, channelType, inviteLinkId } = input;
 
   const base = {
-    ou_id: parseObjectId(ouId, 'ou_id'),
-    branch_id: parseObjectId(branchId, 'branch_id'),
+    ou_id: parseObjectId(ouId, "ou_id"),
+    branch_id: parseObjectId(branchId, "branch_id"),
   };
 
   if (!CHANNEL_TYPES.includes(channelType)) {
-    throw createParamError(400, 'INVALID_PARAM', 'Invalid channelType');
+    throw createParamError(400, "INVALID_PARAM", "Invalid channelType");
   }
 
-  if (channelType === 'affiliate_link') {
+  if (channelType === "affiliate_link") {
     if (!inviteLinkId) {
       throw createParamError(
         400,
-        'INVALID_PARAM',
-        'inviteLinkId is required for affiliate_link',
+        "INVALID_PARAM",
+        "inviteLinkId is required for affiliate_link",
       );
     }
 
     return {
       ...base,
-      referral_staff_link_id: parseObjectId(inviteLinkId, 'inviteLinkId'),
+      referral_staff_link_id: parseObjectId(inviteLinkId, "inviteLinkId"),
     };
   }
 
-  if (channelType === 'member_referral') {
+  if (channelType === "member_referral") {
     return {
       ...base,
-      referral: 'Member',
+      referral: "Member",
     };
   }
 
   return {
     ...base,
-    referral: 'Branch',
+    referral: "Branch",
   };
 }

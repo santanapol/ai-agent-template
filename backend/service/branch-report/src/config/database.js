@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient } from "mongodb";
 
 const DB_OPTIONS = {
   maxPoolSize: 10,
@@ -6,8 +6,8 @@ const DB_OPTIONS = {
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  writeConcern: { w: 'majority', j: true, wtimeoutMS: 5000 },
-  readPreference: 'primaryPreferred',
+  writeConcern: { w: "majority", j: true, wtimeoutMS: 5000 },
+  readPreference: "primaryPreferred",
 };
 
 /** @type {MongoClient | null} */
@@ -26,7 +26,7 @@ export async function connectDatabase() {
 
   if (!uri || !dbName) {
     throw new Error(
-      '[Database] Missing MONGODB_URI_READ (or MONGODB_URI) and MONGODB_DB_BRANCH config.',
+      "[Database] Missing MONGODB_URI_READ (or MONGODB_URI) and MONGODB_DB_BRANCH config.",
     );
   }
 
@@ -39,7 +39,7 @@ export async function connectDatabase() {
 
 export function getDatabase() {
   if (!db) {
-    throw new Error('[Database] Call connectDatabase() first.');
+    throw new Error("[Database] Call connectDatabase() first.");
   }
   return db;
 }

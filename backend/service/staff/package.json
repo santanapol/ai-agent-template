@@ -24,7 +24,7 @@
     "spec:consistency": "node scripts/validate-spec-consistency.mjs",
     "audit:check": "npm audit --audit-level=high",
     "prepare": "husky",
-    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run spec:codes && npm run spec:consistency && npm test && npm run audit:check",
+    "ci": "npm run lint && npm run format:check && npm run spec:lint && npm run spec:codes && npm run spec:consistency && npm run init:db && npm test && npm run audit:check",
     "init:db": "node --env-file-if-exists=.env scripts/init-db.mjs",
     "seed:example": "node --env-file-if-exists=.env scripts/seed-example-data.mjs"
   },

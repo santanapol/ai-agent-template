@@ -156,6 +156,18 @@ Harness smoke login: `platform_admin` / `1234` (ค่า default ใน `dev-li
 
 `seed-all.sh` seed: auth users + permissions, staff profiles, demo items, smart reports, agent-invoice sample, branch-report `gpp_777ww` minimal data
 
+**branch-report:** seed เขียนลง Mongo **localhost เท่านั้น**. ถ้า `MONGODB_URI_READ` ใน `.env.harness` เป็น Atlas → script ข้ามพร้อมเหตุผล (ไม่พัง `seed-all`). ต้องการข้อมูล domain: ตั้งค่าตาม [backend/ENV.md](./backend/ENV.md) (localhost + `gpp_777ww`) แล้วรัน seed ใหม่. Checklist หลัง seed + active branch `777WW`:
+
+```bash
+# หลัง login + switch branch (777WW / 5f4fb5bb3156af7a2db9e5a0)
+curl -s "http://127.0.0.1:3000/api/v1/branch-report/invite-links" \
+  -H "Authorization: Bearer <token>"
+curl -s "http://127.0.0.1:3000/api/v1/branch-report/royalty-21-times?regDateFrom=2024-01-01&regDateTo=2030-12-31&channelType=all" \
+  -H "Authorization: Bearer <token>"
+```
+
+(Channel Performance UI ใช้ royalty endpoint เดียวกัน)
+
 ---
 
 ## Smoke test (curl)
@@ -178,13 +190,37 @@ curl -s http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>
 
 ```bash
 ./scripts/ci/ci-all.sh                  # backend CI ×7 + frontend + docs + smoke
-./scripts/ci/ci-all.sh --skip-install   # ข้าม npm ci
+./scripts/ci/ci-all.sh --skip-install   # ข้าม npm ci (หลัง install ผ่านแล้วเท่านั้น)
 ./scripts/ci/ci-all.sh --skip-smoke     # ไม่ boot stack
 ./scripts/ci/ci-all.sh --with-frontend  # smoke รวม backoffice-next
 ./scripts/ci/ci-all.sh --only backend   # เฉพาะ phase ที่ต้องการ
 ```
 
+Install รันผ่าน `backend/scripts/install-all-deps.sh` — ลบ `node_modules` ก่อน `npm ci` ต่อ package และ retry ครั้งเดียวถ้า extract ไม่ครบ (TD-012). ถ้ายัง flake:
+
+```bash
+rm -rf backend/*/node_modules backend/service/*/node_modules frontend/backoffice-next/node_modules
+./scripts/ci/ci-all.sh --skip-smoke
+```
+
+อย่าใช้ `--skip-install` เป็นค่า default — จะบังตา install flake
+
 Per-package: `npm run ci` ใน directory ของ service นั้น
+
+### Redis / token_gen (CI vs manual E2E)
+
+- **CI:** GHA `ci-check` มี Redis service (`:6379`). Gateway `jwt-auth-token-gen.test.js` ครอบคลุม `GATEWAY_JWT_REJECTED` เมื่อ `token_gen` เก่า/หาย (mock Redis). Auth มี integration ที่ publish `token_gen` หลัง revoke
+- **Manual harness E2E (ไม่บังคับใน PR CI):** login → `POST /internal/users/:id/sessions/revoke` → ยิง gateway ด้วย access token เก่า → คาด `401 GATEWAY_JWT_REJECTED`
+
+### OWASP ZAP (optional DAST)
+
+ไม่บล็อก CI. เมื่อต้องการ baseline:
+
+```bash
+./scripts/dev/dev-up.sh
+# รัน ZAP baseline ต่อ http://127.0.0.1:3000 (หลังมี session/token ตาม coding-standard software-testing)
+# เก็บรายงานเป็น artifact ใน docs/ หรือ CI workflow_dispatch — อย่าใส่ ZAP เป็น required gate จนกว่า noise จะควบคุมได้
+```
 
 ---
 

@@ -99,7 +99,16 @@ Staging bootstrap: [server-environment/staging/RUNBOOK.md](../server-environment
 
 - Service ที่มี `DB_NAME`: path ใน `MONGODB_URI` ต้องตรงกับ `DB_NAME` เสมอ
 - `PORT_OFFSET=100` → `zero-platform_100`, `zero-agent-invoice_100`, …
-- Read DB (`gpp_777ww`, `gpp_org_data`) เหมือนกันทุก environment
+- Read DB names (`gpp_777ww`, `gpp_org_data`) เหมือนกันทุก environment — **แต่ URI ต่างกันได้ตามเครื่อง**
+
+### branch-report read DB (`MONGODB_URI_READ` / `MONGODB_DB_BRANCH`)
+
+| โหมด | `MONGODB_URI_READ` | Seed (`seed-example-data.mjs` / `seed-all`) | ใช้เมื่อ |
+|------|-------------------|---------------------------------------------|---------|
+| **Local harness** | `mongodb://127.0.0.1:27017` (ดู `.env.harness.example`) | เขียนข้อมูล minimal ลง `gpp_777ww` | ต้องการ domain API (invite-links / royalty-21 / Channel Performance) |
+| **Atlas demo** | `mongodb+srv://…` (read-only) | **ข้าม** — log `Skip branch-report seed — … remote/read-only` แล้ว exit 0 | รันอ่านข้อมูลจริงผ่าน service ได้ แต่ไม่ seed/เขียน |
+
+Local: ต้องมี Mongo ว่างบนเครื่อง + ตั้ง harness ตาม example แล้วรัน `./scripts/dev/seed-all.sh`. อย่าชี้ seed ไป Atlas (script กันไว้แล้ว). `dev-up` ไม่ทับ `MONGODB_URI_READ` ใน `.env.harness` ที่มีอยู่ — ถ้ายังเป็น Atlas ให้แก้เองเป็น localhost เมื่อต้องการ seed.
 
 ---
 

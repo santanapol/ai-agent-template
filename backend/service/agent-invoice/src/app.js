@@ -4,15 +4,15 @@ import dbPlugin from "./plugins/db.plugin.js";
 import mongodbRead from "./plugins/mongodb-read.js";
 import mongodbInvoice from "./plugins/mongodb-invoice.js";
 import apiRateLimit from "./plugins/api-rate-limit.js";
-import { secretsMatch } from "./lib/secret-compare.js";
+import duplicateHeaderGuard from "./plugins/duplicate-header.js";
+import gatewaySecretGuard from "./plugins/gateway-secret.js";
 import agentFeesRoute from "./modules/agent-fees/agent-fees.route.js";
 import masterDataRoute from "./modules/agent-fees/master-data.route.js";
 import agentsRoute from "./modules/agents/agents.route.js";
 import invoicesRoute from "./modules/invoices/agent-invoices.route.js";
 import userContextPlugin from "./plugins/user-context.js";
-import { pingInvoiceDatabase } from "./config/database-invoice.js";
-import { pingReadDatabase } from "./config/database-read.js";
 import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
+import { registerHealthRoutes } from "./routes/health.route.js";
 
 const REDACT_PATHS = [
   'req.headers["x-gateway-secret"]',
@@ -22,14 +22,7 @@ const REDACT_PATHS = [
   "req.body.token",
 ];
 
-const CRITICAL_HEADERS = [
-  "x-gateway-secret",
-  "x-user-ou",
-  "x-user-branch",
-  "x-user-id",
-  "x-user-role",
-  "x-user-permissions",
-];
+const PUBLIC_PATHS = ["/healthz", "/readyz", "/metrics"];
 
 export default async function buildApp(opts = {}) {
   const isDev = process.env.NODE_ENV !== "production";
@@ -69,47 +62,8 @@ export default async function buildApp(opts = {}) {
     },
   );
 
-  // Gateway secret + duplicate header guard
-  app.addHook("onRequest", async (request, reply) => {
-    // Skip health probes and metrics scrape
-    if (
-      request.url === "/healthz" ||
-      request.url === "/readyz" ||
-      request.url === "/metrics"
-    )
-      return;
-
-    // Reject duplicate critical headers
-    for (const header of CRITICAL_HEADERS) {
-      const raw = request.headers[header];
-      if (Array.isArray(raw)) {
-        return reply.status(400).send({
-          success: false,
-          code: "INVALID_HEADER",
-          message: `Duplicate header detected: ${header}`,
-          data: null,
-          requestId: request.requestId,
-        });
-      }
-    }
-
-    // Validate gateway secret
-    const secret = request.headers["x-gateway-secret"];
-    const sharedSecret = process.env.GATEWAY_SHARED_SECRET;
-    if (
-      !secret ||
-      !sharedSecret ||
-      !secretsMatch(String(secret), sharedSecret)
-    ) {
-      return reply.status(401).send({
-        success: false,
-        code: "GATEWAY_SECRET_REJECTED",
-        message: "Authentication failed.",
-        data: null,
-        requestId: request.requestId,
-      });
-    }
-  });
+  await app.register(duplicateHeaderGuard, { skipPaths: PUBLIC_PATHS });
+  await app.register(gatewaySecretGuard, { skipPaths: PUBLIC_PATHS });
 
   // Global error handler — normalise Fastify validation errors to response envelope
   app.setErrorHandler((error, request, reply) => {
@@ -142,52 +96,8 @@ export default async function buildApp(opts = {}) {
   await app.register(apiRateLimit);
   await app.register(userContextPlugin);
 
-  // Health probes
-  app.get("/healthz", async () => ({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
-  }));
-
+  await registerHealthRoutes(app);
   registerBasicMetrics(app, { startedAtMs, serviceName: "agent-invoice" });
-
-  app.get("/readyz", async (request, reply) => {
-    const dependencies = [];
-
-    try {
-      await app.db.command({ ping: 1 });
-      dependencies.push({ name: "database", status: "ok" });
-    } catch {
-      dependencies.push({ name: "database", status: "error" });
-    }
-
-    try {
-      await pingInvoiceDatabase();
-      dependencies.push({ name: "invoice-database", status: "ok" });
-    } catch {
-      dependencies.push({ name: "invoice-database", status: "error" });
-    }
-
-    try {
-      await pingReadDatabase();
-      dependencies.push({ name: "read-database", status: "ok" });
-    } catch {
-      dependencies.push({ name: "read-database", status: "error" });
-    }
-
-    const hasError = dependencies.some((dep) => dep.status === "error");
-    if (hasError) {
-      return reply.status(503).send({
-        success: false,
-        code: "SERVICE_UNAVAILABLE",
-        message: "Readiness check failed.",
-        data: { dependencies },
-        requestId: request.requestId,
-      });
-    }
-
-    return { status: "ok", dependencies };
-  });
 
   // Routes
   await app.register(agentsRoute, { prefix: "/api/v1/agent-invoice/agents" });

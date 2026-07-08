@@ -1,16 +1,16 @@
-import { timingSafeEqual } from 'node:crypto';
-import { Buffer } from 'node:buffer';
+import { timingSafeEqual } from "node:crypto";
+import { Buffer } from "node:buffer";
 
-import fp from 'fastify-plugin';
+import fp from "fastify-plugin";
 
-import { sendError } from '../lib/response.js';
+import { sendError } from "../lib/response.js";
 
 /**
  * @param {unknown} provided
  * @param {string} expected
  */
 function secretsMatch(provided, expected) {
-  if (typeof provided !== 'string') {
+  if (typeof provided !== "string") {
     return false;
   }
   const a = Buffer.from(provided);
@@ -25,27 +25,31 @@ function gatewayAuthPlugin(fastify, options) {
   const { secret, skipPaths = [] } = options;
 
   if (!secret) {
-    throw new Error('[gateway-auth] GATEWAY_SHARED_SECRET is required');
+    throw new Error("[gateway-auth] GATEWAY_SHARED_SECRET is required");
   }
 
-  fastify.addHook('onRequest', async (request, reply) => {
-    const path = request.url.split('?')[0];
-    if (skipPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+  fastify.addHook("onRequest", async (request, reply) => {
+    const path = request.url.split("?")[0];
+    if (
+      skipPaths.some(
+        (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+      )
+    ) {
       return;
     }
 
-    const provided = request.headers['x-gateway-secret'];
+    const provided = request.headers["x-gateway-secret"];
     if (!secretsMatch(provided, secret)) {
       return sendError(reply, {
         statusCode: 401,
-        code: 'GATEWAY_SECRET_REJECTED',
-        message: 'Authentication failed',
-        requestId: request.requestId ?? 'unknown',
+        code: "GATEWAY_SECRET_REJECTED",
+        message: "Authentication failed",
+        requestId: request.requestId ?? "unknown",
       });
     }
   });
 }
 
 export default fp(gatewayAuthPlugin, {
-  name: 'gateway-auth',
+  name: "gateway-auth",
 });

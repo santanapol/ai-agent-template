@@ -1,0 +1,463 @@
+openapi: "3.1.0"
+
+info:
+  title: smart-report-service
+  version: "0.1.0"
+  description: |
+    Smart Report Service — MongoDB query scripts, validate (acorn), test-run sandbox,
+    schedule (node-cron), export CSV/Excel.
+
+    HTTP SoT for happy-path ops listed below. Full CRUD (`/{id}`, `/{id}/run`, `/history`)
+    may be added in later revisions; prose tables remain in
+    `docs/specs/backend/smart-report/technical-architecture.md`.
+
+    Direct listen port: `3103` (`PORT` env). Gateway prefix: `/api/v1/smart-reports`.
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local (internal — mesh only)
+    variables:
+      port:
+        default: "3103"
+        description: Direct service listen port (`PORT` env).
+
+security:
+  - GatewaySecret: []
+
+tags:
+  - name: health
+    description: Liveness and readiness (no `x-gateway-secret` at runtime)
+  - name: reports
+    description: Smart report CRUD and pipeline (`/api/v1/smart-reports`)
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness
+      description: Process liveness probe (no Mongo required).
+      operationId: getHealthz
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness
+      description: Pings app Mongo and read Mongo; returns 503 when any dependency fails.
+      operationId: getReadyz
+      security: []
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyzOk"
+        "503":
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyzFail"
+
+  /api/v1/smart-reports:
+    get:
+      tags: [reports]
+      summary: List reports
+      description: Paginated list of report definitions for the caller's branch scope.
+      operationId: listReports
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      tags: [reports]
+      summary: Create report
+      description: Create a report definition. `name` must be unique within scope.
+      operationId: createReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportBody"
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/smart-reports/validate:
+    post:
+      tags: [reports]
+      summary: Validate script (AST)
+      description: Parse/validate Mongo script with acorn — no DB write.
+      operationId: validateReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateBody"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/v1/smart-reports/test-run:
+    post:
+      tags: [reports]
+      summary: Test-run script in sandbox
+      description: Execute compiled script against read Mongo; returns rows + one-time test-run token material.
+      operationId: testRunReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestRunBody"
+      responses:
+        "200":
+          description: Test-run succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/v1/smart-reports/download/{fileId}:
+    get:
+      tags: [reports]
+      summary: Download export file
+      description: Stream a previously exported CSV/Excel file by id.
+      operationId: downloadReportFile
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: File stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    GatewaySecret:
+      type: apiKey
+      in: header
+      name: x-gateway-secret
+
+  parameters:
+    XUserOu:
+      name: x-user-ou
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserBranch:
+      name: x-user-branch
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserHomeBranch:
+      name: x-user-home-branch
+      in: header
+      required: false
+      schema:
+        type: string
+    XUserId:
+      name: x-user-id
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserRole:
+      name: x-user-role
+      in: header
+      required: true
+      schema:
+        type: string
+    XRequestId:
+      name: x-request-id
+      in: header
+      required: false
+      schema:
+        type: string
+
+  headers:
+    XRequestId:
+      description: Correlation id
+      schema:
+        type: string
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: string
+          example: SUCCESS
+        message:
+          type: ["string", "null"]
+        data:
+          description: Payload (shape varies by operation)
+        pagination:
+          type: object
+          additionalProperties: true
+
+    ErrorEnvelope:
+      type: object
+      required: [success, code, message, data]
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: ["object", "null"]
+        requestId:
+          type: string
+
+    ReadyzOk:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+        dependencies:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+                enum: [ok, error]
+
+    ReadyzFail:
+      allOf:
+        - $ref: "#/components/schemas/ReadyzOk"
+        - type: object
+          properties:
+            status:
+              type: string
+              example: error
+
+    CreateReportBody:
+      type: object
+      required: [name, script]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        script:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        enabled:
+          type: boolean
+        schedule:
+          type: object
+          additionalProperties: true
+        exportFormat:
+          type: string
+          enum: [csv, xlsx]
+
+    ValidateBody:
+      type: object
+      required: [script]
+      properties:
+        script:
+          type: string
+          minLength: 1
+
+    TestRunBody:
+      type: object
+      required: [script]
+      properties:
+        script:
+          type: string
+          minLength: 1
+        compiledScript:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: Missing/invalid gateway secret or mesh headers
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: Permission denied
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Conflict:
+      description: Duplicate name or conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    ValidationFailed:
+      description: Domain validation / sandbox failure (`VALIDATION_FAILED`, `TEST_RUN_*`, …)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"

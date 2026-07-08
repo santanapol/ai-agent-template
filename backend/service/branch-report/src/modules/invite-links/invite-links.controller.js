@@ -1,4 +1,4 @@
-import { sendError, sendSuccess } from '../../lib/response.js';
+import { sendError, sendSuccess } from "../../lib/response.js";
 
 /**
  * @param {ReturnType<import('./invite-links.service.js').createInviteLinksService>} service

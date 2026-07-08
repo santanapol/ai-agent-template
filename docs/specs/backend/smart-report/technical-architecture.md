@@ -2,24 +2,26 @@
 
 **Package:** `backend/service/smart-report/` · port **3103**
 
-## HTTP contract (prose — no openapi.yaml)
+## HTTP contract
+
+**SoT:** [`openapi.yaml`](../../../../backend/service/smart-report/openapi.yaml) (`openapi: 3.1.0`) + `npm run spec:lint`.
 
 Mount prefix `/api/v1/smart-reports` (`app.js`). Static paths registered before `/:id`.
 
-| Method | Path | Handler | Notes |
-|--------|------|---------|-------|
-| POST | `/validate` | `validateReportHandler` | acorn AST — no DB write |
-| POST | `/test-run` | `testRunReportHandler` | sandbox + `TEST_RUN_TOKEN` |
-| GET | `/history` | `listHistoryHandler` | pagination |
-| GET | `/download/:fileId` | `downloadFileHandler` | streams file |
-| GET | `/` | `listReportsHandler` | |
-| POST | `/` | `createReportHandler` | unique `name` |
-| GET | `/:id` | `getReportHandler` | ETag from `upd_date` |
-| PUT | `/:id` | `updateReportHandler` | If-Match |
-| DELETE | `/:id` | `deleteReportHandler` | |
-| POST | `/:id/run` | `runReportHandler` | manual trigger |
+| Method | Path | Handler | OpenAPI |
+|--------|------|---------|---------|
+| POST | `/validate` | `validateReportHandler` | yes (skeleton) |
+| POST | `/test-run` | `testRunReportHandler` | yes |
+| GET | `/history` | `listHistoryHandler` | prose only (later) |
+| GET | `/download/:fileId` | `downloadFileHandler` | yes |
+| GET | `/` | `listReportsHandler` | yes |
+| POST | `/` | `createReportHandler` | yes |
+| GET | `/:id` | `getReportHandler` | prose only (later) |
+| PUT | `/:id` | `updateReportHandler` | prose only (later) |
+| DELETE | `/:id` | `deleteReportHandler` | prose only (later) |
+| POST | `/:id/run` | `runReportHandler` | prose only (later) |
 
-Probes: `GET /healthz`, `GET /readyz` (Mongo ping)
+Probes: `GET /healthz`, `GET /readyz` (in OpenAPI)
 
 ## Script pipeline
 

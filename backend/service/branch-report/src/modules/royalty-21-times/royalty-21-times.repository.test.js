@@ -1,22 +1,22 @@
-import assert from 'node:assert/strict';
-import { ObjectId } from 'mongodb';
-import { describe, it } from 'node:test';
+import assert from "node:assert/strict";
+import { ObjectId } from "mongodb";
+import { describe, it } from "node:test";
 
 import {
   DEPOSIT_SUCCESS_STATUS,
   WITHDRAW_SUCCESS_STATUS,
-} from '../../lib/constants.js';
-import { createRoyalty21TimesRepository } from './royalty-21-times.repository.js';
+} from "../../lib/constants.js";
+import { createRoyalty21TimesRepository } from "./royalty-21-times.repository.js";
 
-const OU_ID = '507f1f77bcf86cd799439011';
-const BRANCH_ID = '507f1f77bcf86cd799439012';
-const INVITE_LINK_ID = '507f1f77bcf86cd799439013';
+const OU_ID = "507f1f77bcf86cd799439011";
+const BRANCH_ID = "507f1f77bcf86cd799439012";
+const INVITE_LINK_ID = "507f1f77bcf86cd799439013";
 
-const REG_FROM = '2024-06-01';
-const REG_TO = '2024-06-30';
+const REG_FROM = "2024-06-01";
+const REG_TO = "2024-06-30";
 
 const defaultChannelFilter = {
-  channelType: 'member_referral',
+  channelType: "member_referral",
   regDateFrom: REG_FROM,
   regDateTo: REG_TO,
 };
@@ -82,7 +82,7 @@ function createMockDb() {
 
   const getDb = () => ({
     collection(name) {
-      assert.equal(name, 'member');
+      assert.equal(name, "member");
       return collection;
     },
   });
@@ -90,18 +90,18 @@ function createMockDb() {
   return { getDb, state };
 }
 
-describe('createRoyalty21TimesRepository — members (T6a)', () => {
-  it('findMembersPage returns projected members sorted by username ASC', async () => {
+describe("createRoyalty21TimesRepository — members (T6a)", () => {
+  it("findMembersPage returns projected members sorted by username ASC", async () => {
     const memId = new ObjectId();
-    const regDate = new Date('2024-06-15T10:30:00Z');
+    const regDate = new Date("2024-06-15T10:30:00Z");
     const { getDb, state } = createMockDb();
-    state.members = [{ _id: memId, username: '7W001', reg_date: regDate }];
+    state.members = [{ _id: memId, username: "7W001", reg_date: regDate }];
 
     const repository = createRoyalty21TimesRepository(getDb);
     const { members, filter } = await repository.findMembersPage({
       userContext,
       channelFilter: {
-        channelType: 'affiliate_link',
+        channelType: "affiliate_link",
         inviteLinkId: INVITE_LINK_ID,
         regDateFrom: REG_FROM,
         regDateTo: REG_TO,
@@ -124,7 +124,7 @@ describe('createRoyalty21TimesRepository — members (T6a)', () => {
     assert.deepEqual(members, state.members);
   });
 
-  it('countMembers returns total for the same tenant-scoped filter', async () => {
+  it("countMembers returns total for the same tenant-scoped filter", async () => {
     const { getDb, state } = createMockDb();
     state.total = 42;
 
@@ -137,14 +137,14 @@ describe('createRoyalty21TimesRepository — members (T6a)', () => {
     assert.deepEqual(filter, {
       ou_id: new ObjectId(OU_ID),
       branch_id: new ObjectId(BRANCH_ID),
-      referral: 'Member',
+      referral: "Member",
       ...regDateBounds,
     });
     assert.deepEqual(state.countFilter, filter);
     assert.equal(total, 42);
   });
 
-  it('scopes direct channel members by referral Branch', async () => {
+  it("scopes direct channel members by referral Branch", async () => {
     const { getDb, state } = createMockDb();
     state.members = [];
 
@@ -152,7 +152,7 @@ describe('createRoyalty21TimesRepository — members (T6a)', () => {
     await repository.findMembersPage({
       userContext,
       channelFilter: {
-        channelType: 'direct',
+        channelType: "direct",
         regDateFrom: REG_FROM,
         regDateTo: REG_TO,
       },
@@ -163,13 +163,17 @@ describe('createRoyalty21TimesRepository — members (T6a)', () => {
     assert.deepEqual(state.findFilter, {
       ou_id: new ObjectId(OU_ID),
       branch_id: new ObjectId(BRANCH_ID),
-      referral: 'Branch',
+      referral: "Branch",
       ...regDateBounds,
     });
   });
 });
 
-function createMetricsMockDb({ billinRows = [], withdrawRows = [], depositRows = [] } = {}) {
+function createMetricsMockDb({
+  billinRows = [],
+  withdrawRows = [],
+  depositRows = [],
+} = {}) {
   const state = {
     aggregateCalls: [],
   };
@@ -177,7 +181,7 @@ function createMetricsMockDb({ billinRows = [], withdrawRows = [], depositRows =
   const depositCollection = {
     aggregate(pipeline) {
       state.aggregateCalls.push({
-        collection: 'dm_dm_tn_deposit',
+        collection: "dm_dm_tn_deposit",
         pipeline,
       });
 
@@ -197,7 +201,7 @@ function createMetricsMockDb({ billinRows = [], withdrawRows = [], depositRows =
   const withdrawCollection = {
     aggregate(pipeline) {
       state.aggregateCalls.push({
-        collection: 'wallet_withdraw',
+        collection: "wallet_withdraw",
         pipeline,
       });
 
@@ -211,10 +215,10 @@ function createMetricsMockDb({ billinRows = [], withdrawRows = [], depositRows =
 
   const getDb = () => ({
     collection(name) {
-      if (name === 'dm_dm_tn_deposit') {
+      if (name === "dm_dm_tn_deposit") {
         return depositCollection;
       }
-      if (name === 'wallet_withdraw') {
+      if (name === "wallet_withdraw") {
         return withdrawCollection;
       }
       throw new Error(`Unexpected collection: ${name}`);
@@ -224,8 +228,8 @@ function createMetricsMockDb({ billinRows = [], withdrawRows = [], depositRows =
   return { getDb, state };
 }
 
-describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
-  it('returns metrics map with billin, withdraw, deposits 1-3, and revenue', async () => {
+describe("createRoyalty21TimesRepository — metrics (T6b)", () => {
+  it("returns metrics map with billin, withdraw, deposits 1-3, and revenue", async () => {
     const memId = new ObjectId();
     const { getDb } = createMetricsMockDb({
       billinRows: [{ _id: memId, billin: 15000 }],
@@ -249,7 +253,7 @@ describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
     assert.equal(metrics.deposits.length, 21);
   });
 
-  it('runs exactly three bulk aggregations for deposit and withdraw collections', async () => {
+  it("runs exactly three bulk aggregations for deposit and withdraw collections", async () => {
     const memId = new ObjectId();
     const { getDb, state } = createMetricsMockDb({
       billinRows: [],
@@ -265,18 +269,20 @@ describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
 
     assert.equal(state.aggregateCalls.length, 3);
     assert.equal(
-      state.aggregateCalls.filter((call) => call.collection === 'dm_dm_tn_deposit')
-        .length,
+      state.aggregateCalls.filter(
+        (call) => call.collection === "dm_dm_tn_deposit",
+      ).length,
       2,
     );
     assert.equal(
-      state.aggregateCalls.filter((call) => call.collection === 'wallet_withdraw')
-        .length,
+      state.aggregateCalls.filter(
+        (call) => call.collection === "wallet_withdraw",
+      ).length,
       1,
     );
   });
 
-  it('scopes bulk aggregations by ou_id, branch_id, and mem_id $in', async () => {
+  it("scopes bulk aggregations by ou_id, branch_id, and mem_id $in", async () => {
     const memId = new ObjectId();
     const { getDb, state } = createMetricsMockDb();
 
@@ -288,12 +294,12 @@ describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
 
     const depositMatch = state.aggregateCalls.find(
       (call) =>
-        call.collection === 'dm_dm_tn_deposit' &&
+        call.collection === "dm_dm_tn_deposit" &&
         call.pipeline[0]?.$match?.status?.$in,
     )?.pipeline[0].$match;
 
     const withdrawMatch = state.aggregateCalls.find(
-      (call) => call.collection === 'wallet_withdraw',
+      (call) => call.collection === "wallet_withdraw",
     )?.pipeline[0].$match;
 
     assert.deepEqual(depositMatch, {
@@ -310,7 +316,7 @@ describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
     });
   });
 
-  it('sorts deposit slots by bill_date ASC in aggregation pipeline', async () => {
+  it("sorts deposit slots by bill_date ASC in aggregation pipeline", async () => {
     const memId = new ObjectId();
     const { getDb, state } = createMetricsMockDb();
 
@@ -322,25 +328,31 @@ describe('createRoyalty21TimesRepository — metrics (T6b)', () => {
 
     const depositSlotPipeline = state.aggregateCalls.find(
       (call) =>
-        call.collection === 'dm_dm_tn_deposit' &&
+        call.collection === "dm_dm_tn_deposit" &&
         call.pipeline.some((stage) => stage.$group?.deposits),
     )?.pipeline;
 
-    const groupStage = depositSlotPipeline?.find((stage) => stage.$group?.deposits);
+    const groupStage = depositSlotPipeline?.find(
+      (stage) => stage.$group?.deposits,
+    );
     assert.deepEqual(groupStage?.$group.deposits, {
       $topN: {
         n: 21,
         sortBy: { bill_date: 1 },
-        output: '$amt',
+        output: "$amt",
       },
     });
   });
 
-  it('returns empty map without querying when memIds is empty', async () => {
+  it("returns empty map without querying when memIds is empty", async () => {
     let queried = false;
     const getDb = () => {
       queried = true;
-      return { collection() { throw new Error('should not query'); } };
+      return {
+        collection() {
+          throw new Error("should not query");
+        },
+      };
     };
 
     const repository = createRoyalty21TimesRepository(getDb);

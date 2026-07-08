@@ -1,8 +1,8 @@
-import { buildApp } from './app.js';
-import { closeDatabase, connectDatabase } from './config/database.js';
+import { buildApp } from "./app.js";
+import { closeDatabase, connectDatabase } from "./config/database.js";
 
 const port = Number(process.env.PORT ?? 3104);
-const host = process.env.HOST ?? '0.0.0.0';
+const host = process.env.HOST ?? "0.0.0.0";
 
 const app = await buildApp();
 
@@ -22,5 +22,5 @@ async function shutdown(signal) {
   process.exit(0);
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));

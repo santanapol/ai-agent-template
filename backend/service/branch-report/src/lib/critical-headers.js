@@ -1,10 +1,10 @@
 const CRITICAL_HEADERS = [
-  'x-gateway-secret',
-  'x-user-ou',
-  'x-user-branch',
-  'x-user-home-branch',
-  'x-user-id',
-  'x-user-role',
+  "x-gateway-secret",
+  "x-user-ou",
+  "x-user-branch",
+  "x-user-home-branch",
+  "x-user-id",
+  "x-user-role",
 ];
 
 /**
@@ -15,7 +15,7 @@ function isDuplicatedHeaderValue(value) {
   if (Array.isArray(value)) {
     return true;
   }
-  if (typeof value === 'string' && value.includes(',')) {
+  if (typeof value === "string" && value.includes(",")) {
     return true;
   }
   return false;

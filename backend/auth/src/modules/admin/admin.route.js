@@ -9,7 +9,7 @@ import {
   getRolePermissionsQuerySchema,
   upsertRolePermissionBodySchema,
   deleteRolePermissionQuerySchema
-} from './admin.validator.js'
+} from './admin.schema.js'
 
 /**
  * @param {import('fastify').FastifyInstance} fastify

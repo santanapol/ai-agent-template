@@ -83,6 +83,10 @@ curl -X GET http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_to
 
 ตารางเดียวกับ [root RUNBOOK.md § Troubleshooting](../RUNBOOK.md#troubleshooting-สรุป) ครอบคลุมกรณีนี้แล้ว (E11000, 401, 403, 503 readyz) — ไม่ทำซ้ำที่นี่ ดูที่นั่นแทน
 
+### Local `ci-all` / `npm ci` flake (TD-012)
+
+ลำดับ install ใน monorepo อาจทำให้ `node_modules` extract ไม่ครบ (`TAR_ENTRY_ERROR`). `backend/scripts/install-all-deps.sh` ลบ `node_modules` ก่อน `npm ci` และ retry ครั้งเดียว — ดู [root RUNBOOK § ทดสอบก่อน PR / CI](../RUNBOOK.md#ทดสอบก่อน-pr--ci)
+
 ---
 
 ## 6. 📦 Deploy Checklist

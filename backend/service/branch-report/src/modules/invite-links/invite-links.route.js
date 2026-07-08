@@ -1,8 +1,8 @@
-import { getDatabase } from '../../config/database.js';
-import { createInviteLinksController } from './invite-links.controller.js';
-import { createInviteLinksRepository } from './invite-links.repository.js';
-import { inviteLinksListSchema } from './invite-links.schema.js';
-import { createInviteLinksService } from './invite-links.service.js';
+import { getDatabase } from "../../config/database.js";
+import { createInviteLinksController } from "./invite-links.controller.js";
+import { createInviteLinksRepository } from "./invite-links.repository.js";
+import { inviteLinksListSchema } from "./invite-links.schema.js";
+import { createInviteLinksService } from "./invite-links.service.js";
 
 /**
  * @param {import('fastify').FastifyInstance} app
@@ -15,7 +15,7 @@ export async function registerInviteLinksRoutes(app, options = {}) {
   const controller = createInviteLinksController(service);
 
   app.get(
-    '/api/v1/branch-report/invite-links',
+    "/api/v1/branch-report/invite-links",
     {
       schema: inviteLinksListSchema,
     },

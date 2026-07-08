@@ -1,5 +1,5 @@
-export const DEPOSIT_COLLECTION = 'dm_dm_tn_deposit';
-export const WITHDRAW_COLLECTION = 'wallet_withdraw';
+export const DEPOSIT_COLLECTION = "dm_dm_tn_deposit";
+export const WITHDRAW_COLLECTION = "wallet_withdraw";
 export const DEPOSIT_SLOT_COUNT = 21;
 
 /**
