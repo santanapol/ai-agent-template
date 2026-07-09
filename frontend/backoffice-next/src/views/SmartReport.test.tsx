@@ -99,6 +99,17 @@ describe("SmartReport (list mode)", () => {
     vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
   });
 
+  it("fetches enrichment history and reports once on mount", async () => {
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(listReports).toHaveBeenCalledTimes(1);
+      expect(listHistory).toHaveBeenCalledTimes(1);
+    });
+    expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
+    expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+  });
+
   it("renders list view with title and create button", async () => {
     renderSmartReport();
 
