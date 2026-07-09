@@ -16,6 +16,13 @@ import type {
 
 import { buildInvoiceEtag } from "../bulk/invoiceEtag";
 
+let invoiceAgentsInflight: Promise<InvoiceAgentBranch[]> | null = null;
+
+/** @internal Test helper — resets module-level in-flight dedupe state. */
+export function __resetInvoiceAgentsInflightForTests() {
+  invoiceAgentsInflight = null;
+}
+
 export function useInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
@@ -31,18 +38,27 @@ export function useInvoices() {
   const [loadingBranches, setLoadingBranches] = useState(false);
 
   const fetchInvoiceAgents = useCallback(async () => {
-    setLoadingBranches(true);
-    try {
-      const res = await api.listInvoiceAgents();
-      const items = Array.isArray(res.data) ? res.data : [];
-      setBranches(items);
-      return items;
-    } catch (error: unknown) {
-      toast.error(apiErrorMessage(error, "Failed to fetch branches"));
-      return [];
-    } finally {
-      setLoadingBranches(false);
+    if (invoiceAgentsInflight) {
+      return invoiceAgentsInflight;
     }
+
+    setLoadingBranches(true);
+    invoiceAgentsInflight = (async () => {
+      try {
+        const res = await api.listInvoiceAgents();
+        const items = Array.isArray(res.data) ? res.data : [];
+        setBranches(items);
+        return items;
+      } catch (error: unknown) {
+        toast.error(apiErrorMessage(error, "Failed to fetch branches"));
+        return [];
+      } finally {
+        setLoadingBranches(false);
+        invoiceAgentsInflight = null;
+      }
+    })();
+
+    return invoiceAgentsInflight;
   }, []);
 
   const fetchInvoices = useCallback(async (params: ListInvoicesParams = {}, signal?: AbortSignal) => {
