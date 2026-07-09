@@ -13,6 +13,11 @@ export async function listProfiles(params: ListProfilesParams = {}) {
   return res.data;
 }
 
+export async function getProfileCounts(params: { status: "active" | "archived"; branch_id?: string }) {
+  const res = await client.get<ApiEnvelope<{ total: number }>>("/api/v1/staff/profiles/count", { params });
+  return res.data.data;
+}
+
 export async function getProfileById(id: string): Promise<{ profile: StaffProfile; etag: string | null }> {
   const res = await client.get<ApiEnvelope<StaffProfile>>(`/api/v1/staff/profiles/${id}`);
   return { profile: res.data.data, etag: extractETag(res) };

@@ -38,12 +38,12 @@ const Dashboard: React.FC = () => {
       }
       try {
         const [activeRes, archivedRes] = await Promise.all([
-          staffApi.listProfiles({ status: "active", page: 1, limit: 1 }),
-          staffApi.listProfiles({ status: "archived", page: 1, limit: 1 }),
+          staffApi.getProfileCounts({ status: "active" }),
+          staffApi.getProfileCounts({ status: "archived" }),
         ]);
         if (cancelled) return;
-        setActiveCount(activeRes.pagination?.total ?? 0);
-        setArchivedCount(archivedRes.pagination?.total ?? 0);
+        setActiveCount(activeRes?.total ?? 0);
+        setArchivedCount(archivedRes?.total ?? 0);
       } catch (err) {
         if (!cancelled) message.error(apiErrorMessage(err, "Failed to load dashboard stats"));
       } finally {

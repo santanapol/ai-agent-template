@@ -96,7 +96,7 @@ const ChannelPerformancePage: React.FC = () => {
     inviteAbortRef.current = controller;
     setInviteLinksLoading(true);
     try {
-      const links = await getInviteLinks(controller.signal);
+      const links = await getInviteLinks({ limit: 20, signal: controller.signal });
       if (controller.signal.aborted) return;
       setInviteLinks(links);
     } catch (err: unknown) {
@@ -109,8 +109,14 @@ const ChannelPerformancePage: React.FC = () => {
   }, [hasActiveBranch, message]);
 
   useEffect(() => {
-    if (hasActiveBranch) void loadInviteLinks();
-  }, [hasActiveBranch, loadInviteLinks]);
+    if (!hasActiveBranch) return;
+    // Lazy: invite links load when user opens affiliate filter (see Royalty21SearchForm).
+  }, [hasActiveBranch]);
+
+  const handleInviteLinksOpen = useCallback(() => {
+    if (inviteLinks.length > 0 || inviteLinksLoading) return;
+    void loadInviteLinks();
+  }, [inviteLinks.length, inviteLinksLoading, loadInviteLinks]);
 
   const fetchReport = useCallback(
     async (params: Royalty21QueryParams) => {
@@ -211,6 +217,7 @@ const ChannelPerformancePage: React.FC = () => {
           disabled={!hasActiveBranch}
           onSearch={handleSearch}
           onClear={resetFormAndReport}
+          onInviteLinksOpen={handleInviteLinksOpen}
         />
       }
     >

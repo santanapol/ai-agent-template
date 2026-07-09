@@ -7,7 +7,10 @@ export function createInviteLinksController(service) {
   return {
     async list(request, reply) {
       try {
-        const data = await service.listInviteLinks(request.userContext);
+        const data = await service.listInviteLinks(
+          request.userContext,
+          request.query ?? {},
+        );
         return sendSuccess(reply, {
           data,
           requestId: request.requestId,

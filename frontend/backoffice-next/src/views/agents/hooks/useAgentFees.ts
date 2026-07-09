@@ -38,7 +38,7 @@ export function useAgentFees(agentId: string) {
     async (ou_id?: string, signal?: AbortSignal) => {
       try {
         const [comps, cats] = await Promise.all([
-          api.getGameCompanies(ou_id, signal),
+          api.getGameCompanies(ou_id, signal, "matrix"),
           api.getGameCategories(ou_id, signal),
         ]);
         if (signal?.aborted) return;
