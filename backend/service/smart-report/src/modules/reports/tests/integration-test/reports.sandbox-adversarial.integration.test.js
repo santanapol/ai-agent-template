@@ -95,9 +95,13 @@ if (!RUN) {
     test("POST / rejects tampered testRunToken (422 TEST_RUN_TOKEN_INVALID)", async () => {
       const headers = buildMeshHeaders();
       const script = `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`;
-      const { compiledScript, testRunToken } = await validateAndTestRun(app, headers, {
-        script,
-      });
+      const { compiledScript, testRunToken } = await validateAndTestRun(
+        app,
+        headers,
+        {
+          script,
+        },
+      );
 
       const tamperedToken = `${testRunToken.slice(0, -4)}xxxx`;
 
@@ -125,9 +129,13 @@ if (!RUN) {
       const originalTtl = process.env.TEST_RUN_TOKEN_TTL_MS;
       process.env.TEST_RUN_TOKEN_TTL_MS = "1";
 
-      const { compiledScript, testRunToken } = await validateAndTestRun(app, headers, {
-        script,
-      });
+      const { compiledScript, testRunToken } = await validateAndTestRun(
+        app,
+        headers,
+        {
+          script,
+        },
+      );
 
       await new Promise((resolve) => setTimeout(resolve, 5));
 
