@@ -191,7 +191,9 @@ async function checkCollectionValidators() {
       fail(`[validators] database-erd.md ขาด collection "${collection}"`);
     }
   }
-  const feesSpec = COLLECTION_VALIDATORS.find((v) => v.collection === "agent_fees");
+  const feesSpec = COLLECTION_VALIDATORS.find(
+    (v) => v.collection === "agent_fees",
+  );
   if (
     erd.includes("agent_fee") &&
     feesSpec &&

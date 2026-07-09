@@ -217,7 +217,9 @@ async function checkAuthValidators() {
     erd.includes('access_token_gen') &&
     !COLLECTION_VALIDATORS[0].schema.required?.includes('access_token_gen')
   ) {
-    fail('[validators] database-erd.md ระบุ access_token_gen required แต่ module ไม่ใส่ใน required[]')
+    fail(
+      '[validators] database-erd.md ระบุ access_token_gen required แต่ module ไม่ใส่ใน required[]'
+    )
   }
 }
 
