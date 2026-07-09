@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
+import logger from "./config/logger.js";
 import dbPlugin from "./plugins/db.plugin.js";
 import mongodbRead from "./plugins/mongodb-read.js";
 import mongodbInvoice from "./plugins/mongodb-invoice.js";
@@ -14,25 +15,13 @@ import userContextPlugin from "./plugins/user-context.js";
 import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
 import { registerHealthRoutes } from "./routes/health.route.js";
 
-const REDACT_PATHS = [
-  'req.headers["x-gateway-secret"]',
-  "req.headers.authorization",
-  "req.headers.cookie",
-  "req.body.password",
-  "req.body.token",
-];
-
 const PUBLIC_PATHS = ["/healthz", "/readyz", "/metrics"];
 
 export default async function buildApp(opts = {}) {
-  const isDev = process.env.NODE_ENV !== "production";
   const startedAtMs = Date.now();
 
   const app = Fastify({
-    logger: {
-      level: isDev ? "info" : "warn",
-      redact: REDACT_PATHS,
-    },
+    loggerInstance: logger,
     ...opts,
   });
 
