@@ -83,6 +83,7 @@ if (!RUN) {
         username: `t14other.${Date.now()}@test.invalid`,
         password_hash: "test-hash-not-used",
         role: "staff",
+        access_token_gen: 0,
         cr_by: staffUserId,
         cr_date: now,
         cr_prog: "test.setup",

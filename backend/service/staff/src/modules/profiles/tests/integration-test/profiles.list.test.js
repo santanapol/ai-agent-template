@@ -98,6 +98,7 @@ if (!RUN) {
             username: item.username,
             password_hash: "test-hash-not-used",
             role: "staff",
+            access_token_gen: 0,
             cr_by: adminUserId,
             cr_date: now,
             cr_prog: "test.setup",
