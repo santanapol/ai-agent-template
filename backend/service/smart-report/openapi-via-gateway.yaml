@@ -1,0 +1,395 @@
+openapi: 3.1.0
+info:
+  title: smart-report-service
+  version: 0.1.0
+  contact:
+    name: engineering
+    url: https://example.invalid/smart-report-service
+  description: |
+    **Client import** for **`smart-report-service`** through **`gateway`** (default listen **`3000`**).
+
+    Send **`Authorization: Bearer <access JWT>`** only — gateway verifies JWT, injects mesh headers, and proxies to smart-report (`3103`).
+
+    Normative schemas and mesh contract: **[`./openapi.yaml`](./openapi.yaml)**.
+
+    Gateway routes: **[`../../../gateway/routes.json`](../../../gateway/routes.json)** (`/api/v1/smart-reports` → `127.0.0.1:3103`).
+  license:
+    name: LicenseRef-Proprietary
+    url: https://example.invalid/license
+
+servers:
+  - url: http://127.0.0.1:{port}
+    description: Local gateway
+    variables:
+      port:
+        default: "3000"
+        description: gateway `PORT`.
+
+security:
+  - BearerJwt: []
+
+tags:
+  - name: reports
+    description: Smart report CRUD and pipeline via gateway (`/api/v1/smart-reports`).
+
+paths:
+  /api/v1/smart-reports:
+    get:
+      tags: [reports]
+      summary: List reports (via gateway)
+      description: Paginated list of report definitions for the caller's branch scope. Requires permission `reports:smart`.
+      operationId: listReportsViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "./openapi.yaml#/components/schemas/Report"
+                      pagination:
+                        $ref: "./openapi.yaml#/components/schemas/Pagination"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+
+    post:
+      tags: [reports]
+      summary: Create report (via gateway)
+      description: Create a report definition after validate + test-run gate. Requires permission `reports:smart`.
+      operationId: createReportViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/CreateReportBody"
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "./openapi.yaml#/components/schemas/ReportDetail"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/BadRequest"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+        "409":
+          $ref: "./openapi.yaml#/components/responses/Conflict"
+        "422":
+          $ref: "./openapi.yaml#/components/responses/ValidationFailed"
+
+  /api/v1/smart-reports/validate:
+    post:
+      tags: [reports]
+      summary: Validate script (via gateway)
+      description: Parse/validate Mongo script with acorn — no DB write.
+      operationId: validateReportViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/ValidateBody"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "422":
+          $ref: "./openapi.yaml#/components/responses/ValidationFailed"
+
+  /api/v1/smart-reports/test-run:
+    post:
+      tags: [reports]
+      summary: Test-run script in sandbox (via gateway)
+      description: Execute compiled script against read Mongo; returns rows + test-run token material.
+      operationId: testRunReportViaGateway
+      security:
+        - BearerJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/TestRunBody"
+      responses:
+        "200":
+          description: Test-run succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "422":
+          $ref: "./openapi.yaml#/components/responses/ValidationFailed"
+
+  /api/v1/smart-reports/history:
+    get:
+      tags: [reports]
+      summary: List download history (via gateway)
+      description: Paginated download/run history for all smart reports in scope.
+      operationId: listReportHistoryViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "./openapi.yaml#/components/schemas/HistoryEntry"
+                      pagination:
+                        $ref: "./openapi.yaml#/components/schemas/Pagination"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+
+  /api/v1/smart-reports/download/{fileId}:
+    get:
+      tags: [reports]
+      summary: Download export file (via gateway)
+      description: Stream a previously exported CSV/Excel file by id.
+      operationId: downloadReportFileViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-fA-F0-9]{24}$"
+      responses:
+        "200":
+          description: File stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/NotFound"
+
+  /api/v1/smart-reports/{id}:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ReportId"
+    get:
+      tags: [reports]
+      summary: Get report by id (via gateway)
+      description: Returns full report definition including script and compiledScript.
+      operationId: getReportViaGateway
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "./openapi.yaml#/components/schemas/ReportDetail"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/NotFound"
+
+    put:
+      tags: [reports]
+      summary: Update report (via gateway)
+      description: Partial update with `If-Match` (ETag). Script changes require a fresh `testRunToken`.
+      operationId: updateReportViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./openapi.yaml#/components/schemas/UpdateReportBody"
+      responses:
+        "200":
+          description: Updated
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+            ETag:
+              $ref: "./openapi.yaml#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+        "400":
+          $ref: "./openapi.yaml#/components/responses/BadRequest"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/NotFound"
+        "412":
+          $ref: "./openapi.yaml#/components/responses/VersionConflict"
+        "422":
+          $ref: "./openapi.yaml#/components/responses/ValidationFailed"
+        "428":
+          $ref: "./openapi.yaml#/components/responses/PreconditionRequired"
+
+    delete:
+      tags: [reports]
+      summary: Delete report (via gateway)
+      description: Delete report definition with optimistic concurrency (`If-Match`).
+      operationId: deleteReportViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - $ref: "./openapi.yaml#/components/parameters/IfMatch"
+      responses:
+        "200":
+          description: Deleted
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/NotFound"
+        "412":
+          $ref: "./openapi.yaml#/components/responses/VersionConflict"
+        "428":
+          $ref: "./openapi.yaml#/components/responses/PreconditionRequired"
+
+  /api/v1/smart-reports/{id}/run:
+    parameters:
+      - $ref: "./openapi.yaml#/components/parameters/ReportId"
+    post:
+      tags: [reports]
+      summary: Manually run report (via gateway)
+      description: Execute report now and record download history.
+      operationId: runReportViaGateway
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          description: Run succeeded
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./openapi.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "./openapi.yaml#/components/schemas/HistoryEntry"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/Unauthorized"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/Forbidden"
+        "404":
+          $ref: "./openapi.yaml#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token issued by auth; verified at gateway only.

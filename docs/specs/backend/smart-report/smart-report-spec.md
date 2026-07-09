@@ -1,9 +1,9 @@
 ---
 status: implemented
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-09
 owner: Berlin
-last-verified: 2026-07-03
+last-verified: 2026-07-09
 source-scan: 2026-07-03 — src 58/58 files
 ---
 
@@ -13,7 +13,7 @@ source-scan: 2026-07-03 — src 58/58 files
 
 **Smart Report** — ให้ staff วาง MongoDB query scripts, validate (acorn), test-run ใน sandbox, schedule (node-cron), export CSV/Excel
 
-**OpenAPI:** [`openapi.yaml`](../../../../backend/service/smart-report/openapi.yaml) — happy-path skeleton (list/create/validate/test-run/download + probes). ดูรายละเอียด path ที่ยัง prose-only ใน [technical-architecture.md](./technical-architecture.md)
+**OpenAPI:** [`openapi.yaml`](../../../../backend/service/smart-report/openapi.yaml) (direct mesh CRUD) · [`openapi-via-gateway.yaml`](../../../../backend/service/smart-report/openapi-via-gateway.yaml) (Bearer JWT via gateway)
 
 ## Consumers
 
@@ -25,7 +25,7 @@ source-scan: 2026-07-03 — src 58/58 files
 | หัวข้อ | SoT |
 |--------|-----|
 | Business | [business-domain.md](./business-domain.md) |
-| HTTP contract | [openapi.yaml](../../../../backend/service/smart-report/openapi.yaml) + [technical-architecture.md](./technical-architecture.md) |
+| HTTP contract | [openapi.yaml](../../../../backend/service/smart-report/openapi.yaml) + [openapi-via-gateway.yaml](../../../../backend/service/smart-report/openapi-via-gateway.yaml) + [technical-architecture.md](./technical-architecture.md) |
 | Persistence | [database-erd.md](./database-erd.md) |
 | Error codes | [codes.yaml](../../../../backend/service/smart-report/codes.yaml) |
 | Testing | [TESTING.md](./TESTING.md) |

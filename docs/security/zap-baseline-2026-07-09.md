@@ -126,5 +126,5 @@ After a run, append a row to **Run log** and optionally commit HTML/JSON under `
 ## Related
 
 - [RUNBOOK.md § OWASP ZAP](../../RUNBOOK.md#owasp-zap-optional-dast)
-- [backend-post-residual-roadmap § 3.3](../exec-plans/active/backend-post-residual-roadmap-2026-07-09.md) — security sprint context
+- [backend-post-residual-roadmap § 3.3](../exec-plans/completed/backend-post-residual-roadmap-2026-07-09.md) — security sprint context
 - Mesh/adversarial evidence: backend review findings Appendix E (deferred ZAP → this doc)

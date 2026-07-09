@@ -8,7 +8,7 @@ Owner: Berlin. src 58/58 read (2026-07-03 re-harden).
 |-------|-------|
 | Package root | `backend/service/smart-report/` |
 | `src/` files | 58/58 |
-| OpenAPI | [openapi.yaml](../../../../backend/service/smart-report/openapi.yaml) (full CRUD direct spec; via-gateway in TD-013 follow-up) |
+| OpenAPI | [openapi.yaml](../../../../backend/service/smart-report/openapi.yaml) + [openapi-via-gateway.yaml](../../../../backend/service/smart-report/openapi-via-gateway.yaml) (full CRUD) |
 
 ## Section confidence
 

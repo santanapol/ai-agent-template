@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "spec:codes": "node --test src/lib/tests/codes-registry.test.js",
-    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml",
+    "spec:lint": "spectral lint openapi.yaml --ruleset .spectral.yaml && spectral lint openapi-via-gateway.yaml --ruleset .spectral.yaml",
     "spec:consistency": "node scripts/validate-spec-consistency.mjs",
     "audit:check": "npm audit --audit-level=high",
     "ci": "npm run lint && npm run format:check && npm run spec:codes && npm run spec:lint && npm run spec:consistency && npm test && npm run audit:check",
