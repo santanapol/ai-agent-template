@@ -1260,6 +1260,16 @@ paths:
           schema:
             type: string
             pattern: "^[0-9a-fA-F]{24}$"
+        - name: fields
+          in: query
+          required: false
+          description: |
+            Response projection. Default `full` preserves existing payload.
+            `matrix` returns `{ _id, provider_name: { en } }` only (~50% smaller).
+          schema:
+            type: string
+            enum: [full, matrix]
+            default: full
       responses:
         "200":
           description: Success

@@ -33,6 +33,43 @@ test("Master Data API - Game Companies and Categories", async (t) => {
   );
 
   await t.test(
+    "GET /game-companies fields=matrix returns slim projection",
+    async () => {
+      const fullResponse = await app.inject({
+        method: "GET",
+        url: "/api/v1/agent-invoice/master-data/game-companies",
+        headers: validHeaders,
+      });
+      const matrixResponse = await app.inject({
+        method: "GET",
+        url: "/api/v1/agent-invoice/master-data/game-companies?fields=matrix",
+        headers: validHeaders,
+      });
+
+      assert.strictEqual(fullResponse.statusCode, 200);
+      assert.strictEqual(matrixResponse.statusCode, 200);
+      const fullBody = JSON.parse(fullResponse.payload);
+      const matrixBody = JSON.parse(matrixResponse.payload);
+      assert.ok(Array.isArray(fullBody.data));
+      assert.ok(Array.isArray(matrixBody.data));
+      assert.strictEqual(fullBody.data.length, matrixBody.data.length);
+
+      if (matrixBody.data.length > 0) {
+        const row = matrixBody.data[0];
+        assert.ok(row._id);
+        assert.ok("provider_name" in row);
+        assert.ok(!("ou_id" in row));
+        assert.ok(!("name" in row));
+        assert.ok(!("active" in row));
+        assert.ok(
+          JSON.stringify(matrixBody.data).length <
+            JSON.stringify(fullBody.data).length * 0.5,
+        );
+      }
+    },
+  );
+
+  await t.test(
     "GET /game-categories should return list of game categories",
     async () => {
       const response = await app.inject({

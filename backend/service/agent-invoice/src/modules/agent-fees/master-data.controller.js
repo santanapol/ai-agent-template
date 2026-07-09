@@ -5,7 +5,8 @@ import * as repo from "./master-data.repository.js";
 export const getGameCompaniesHandler = async (request, reply) => {
   try {
     const { ouId } = extractContext(request);
-    const data = await repo.getGameCompanies(ouId);
+    const fields = request.query?.fields === "matrix" ? "matrix" : "full";
+    const data = await repo.getGameCompanies(ouId, { fields });
 
     return reply.status(200).send({
       success: true,

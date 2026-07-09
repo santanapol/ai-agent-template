@@ -60,7 +60,7 @@ Prefix via gateway: `/api/v1/agent-invoice` and `/api/v1/invoices`
 | Method | Path | Permission |
 |--------|------|------------|
 | GET/POST/PUT/DELETE | `/api/v1/agent-invoice/agents/:agentId/fees...` | `agent-fees:*` |
-| GET | `/api/v1/agent-invoice/master-data/game-companies` | `agents:list` |
+| GET | `/api/v1/agent-invoice/master-data/game-companies` | `agents:fees`; optional `fields=matrix` for slim projection |
 | GET | `/api/v1/agent-invoice/master-data/game-categories` | `agents:list` |
 
 ### Invoices (`/api/v1/invoices`)
