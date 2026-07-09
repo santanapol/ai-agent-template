@@ -138,45 +138,12 @@ MVP แนะนำ **case-insensitive regex** บนฟิลด์ที่ม
 
 **ไม่บังคับ** Atlas Search ใน MVP
 
-### Schema validation (แนะนำ)
+### Schema validation (`$jsonSchema`)
 
-```javascript
-// ตัวอย่าง — ปรับชื่อ DB/collection ตาม env
-db.runCommand({
-  collMod: "staff_profiles",
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: [
-        "user_id",
-        "ou_id",
-        "branch_id",
-        "status",
-        "code",
-        "firstname",
-        "lastname",
-        "email",
-        "tel",
-        "cr_by",
-        "cr_date",
-        "cr_prog",
-        "upd_by",
-        "upd_date",
-        "upd_prog",
-      ],
-      properties: {
-        status: { enum: ["active", "archived"] },
-        code: { bsonType: "string", minLength: 1, maxLength: 32 },
-        firstname: { bsonType: "string", minLength: 1, maxLength: 128 },
-        lastname: { bsonType: "string", minLength: 1, maxLength: 128 },
-        email: { bsonType: "string", maxLength: 254 },
-        tel: { bsonType: "string", maxLength: 16 },
-      },
-    },
-  },
-  validationLevel: "moderate",
-});
-```
+`validationLevel: "moderate"` — SoT: [`collection-validators.mjs`](../../../../backend/service/staff/scripts/collection-validators.mjs). Applied by [`init-db.mjs`](../../../../backend/service/staff/scripts/init-db.mjs). Policy: [ADR 005](../../../adrs/005-mongodb-collection-validators-policy.md).
+
+**Required:** `user_id`, `ou_id`, `branch_id`, `status`, `code`, `firstname`, `lastname`, `email`, `tel`, audit (`cr_*`, `upd_*`).  
+**Properties:** `status` enum `active` \| `archived`; string length bounds on `code`, `firstname`, `lastname`, `email`, `tel`.
 
 ## Collection: `auth_users` (auth-owned)
 

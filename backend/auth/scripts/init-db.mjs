@@ -16,6 +16,9 @@ import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
 import { AUTH_COLLECTIONS } from '../src/config/mongo-collections.js'
 import { ensureZeroHqBranch } from './seed-data/ensure-zero-hq.mjs'
+import { ensureAuthIndexes } from './ensure-auth-indexes.mjs'
+import { COLLECTION_VALIDATORS } from './collection-validators.mjs'
+import { applyCollectionValidators } from '../../../scripts/ops/apply-collection-validator-lib.mjs'
 import {
   DEV_SEED_CUSTOMER_BRANCH_ID,
   DEV_SEED_OU_ID,
@@ -72,51 +75,20 @@ console.log('')
 // ─── 1. Indexes (ตาม docs/db/erd.md — architecture §8.3) ───────
 
 console.log('▶ สร้าง indexes...')
-
-// Collection: auth_users
-await db
-  .collection(AUTH_COLLECTIONS.USERS)
-  .createIndex({ username: 1 }, { unique: true, name: 'uniq_username' })
-await db
-  .collection(AUTH_COLLECTIONS.USERS)
-  .createIndex({ ou_id: 1, branch_id: 1 }, { name: 'by_ou_branch' })
-await db
-  .collection(AUTH_COLLECTIONS.USERS)
-  .createIndex({ ou_id: 1, role: 1 }, { name: 'by_ou_role' })
-
-// Collection: auth_refresh_tokens
-await db
-  .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
-  .createIndex({ token_hash: 1 }, { unique: true, name: 'uniq_token_hash' })
-await db
-  .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
-  .createIndex({ user_id: 1, revoked_at: 1, expires_at: 1 }, { name: 'by_user_revoked_exp' })
-await db
-  .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
-  .createIndex({ family_id: 1 }, { name: 'by_family' })
-await db
-  .collection(AUTH_COLLECTIONS.REFRESH_TOKENS)
-  .createIndex({ expires_at: 1 }, { name: 'ttl_expires_at', expireAfterSeconds: 0 })
-
-// Collection: auth_credential_throttle
-await db
-  .collection(AUTH_COLLECTIONS.CREDENTIAL_THROTTLE)
-  .createIndex({ throttle_key: 1 }, { unique: true, name: 'uniq_throttle_key' })
-
-// Collection: auth_audit_events
-await db
-  .collection(AUTH_COLLECTIONS.AUDIT_EVENTS)
-  .createIndex({ request_id: 1 }, { name: 'by_request_id' })
-await db
-  .collection(AUTH_COLLECTIONS.AUDIT_EVENTS)
-  .createIndex({ retention_until: 1 }, { name: 'ttl_retention_until', expireAfterSeconds: 0 })
-
-console.log('  ✔ auth_users: uniq_username, by_ou_branch')
+await ensureAuthIndexes(db)
+console.log('  ✔ auth_users: uniq_username, by_ou_branch, by_ou_role')
 console.log(
   '  ✔ auth_refresh_tokens: uniq_token_hash, by_user_revoked_exp, by_family, ttl_expires_at'
 )
 console.log('  ✔ auth_credential_throttle: uniq_throttle_key')
 console.log('  ✔ auth_audit_events: by_request_id, ttl_retention_until')
+console.log('  ✔ auth_menus: uniq_menu_key, by_parent_key')
+console.log('  ✔ auth_role_permissions: uniq_ou_role')
+console.log('  ✔ platform_branches: uniq_ou_branch_code, by_ou_active')
+
+console.log('▶ collection validators (moderate)...')
+await applyCollectionValidators(db, COLLECTION_VALIDATORS)
+console.log('')
 
 if (isOuWideHomeBranchRole(adminRole) && !process.env.SEED_BRANCH_ID) {
   console.log('▶ Zero HQ (platform_branches)...')

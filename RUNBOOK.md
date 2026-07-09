@@ -154,7 +154,7 @@ UI: `http://localhost:3005`
 
 Harness smoke login: `platform_admin` / `1234` (ค่า default ใน `dev-lib.sh`)
 
-`seed-all.sh` seed: auth users + permissions, staff profiles, demo items, smart reports, agent-invoice sample, branch-report `gpp_777ww` minimal data
+`seed-all.sh` seed: auth users + permissions, staff profiles, demo items, smart reports, agent-invoice sample, branch-report `gpp_777ww` minimal data. ท้าย seed รัน **`./scripts/dev/verify-harness-schema.sh`** อัตโนมัติ (validators registry + prod baseline parity + indexes).
 
 **branch-report:** seed เขียนลง Mongo **localhost เท่านั้น**. ถ้า `MONGODB_URI_READ` ใน `.env.harness` เป็น Atlas → script ข้ามพร้อมเหตุผล (ไม่พัง `seed-all`). ต้องการข้อมูล domain: ตั้งค่าตาม [backend/ENV.md](./backend/ENV.md) (localhost + `gpp_777ww`) แล้วรัน seed ใหม่.
 

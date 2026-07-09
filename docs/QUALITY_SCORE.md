@@ -6,7 +6,7 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 
 | Domain | Grade | CI | Spec | Observability | Notes |
 |--------|:-----:|:--:|:----:|:-------------:|-------|
-| auth | A- | yes | yes | yes | ESLint harness `error`; metrics + JSON logs in harness dev |
+| auth | A- | yes | yes | yes | Collection validators + `verify-harness-schema` gate; `spec:consistency` checks validators |
 | gateway | A- | yes | yes | yes | ESLint harness `error`; metrics wired |
 | staff | A | yes | yes | yes | Reference service; profiles split; prom default metrics |
 | agent-invoice | B+ | yes | yes | yes | Booted in dev-up; `/metrics` wired; `config/logger.js` aligned (CS-10) |
@@ -22,4 +22,4 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 
 ## Last updated
 
-2026-07-09 — Post-residual Phases 1–4: smart-report OpenAPI CRUD + via-gateway (A-), branch-report local seed verify (B+), demo-service spec index, agent-invoice logger. Prior: Legacy `frontend/backoffice` (Vite) removed; harness/CI/docs updated to `backoffice-next` only.
+2026-07-09 — Collection validators rollout closed (11 collections, harness/staging gates, BE review packet). Post-residual Phases 1–4: smart-report OpenAPI CRUD + via-gateway (A-), branch-report local seed verify (B+), demo-service spec index, agent-invoice logger. Prior: Legacy `frontend/backoffice` (Vite) removed; harness/CI/docs updated to `backoffice-next` only.

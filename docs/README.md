@@ -8,6 +8,7 @@ Product and engineering docs live in different places — by design.
 | **What to build** (PRD, API spec per service) | [`specs/`](./specs/) | Defining or changing a feature |
 | **Execution plans** | [`exec-plans/`](./exec-plans/) | Multi-step or cross-service work |
 | **Golden principles** | [`golden-principles.md`](./golden-principles.md) | Encoding mechanical invariants |
+| **ADRs (platform)** | [`adrs/`](./adrs/) | Cross-cutting architecture decisions (schema, validators) |
 | **Quality score** | [`QUALITY_SCORE.md`](./QUALITY_SCORE.md) | After audits or `/gc` |
 | **Observability** | [`observability.md`](./observability.md) | Changing logs/metrics stack |
 | **Harness (how we work)** | [`../harness-engineering/README.md`](../harness-engineering/README.md) | Beliefs, skills ↔ harness |

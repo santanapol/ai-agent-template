@@ -6,7 +6,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { dirname, resolve, join, extname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, "..");
@@ -171,10 +171,33 @@ async function checkRoles(mdFiles) {
   }
 }
 
+async function checkCollectionValidators() {
+  const erdPath = join(CONFIG.specDir, "database-erd.md");
+  if (!existsSync(erdPath)) return;
+  const erd = readFileSync(erdPath, "utf8");
+  if (!erd.includes("collection-validators.mjs")) {
+    fail("[validators] database-erd.md ต้องลิงก์ collection-validators.mjs");
+  }
+  const validatorsPath = resolve(PKG_ROOT, "scripts/collection-validators.mjs");
+  if (!existsSync(validatorsPath)) {
+    fail("[validators] scripts/collection-validators.mjs missing");
+    return;
+  }
+  const { COLLECTION_VALIDATORS } = await import(
+    pathToFileURL(validatorsPath).href
+  );
+  for (const { collection } of COLLECTION_VALIDATORS) {
+    if (!erd.includes(`\`${collection}\``) && !erd.includes(collection)) {
+      fail(`[validators] database-erd.md ขาด collection "${collection}"`);
+    }
+  }
+}
+
 const mdFiles = walkMarkdown(CONFIG.specDir);
 checkLinks(mdFiles);
 checkPassword(mdFiles);
 await checkRoles(mdFiles);
+await checkCollectionValidators();
 
 if (errors.length) {
   console.error(`\n✗ spec:consistency — พบ ${errors.length} ปัญหา\n`);
@@ -183,5 +206,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ spec:consistency — ${mdFiles.length} md files: links + password + roles ตรงกัน`,
+  `✓ spec:consistency — ${mdFiles.length} md files: links + password + roles + validators ตรงกัน`,
 );

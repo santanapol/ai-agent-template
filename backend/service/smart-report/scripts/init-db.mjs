@@ -17,6 +17,8 @@ import {
   DOWNLOAD_HISTORY_COLLECTION,
   ensureDownloadHistoryIndexes,
 } from "../src/modules/reports/download-history.repository.js";
+import { COLLECTION_VALIDATORS } from "./collection-validators.mjs";
+import { applyCollectionValidators } from "../../../../scripts/ops/apply-collection-validator-lib.mjs";
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -42,6 +44,10 @@ console.log("  ✔ reports: IDX_REPORTS_ENABLED");
 await ensureDownloadHistoryIndexes(db);
 console.log("  ✔ download_history: IDX_DOWNLOAD_HISTORY_REPORT_LIST");
 console.log("  ✔ download_history: IDX_DOWNLOAD_HISTORY_RECENT");
+console.log("");
+
+console.log("▶ collection validators (moderate)...");
+await applyCollectionValidators(db, COLLECTION_VALIDATORS);
 console.log("");
 
 const reportsCount = await db.collection(REPORTS_COLLECTION).countDocuments();
