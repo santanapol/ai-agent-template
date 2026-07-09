@@ -16,7 +16,7 @@
 | TD-012 | Harness | P2 | Local sequential `npm ci` can corrupt `node_modules` (TAR_ENTRY_ERROR) — BE-001 | closed (2026-07-08; install-all-deps rm node_modules + retry + RUNBOOK) |
 | TD-013 | Spec | P2 | smart-report OpenAPI full CRUD + openapi-via-gateway (skeleton done — TD-011) | closed (2026-07-09; direct CRUD + openapi-via-gateway + dual spec:lint) |
 | TD-014 | Harness | P3 | Redis revoke → gateway E2E script (`workflow_dispatch`, not PR gate) | closed (2026-07-09; `scripts/ci/redis-revoke-gateway-e2e.sh` + GHA workflow_dispatch) |
-| TD-015 | Spec | P3 | smart-report sandbox adversarial integration tests | open |
+| TD-015 | Spec | P3 | smart-report sandbox adversarial integration tests | closed (2026-07-09; HTTP integration tests in reports.sandbox-adversarial.integration.test.js) |
 
 ## How to use
 
