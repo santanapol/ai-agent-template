@@ -245,20 +245,26 @@ Detail routes and `my_profile` — not sidebar leaves; listed above.
 
 ---
 
-## 8. Recommendations (fix later — not implemented)
+## 8. Implementation status (2026-07-09)
 
-**Execution plans (2026-07-09):**
+**Branch:** `feat/api-network-audit-fixes-2026-07-09`  
+**Completed plans:** [`docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md`](../../../docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md), [`docs/exec-plans/completed/api-network-audit-backend-2026-07-09.md`](../../../docs/exec-plans/completed/api-network-audit-backend-2026-07-09.md)
 
-- Frontend: [`docs/exec-plans/active/api-network-audit-frontend-2026-07-09.md`](../../../docs/exec-plans/active/api-network-audit-frontend-2026-07-09.md)
-- Backend: [`docs/exec-plans/active/api-network-audit-backend-2026-07-09.md`](../../../docs/exec-plans/active/api-network-audit-backend-2026-07-09.md)
+| ID | Status | Notes |
+|----|--------|-------|
+| NET-001 | **Fixed** | Single mount `Promise.all` + stable feedback ref (`SmartReport.tsx`) |
+| NET-002 | **Fixed** | Lifted menu catalog + `forceMount` tabs (`PermissionAdmin.tsx`) |
+| NET-004 | **Fixed** | In-flight dedupe + cache (`useInvoices.ts`, `branchCatalogCache.ts`) |
+| NET-006 | **Mitigated** | Option B — list fetch guard on branch remount (`StaffManagement.tsx`); Option A → TD-020 |
+| PAY-001 | **Fixed** | Branch switcher `q`+`limit=20` typeahead (`AdminLayout` + BE-2) |
+| PAY-002 | **Mitigated** | Shared `branchCatalogCache`; switch-capable roles reuse auth catalog |
+| PAY-003 | **Fixed** | BE-4 `q`/`limit` + lazy invite-links load (`ChannelPerformancePage`) |
+| PAY-004 | **Fixed** | `fields=matrix` BE-5 + FE agent fees matrix consumer |
+| PAY-005 | **Fixed** | `GET /profiles/count` BE-1 + Dashboard consumer |
 
-1. **NET-001:** Stabilize Smart Report mount effects — empty deps + refs, or single `refresh()` on mount; investigate `useAppFeedback` identity.
-2. **NET-002:** Lift `listAdminMenus` to `PermissionAdmin` parent; pass registry to both tabs; stop conditional unmount or use `forceMount` on tabs.
-3. **NET-004:** Add ref guard / module cache for `fetchInvoiceAgents`; dedupe with `branchOptions` cache already used post-fetch.
-4. **PAY-001/002:** Shared branch catalog SWR cache keyed by `ou_id` (switcher + invoice filter); consider paginated/typeahead for 197 branches.
-5. **PAY-005:** Backend `GET /staff/profiles/count?status=` or return total-only when `limit=1&fields=count`.
-6. **PAY-003:** Invite-links summary projection or server-side search.
-7. **NET-006:** Evaluate softer branch switch (reset filters via context vs full remount) if refetch cost becomes painful.
+**Prod `:3006` gate (Wave 1):** Server build OK; live re-verify blocked by `AUTH_TOO_MANY_ATTEMPTS` on harness auth — re-run per [`NETWORK-VERIFY-CHECKLIST.md`](./NETWORK-VERIFY-CHECKLIST.md) after rate limit clears.
+
+**Deferred:** TD-020 (NET-006 Option A), TD-021 (bulk export batch), BE-3 skipped (FE cache + parity sufficient).
 
 ---
 
