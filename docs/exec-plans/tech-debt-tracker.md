@@ -20,7 +20,7 @@
 | TD-016 | Docs | P2 | ERD ↔ init-db ↔ generated db-schema drift | closed (2026-07-09; prod handoff verified, baseline refreshed, drift resolved — [`db-schema-sync`](../exec-plans/completed/db-schema-sync-2026-07-09.md)) |
 | TD-017 | Harness | P2 | Post-seed validator + index gates (`verify-harness-schema.sh`, `verify-staging-schema.sh`) | closed (2026-07-09; wired seed-all + staging-seed-all — [`collection-validators-rollout`](../exec-plans/completed/collection-validators-rollout-2026-07-09.md)) |
 | TD-018 | Data | P3 | Orphan `agent_fees` row without `agents` parent — read-only audit + cleanup ticket | open |
-| TD-019 | Spec | P3 | `spec:consistency` validator checks for staff / agent-invoice / smart-report (auth done) | open |
+| TD-019 | Spec | P3 | `spec:consistency` validator checks for staff / agent-invoice / smart-report (auth done) | closed (2026-07-09; validator↔ERD gates in all 4 services) |
 
 ## How to use
 

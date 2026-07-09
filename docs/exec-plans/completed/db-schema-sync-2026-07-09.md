@@ -124,7 +124,7 @@ flowchart TB
 - 2026-07-09: **Re-dump baseline** เมื่อ deploy migration ที่เปลี่ยน indexes — บันทึก `prod_git_commit` ใหม่.
 - 2026-07-09: **Prod handoff complete** — human applied `by_ou_role`, agents index cleanup, smart-report collection drops (MongoDB Compass).
 - 2026-07-09: **Verify + closure** — `verify-indexes` passed (3 DBs); baseline re-dumped; drift matrix resolved; plan completed.
-- 2026-07-09: **ADRs** — formalized in [`docs/adrs/`](../adrs/README.md) (schema SoT, legacy drops, validator policy).
+- 2026-07-09: **ADRs** — formalized in [`docs/adrs/`](../../adrs/README.md) (schema SoT, legacy drops, validator policy).
 
 ## Outcome
 

@@ -284,6 +284,23 @@ db.auth_audit_events.createIndex(
   { retention_until: 1 },
   { name: "ttl_retention_until", expireAfterSeconds: 0 }
 );
+
+db.auth_menus.createIndex({ key: 1 }, { unique: true, name: "uniq_menu_key" });
+db.auth_menus.createIndex({ parent_key: 1 }, { name: "by_parent_key" });
+
+db.auth_role_permissions.createIndex(
+  { ou_id: 1, role: 1 },
+  { unique: true, name: "uniq_ou_role" }
+);
+
+db.platform_branches.createIndex(
+  { ou_id: 1, branch_code: 1 },
+  { unique: true, name: "uniq_ou_branch_code" }
+);
+db.platform_branches.createIndex(
+  { ou_id: 1, active: 1 },
+  { name: "by_ou_active" }
+);
 ```
 
 ## 5. Schema validation (`$jsonSchema`)
