@@ -41,12 +41,10 @@ if (!RUN) {
       db = await connectDatabase();
       await connectReadDatabase();
       await ensureReportIndexes(db);
-      await db.collection(REPORTS_COLLECTION).deleteMany({});
       app = await buildApp();
     });
 
     after(async () => {
-      await db.collection(REPORTS_COLLECTION).deleteMany({});
       await app.close();
       await closeReadDatabase();
       await closeDatabase();
