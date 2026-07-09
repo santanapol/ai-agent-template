@@ -93,6 +93,7 @@ if (!RUN) {
         username,
         password_hash: "test-hash-not-used",
         role,
+        access_token_gen: 0,
         cr_by: staffUserId,
         cr_date: now,
         cr_prog: "test.setup",

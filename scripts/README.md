@@ -69,7 +69,14 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`ci/docs-lint.mjs`](./ci/docs-lint.mjs) | Validate knowledge base (CI) |
 | [`ci/env-status.mjs`](./ci/env-status.mjs) | แสดงว่ามี `.env` / `.env.prod` / harness ไฟล์ไหนบ้าง — ดู [backend/ENV.md](../backend/ENV.md) |
 | [`ci/check-coding-standard-sync.sh`](./ci/check-coding-standard-sync.sh) | Diff vendored `coding-standard/` vs org upstream |
-| [`ci/generate-db-schema.mjs`](./ci/generate-db-schema.mjs) | Dump Mongo schema → `docs/generated/` |
+| [`ci/generate-db-schema.mjs`](./ci/generate-db-schema.mjs) | Dump harness Mongo schema → `docs/generated/db-schema/` |
+| [`ops/dump-db-schema.mjs`](./ops/dump-db-schema.mjs) | Read-only prod schema → `docs/audit/prod-schema-baseline-*` |
+| [`ops/verify-indexes.mjs`](./ops/verify-indexes.mjs) | Compare live DB indexes to prod baseline (read-only) |
+| [`ops/apply-collection-validators.mjs`](./ops/apply-collection-validators.mjs) | Apply `$jsonSchema` validators (`--staging`, `--prod-all`; prod needs `MONGODB_ADMIN_URI`) |
+| [`ops/verify-validators.mjs`](./ops/verify-validators.mjs) | Compare live validators to registry and/or prod baseline (`--harness`, `--staging`, `--baseline`) |
+| [`ops/schema-verify-targets.mjs`](./ops/schema-verify-targets.mjs) | Shared env targets for apply + verify scripts |
+| [`dev/verify-harness-schema.sh`](./dev/verify-harness-schema.sh) | Harness gate: validators + indexes after seed |
+| [`staging/verify-staging-schema.sh`](./staging/verify-staging-schema.sh) | Staging validator gate after seed |
 | [`release/release-tag.sh`](./release/release-tag.sh) | Tag a release after staging smoke passes |
 
 See [AGENTS.md](../AGENTS.md), [harness-engineering/README.md](../harness-engineering/README.md), and [docs/golden-principles.md](../docs/golden-principles.md).

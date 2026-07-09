@@ -6,6 +6,8 @@
  *   node --env-file=.env scripts/init-db.mjs
  */
 import { MongoClient } from "mongodb";
+import { COLLECTION_VALIDATORS } from "./collection-validators.mjs";
+import { applyCollectionValidators } from "../../../../scripts/ops/apply-collection-validator-lib.mjs";
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -40,35 +42,6 @@ const PROFILE_INDEXES = [
   },
 ];
 
-const PROFILE_JSON_SCHEMA = {
-  bsonType: "object",
-  required: [
-    "user_id",
-    "ou_id",
-    "branch_id",
-    "status",
-    "code",
-    "firstname",
-    "lastname",
-    "email",
-    "tel",
-    "cr_by",
-    "cr_date",
-    "cr_prog",
-    "upd_by",
-    "upd_date",
-    "upd_prog",
-  ],
-  properties: {
-    status: { enum: ["active", "archived"] },
-    code: { bsonType: "string", minLength: 1, maxLength: 32 },
-    firstname: { bsonType: "string", minLength: 1, maxLength: 128 },
-    lastname: { bsonType: "string", minLength: 1, maxLength: 128 },
-    email: { bsonType: "string", maxLength: 254 },
-    tel: { bsonType: "string", maxLength: 16 },
-  },
-};
-
 const client = new MongoClient(uri);
 await client.connect();
 const db = client.db(dbName);
@@ -87,27 +60,10 @@ for (const { keys, options } of PROFILE_INDEXES) {
 console.log("");
 
 console.log("Applying $jsonSchema validator (moderate)...");
-try {
-  await db.command({
-    collMod: COLLECTION,
-    validator: { $jsonSchema: PROFILE_JSON_SCHEMA },
-    validationLevel: "moderate",
-  });
-  console.log("  ok collMod validator");
-} catch (error) {
-  if (error.codeName === "NamespaceNotFound") {
-    await db.createCollection(COLLECTION, {
-      validator: { $jsonSchema: PROFILE_JSON_SCHEMA },
-      validationLevel: "moderate",
-    });
-    console.log("  ok createCollection with validator");
-  } else {
-    throw error;
-  }
-}
+await applyCollectionValidators(db, COLLECTION_VALIDATORS);
+console.log("");
 
 const count = await col.countDocuments();
-console.log("");
 console.log("=== summary ===");
 console.log(`  documents in ${COLLECTION}: ${count}`);
 

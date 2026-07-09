@@ -27,6 +27,7 @@
 2. [Collections](#2-collections)
 3. [ER diagram](#3-er-diagram)
 4. [Index bootstrap — ตัวอย่าง `mongosh`](#4-index-bootstrap--ตัวอย่าง-mongosh)
+5. [Schema validation (`$jsonSchema`)](#5-schema-validation-jsonschema)
 
 ## 1. MongoDB database design (normative)
 
@@ -42,7 +43,7 @@
 - **ควร** ใช้ **MongoDB transaction** (หรือ pattern atomic เทียบเท่า) สำหรับ **refresh rotation**
 - **Tenant + Audit** — `auth_users` **ต้อง** มี `ou_id`, `branch_id` และ audit fields ตาม [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md); สร้าง/แก้ผ่าน Admin UI หลัง login ผ่าน `gateway` (headers `x-user-id`, `x-user-ou`, `x-user-branch`)
 - **`access_token_gen`:** SoT ใน MongoDB; เมื่อตั้ง **`REDIS_URL`** (production) หลัง login/refresh สำเร็จ และหลัง revoke/password/branch switch → **`SET`** `user:{sub}:token_gen` ให้สอดคล้อง DB — Gateway อ่านจาก Redis (ดู [technical-architecture.md §9](./technical-architecture.md))
-- **Deviation — Operational collections:** `auth_refresh_tokens`, `auth_credential_throttle`, `auth_audit_events` **ยกเว้น** `ou_id` / `branch_id` / `cr_*` / `upd_*` — ถ้าเพิ่มในอนาคต **ต้อง** ADR
+- **Deviation — Operational collections:** `auth_refresh_tokens`, `auth_credential_throttle`, `auth_audit_events` **ยกเว้น** `ou_id` / `branch_id` / `cr_*` / `upd_*` — ถ้าเพิ่มในอนาคต **ต้อง** ADR; **ไม่ใส่** `$jsonSchema` validator ตาม [ADR 005](../../../adrs/005-mongodb-collection-validators-policy.md)
 
 ## 2. Collections
 
@@ -283,4 +284,34 @@ db.auth_audit_events.createIndex(
   { retention_until: 1 },
   { name: "ttl_retention_until", expireAfterSeconds: 0 }
 );
+
+db.auth_menus.createIndex({ key: 1 }, { unique: true, name: "uniq_menu_key" });
+db.auth_menus.createIndex({ parent_key: 1 }, { name: "by_parent_key" });
+
+db.auth_role_permissions.createIndex(
+  { ou_id: 1, role: 1 },
+  { unique: true, name: "uniq_ou_role" }
+);
+
+db.platform_branches.createIndex(
+  { ou_id: 1, branch_code: 1 },
+  { unique: true, name: "uniq_ou_branch_code" }
+);
+db.platform_branches.createIndex(
+  { ou_id: 1, active: 1 },
+  { name: "by_ou_active" }
+);
 ```
+
+## 5. Schema validation (`$jsonSchema`)
+
+`validationLevel: "moderate"` on insert/update — applied by [`init-db.mjs`](../../../../backend/auth/scripts/init-db.mjs) and [`collection-validators.mjs`](../../../../backend/auth/scripts/collection-validators.mjs). Policy: [ADR 005](../../../adrs/005-mongodb-collection-validators-policy.md).
+
+| Collection | Required (summary) | Module |
+|------------|-------------------|--------|
+| `auth_users` | `ou_id`, `branch_id`, `username`, `password_hash`, `role`, `access_token_gen`, audit | [`collection-validators.mjs`](../../../../backend/auth/scripts/collection-validators.mjs) |
+| `platform_branches` | `ou_id` | same |
+| `auth_menus` | `key`, `label` | same |
+| `auth_role_permissions` | `role`, `menu_keys` | same |
+
+**Skipped:** `auth_refresh_tokens`, `auth_credential_throttle`, `auth_audit_events` — operational collections (ADR 005).

@@ -20,7 +20,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { dirname, resolve, join, extname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PKG_ROOT = resolve(HERE, '..') // scripts/ -> package root
@@ -184,11 +184,52 @@ async function checkRoles(mdFiles) {
   }
 }
 
+// ── check 4: auth index manifest ↔ database-erd.md ───────────────────────
+async function checkAuthIndexes() {
+  const erdPath = join(CONFIG.specDir, 'database-erd.md')
+  if (!existsSync(erdPath)) return
+  const erd = readFileSync(erdPath, 'utf8')
+  const manifestPath = resolve(PKG_ROOT, 'scripts/ensure-auth-indexes.mjs')
+  const { AUTH_INDEX_MANIFEST } = await import(pathToFileURL(manifestPath).href)
+  for (const spec of AUTH_INDEX_MANIFEST) {
+    if (!erd.includes(spec.name)) {
+      fail(`[indexes] database-erd.md ขาด index name "${spec.name}" (${spec.collection})`)
+    }
+  }
+}
+
+// ── check 5: auth validator module ↔ database-erd.md §5 ───────────────────
+async function checkAuthValidators() {
+  const erdPath = join(CONFIG.specDir, 'database-erd.md')
+  if (!existsSync(erdPath)) return
+  const erd = readFileSync(erdPath, 'utf8')
+  if (!erd.includes('collection-validators.mjs')) {
+    fail('[validators] database-erd.md §5 ต้องลิงก์ collection-validators.mjs')
+  }
+  const validatorsPath = resolve(PKG_ROOT, 'scripts/collection-validators.mjs')
+  const { COLLECTION_VALIDATORS } = await import(pathToFileURL(validatorsPath).href)
+  for (const { collection } of COLLECTION_VALIDATORS) {
+    if (!erd.includes(`\`${collection}\``)) {
+      fail(`[validators] database-erd.md §5 ขาด collection "${collection}"`)
+    }
+  }
+  if (
+    erd.includes('access_token_gen') &&
+    !COLLECTION_VALIDATORS[0].schema.required?.includes('access_token_gen')
+  ) {
+    fail(
+      '[validators] database-erd.md ระบุ access_token_gen required แต่ module ไม่ใส่ใน required[]'
+    )
+  }
+}
+
 // ── run ───────────────────────────────────────────────────────────────────
 const mdFiles = walkMarkdown(CONFIG.specDir)
 checkLinks(mdFiles)
 checkPassword(mdFiles)
 await checkRoles(mdFiles)
+await checkAuthIndexes()
+await checkAuthValidators()
 
 if (errors.length) {
   console.error(`\n✗ spec:consistency — พบ ${errors.length} ปัญหา\n`)
@@ -196,4 +237,6 @@ if (errors.length) {
   console.error('')
   process.exit(1)
 }
-console.log(`✓ spec:consistency — ${mdFiles.length} md files: links + password + roles ตรงกัน`)
+console.log(
+  `✓ spec:consistency — ${mdFiles.length} md files: links + password + roles + auth indexes + validators ตรงกัน`
+)

@@ -148,6 +148,7 @@ export async function startMockAuthInternalServer(options) {
       username,
       password_hash: "mock-hash",
       role: body.role ?? defaultRole,
+      access_token_gen: 0,
       cr_by: options.actorUserId,
       cr_date: now,
       cr_prog: "mock-auth-internal",

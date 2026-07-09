@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { MongoClient } from "mongodb";
+import { COLLECTION_VALIDATORS } from "./collection-validators.mjs";
+import { applyCollectionValidators } from "../../../../scripts/ops/apply-collection-validator-lib.mjs";
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -79,6 +81,10 @@ async function run() {
       { background: true, name: "txn_by_invoice" },
     );
   console.log("  ✔ agent_iv_transaction: txn_by_invoice");
+
+  console.log("");
+  console.log("▶ collection validators (moderate)...");
+  await applyCollectionValidators(db, COLLECTION_VALIDATORS);
 
   console.log("");
   console.log("=== สรุป ===");

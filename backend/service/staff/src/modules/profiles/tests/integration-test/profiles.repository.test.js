@@ -58,6 +58,7 @@ if (!RUN) {
           username: `t06repo.${Date.now()}@test.invalid`,
           password_hash: "test-hash-not-used",
           role: "staff",
+          access_token_gen: 0,
           cr_by: actorUserId,
           cr_date: now,
           cr_prog: "test.setup",

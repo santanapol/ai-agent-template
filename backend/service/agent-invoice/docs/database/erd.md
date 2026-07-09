@@ -1,5 +1,8 @@
 # Database Design Document
 
+> **Normative ERD (indexes + validators):** [`docs/specs/backend/agent-invoice/database-erd.md`](../../../../docs/specs/backend/agent-invoice/database-erd.md)  
+> Validator SoT: [`scripts/collection-validators.mjs`](../../scripts/collection-validators.mjs)
+
 ## Branch & Fee Management System
 
 **Project:** Branch & Fee Management System (Invoice module — deferred)  
@@ -381,7 +384,8 @@ Optional; ถ้าไม่มี category fee และไม่มี default
 | `ou_id` | Required | |
 | `branch_id` | Required, ObjectId | FK → `agents._id` |
 | `game_company_id`, `game_main_cate_id` | Required, ObjectId | |
-| `gcomp_cost`, `agent_known_fee`, `agent_fee` | Required | Number |
+| `gcomp_cost`, `agent_known_fee` | Optional | Number — API POST requires `agent_known_fee`; validator optional |
+| `agent_fee` | Required | Number — billing rate; validator + API |
 | `(ou_id, branch_id, game_company_id, game_main_cate_id)` | Indexed | |
 
 ### `agent_iv`

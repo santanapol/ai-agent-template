@@ -58,6 +58,10 @@ echo "==> branch-report — minimal gpp_777ww marketing data"
 node --env-file="$ENV_BRANCH" "$ROOT/backend/service/branch-report/scripts/seed-example-data.mjs"
 
 echo ""
+echo "==> schema verify (validators + indexes)"
+"$SCRIPT_DIR/verify-harness-schema.sh"
+
+echo ""
 echo "✓ seed-all complete"
 dev_load_ports
 echo "  login: ${SMOKE_USERNAME} / ${SMOKE_PASSWORD}"

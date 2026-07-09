@@ -70,5 +70,9 @@ echo "==> branch-report — minimal gpp_777ww marketing data"
 node --env-file="$ENV_BRANCH" "$BACKEND/service/branch-report/scripts/seed-example-data.mjs"
 
 echo ""
+echo "==> schema verify (validators)"
+bash "$SCRIPT_DIR/verify-staging-schema.sh"
+
+echo ""
 echo "✓ staging-seed-all complete"
 echo "  login: \${ADMIN_USERNAME:-platform_admin} / set ADMIN_PASSWORD in auth/.env.staging"

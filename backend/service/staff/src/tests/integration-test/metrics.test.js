@@ -87,6 +87,7 @@ if (!RUN) {
           username: `metrics.${Date.now()}@test.invalid`,
           password_hash: "x",
           role: "staff",
+          access_token_gen: 0,
           cr_by: actorUserId,
           cr_date: now,
           cr_prog: "test.setup",

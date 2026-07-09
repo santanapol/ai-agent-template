@@ -17,6 +17,10 @@
 | TD-013 | Spec | P2 | smart-report OpenAPI full CRUD + openapi-via-gateway (skeleton done — TD-011) | closed (2026-07-09; direct CRUD + openapi-via-gateway + dual spec:lint) |
 | TD-014 | Harness | P3 | Redis revoke → gateway E2E script (`workflow_dispatch`, not PR gate) | closed (2026-07-09; `scripts/ci/redis-revoke-gateway-e2e.sh` + GHA workflow_dispatch) |
 | TD-015 | Spec | P3 | smart-report sandbox adversarial integration tests | closed (2026-07-09; HTTP integration tests in reports.sandbox-adversarial.integration.test.js) |
+| TD-016 | Docs | P2 | ERD ↔ init-db ↔ generated db-schema drift | closed (2026-07-09; prod handoff verified, baseline refreshed, drift resolved — [`db-schema-sync`](../exec-plans/completed/db-schema-sync-2026-07-09.md)) |
+| TD-017 | Harness | P2 | Post-seed validator + index gates (`verify-harness-schema.sh`, `verify-staging-schema.sh`) | closed (2026-07-09; wired seed-all + staging-seed-all — [`collection-validators-rollout`](../exec-plans/completed/collection-validators-rollout-2026-07-09.md)) |
+| TD-018 | Data | P3 | Orphan `agent_fees` row without `agents` parent — read-only audit + cleanup ticket | open |
+| TD-019 | Spec | P3 | `spec:consistency` validator checks for staff / agent-invoice / smart-report (auth done) | closed (2026-07-09; validator↔ERD gates in all 4 services) |
 
 ## How to use
 

@@ -26,6 +26,20 @@ check_file() {
 }
 
 check_file "auth" "$BACKEND/auth/.env.staging" DATABASE_URI
+if [[ -f "$BACKEND/auth/.env.staging" ]]; then
+  uri=$(grep -E '^DATABASE_URI=' "$BACKEND/auth/.env.staging" | cut -d= -f2-)
+  if [[ "$uri" == *auth_login* ]]; then
+    echo "✗ auth DATABASE_URI must use zero-platform, not auth_login (see docs/ops/staging-auth-login-to-zero-platform-2026-07-09.md)"
+    fail=1
+  fi
+fi
+if [[ -f "$BACKEND/service/staff/.env.staging" ]]; then
+  uri=$(grep -E '^MONGODB_URI=' "$BACKEND/service/staff/.env.staging" | cut -d= -f2-)
+  if [[ "$uri" == *auth_login* ]]; then
+    echo "✗ staff MONGODB_URI must use zero-platform, not auth_login"
+    fail=1
+  fi
+fi
 check_file "gateway" "$BACKEND/gateway/.env.staging" GATEWAY_SECRET
 check_file "staff" "$BACKEND/service/staff/.env.staging" GATEWAY_SHARED_SECRET MONGODB_URI
 check_file "agent-invoice" "$BACKEND/service/agent-invoice/.env.staging" GATEWAY_SHARED_SECRET MONGODB_URI_READ
