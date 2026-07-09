@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   backend-checks:
@@ -115,3 +116,66 @@ jobs:
 
       - name: Run docs-lint
         run: node scripts/ci/docs-lint.mjs
+
+  redis-revoke-gateway-e2e:
+    name: Redis revoke gateway E2E (manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/auth/package-lock.json
+            backend/gateway/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend/auth && npm ci
+          cd ../gateway && npm ci
+
+      - name: Prepare harness env
+        run: node scripts/dev/dev-generate-env.mjs .dev-run/0 0
+
+      - name: Init auth database and seed
+        run: |
+          node --env-file=backend/auth/.env.harness backend/auth/scripts/init-db.mjs
+          node --env-file=backend/auth/.env.harness backend/auth/scripts/seed-example-data.mjs
+          node --env-file=backend/auth/.env.harness backend/auth/scripts/seed-permissions.js
+
+      - name: Start auth and gateway
+        run: |
+          # shellcheck source=scripts/dev/dev-lib.sh
+          source scripts/dev/dev-lib.sh
+          dev_load_ports
+          dev_start_service auth backend/auth backend/auth/.env.harness
+          dev_start_service gateway backend/gateway backend/gateway/.env.harness
+          dev_wait_http "http://127.0.0.1:${AUTH_PORT}/healthz" "auth"
+          dev_wait_http "http://127.0.0.1:${GATEWAY_PORT}/healthz" "gateway"
+
+      - name: Run Redis revoke gateway E2E
+        run: ./scripts/ci/redis-revoke-gateway-e2e.sh
