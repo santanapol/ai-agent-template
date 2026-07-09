@@ -129,11 +129,14 @@ export function createAuthController({ service, env, types }) {
     },
 
     async listMyBranches(request, reply) {
+      const query = request.query ?? {}
       const result = await service.listMyBranches({
         user_id_hex: request.accessSub,
         access_token_gen_claim: request.accessTokenGen,
         branch_id_hex: request.accessBranchId,
-        ou_id_hex: request.accessOuId
+        ou_id_hex: request.accessOuId,
+        q: typeof query.q === 'string' ? query.q : undefined,
+        limit: query.limit
       })
 
       if (!result.ok) {

@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb'
 import { hashRefreshToken } from '../../lib/refresh-token.js'
 import { BRANCH_SWITCH_ROLES } from '../../lib/branch-switch-roles.js'
+import { applyBranchListQuery } from './branch-display-sort.js'
 import {
   OBJECT_ID_HEX,
   buildAccessTokenResponseBody,
@@ -87,7 +88,14 @@ export const authMixin = {
     return { ok: true, status: 200, body: branch }
   },
 
-  async listMyBranches({ user_id_hex, access_token_gen_claim, branch_id_hex, ou_id_hex }) {
+  async listMyBranches({
+    user_id_hex,
+    access_token_gen_claim,
+    branch_id_hex,
+    ou_id_hex,
+    q,
+    limit
+  }) {
     const genCheck = await this.assertAccessTokenGenMatches({
       user_id_hex,
       token_gen_claim: access_token_gen_claim
@@ -139,16 +147,20 @@ export const authMixin = {
         return { ok: true, status: 200, body: { branches: [] } }
       }
       const branch = await this.branchAccessResolver.findBranchDisplay(branchOid, ouOid)
+      const branches = applyBranchListQuery(branch ? [branch] : [], { q, limit })
       return {
         ok: true,
         status: 200,
-        body: { branches: branch ? [branch] : [] }
+        body: { branches }
       }
     }
 
-    const branches = await this.branchAccessResolver.listBranchesForOu(ouOid, {
-      ensureBranchIds: branch_id_hex ? [branch_id_hex] : []
-    })
+    const branches = applyBranchListQuery(
+      await this.branchAccessResolver.listBranchesForOu(ouOid, {
+        ensureBranchIds: branch_id_hex ? [branch_id_hex] : []
+      }),
+      { q, limit }
+    )
 
     return { ok: true, status: 200, body: { branches } }
   },

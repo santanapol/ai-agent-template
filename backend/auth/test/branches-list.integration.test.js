@@ -102,8 +102,9 @@ async function loginNative(base, username) {
   return r.json()
 }
 
-async function listBranches(base, accessToken) {
-  return fetch(`${base}/auth/me/branches`, {
+async function listBranches(base, accessToken, query = '') {
+  const suffix = query ? (query.startsWith('?') ? query : `?${query}`) : ''
+  return fetch(`${base}/auth/me/branches${suffix}`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   })
 }
@@ -244,6 +245,26 @@ test('GET /auth/me/branches', { timeout: 180_000 }, async (t) => {
     const body = await r.json()
     assert.equal(body.branches.length, 1)
     assert.equal(body.branches[0].branch_id, HOME_BRANCH_ID.toHexString())
+  })
+
+  await t.test('q filters branch_code and limit caps results', async () => {
+    const login = await loginNative(base, PLATFORM_USER)
+    const full = await listBranches(base, login.access_token)
+    assert.equal(full.status, 200)
+    const fullBody = await full.json()
+    assert.ok(fullBody.branches.length >= 4)
+
+    const filtered = await listBranches(base, login.access_token, 'q=T01')
+    assert.equal(filtered.status, 200)
+    const filteredBody = await filtered.json()
+    assert.equal(filteredBody.branches.length, 1)
+    assert.equal(filteredBody.branches[0].branch_code, 'T01')
+
+    const limited = await listBranches(base, login.access_token, 'limit=2')
+    assert.equal(limited.status, 200)
+    const limitedBody = await limited.json()
+    assert.equal(limitedBody.branches.length, 2)
+    assert.equal(limitedBody.branches[0].branch_id, ZERO_HQ_ID.toHexString())
   })
 
   await t.test('returns 401 when access token_gen is stale', async () => {

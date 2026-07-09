@@ -43,3 +43,12 @@ export const switchActiveBranchBodySchema = {
   required: ['branch_id'],
   additionalProperties: false
 }
+
+export const listMyBranchesQuerySchema = {
+  type: 'object',
+  properties: {
+    q: { type: 'string', minLength: 1, maxLength: 64 },
+    limit: { type: 'integer', minimum: 1, maximum: 100 }
+  },
+  additionalProperties: false
+}

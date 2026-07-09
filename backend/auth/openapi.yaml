@@ -699,6 +699,26 @@ paths:
       x-ratelimit:
         windowMs: 60000
         max: 60
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: |
+            Case-insensitive filter on `branch_code` and `branch_name` (typeahead).
+            Omit for full list (backward compatible).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Cap result count (max 100). Omit to return all matching branches.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Branches available for the branch switcher.

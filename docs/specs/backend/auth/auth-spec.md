@@ -104,6 +104,7 @@ Normative detail: [openapi.yaml](../../../../backend/auth/openapi.yaml)
 | POST | `/auth/me/password` | Self-service password change |
 | GET | `/auth/me/menus` | User menu keys |
 | GET | `/auth/me/branch` | Active branch metadata |
+| GET | `/auth/me/branches` | Switchable branch list; optional `q` (typeahead) + `limit` (max 100) |
 | POST | `/auth/me/active-branch` | Switch active branch |
 | GET/POST/PATCH/DELETE | `/auth/admin/menus`… | Permission menu admin |
 | GET/PUT/DELETE | `/auth/admin/role-permissions`… | Role permission admin |
