@@ -11,14 +11,14 @@ baseline-commit: 36422b2
 
 ## Objective
 
-ดำเนินงานหลัง commit `36422b2` (residual review ปิดแล้ว) โดย **ship ก่อน** แล้วไล่ epic ตามความเสี่ยง: OpenAPI เต็ม → ops seed verify → security sprint → polish/closeout. **Phase 0 executing** (2026-07-09).
+ดำเนินงานหลัง commit `36422b2` (residual review ปิดแล้ว) โดย **ship ก่อน** แล้วไล่ epic ตามความเสี่ยง: OpenAPI เต็ม → ops seed verify → security sprint → polish/closeout. **Phase 0 complete** (2026-07-09).
 
 ## สถานะ baseline (2026-07-09)
 
 | หัวข้อ | สถานะ |
 |--------|--------|
 | Residual implement | **done** — `36422b2` |
-| Git remote | `main` ahead origin **6 commits** — ยังไม่ push |
+| Git remote | `main` synced with origin (7 commits pushed 2026-07-09) |
 | แผนนี้ | committed Phase 0 prep (2026-07-09) |
 | TD tracker | TD-010/011/012 **closed**; TD-001 mitigated; TD-013/014/015 **open** |
 | Findings doc | [`backend-review-findings-2026-07-08.md`](./backend-review-findings-2026-07-08.md) — **synced** Phase 0 |
@@ -92,11 +92,10 @@ PR body **แยก area ต่อ commit** (reviewer ไม่ต้องไ�
 
 - [x] Commit แผนนี้ + sync findings + TD rows + archive frontend-ui-audit
 - [x] เปิดแถว **TD-013/014/015** ใน [`tech-debt-tracker.md`](../tech-debt-tracker.md) เป็น `open`
-- [ ] `git push -u origin main`
-- [ ] เปิด PR ตาม title/body ด้านบน
-- [ ] รอ GHA: **backend matrix (7 services)** + **frontend-next-checks** + docs-lint
-- [ ] Local verify: `./scripts/ci/ci-all.sh --only backend --skip-smoke` **without** `--skip-install` อย่างน้อย 1 รอบ
-- [ ] Optional local: `./scripts/ci/ci-all.sh --only frontend --skip-install` (ยืนยัน `ab81416`)
+- [x] `git push -u origin main`
+- [x] Ship direct to `main` (repo ไม่ใช้ PR gate — 7 commits รวม `4d47fd3`)
+- [x] GHA: backend matrix + frontend-next-checks + docs-lint — [run 28985305608](https://github.com/Chiang-Rai-Technology/zero-platform/actions/runs/28985305608) **success**
+- [x] Local verify: `./scripts/ci/ci-all.sh --only backend --skip-smoke` (with install) exit 0 ~152s
 - [x] Sync [`backend-review-findings-2026-07-08.md`](./backend-review-findings-2026-07-08.md)
 
 | Section | แก้เป็น |
@@ -117,7 +116,7 @@ PR body **แยก area ต่อ commit** (reviewer ไม่ต้องไ�
 
 - [x] [`frontend-ui-audit-2026-07.md`](../completed/frontend-ui-audit-2026-07.md) → `completed/` (audit จบแล้ว — อ้าง COMPREHENSIVE-AUDIT §F)
 
-**Definition of done Phase 0:** PR merged · findings synced · TD-013/014/015 เปิดใน tracker · `main` = origin · frontend-ui-audit archived
+**Definition of done Phase 0:** ~~PR merged~~ shipped to `main` · findings synced · TD-013/014/015 เปิดใน tracker · `main` = origin · frontend-ui-audit archived · GHA green
 
 ---
 
@@ -286,12 +285,12 @@ Integration tests ใหม่/ขยาย:
 
 - 2026-07-09: Plan created post-`36422b2`; no execution yet.
 - 2026-07-09: Plan revised after review — PR 0 scope (6 commits), archive timing, TD-013 close rule, Redis env detail, Phase 2 estimate.
-- 2026-07-09: **Phase 0 started** — findings synced, TD-013/14/15 open, frontend-ui-audit archived; push/PR pending.
+- 2026-07-09: **Phase 0 complete** — pushed 7 commits to origin/main; GHA run 28985305608 success; local ci-all backend (with install) exit 0.
 
 ## Decision log
 
 - 2026-07-09: **Ship before new epics** — 6 unpushed commits must land before OpenAPI expansion.
-- 2026-07-09: **PR 0 = single PR, multi-area title** — body summarizes per commit; not backend-only title.
+- 2026-07-09: **Direct push to main** — no PR opened (commits already on default branch); GHA validates push.
 - 2026-07-09: **TD-013 closes only after PR 1-B** — PR 1-A marks in progress only.
 - 2026-07-09: **Archive split** — frontend-ui-audit after Phase 0; findings + roadmap after Phase 1-B.
 - 2026-07-09: **Do not force localhost Atlas override** — preserve read-only demo URI; document local path instead.
