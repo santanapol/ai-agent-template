@@ -7,9 +7,8 @@ info:
     Smart Report Service — MongoDB query scripts, validate (acorn), test-run sandbox,
     schedule (node-cron), export CSV/Excel.
 
-    HTTP SoT for happy-path ops listed below. Full CRUD (`/{id}`, `/{id}/run`, `/history`)
-    may be added in later revisions; prose tables remain in
-    `docs/specs/backend/smart-report/technical-architecture.md`.
+    HTTP SoT for all business routes below. Prose tables in
+    `docs/specs/backend/smart-report/technical-architecture.md` mirror this spec.
 
     Direct listen port: `3103` (`PORT` env). Gateway prefix: `/api/v1/smart-reports`.
 
@@ -105,7 +104,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-            maximum: 100
+            maximum: 200
             default: 20
       responses:
         "200":
@@ -116,7 +115,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SuccessEnvelope"
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Report"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -148,10 +156,17 @@ paths:
           headers:
             x-request-id:
               $ref: "#/components/headers/XRequestId"
+            ETag:
+              $ref: "#/components/headers/ETag"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SuccessEnvelope"
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReportDetail"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -227,6 +242,60 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationFailed"
 
+  /api/v1/smart-reports/history:
+    get:
+      tags: [reports]
+      summary: List download history
+      description: Paginated download/run history for all smart reports in scope.
+      operationId: listReportHistory
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/HistoryEntry"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/v1/smart-reports/download/{fileId}:
     get:
       tags: [reports]
@@ -247,7 +316,7 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 1
+            pattern: "^[a-fA-F0-9]{24}$"
       responses:
         "200":
           description: File stream
@@ -265,6 +334,180 @@ paths:
                 format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/smart-reports/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ReportId"
+    get:
+      tags: [reports]
+      summary: Get report by id
+      description: Returns full report definition including script and compiledScript.
+      operationId: getReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Success
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [reports]
+      summary: Update report
+      description: |
+        Partial update with **`If-Match`** (weak ETag from `upd_date`).
+        Script changes require a fresh `testRunToken` from `/test-run`.
+      operationId: updateReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReportBody"
+      responses:
+        "200":
+          description: Updated
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: "null"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+
+    delete:
+      tags: [reports]
+      summary: Delete report
+      description: Delete a report definition. Requires **`If-Match`** (weak ETag from `upd_date`).
+      operationId: deleteReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Deleted
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/VersionConflict"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+
+  /api/v1/smart-reports/{id}/run:
+    parameters:
+      - $ref: "#/components/parameters/ReportId"
+    post:
+      tags: [reports]
+      summary: Run report manually
+      description: Execute the report script and record download history.
+      operationId: runReport
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Run succeeded
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HistoryEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -312,10 +555,31 @@ components:
       required: false
       schema:
         type: string
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Weak ETag from last read or create (`upd_date`).
+      schema:
+        type: string
+      example: '"2026-05-28T00:00:00.000Z"'
+    ReportId:
+      name: id
+      in: path
+      required: true
+      description: MongoDB ObjectId (hex24)
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+      example: "507f1f77bcf86cd799439011"
 
   headers:
     XRequestId:
       description: Correlation id
+      schema:
+        type: string
+    ETag:
+      description: Weak ETag from `upd_date`
       schema:
         type: string
 
@@ -334,9 +598,6 @@ components:
           type: ["string", "null"]
         data:
           description: Payload (shape varies by operation)
-        pagination:
-          type: object
-          additionalProperties: true
 
     ErrorEnvelope:
       type: object
@@ -353,6 +614,138 @@ components:
           type: ["object", "null"]
         requestId:
           type: string
+
+    Pagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Schedule:
+      type: ["object", "null"]
+      required: [frequency]
+      properties:
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly]
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+        dayOfMonth:
+          oneOf:
+            - type: integer
+              minimum: 1
+              maximum: 31
+            - type: string
+              enum: [last]
+        timezone:
+          type: string
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        params:
+          type: object
+        outputFormat:
+          type: string
+          enum: [csv, excel]
+        schedule:
+          $ref: "#/components/schemas/Schedule"
+        enabled:
+          type: boolean
+        validationStatus:
+          type: string
+          enum: [pending, valid, invalid]
+        validatedAt:
+          type: ["string", "null"]
+        lastTestRunAt:
+          type: ["string", "null"]
+        lastTestRunMeta:
+          type: ["object", "null"]
+          properties:
+            recordCount:
+              type: ["number", "null"]
+        cr_by:
+          type: string
+        cr_date:
+          type: string
+        cr_prog:
+          type: string
+        upd_by:
+          type: string
+        upd_date:
+          type: string
+        upd_prog:
+          type: string
+
+    ReportDetail:
+      allOf:
+        - $ref: "#/components/schemas/Report"
+        - type: object
+          properties:
+            script:
+              type: string
+            compiledScript:
+              type: ["string", "null"]
+            validationErrors:
+              type: array
+              items:
+                type: string
+            lastTestRunMeta:
+              type: ["object", "null"]
+              properties:
+                recordCount:
+                  type: ["number", "null"]
+                durationMs:
+                  type: ["number", "null"]
+
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        reportId:
+          type: string
+        reportName:
+          type: string
+        fileName:
+          type: ["string", "null"]
+        format:
+          type: string
+        status:
+          type: string
+        recordCount:
+          type: ["number", "null"]
+        error:
+          type: ["string", "null"]
+        triggeredBy:
+          type: string
+        startedAt:
+          type: string
+        finishedAt:
+          type: ["string", "null"]
 
     ReadyzOk:
       type: object
@@ -387,24 +780,61 @@ components:
 
     CreateReportBody:
       type: object
-      required: [name, script]
+      required: [name, script, compiledScript, outputFormat]
+      additionalProperties: false
       properties:
         name:
           type: string
           minLength: 1
+        description:
+          type: ["string", "null"]
         script:
           type: string
           minLength: 1
-        description:
+        compiledScript:
           type: string
+          minLength: 1
+        testRunToken:
+          type: string
+          minLength: 1
+        params:
+          type: object
+        outputFormat:
+          type: string
+          enum: [csv, excel]
+        schedule:
+          $ref: "#/components/schemas/Schedule"
         enabled:
           type: boolean
-        schedule:
-          type: object
-          additionalProperties: true
-        exportFormat:
+
+    UpdateReportBody:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        name:
           type: string
-          enum: [csv, xlsx]
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        script:
+          type: string
+          minLength: 1
+        compiledScript:
+          type: string
+          minLength: 1
+        testRunToken:
+          type: string
+          minLength: 1
+        params:
+          type: object
+        outputFormat:
+          type: string
+          enum: [csv, excel]
+        schedule:
+          $ref: "#/components/schemas/Schedule"
+        enabled:
+          type: boolean
 
     ValidateBody:
       type: object
@@ -416,13 +846,17 @@ components:
 
     TestRunBody:
       type: object
-      required: [script]
+      required: [script, compiledScript]
+      additionalProperties: false
       properties:
         script:
           type: string
           minLength: 1
         compiledScript:
           type: string
+          minLength: 1
+        params:
+          type: object
 
   responses:
     BadRequest:
@@ -457,6 +891,18 @@ components:
             $ref: "#/components/schemas/ErrorEnvelope"
     ValidationFailed:
       description: Domain validation / sandbox failure (`VALIDATION_FAILED`, `TEST_RUN_*`, …)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    VersionConflict:
+      description: Stale If-Match / ETag (`VERSION_CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    PreconditionRequired:
+      description: If-Match header required (`PRECONDITION_REQUIRED`)
       content:
         application/json:
           schema:
