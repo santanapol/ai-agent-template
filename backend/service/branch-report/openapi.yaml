@@ -54,7 +54,8 @@ paths:
       summary: List affiliate invite links for active branch
       description: |
         Returns invite links scoped to `x-user-ou` and `x-user-branch`.
-        Sorted by `invite_code` ASC. No pagination.
+        Sorted by `invite_code` ASC. Optional `q` (typeahead) and `limit` (max 100) cap results;
+        omit both for the full branch list (backward compatible). No page-based pagination.
 
         **Example 200 response:**
         ```json
@@ -78,6 +79,25 @@ paths:
         - $ref: "#/components/parameters/XUserOu"
         - $ref: "#/components/parameters/XUserBranch"
         - $ref: "#/components/parameters/XRequestId"
+        - name: q
+          in: query
+          required: false
+          description: |
+            Case-insensitive filter on `invite_code`, `username`, and `description` (typeahead).
+            Omit for full list.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Cap result count (max 100). Omit to return all matching invite links.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
       responses:
         "200":
           description: Invite links sorted by inviteCode ASC

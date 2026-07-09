@@ -1,7 +1,7 @@
 ---
 status: implemented
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-09
 owner: Berlin
 last-verified: 2026-07-03
 source-scan: 2026-07-03 — src 39/39 files
@@ -45,7 +45,7 @@ Prefix via gateway: `/api/v1/branch-report`
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/invite-links` | Affiliate links for `x-user-ou` + `x-user-branch` |
+| GET | `/invite-links` | Affiliate links for `x-user-ou` + `x-user-branch`; optional `q` (typeahead) + `limit` (max 100) |
 | GET | `/royalty-21-times` | Paginated member metrics; query `channelType`, `regDateFrom`, `regDateTo`, optional `inviteLinkId` |
 | GET | `/healthz`, `/readyz` | Probes (no mesh auth) |
 

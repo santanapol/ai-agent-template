@@ -128,6 +128,60 @@ paths:
         "500":
           $ref: "./openapi.yaml#/components/responses/InternalError"
 
+  /api/v1/staff/profiles/count:
+    get:
+      tags: [profiles]
+      summary: Count staff profiles by status (via gateway)
+      description: |
+        Returns `{ total }` for dashboard stats. Requires permission `profiles:list`.
+        Branch scope matches list mode (HQ vs branch-pinned). Response payload is intentionally small (< 100 bytes).
+      operationId: countProfilesViaGateway
+      security:
+        - BearerJwt: []
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [active, archived]
+        - $ref: "./openapi.yaml#/components/parameters/BranchIdFilter"
+      responses:
+        "200":
+          description: Profile count
+          headers:
+            x-request-id:
+              $ref: "./openapi.yaml#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, data]
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: SUCCESS
+                  data:
+                    type: object
+                    required: [total]
+                    properties:
+                      total:
+                        type: integer
+                        minimum: 0
+        "400":
+          $ref: "./openapi.yaml#/components/responses/InvalidParam"
+        "401":
+          $ref: "./openapi.yaml#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "./openapi.yaml#/components/responses/PermissionDenied"
+        "429":
+          $ref: "./openapi.yaml#/components/responses/TooManyRequests"
+        "500":
+          $ref: "./openapi.yaml#/components/responses/InternalError"
+
   /api/v1/staff/profiles/{profileId}:
     parameters:
       - $ref: "./openapi.yaml#/components/parameters/ProfileId"
