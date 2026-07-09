@@ -53,6 +53,7 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`dev/dev-down.sh`](./dev/dev-down.sh) | Stop harness services (incl. frontend) |
 | [`dev/dev-lib.sh`](./dev/dev-lib.sh) | Shared bash helpers (ports, env paths) — sourced by other `dev/` + `ci/` scripts |
 | [`dev/seed-all.sh`](./dev/seed-all.sh) | Seed example data (uses `backend/*/.env.harness`; called by `dev-up` by default) |
+| [`dev/verify-branch-report-seed.sh`](./dev/verify-branch-report-seed.sh) | Verify `gpp_777ww` branch-report seed (local Mongo counts; remote URI → skip; optional gateway curl) |
 | [`dev/smoke.sh`](./dev/smoke.sh) | Healthz + metrics + login/gateway smoke (+ frontend when booted) |
 | [`dev/dev-obs-up.sh`](./dev/dev-obs-up.sh) / [`dev/dev-obs-down.sh`](./dev/dev-obs-down.sh) | VictoriaLogs/Metrics + Vector |
 | [`dev/dev-generate-env.mjs`](./dev/dev-generate-env.mjs) | Generate per-offset harness env files |

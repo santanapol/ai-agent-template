@@ -80,6 +80,12 @@ export default [
     },
   },
   {
+    files: ["src/config/**/*.js"],
+    rules: {
+      "n/no-unsupported-features/node-builtins": "off",
+    },
+  },
+  {
     files: ["**/*.test.js", "**/tests/**/*.js"],
     rules: {
       "no-console": "off",

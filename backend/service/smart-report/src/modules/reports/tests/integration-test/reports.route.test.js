@@ -85,6 +85,23 @@ if (!RUN) {
       etag = response.headers.etag;
     });
 
+    test("GET /:id returns the created report (200)", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/v1/smart-reports/${reportId}`,
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.equal(body.success, true);
+      assert.equal(body.data.id, reportId);
+      assert.ok(body.data.script);
+      assert.ok(body.data.compiledScript);
+      assert.equal(body.data.outputFormat, "csv");
+      assert.equal(body.data.validationStatus, "valid");
+    });
+
     test("POST / with a duplicate name returns 409 DUPLICATE", async () => {
       const report = await db
         .collection(REPORTS_COLLECTION)

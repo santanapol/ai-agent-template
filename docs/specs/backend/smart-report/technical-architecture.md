@@ -10,16 +10,16 @@ Mount prefix `/api/v1/smart-reports` (`app.js`). Static paths registered before 
 
 | Method | Path | Handler | OpenAPI |
 |--------|------|---------|---------|
-| POST | `/validate` | `validateReportHandler` | yes (skeleton) |
+| POST | `/validate` | `validateReportHandler` | yes |
 | POST | `/test-run` | `testRunReportHandler` | yes |
-| GET | `/history` | `listHistoryHandler` | prose only (later) |
+| GET | `/history` | `listHistoryHandler` | yes |
 | GET | `/download/:fileId` | `downloadFileHandler` | yes |
 | GET | `/` | `listReportsHandler` | yes |
 | POST | `/` | `createReportHandler` | yes |
-| GET | `/:id` | `getReportHandler` | prose only (later) |
-| PUT | `/:id` | `updateReportHandler` | prose only (later) |
-| DELETE | `/:id` | `deleteReportHandler` | prose only (later) |
-| POST | `/:id/run` | `runReportHandler` | prose only (later) |
+| GET | `/:id` | `getReportHandler` | yes |
+| PUT | `/:id` | `updateReportHandler` | yes |
+| DELETE | `/:id` | `deleteReportHandler` | yes |
+| POST | `/:id/run` | `runReportHandler` | yes |
 
 Probes: `GET /healthz`, `GET /readyz` (in OpenAPI)
 

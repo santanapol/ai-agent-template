@@ -20,6 +20,18 @@ Product and engineering docs live in different places — by design.
 
 Service-level specifications (`*-spec.md`) and supporting material. Link to `coding-standard/` paths from specs — do not duplicate full standards here.
 
+### Backend service specs
+
+| Service | Spec |
+|---------|------|
+| auth | [auth-spec.md](./specs/backend/auth/auth-spec.md) |
+| gateway | [gateway-spec.md](./specs/backend/gateway/gateway-spec.md) |
+| staff | [staff-spec.md](./specs/backend/staff/staff-spec.md) |
+| demo-service | [demo-service-spec.md](./specs/backend/demo-service/demo-service-spec.md) |
+| agent-invoice | [agent-invoice-spec.md](./specs/backend/agent-invoice/agent-invoice-spec.md) |
+| smart-report | [smart-report-spec.md](./specs/backend/smart-report/smart-report-spec.md) |
+| branch-report | [branch-report-spec.md](./specs/backend/branch-report/branch-report-spec.md) |
+
 ## Exec plans (`docs/exec-plans/`)
 
 Active/completed work and tech debt — see [exec-plans/README.md](./exec-plans/README.md).

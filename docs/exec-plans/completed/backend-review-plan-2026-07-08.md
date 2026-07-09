@@ -28,7 +28,7 @@ This plan was drafted from a review-session discussion (2026-07-08). It is indep
 
 | Round | Goal | Output |
 |-------|------|--------|
-| **Review (this plan)** | Document truth: spec vs code vs runtime; file bugs; compliance matrices | [backend-review-findings-2026-07-08.md](../active/backend-review-findings-2026-07-08.md) |
+| **Review (this plan)** | Document truth: spec vs code vs runtime; file bugs; compliance matrices | [backend-review-findings-2026-07-08.md](../completed/backend-review-findings-2026-07-08.md) |
 | **Fix (follow-up)** | Resolve P0/P1 findings; add `.env.test` for staff/demo in CI (TD-010) | Separate PRs per domain |
 
 Do **not** block review closeout on fixing every finding — ticket and prioritize instead.
@@ -235,7 +235,7 @@ Principles:
 
 ### Phase 6 — Closeout
 
-**Deliverable:** [backend-review-findings-2026-07-08.md](../active/backend-review-findings-2026-07-08.md) (single rollup — not per-service docs).
+**Deliverable:** [backend-review-findings-2026-07-08.md](../completed/backend-review-findings-2026-07-08.md) (single rollup — not per-service docs).
 
 #### Findings template outline
 
@@ -631,7 +631,7 @@ curl -X POST http://127.0.0.1:3000/auth/login \
 - [x] Optional: OWASP ZAP baseline on gateway `:3000`
 
 ### Phase 6 — Closeout
-- [x] Complete [backend-review-findings-2026-07-08.md](../active/backend-review-findings-2026-07-08.md) per template (methodology Phase 6)
+- [x] Complete [backend-review-findings-2026-07-08.md](../completed/backend-review-findings-2026-07-08.md) per template (methodology Phase 6)
 - [x] File systemic gaps in findings → `tech-debt-tracker.md` (TD-010 if confirmed)
 - [x] Move this plan to `completed/` when review round signed off — **fixes continue in follow-up PRs**
 
@@ -671,7 +671,7 @@ curl -X POST http://127.0.0.1:3000/auth/login \
 | [completed/SPEC-CODE-AUDIT-2026-07-03.md](../completed/SPEC-CODE-AUDIT-2026-07-03.md) | Prior spec vs code audit |
 | [completed/frontend-ui-audit-2026-07.md](../completed/frontend-ui-audit-2026-07.md) | Related frontend audit (archived 2026-07-09) |
 | [frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md](../../../frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md) | Cross-ref staff/branch findings |
-| [backend-review-findings-2026-07-08.md](../active/backend-review-findings-2026-07-08.md) | Review output (this round) |
+| [backend-review-findings-2026-07-08.md](../completed/backend-review-findings-2026-07-08.md) | Review output (this round) |
 
 ---
 

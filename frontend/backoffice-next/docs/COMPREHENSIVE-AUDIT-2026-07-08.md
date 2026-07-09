@@ -334,7 +334,7 @@ db.agent_iv.findOne({iv_no:'IV-202607-001'}, {status:1, iv_no:1})
 
 ### E. Known limitations (remaining)
 
-1. **branch-report seed** — skipped on local harness; Channel Performance empty (deferred).
+1. **branch-report seed** — Atlas `MONGODB_URI_READ` skips local seed by design (exit 0). Local domain data: copy `.env.harness.example` → `npm run seed:example` → `./scripts/dev/verify-branch-report-seed.sh` (see RUNBOOK “Quick start: local domain data”). Channel Performance empty only when harness uses remote read URI without local seed.
 2. **Smart-report search** — stubbed UI (FF-01, deferred; legacy parity).
 3. **Default branch** — seed billing/staff on 777WW; Zero HQ shows branch-aware empty state.
 
@@ -367,6 +367,6 @@ db.agent_iv.findOne({iv_no:'IV-202607-001'}, {status:1, iv_no:1})
 | Smart Reports create gate | **Verified** | validate → test-run → save; unit test added |
 | Channel Performance double-fetch | **Fixed** | `handleTableChange` skips unchanged pagination |
 | FF-01 smart-report search stub | **Deferred** | Intentional parity with legacy |
-| branch-report seed | **Deferred** | Local harness skips Atlas marketing seed |
+| branch-report seed | **Documented** | Local path via `.env.harness.example` + `verify-branch-report-seed.sh`; Atlas read skips seed |
 | Full test suite | **425/425 pass** | Includes Channel Performance fix |
 | Production build | **Pass** | `npm run build` |
