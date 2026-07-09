@@ -66,6 +66,7 @@ const INITIAL_FORM: ReportFormValues = {
 
 const SMART_REPORT_PAGE_SIZE = 20;
 const REPORT_HISTORY_ENRICHMENT_LIMIT = 100;
+const SMART_REPORT_DRAWER_HISTORY_LIMIT = 20;
 
 const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
@@ -537,7 +538,7 @@ const SmartReport: React.FC = () => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
     try {
-      const response = await listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT });
+      const response = await listHistory({ page: 1, limit: SMART_REPORT_DRAWER_HISTORY_LIMIT });
       setDrawerDownloads(response.data.filter((record) => record.reportId === reportId));
     } catch (err) {
       message.error(apiErrorMessage(err, "Failed to load report history"));

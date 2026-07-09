@@ -193,7 +193,9 @@ describe("SmartReport (list mode)", () => {
     });
   });
 
-  it("refetches reports on page 2 without re-fetching enrichment history", async () => {
+  it(
+    "refetches reports on page 2 without re-fetching enrichment history",
+    async () => {
     const pageOneReports = Array.from({ length: 20 }, (_, index) => ({
       ...sampleReport,
       id: `report-${index + 1}`,
@@ -234,7 +236,9 @@ describe("SmartReport (list mode)", () => {
       expect(listReports).toHaveBeenCalledWith({ page: 2, limit: 20 });
     });
     expect(vi.mocked(listHistory).mock.calls.length).toBe(enrichmentCalls);
-  });
+  },
+  10000,
+  );
 
   it("shows fixed toast when report run returns a failed status", async () => {
     const { runReport } = await import("../lib/smartReportApiClient");

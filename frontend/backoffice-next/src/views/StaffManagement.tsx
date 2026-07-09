@@ -101,6 +101,7 @@ const StaffManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<ListViewMode>("list");
   const [refreshToken, setRefreshToken] = useState(0);
   const currentEtag = useRef<string | null>(null);
+  const listFetchKeyRef = useRef<string | null>(null);
   const canCreate = usePermission("profiles:create");
   const canEdit = usePermission("profiles:edit");
   const canAssignRole = usePermission("roles:assign");
@@ -116,6 +117,10 @@ const StaffManagement: React.FC = () => {
   const { current: currentPage, pageSize } = paginationConfig;
   useEffect(() => {
     void refreshToken;
+    const fetchKey = `${user?.branch_id ?? ""}:${debouncedSearch}:${statusFilter}:${currentPage}:${pageSize}:${refreshToken}`;
+    if (listFetchKeyRef.current === fetchKey) return;
+    listFetchKeyRef.current = fetchKey;
+
     let cancelled = false;
     const load = async () => {
       setTableLoading(true);
@@ -134,13 +139,14 @@ const StaffManagement: React.FC = () => {
         if (!cancelled) message.error(apiErrorMessage(err, "Failed to load profiles"));
       } finally {
         if (!cancelled) setTableLoading(false);
+        if (listFetchKeyRef.current === fetchKey) listFetchKeyRef.current = null;
       }
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, message, statusFilter, currentPage, pageSize, refreshToken]);
+  }, [debouncedSearch, message, statusFilter, currentPage, pageSize, refreshToken, user?.branch_id]);
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
