@@ -14,6 +14,9 @@
 | TD-010 | CI | P1 | staff/demo `.env.test` missing from CI matrix — integration skipped silently | closed (2026-07-08; `.env.test` + GHA/ci-all + staff `init:db`) |
 | TD-011 | Spec | P2 | smart-report has no `openapi.yaml` / `spec:lint` — prose API table only (backend review 2026-07-08) | closed (2026-07-08; openapi.yaml skeleton + spec:lint in ci) |
 | TD-012 | Harness | P2 | Local sequential `npm ci` can corrupt `node_modules` (TAR_ENTRY_ERROR) — BE-001 | closed (2026-07-08; install-all-deps rm node_modules + retry + RUNBOOK) |
+| TD-013 | Spec | P2 | smart-report OpenAPI full CRUD + openapi-via-gateway (skeleton done — TD-011) | open |
+| TD-014 | Harness | P3 | Redis revoke → gateway E2E script (`workflow_dispatch`, not PR gate) | open |
+| TD-015 | Spec | P3 | smart-report sandbox adversarial integration tests | open |
 
 ## How to use
 

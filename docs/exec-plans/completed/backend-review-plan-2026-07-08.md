@@ -669,7 +669,7 @@ curl -X POST http://127.0.0.1:3000/auth/login \
 | [coding-standard/README.md](../../../coding-standard/README.md) | Org standards vendored copy |
 | [coding-standard/software-testing/00-software_testing_overview/README.md](../../../coding-standard/software-testing/00-software_testing_overview/README.md) | Testing levels index |
 | [completed/SPEC-CODE-AUDIT-2026-07-03.md](../completed/SPEC-CODE-AUDIT-2026-07-03.md) | Prior spec vs code audit |
-| [active/frontend-ui-audit-2026-07.md](../active/frontend-ui-audit-2026-07.md) | Related frontend audit |
+| [completed/frontend-ui-audit-2026-07.md](../completed/frontend-ui-audit-2026-07.md) | Related frontend audit (archived 2026-07-09) |
 | [frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md](../../../frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md) | Cross-ref staff/branch findings |
 | [backend-review-findings-2026-07-08.md](../active/backend-review-findings-2026-07-08.md) | Review output (this round) |
 

@@ -1,16 +1,16 @@
 ---
 status: complete
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-09
 parent-plan: backend-review-plan-2026-07-08.md
 services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, branch-report]
 ---
 
 # Backend Review Findings — 2026-07-08
 
-> **Status:** Complete (review round) — [backend-review-plan-2026-07-08.md](../completed/backend-review-plan-2026-07-08.md) Phases 0–6 (plan archived).
-> **Review round** — in-tree fixes this round: TD-010, BE-002, auth `*.schema.js`, earlier gateway Spectral + branch-report CI gates.
-> **Residual fixes** continue outside this findings doc (TD-012 closed 2026-07-08; TD-011 / fleet health / seed docs in progress).
+> **Status:** Complete — review round + **residual fixes complete** (`36422b2`, 2026-07-09). [backend-review-plan-2026-07-08.md](../completed/backend-review-plan-2026-07-08.md) Phases 0–6 archived; post-residual epics in [backend-post-residual-roadmap-2026-07-09.md](./backend-post-residual-roadmap-2026-07-09.md).
+> **Review round** — in-tree fixes: TD-010, BE-002, auth `*.schema.js`, gateway Spectral + branch-report CI gates.
+> **Residual (2026-07-09):** TD-012 install harden, TD-011 OpenAPI skeleton, fleet health extract, branch-report seed docs, agent-invoice mesh plugins — all landed in `36422b2`.
 
 ## Executive summary
 
@@ -21,7 +21,7 @@ services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, bran
 | Integration truth (staff/demo Mongo) | **pass** | `.env.test` in GHA/ci-all; staff `init:db` before test; staff 218/218, demo 30/30, 0 documented skip (TD-010 fixed) |
 | API runtime (harness + smoke) | **pass** | `dev-up` + `seed-all` + `smoke.sh` exit 0 (2026-07-08). Spot-checks via gateway `:3000`: `/api/v1/me`, `/auth/me/branches`, staff profiles (HQ vs 777WW), invoices, smart-reports; mesh without secret → `401 GATEWAY_SECRET_REJECTED`. BUG-01: **backend OK → frontend**. See Phase 3 evidence below. |
 | Adversarial / security | **pass** | Phase 4 checklist green (mesh secret, spoof role, duplicate headers, IDOR staff, If-Match, revoke+Redis). agent-invoice missing `x-user-home-branch` duplicate guard → **BE-002 fixed**. ZAP deferred. See Appendix E. |
-| Spec/OpenAPI drift | **partial** | smart-report (no OpenAPI, prose oracle only — TD-011); demo-service (no central spec — README/spec:lint/headers fixed); others have oracles + gates but `spec:consistency` ≠ runtime proof |
+| Spec/OpenAPI drift | **partial** | smart-report: OpenAPI skeleton + `spec:lint` (TD-011 closed); CRUD paths still prose (TD-013); demo-service (no central spec); others have oracles + gates but `spec:consistency` ≠ runtime proof |
 
 **Overall verdict:** **GO with caveats** — harness, CI, mesh/authZ, and Phase 3–4 API/adversarial checks pass. Residuals closed/mitigated 2026-07-08 follow-up: TD-012 install harden, TD-011 OpenAPI skeleton, fleet health extract, branch-report seed docs, agent-invoice mesh plugins. ZAP still optional (RUNBOOK).
 
@@ -42,7 +42,7 @@ services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, bran
 | **gateway** | ~~`spec:lint` lacks `--fail-severity=error`~~ — **fixed earlier 2026-07-08**; no `modules/` layout (expected for proxy service) |
 | **demo-service** | ~~No central spec~~; ~~`spec:lint` not in `ci`~~; ~~integration skips without `MONGODB_URI` (TD-010)~~; ~~README says "Express"~~; ~~duplicate-header omits `x-user-role` / `x-user-permissions`~~ — **fixed 2026-07-08** (TD-010, spec:lint, README, headers); no central spec remains |
 | **staff** | ~~TD-010: CI may skip without Mongo~~ — **fixed 2026-07-08** (`.env.test` + `init:db` in ci). Reference-compliant plugins, layers, OpenAPI gates. |
-| **agent-invoice** | Mesh/header guards **inline in `app.js`** (not shared plugins); uses inline Fastify logger vs `loggerInstance`/pino pattern; no `spec:codes` gate; ~~missing `x-user-home-branch` in dup list~~ — **BE-002 fixed** |
+| **agent-invoice** | Mesh plugins **`plugins/gateway-secret.js` + `plugins/duplicate-header.js`** (extracted 2026-07-09); uses inline Fastify logger vs `loggerInstance`/pino pattern; no `spec:codes` gate; ~~missing `x-user-home-branch` in dup list~~ — **BE-002 fixed** |
 | **smart-report** | OpenAPI skeleton + `spec:lint` added 2026-07-08 (TD-011 closed); remaining CRUD paths still prose in technical-architecture |
 | **branch-report** | ~~No `format:check` or `audit:check` in CI~~ — **fixed earlier 2026-07-08**; plugin naming differs (`gateway-auth` vs `gateway-secret`); `routes/` for health outside `modules/` (accepted) |
 | **shared** | `platform-roles` is canonical roles SoT; only `npm test` — no spectral/consistency (library, n/a) |
@@ -58,7 +58,7 @@ services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, bran
 | demo-service | done | **pass** (30, 0 skip) | **pass** (30, 0 skip) | **pass** (`GET /api/v1/me`) | **pass** (mesh secret) | Covered by smoke `/api/v1/me` |
 | staff | done | **pass** (218, 0 skip) | **pass** (218, 0 skip) | **pass** (BUG-01: HQ 2 / 777WW 3) | **pass** (IDOR 404, If-Match 428/412) | Backend list OK; empty UI → frontend (**fixed** `ab81416`) |
 | agent-invoice | done | **pass** (47) | | **pass** (invoices + agents list) | **pass** (+ BE-002 fix) | Seeded `IV-202607-001`; home-branch dup guard added |
-| smart-report | done | **pass** (160) | | **pass** (list total 4) | **partial** (mesh + RBAC; sandbox deep skip) | curl only; no OpenAPI (TD-011) |
+| smart-report | done | **pass** (160) | | **pass** (list total 4) | **partial** (mesh + RBAC; sandbox deep skip) | OpenAPI skeleton + spec:lint (TD-011 closed); CRUD paths → TD-013 |
 | branch-report | done | **pass** (77) | | skipped (seed skipped; read-only Atlas URI) | **pass** (mesh secret only) | Domain routes not data-exercised |
 | shared (ecosystem.factory) | done | **pass** (3) | | n/a | n/a | |
 
@@ -68,7 +68,7 @@ services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, bran
 
 | ID | Sev | Service | Title | Repro | Expected | Actual | Owner | Fix PR |
 |----|-----|---------|-------|-------|----------|--------|-------|--------|
-| BE-001 | P2 | harness | Local `npm ci` leaves corrupt `node_modules` | `./scripts/ci/ci-all.sh --only backend --skip-smoke` (2026-07-08, Node v24.15.0) | All 7 `npm run ci` exit 0 | First run exit 1: TAR_ENTRY_ERROR / missing eslint, spectral, fastify, mongodb | infra | (open — TD-012) |
+| BE-001 | P2 | harness | Local `npm ci` leaves corrupt `node_modules` | `./scripts/ci/ci-all.sh --only backend --skip-smoke` (2026-07-08, Node v24.15.0) | All 7 `npm run ci` exit 0 | First run exit 1: TAR_ENTRY_ERROR / missing eslint, spectral, fastify, mongodb | infra | **closed** (2026-07-09; TD-012 — `install-all-deps.sh` rm node_modules + retry) |
 | BE-002 | P2 | agent-invoice | Duplicate-header list omitted `x-user-home-branch` | Dual `x-user-home-branch` on `/api/v1/*` | `400 INVALID_HEADER` | Prior: not rejected (header not in `CRITICAL_HEADERS`; Array-only check missed wire dupes under inject) | backend | **fixed in-tree** 2026-07-08 — add header + `rawHeaders` count via `lib/critical-headers.js` + unit tests |
 
 ---
@@ -78,8 +78,8 @@ services: [auth, gateway, demo-service, staff, agent-invoice, smart-report, bran
 | ID | Description | Confirmed? | Action |
 |----|-------------|------------|--------|
 | TD-010 | staff/demo `.env.test` missing from CI matrix — integration passes via skip placeholders | **fixed** (2026-07-08) | `.env.test` + GHA/ci-all matrix; staff `init:db` in ci |
-| TD-011 | smart-report missing OpenAPI + `spec:lint` | **confirmed** (Phase 0/5) | Defer epic — tracked in `tech-debt-tracker.md` |
-| TD-012 | Local sequential `npm ci` can corrupt `node_modules` (BE-001) | **confirmed** (Phase 1) | Investigate npm/tar flake; until then prefer `--skip-install` after known-good deps |
+| TD-011 | smart-report missing OpenAPI + `spec:lint` | **closed** (2026-07-08; skeleton + spec:lint) | Full CRUD + via-gateway → TD-013 |
+| TD-012 | Local sequential `npm ci` can corrupt `node_modules` (BE-001) | **closed** (2026-07-09; install-all-deps rm + retry) | BE-001 closed |
 
 ---
 
@@ -401,12 +401,12 @@ Items needing human decision before implementation. Each includes a one-line rec
 
 | Topic | Context | Recommendation |
 |-------|---------|----------------|
-| **agent-invoice: inline mesh guards** | Mesh/header guards live in `app.js` hooks, not shared `plugins/` like staff/demo — functionally correct but diverges from reference layout. | **Decided: Defer** (2026-07-08) — refactor only if team wants layout uniformity; not blocking. BE-002 home-branch dup guard fixed in-line without extracting plugins. |
+| **agent-invoice: mesh plugins** | Mesh/header guards were inline in `app.js`; staff/demo use shared `plugins/`. | **Done** (2026-07-09) — extracted `plugins/gateway-secret.js` + `plugins/duplicate-header.js`; response codes unchanged. Logger alignment still partial (CS-10). |
 | **smart-report: OpenAPI + spec:lint** | No `openapi.yaml`; prose API table in `technical-architecture.md` is the oracle — highest drift risk in the fleet. | **Closed 2026-07-08** — `openapi.yaml` skeleton (list/create/validate/test-run/download + probes) + `spec:lint` in ci; full CRUD paths still prose (TD-011 closed). |
 | **auth: `*.validator.js` vs `*.schema.js`** | Auth used `*.validator.js` naming; backend standard prefers `*.schema.js`. | **Done** (2026-07-08) — renamed to `auth.schema.js` / `admin.schema.js` / `internal.schema.js`; auth tests 193/193; architecture.md path updated. CHANGELOG historical filenames left as-is. |
 | **gateway: `--fail-severity=error`** | Auth `spec:lint` fails on warnings; gateway did not — weaker Spectral gate. | **Done** (earlier 2026-07-08) — `--fail-severity=error` already in gateway `package.json`. |
 | **branch-report: format + audit in CI** | `package.json` `ci` omitted `format:check` and `audit:check` unlike other services. | **Done** (earlier 2026-07-08) — wired into `ci`. |
-| **branch-report: health in `routes/`** | `routes/health.route.js` sits outside `modules/`; most peers still inline health in `app.js`. | **Decided: Accept** (2026-07-08) — keep; later fleet-wide shared ops pattern. |
+| **branch-report: health in `routes/`** | `routes/health.route.js` sits outside `modules/`; fleet now uses same pattern. | **Done** (2026-07-09) — fleet-wide extract to `routes/health.route.js` (layout only; response bodies preserved per service). |
 | **Redis/token_gen E2E harness** | Manual harness test for revoke → gateway reject not automated as cross-service script. | **Phase 4 manually PASS**. Mitigation 2026-07-08: GHA Redis service + existing gateway `jwt-auth-token-gen` unit coverage; full login→revoke→proxy script still optional (see RUNBOOK). |
 | **Frontend BUG-01: staff table empty** | Backoffice staff list @ 777WW empty in UI. | **Concluded Phase 3** — backend OK → frontend. **Fixed in-tree** (`ab81416`) — `useServerDataTable` `"use no memo"` + core row model; see [COMPREHENSIVE-AUDIT](../../../frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md) §7. |
 | **OWASP ZAP on gateway** | Optional DAST not in CI. | **Defer** — RUNBOOK documents how to run baseline; do not make required gate yet. |
@@ -425,3 +425,4 @@ Items needing human decision before implementation. Each includes a one-line rec
 - 2026-07-08: **Phase 3 API runtime complete** — `dev-up` (stack already up / ready), `seed-all` via boot, `smoke.sh` **pass** (exit 0). Spot-checks through gateway: `/api/v1/me`, `/auth/me/branches` (197), staff HQ vs 777WW (2 vs 3), invoices (`IV-202607-001`), smart-reports (4), staff internal without secret → 401. **BUG-01 owner: frontend** (backend list OK). Phase 4 not started.
 - 2026-07-08: **Frontend BUG-01 fixed** — commit `ab81416` (`useServerDataTable` React Compiler opt-out); findings appendix + open questions updated.
 - 2026-07-08: **Phase 4–6 closeout** — adversarial checklist **pass** (Appendix E); revoke+Redis E2E **pass**; **BE-002** fixed (agent-invoice `x-user-home-branch` dup guard + `lib/critical-headers.js`); auth `*.schema.js` rename (193 tests pass); TD-011/TD-012 added to findings + `tech-debt-tracker.md`; overall verdict **GO with caveats**; `docs-lint` **pass**.
+- 2026-07-09: **Residual complete** — `36422b2` landed: TD-012 install harden, TD-011 OpenAPI skeleton, fleet health extract, branch-report seed docs, agent-invoice mesh plugins, GHA Redis service. BE-001 closed. Post-residual roadmap: [backend-post-residual-roadmap-2026-07-09.md](./backend-post-residual-roadmap-2026-07-09.md).

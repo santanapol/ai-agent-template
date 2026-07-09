@@ -280,7 +280,7 @@ cd frontend/backoffice-next && npm run lint && npm test && npm run build
 ./scripts/dev/dev-up.sh --with-frontend && ./scripts/dev/smoke.sh
 ```
 
-Audit checklist: [docs/exec-plans/active/frontend-ui-audit-2026-07.md](./docs/exec-plans/active/frontend-ui-audit-2026-07.md)
+Audit checklist: [docs/exec-plans/completed/frontend-ui-audit-2026-07.md](./docs/exec-plans/completed/frontend-ui-audit-2026-07.md) (superseded by [COMPREHENSIVE-AUDIT](./frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md))
 
 ---
 
