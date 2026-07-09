@@ -11,6 +11,11 @@ export default async function profileRoutes(fastify, _options) {
     );
   }
   fastify.get(
+    "/count",
+    { schema: schema.countProfilesSchema },
+    controller.countProfiles,
+  );
+  fastify.get(
     "/",
     { schema: schema.listOrLookupProfilesSchema },
     controller.listOrLookupProfiles,

@@ -1,5 +1,7 @@
 import { HttpError } from "../../lib/http-error.js";
 import CODES from "../../lib/error-codes.js";
+import { getDatabase } from "../../config/database.js";
+import { STAFF_COLLECTIONS } from "../../config/mongo-collections.js";
 import * as repository from "./profiles.repository.js";
 import {
   resolveListScope,
@@ -89,4 +91,28 @@ export async function listProfiles(query, userContext, { log } = {}) {
     }
     throw error;
   }
+}
+
+/**
+ * @param {Record<string, unknown>} query
+ * @param {{ userId: string, ouId: string, branchId: string, role: string }} userContext
+ */
+export async function countProfiles(query, userContext, { log } = {}) {
+  const scope = resolveListScope(
+    userContext,
+    {
+      branch_id:
+        typeof query.branch_id === "string" ? query.branch_id : undefined,
+    },
+    { log },
+  );
+
+  const match = {
+    ...repository.buildScopeFilter(scope),
+    status: query.status,
+  };
+  const total = await getDatabase()
+    .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+    .countDocuments(match);
+  return { total };
 }

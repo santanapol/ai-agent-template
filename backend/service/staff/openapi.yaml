@@ -202,6 +202,65 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/v1/staff/profiles/count:
+    get:
+      tags: [profiles]
+      summary: Count staff profiles by status
+      description: |
+        Returns `{ total }` for dashboard stats. Requires permission `profiles:list`.
+        Branch scope matches list mode (HQ vs branch-pinned). Response payload is intentionally small (< 100 bytes).
+      operationId: countProfiles
+      security:
+        - GatewaySecret: []
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XUserHomeBranch"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XUserRole"
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [active, archived]
+        - $ref: "#/components/parameters/BranchIdFilter"
+      responses:
+        "200":
+          description: Profile count
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, data]
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: SUCCESS
+                  data:
+                    type: object
+                    required: [total]
+                    properties:
+                      total:
+                        type: integer
+                        minimum: 0
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewayAuthFailed"
+        "403":
+          $ref: "#/components/responses/PermissionDenied"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/v1/staff/profiles/{profileId}:
     parameters:
       - $ref: "#/components/parameters/ProfileId"
