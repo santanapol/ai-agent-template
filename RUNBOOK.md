@@ -223,8 +223,9 @@ Per-package: `npm run ci` ใน directory ของ service นั้น
 
 ### Redis / token_gen (CI vs manual E2E)
 
-- **CI:** GHA `ci-check` มี Redis service (`:6379`). Gateway `jwt-auth-token-gen.test.js` ครอบคลุม `GATEWAY_JWT_REJECTED` เมื่อ `token_gen` เก่า/หาย (mock Redis). Auth มี integration ที่ publish `token_gen` หลัง revoke
-- **Manual harness E2E (ไม่บังคับใน PR CI):** login → `POST /internal/users/:id/sessions/revoke` → ยิง gateway ด้วย access token เก่า → คาด `401 GATEWAY_JWT_REJECTED`
+- **CI (PR gate):** GHA `ci-check` มี Redis service (`:6379`). Gateway `jwt-auth-token-gen.test.js` ครอบคลุม `GATEWAY_JWT_REJECTED` เมื่อ `token_gen` เก่า/หาย (mock Redis). Auth มี integration ที่ publish `token_gen` หลัง revoke
+- **Manual harness E2E (ไม่บังคับใน PR CI):** `./scripts/ci/redis-revoke-gateway-e2e.sh` — ต้อง boot stack ก่อน (`./scripts/dev/dev-up.sh`); flow: login → `POST /internal/users/:id/sessions/revoke` (Bearer `AUTH_INTERNAL_SERVICE_SECRET`) → gateway `/api/v1/me` ด้วย access token เก่า → `401 GATEWAY_JWT_REJECTED` → re-login 200
+- **GHA manual:** Actions → **CI Quality Gate** → **Run workflow** → job **Redis revoke gateway E2E (manual)** (workflow_dispatch only — ไม่ block PR)
 
 ### OWASP ZAP (optional DAST)
 
