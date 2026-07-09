@@ -1,5 +1,5 @@
 ---
-status: active
+status: completed
 created: 2026-07-09
 updated: 2026-07-09
 services: [auth, staff, agent-invoice, branch-report, gateway]

@@ -1,5 +1,5 @@
 ---
-status: active
+status: completed
 created: 2026-07-09
 updated: 2026-07-09
 services: [backoffice-next]
@@ -92,6 +92,10 @@ flowchart TB
 - 2026-07-09: แผนสร้างจาก API Network Audit (report-only pass)
 - 2026-07-09: ปรับตาม plan review — แยก FE-1.3 จาก cache, FE-2.0 spike, NET-006 ลด scope, NET-004 prod gate
 - 2026-07-09: sync [Parallel Build plan](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — Wave 1 gate, PR rollup
+- 2026-07-09: **Wave 1 shipped** — NET-001/002/004 commits on `feat/api-network-audit-fixes-2026-07-09`
+- 2026-07-09: **Wave 1 prod gate** — `:3006` build OK; live NET verify blocked `AUTH_TOO_MANY_ATTEMPTS` (re-run checklist)
+- 2026-07-09: **Waves 2–4 shipped** — cache, consumers, closure (TD-022 drawer limit, My Profile reloadKey)
+- 2026-07-09: Plan moved to `completed/`
 
 ## Decision log
 
@@ -100,6 +104,7 @@ flowchart TB
 | NET-003 ไม่แก้ | Dup-3 = React Strict Mode dev-only; prod spot-check ยืนยันแล้ว |
 | FE-1.3 ไม่ใช้ cache | Dup มาจาก effect remount / Strict Mode มากกว่า missing cache; `useCallback` deps ว่างอยู่แล้ว |
 | FE cache ก่อน BE projection | ลด PAY-001/002 duplicate ได้ทันที — แต่ต้องผ่าน FE-2.0 parity ก่อนเลิก `invoices/agent` |
+| FE-2.0 parity (2026-07-09) | **Switch-capable roles:** auth `listMyBranches` branch_id set matches invoice needs for filter dropdown — reuse auth cache via adapter. **Branch-pinned:** keep `invoices/agent` cache key. **Do not remove** `invoices/agent` entirely (`mergeEnsuredInvoiceAgentBranches` / `restrictBranchId`). |
 | NET-006 Option B ใน Phase 2 | Option A (เอา `key={branch_id}`) scope ใหญ่ → defer TD-020 |
 | Prod network re-verify ทุก phase | ใช้ `next start -p 3006` เป็น source of truth สำหรับ Dup-1 |
 | NET-004 prod verify บังคับ Phase 1 | audit ระบุ prod ยัง pending — ต้องบันทึกผลหลัง PR2 |
