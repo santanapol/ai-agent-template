@@ -6,25 +6,6 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import type { AdminMenuNode } from "../../types/permissionAdmin";
 import RolePermissionsTab from "./RolePermissionsTab";
 
-const listAdminMenus = vi.fn();
-const listRolePermissions = vi.fn();
-const upsertRolePermission = vi.fn();
-
-const mockFeedback = vi.hoisted(() => ({
-  message: { success: vi.fn(), error: vi.fn() },
-  modal: { confirm: vi.fn() },
-}));
-
-vi.mock("../../lib/authApiClient", () => ({
-  listAdminMenus: (...args: unknown[]) => listAdminMenus(...args),
-  listRolePermissions: (...args: unknown[]) => listRolePermissions(...args),
-  upsertRolePermission: (...args: unknown[]) => upsertRolePermission(...args),
-}));
-
-vi.mock("../../hooks/useAppFeedback", () => ({
-  useAppFeedback: () => mockFeedback,
-}));
-
 const sampleMenus: AdminMenuNode[] = [
   {
     key: "settings",
@@ -52,6 +33,33 @@ const sampleMenus: AdminMenuNode[] = [
   },
 ];
 
+function renderRolePermissionsTab(overrides: Partial<React.ComponentProps<typeof RolePermissionsTab>> = {}) {
+  const props: React.ComponentProps<typeof RolePermissionsTab> = {
+    menus: sampleMenus,
+    menusLoading: false,
+    menusForbidden: false,
+    ...overrides,
+  };
+  renderWithProviders(<RolePermissionsTab {...props} />);
+}
+
+const listRolePermissions = vi.fn();
+const upsertRolePermission = vi.fn();
+
+const mockFeedback = vi.hoisted(() => ({
+  message: { success: vi.fn(), error: vi.fn() },
+  modal: { confirm: vi.fn() },
+}));
+
+vi.mock("../../lib/authApiClient", () => ({
+  listRolePermissions: (...args: unknown[]) => listRolePermissions(...args),
+  upsertRolePermission: (...args: unknown[]) => upsertRolePermission(...args),
+}));
+
+vi.mock("../../hooks/useAppFeedback", () => ({
+  useAppFeedback: () => mockFeedback,
+}));
+
 function axios403() {
   const err = new Error("Forbidden") as import("axios").AxiosError;
   err.isAxiosError = true;
@@ -67,14 +75,12 @@ function axios403() {
 
 describe("RolePermissionsTab", () => {
   beforeEach(() => {
-    listAdminMenus.mockReset();
     listRolePermissions.mockReset();
     upsertRolePermission.mockReset();
     mockFeedback.message.success.mockReset();
     mockFeedback.message.error.mockReset();
     mockFeedback.modal.confirm.mockReset();
 
-    listAdminMenus.mockResolvedValue(sampleMenus);
     listRolePermissions.mockResolvedValue([
       {
         ou_id: null,
@@ -86,7 +92,7 @@ describe("RolePermissionsTab", () => {
   });
 
   it("loads role mapping and shows checkbox tree", async () => {
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     expect(await screen.findByText("Permissions")).toBeInTheDocument();
     expect(screen.getByText("Staff list")).toBeInTheDocument();
     expect(screen.getByLabelText("Role")).toBeInTheDocument();
@@ -94,13 +100,12 @@ describe("RolePermissionsTab", () => {
   });
 
   it("shows wildcard alert preserved on save", async () => {
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     expect(await screen.findByText(/profiles:\*/)).toBeInTheDocument();
   });
 
-  it("shows forbidden result when API returns 403", async () => {
-    listAdminMenus.mockRejectedValue(axios403());
-    renderWithProviders(<RolePermissionsTab />);
+  it("shows forbidden result when menusForbidden is true", async () => {
+    renderRolePermissionsTab({ menusForbidden: true });
     expect(await screen.findByText("403 Forbidden")).toBeInTheDocument();
   });
 
@@ -114,7 +119,7 @@ describe("RolePermissionsTab", () => {
       revoked_users_count: 0,
     });
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
@@ -144,7 +149,7 @@ describe("RolePermissionsTab", () => {
       },
     ]);
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
@@ -166,7 +171,7 @@ describe("RolePermissionsTab", () => {
       revoked_users_count: 3,
     });
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
     await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
@@ -192,7 +197,7 @@ describe("RolePermissionsTab", () => {
       },
     ]);
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
     const manageCheckbox = screen.getByRole("checkbox", { name: /permissions/i });
@@ -213,7 +218,7 @@ describe("RolePermissionsTab", () => {
       },
     ]);
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
     await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
@@ -231,10 +236,7 @@ describe("RolePermissionsTab", () => {
   });
 
   it("does not stay loading when menu registry is empty", async () => {
-    listAdminMenus.mockResolvedValue([]);
-    listRolePermissions.mockResolvedValue([]);
-
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab({ menus: [] });
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled();
@@ -253,7 +255,7 @@ describe("RolePermissionsTab", () => {
       },
     ]);
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
@@ -271,7 +273,7 @@ describe("RolePermissionsTab", () => {
   it("does not switch role when discard dialog is cancelled", async () => {
     const user = userEvent.setup();
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
@@ -289,7 +291,7 @@ describe("RolePermissionsTab", () => {
   it("does not save when revoke sessions dialog is cancelled", async () => {
     const user = userEvent.setup();
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
     await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
@@ -325,7 +327,7 @@ describe("RolePermissionsTab", () => {
       revoked_users_count: 0,
     });
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
@@ -353,7 +355,7 @@ describe("RolePermissionsTab", () => {
     };
     upsertRolePermission.mockRejectedValue(err);
 
-    renderWithProviders(<RolePermissionsTab />);
+    renderRolePermissionsTab();
     await screen.findByText("Permissions");
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 

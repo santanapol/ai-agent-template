@@ -163,6 +163,14 @@ describe("InvoiceList page", () => {
     expect(screen.getByDisplayValue("INV-999")).toBeInTheDocument();
   });
 
+  it("calls fetchInvoiceAgents once on initial load", async () => {
+    renderWithRouter(<InvoiceList />);
+
+    await waitFor(() => {
+      expect(fetchInvoiceAgents).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("calls fetchInvoices once on initial load", async () => {
     renderWithRouter(<InvoiceList />);
 

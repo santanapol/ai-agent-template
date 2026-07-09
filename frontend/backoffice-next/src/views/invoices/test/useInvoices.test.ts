@@ -6,6 +6,9 @@ import type { InvoiceAgentBranch } from "../../../types/invoice";
 import { __resetInvoiceAgentsInflightForTests, useInvoices } from "../hooks/useInvoices";
 
 vi.mock("../../../lib/invoicesApiClient");
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { ou_id: "ou1", role: "branch_admin", branch_id: "br1" } }),
+}));
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),

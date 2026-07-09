@@ -42,6 +42,10 @@ import {
   setCachedMyBranch,
   upsertBranchInList,
 } from "@/lib/branchOptions";
+import {
+  branchCatalogCacheKey,
+  getBranchCatalog,
+} from "@/lib/branchCatalogCache";
 import { subscribeProfileRefresh } from "@/lib/profileRefresh";
 import * as staffApi from "@/lib/staffApiClient";
 import { cn } from "@/lib/utils";
@@ -153,6 +157,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   } | null>(null);
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+  const [branchSearchQuery, setBranchSearchQuery] = useState("");
+  const [debouncedBranchSearch, setDebouncedBranchSearch] = useState("");
   const [activeBranch, setActiveBranch] = useState<InvoiceAgentBranch | null>(() => getCachedMyBranch(user?.branch_id));
   const [activeBranchLoading, setActiveBranchLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
@@ -163,6 +170,16 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const activeBranchId = optimisticBranchId ?? user?.branch_id;
   const viewingOtherBranch = Boolean(user?.home_branch_id) && activeBranchId !== user?.home_branch_id;
   const roleLabel = formatRoleLabel(user?.role);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedBranchSearch(branchSearchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [branchSearchQuery]);
+
+  const handleBranchDropdownOpenChange = useCallback((open: boolean) => {
+    setBranchDropdownOpen(open);
+    if (!open) setBranchSearchQuery("");
+  }, []);
 
   const handleBranchSwitch = useCallback(
     async (branchId: string) => {
@@ -248,26 +265,38 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       setBranchesLoading(false);
       return;
     }
-    let cancelled = false;
-    const cached = getCachedInvoiceAgentBranches(user.ou_id);
-    if (cached) {
-      setBranches(mergePlatformBranches(cached));
+
+    if (!branchDropdownOpen) {
+      if (activeBranch) {
+        setBranches(mergePlatformBranches([activeBranch]));
+      } else {
+        setBranches([]);
+      }
       setBranchesLoading(false);
-    } else {
-      setBranchesLoading(true);
+      return;
     }
+
+    let cancelled = false;
+    setBranchesLoading(true);
     const loadSwitcherBranches = async () => {
-      let list: InvoiceAgentBranch[] = cached ?? [];
+      let list: InvoiceAgentBranch[] = [];
       try {
-        const res = await authApi.listMyBranches();
-        list = res;
+        const searchParams = debouncedBranchSearch
+          ? { q: debouncedBranchSearch, limit: 20 }
+          : { limit: 20 };
+        if (user.ou_id) {
+          const key = `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}`;
+          list = await getBranchCatalog(key, () => authApi.listMyBranches(searchParams));
+        } else {
+          list = await authApi.listMyBranches(searchParams);
+        }
       } catch {
         // Switcher still works with active branch only when branch list is unavailable.
       }
       if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
       const sorted = mergePlatformBranches(list);
-      if (user.ou_id) setCachedInvoiceAgentBranches(user.ou_id, sorted);
+      if (user.ou_id && !debouncedBranchSearch) setCachedInvoiceAgentBranches(user.ou_id, sorted);
       setBranches(sorted);
       setBranchesLoading(false);
     };
@@ -275,7 +304,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch]);
+  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch, branchDropdownOpen, debouncedBranchSearch]);
 
   const branchDisplayLabel = formatActiveBranchLabel(activeBranch, user?.branch_id, activeBranchLoading);
 
@@ -344,9 +373,13 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     activeBranchSelectLabel,
     branches,
     branchSelectLoading,
+    branchSearchQuery,
+    branchSearchLoading: branchesLoading && branchDropdownOpen,
     viewingOtherBranch,
     homeBranchId,
     onBranchSwitch: (branchId: string) => void handleBranchSwitch(branchId),
+    onBranchSearchQueryChange: setBranchSearchQuery,
+    onDropdownOpenChange: handleBranchDropdownOpenChange,
     roleLabel,
   };
 
