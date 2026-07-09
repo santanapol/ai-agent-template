@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import axios from "axios";
 
@@ -42,15 +42,21 @@ function sortedKeySignature(keys: string[]): string {
   return [...keys].sort().join("|");
 }
 
-const RolePermissionsTab: React.FC = () => {
+interface RolePermissionsTabProps {
+  menus: AdminMenuNode[];
+  menusLoading: boolean;
+  menusForbidden: boolean;
+}
+
+const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoading, menusForbidden }) => {
   const { message } = useAppFeedback();
+  const messageRef = useRef(message);
+  messageRef.current = message;
   const { confirm } = useConfirmDialog();
-  const [menus, setMenus] = useState<AdminMenuNode[]>([]);
   const [role, setRole] = useState<KnownRole>("platform_admin");
   const [checkedExact, setCheckedExact] = useState<string[]>([]);
   const [baselineCheckedExact, setBaselineCheckedExact] = useState<string[]>([]);
   const [wildcards, setWildcards] = useState<string[]>([]);
-  const [menusLoading, setMenusLoading] = useState(true);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [forbidden, setForbidden] = useState(false);
@@ -73,40 +79,13 @@ const RolePermissionsTab: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadMenus() {
-      setMenusLoading(true);
-      setForbidden(false);
-      try {
-        const registry = await authApi.listAdminMenus();
-        if (!cancelled) {
-          setMenus(registry);
-          if (registry.length === 0) {
-            setCheckedExact([]);
-            setBaselineCheckedExact([]);
-            setWildcards([]);
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          if (axios.isAxiosError(err) && err.response?.status === 403) {
-            setForbidden(true);
-          } else {
-            message.error(apiErrorMessage(err, "Failed to load menu registry"));
-          }
-        }
-      } finally {
-        if (!cancelled) setMenusLoading(false);
-      }
+    if (menusLoading) return;
+    if (menus.length === 0) {
+      setCheckedExact([]);
+      setBaselineCheckedExact([]);
+      setWildcards([]);
+      return;
     }
-    void loadMenus();
-    return () => {
-      cancelled = true;
-    };
-  }, [message]);
-
-  useEffect(() => {
-    if (menusLoading || menus.length === 0) return;
 
     let cancelled = false;
 
@@ -119,7 +98,7 @@ const RolePermissionsTab: React.FC = () => {
           if (axios.isAxiosError(err) && err.response?.status === 403) {
             setForbidden(true);
           } else {
-            message.error(apiErrorMessage(err, "Failed to load role permissions"));
+            messageRef.current.error(apiErrorMessage(err, "Failed to load role permissions"));
           }
         }
       } finally {
@@ -131,7 +110,7 @@ const RolePermissionsTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [role, menus, menusLoading, loadRoleMapping, message]);
+  }, [role, menus, menusLoading, loadRoleMapping]);
 
   const loading = menusLoading || (menus.length > 0 && mappingLoading);
 
@@ -203,7 +182,7 @@ const RolePermissionsTab: React.FC = () => {
     }
   };
 
-  if (forbidden) {
+  if (menusForbidden || forbidden) {
     return <AdminApiForbidden />;
   }
 
