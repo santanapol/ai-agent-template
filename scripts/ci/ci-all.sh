@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 # Run package CI for every service (mirrors GitHub Actions) plus optional smoke stack.
-# Usage: ./scripts/ci/ci-all.sh [--skip-install] [--skip-smoke] [--with-frontend] [--no-obs] [--only backend|frontend|docs|smoke]
+# Usage: ./scripts/ci/ci-all.sh [--skip-install] [--skip-smoke] [--with-frontend] [--no-obs] [--low-resource] [--only backend|frontend|docs|smoke]
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../dev/dev-lib.sh
 source "$SCRIPT_DIR/../dev/dev-lib.sh"
+# shellcheck source=low-resource-env.sh
+source "$SCRIPT_DIR/low-resource-env.sh"
 
 SKIP_INSTALL=false
 SKIP_SMOKE=false
 WITH_FRONTEND=false
 NO_OBS=false
+LOW_RESOURCE=false
+LOW_RESOURCE_AUTO=false
 ONLY=""
 
 FAILURES=()
@@ -27,6 +31,7 @@ Options:
   --skip-smoke       Run package CI + docs only (no dev-up/smoke)
   --with-frontend    Boot backoffice-next (Next.js) during smoke phase
   --no-obs           Skip observability stack during dev-up
+  --low-resource     Cap CPU/RAM for small hosts (2 vCPU / 2GB). Auto-enabled when detected.
   --only <phase>     Run one phase: backend | frontend | docs | smoke
   -h, --help         Show this help
 
@@ -52,6 +57,7 @@ while [[ $# -gt 0 ]]; do
     --skip-smoke) SKIP_SMOKE=true ;;
     --with-frontend) WITH_FRONTEND=true ;;
     --no-obs) NO_OBS=true ;;
+    --low-resource) LOW_RESOURCE=true ;;
     --only)
       shift
       ONLY="${1:-}"
@@ -285,8 +291,22 @@ print_summary() {
   return 1
 }
 
+apply_resource_profile() {
+  if [[ "$LOW_RESOURCE" == true ]] || ci_detect_low_resource; then
+    if [[ "$LOW_RESOURCE" != true ]] && ci_detect_low_resource; then
+      LOW_RESOURCE_AUTO=true
+      echo "==> Low-resource host detected (<=2 CPU, <=3GB RAM) — applying conservative CI profile"
+    else
+      echo "==> Low-resource CI profile (--low-resource)"
+    fi
+    ci_apply_low_resource_env
+    ci_ensure_swap_if_low_resource
+  fi
+}
+
 main() {
   echo "Harness ci-all (PORT_OFFSET=$PORT_OFFSET)"
+  apply_resource_profile
 
   if [[ "$SKIP_INSTALL" == false ]] && { run_phase backend || run_phase frontend; }; then
     echo ""

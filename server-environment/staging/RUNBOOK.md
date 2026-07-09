@@ -218,6 +218,8 @@ npm run build:staging --prefix frontend/backoffice-next
 
 ## 5. PM2 (staging config)
 
+โปรไฟล์ `ecosystem.staging.config.js` ใช้ `memoryProfile: small-with-deps` สำหรับ droplet 2GB ที่รัน Mongo + Redis บนเครื่องเดียวกัน — PM2 จะ restart process ที่เกิน `max_memory_restart` และจำกัด V8 heap ผ่าน `NODE_OPTIONS`
+
 ```bash
 pm2 start backend/ecosystem.staging.config.js
 pm2 save && pm2 startup
@@ -228,6 +230,8 @@ Reload after deploy:
 ```bash
 pm2 reload backend/ecosystem.staging.config.js
 ```
+
+ตรวจ RAM: `pm2 monit` หรือ `pm2 status` (คอลัมน์ mem)
 
 ---
 

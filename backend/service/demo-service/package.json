@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "TZ=UTC node --env-file-if-exists=.env --watch --enable-source-maps src/server.js",
     "start": "TZ=UTC node --env-file-if-exists=.env --enable-source-maps src/server.js",
-    "test": "NODE_ENV=test TZ=UTC node --env-file-if-exists=.env --test",
+    "test": "NODE_ENV=test TZ=UTC node --env-file-if-exists=.env --test --test-concurrency=1",
     "test:coverage": "NODE_ENV=test TZ=UTC node --env-file-if-exists=.env --experimental-test-coverage --test",
     "coverage:gate": "node scripts/coverage-gate.mjs",
     "ci:with-coverage": "npm run ci && npm run test:coverage && npm run coverage:gate",

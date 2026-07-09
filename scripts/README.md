@@ -65,7 +65,8 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`staging/staging-verify-env.sh`](./staging/staging-verify-env.sh) | ตรวจ env vars ที่จำเป็นก่อน deploy |
 | [`staging/staging-verify-seed.sh`](./staging/staging-verify-seed.sh) | ตรวจ indexes + document counts หลัง seed |
 | [`staging/ensure-staging-swap.sh`](./staging/ensure-staging-swap.sh) | สร้าง swapfile บน droplet เล็กก่อน `npm ci`/`next build` |
-| [`ci/ci-all.sh`](./ci/ci-all.sh) | Package CI for all services + docs + smoke (`--skip-install`, `--skip-smoke`, `--with-frontend`, `--only`) |
+| [`ci/ci-all.sh`](./ci/ci-all.sh) | Package CI for all services + docs + smoke (`--skip-install`, `--skip-smoke`, `--with-frontend`, `--low-resource`, `--only`) |
+| [`ci/low-resource-env.sh`](./ci/low-resource-env.sh) | Shared CPU/RAM caps for 2 vCPU / 2GB hosts (auto-detected by `ci-all` + `deploy-staging`) |
 | [`ci/docs-lint.mjs`](./ci/docs-lint.mjs) | Validate knowledge base (CI) |
 | [`ci/env-status.mjs`](./ci/env-status.mjs) | แสดงว่ามี `.env` / `.env.prod` / harness ไฟล์ไหนบ้าง — ดู [backend/ENV.md](../backend/ENV.md) |
 | [`ci/check-coding-standard-sync.sh`](./ci/check-coding-standard-sync.sh) | Diff vendored `coding-standard/` vs org upstream |
