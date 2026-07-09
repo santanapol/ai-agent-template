@@ -6,16 +6,16 @@ services: [backoffice-next]
 parallel-build: api_audit_parallel_build_d1c19150.plan.md
 parent-audit: frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md
 paired-plan: api-network-audit-backend-2026-07-09.md
-parallel-build: ../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md
+parallel-build: api_audit_parallel_build_d1c19150.plan.md (Cursor workspace — not versioned)
 ---
 
 # Plan: API Network Audit fixes — frontend (backoffice-next)
 
-> **Parallel execution:** [API Audit Parallel Build](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — Wave 1 เริ่ม FE Phase 1 + BE-2/BE-5/BE-1 พร้อมกัน
+> **Parallel execution:** API Audit Parallel Build (`api_audit_parallel_build_d1c19150.plan.md`, Cursor workspace) — Wave 1 เริ่ม FE Phase 1 + BE-2/BE-5/BE-1 พร้อมกัน
 
 ## Objective
 
-แก้ findings จาก [API Network Audit](../../frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md) ฝั่ง **frontend/backoffice-next** ครบทุก NET/PAY ที่ owner เป็น UI — ลด duplicate requests, รวม cache ร่วม, และ consume backend projection endpoints เมื่อพร้อม. แผน backend คู่กัน: [`api-network-audit-backend-2026-07-09.md`](./api-network-audit-backend-2026-07-09.md).
+แก้ findings จาก [API Network Audit](../../../frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md) ฝั่ง **frontend/backoffice-next** ครบทุก NET/PAY ที่ owner เป็น UI — ลด duplicate requests, รวม cache ร่วม, และ consume backend projection endpoints เมื่อพร้อม. แผน backend คู่กัน: [`api-network-audit-backend-2026-07-09.md`](./api-network-audit-backend-2026-07-09.md).
 
 ## Finding ownership matrix
 
@@ -81,7 +81,7 @@ flowchart TB
 | PR4 | BE-1 + FE-3.1 | BE-1 |
 | PR5 | BE-2 + FE-3.2 | BE-2 |
 | PR6 | BE-5 + FE-3.4 | BE-5 |
-| PR7 | BE-4 + FE-3.3 | BE-4 + [branch-report seed](../../exec-plans/active/backend-post-residual-roadmap-2026-07-09.md) |
+| PR7 | BE-4 + FE-3.3 | BE-4 + [branch-report seed](./backend-post-residual-roadmap-2026-07-09.md) |
 | PR8 | FE-2.2 (NET-006 Option B) | PR3 |
 | PR9 | FE-4 closure + quick wins | prior PRs |
 
@@ -91,7 +91,7 @@ flowchart TB
 
 - 2026-07-09: แผนสร้างจาก API Network Audit (report-only pass)
 - 2026-07-09: ปรับตาม plan review — แยก FE-1.3 จาก cache, FE-2.0 spike, NET-006 ลด scope, NET-004 prod gate
-- 2026-07-09: sync [Parallel Build plan](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — Wave 1 gate, PR rollup
+- 2026-07-09: sync Parallel Build plan (`api_audit_parallel_build_d1c19150.plan.md`) — Wave 1 gate, PR rollup
 - 2026-07-09: **Wave 1 shipped** — NET-001/002/004 commits on `feat/api-network-audit-fixes-2026-07-09`
 - 2026-07-09: **Wave 1 prod gate** — `:3006` build OK; live NET verify blocked `AUTH_TOO_MANY_ATTEMPTS` (re-run checklist)
 - 2026-07-09: **Waves 2–4 shipped** — cache, consumers, closure (TD-022 drawer limit, My Profile reloadKey)

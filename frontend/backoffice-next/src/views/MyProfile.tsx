@@ -56,6 +56,7 @@ const MyProfile: React.FC = () => {
   const userSub = user?.sub;
 
   useEffect(() => {
+    void reloadKey;
     let cancelled = false;
     const load = async () => {
       if (!userSub) {

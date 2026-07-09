@@ -227,16 +227,16 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
         Revoke active sessions for users with this role
       </label>
 
-      {loading ? (
-        <Skeleton className="h-48 w-full" aria-busy="true" />
-      ) : menus.length === 0 ? (
+      {loading && <Skeleton className="h-48 w-full" aria-busy="true" />}
+      {!loading && menus.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyTitle>No menu nodes in registry</EmptyTitle>
             <EmptyDescription>Add menu nodes in the catalog tab first.</EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : (
+      )}
+      {!loading && menus.length > 0 && (
         <MenuTree
           nodes={treeNodes}
           defaultExpanded

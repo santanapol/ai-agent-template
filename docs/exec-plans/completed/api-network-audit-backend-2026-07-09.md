@@ -7,16 +7,16 @@ parallel-build: api_audit_parallel_build_d1c19150.plan.md
 parent-audit: frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md
 paired-plan: api-network-audit-frontend-2026-07-09.md
 related-roadmap: backend-post-residual-roadmap-2026-07-09.md
-parallel-build: ../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md
+parallel-build: api_audit_parallel_build_d1c19150.plan.md (Cursor workspace — not versioned)
 ---
 
 # Plan: API Network Audit fixes — backend
 
-> **Parallel execution:** [API Audit Parallel Build](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — Wave 1 รวม BE-2 + BE-5 + BE-1 parallel กับ FE NET fixes
+> **Parallel execution:** API Audit Parallel Build (`api_audit_parallel_build_d1c19150.plan.md`, Cursor workspace) — Wave 1 รวม BE-2 + BE-5 + BE-1 parallel กับ FE NET fixes
 
 ## Objective
 
-แก้ findings **PAY** (และ NET-005 ที่ต้องการ count API) จาก [API Network Audit](../../frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md) ฝั่ง backend — ลด payload, เพิ่ม projection/search endpoints, และจัดทำ contract ให้ frontend consume ได้โดยไม่ breaking existing clients. แผน frontend คู่กัน: [`api-network-audit-frontend-2026-07-09.md`](./api-network-audit-frontend-2026-07-09.md).
+แก้ findings **PAY** (และ NET-005 ที่ต้องการ count API) จาก [API Network Audit](../../../frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md) ฝั่ง backend — ลด payload, เพิ่ม projection/search endpoints, และจัดทำ contract ให้ frontend consume ได้โดยไม่ breaking existing clients. แผน frontend คู่กัน: [`api-network-audit-frontend-2026-07-09.md`](./api-network-audit-frontend-2026-07-09.md).
 
 ## Finding ownership matrix
 
@@ -87,7 +87,7 @@ flowchart TB
 
 - 2026-07-09: แผนสร้างจาก API Network Audit (report-only pass)
 - 2026-07-09: ปรับตาม plan review — BE-2 โฟกัส q/limit, BE-4 backward compat, BE-3 optional, Phase 0 parallel
-- 2026-07-09: sync [Parallel Build plan](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — BE-1 ย้ายเข้า Wave 1
+- 2026-07-09: sync Parallel Build plan (`api_audit_parallel_build_d1c19150.plan.md`) — BE-1 ย้ายเข้า Wave 1
 - 2026-07-09: **BE-2/BE-5/BE-1** shipped Wave 1 (`dc1279a`, `1e0183d`, `6423563`)
 - 2026-07-09: **BE-4** invite-links `q`/`limit` shipped; **BE-3 skipped** (FE cache + parity)
 - 2026-07-09: **BE-6** `scripts/ops/payload-benchmark-api-audit.mjs` delivered

@@ -47,7 +47,7 @@ export function useInvoices() {
   const [loadingBranches, setLoadingBranches] = useState(false);
 
   const fetchInvoiceAgents = useCallback(async () => {
-    if (invoiceAgentsInflight) {
+    if (invoiceAgentsInflight != null) {
       return invoiceAgentsInflight;
     }
 
