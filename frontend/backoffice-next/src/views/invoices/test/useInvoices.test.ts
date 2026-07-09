@@ -1,12 +1,17 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { clearBranchCatalogCacheForTests } from "@/lib/branchCatalogCache";
 import * as api from "../../../lib/invoicesApiClient";
-import { useInvoices } from "../hooks/useInvoices";
+import type { InvoiceAgentBranch } from "../../../types/invoice";
+import { __resetInvoiceAgentsInflightForTests, useInvoices } from "../hooks/useInvoices";
 
 vi.mock("../../../lib/invoicesApiClient");
-vi.mock("antd", () => ({
-  message: {
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { ou_id: "ou1", role: "branch_admin", branch_id: "br1" } }),
+}));
+vi.mock("sonner", () => ({
+  toast: {
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
@@ -16,6 +21,40 @@ vi.mock("antd", () => ({
 describe("useInvoices", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearBranchCatalogCacheForTests();
+    __resetInvoiceAgentsInflightForTests();
+  });
+
+  it("should dedupe concurrent fetchInvoiceAgents calls", async () => {
+    const mockBranches = [{ branch_id: "br1", branch_name: "Vegas", branch_code: "VS" }];
+    let resolveAgents: (value: Awaited<ReturnType<typeof api.listInvoiceAgents>>) => void;
+    const agentsPromise = new Promise<Awaited<ReturnType<typeof api.listInvoiceAgents>>>((resolve) => {
+      resolveAgents = resolve;
+    });
+    vi.mocked(api.listInvoiceAgents).mockReturnValueOnce(agentsPromise);
+
+    const { result } = renderHook(() => useInvoices());
+
+    let first: Promise<InvoiceAgentBranch[]>;
+    let second: Promise<InvoiceAgentBranch[]>;
+    await act(async () => {
+      first = result.current.fetchInvoiceAgents();
+      second = result.current.fetchInvoiceAgents();
+    });
+
+    resolveAgents!({
+      success: true,
+      code: "SUCCESS",
+      message: "ok",
+      data: mockBranches,
+    });
+
+    await act(async () => {
+      await Promise.all([first!, second!]);
+    });
+
+    expect(api.listInvoiceAgents).toHaveBeenCalledTimes(1);
+    expect(result.current.branches).toEqual(mockBranches);
   });
 
   it("should fetch invoice agent branches", async () => {

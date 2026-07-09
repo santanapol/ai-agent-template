@@ -38,6 +38,7 @@ interface Royalty21SearchFormProps {
   initialValues?: Partial<Royalty21SearchValues>;
   onSearch: (values: Royalty21SearchValues) => void;
   onClear: () => void;
+  onInviteLinksOpen?: () => void;
 }
 
 const CHANNEL_TYPE_OPTIONS = [
@@ -54,6 +55,7 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
   initialValues,
   onSearch,
   onClear,
+  onInviteLinksOpen,
 }) => {
   const defaults = getRoyalty21DefaultSearchValues();
   const [channelType, setChannelType] = useState<ChannelType>(initialValues?.channelType ?? defaults.channelType);
@@ -110,6 +112,7 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
             if (!next) return;
             setChannelType(next as ChannelType);
             if (next !== "affiliate_link") setInviteLinkId(undefined);
+            if (next === "affiliate_link") onInviteLinksOpen?.();
           }}
           disabled={disabled}
           variant="outline"

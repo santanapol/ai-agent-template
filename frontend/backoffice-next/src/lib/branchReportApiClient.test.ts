@@ -25,6 +25,7 @@ describe("branchReportApiClient", () => {
 
     const result = await getInviteLinks();
     expect(mockGet).toHaveBeenCalledWith("/api/v1/branch-report/invite-links", {
+      params: { q: undefined, limit: undefined },
       signal: undefined,
     });
     expect(result).toEqual(links);

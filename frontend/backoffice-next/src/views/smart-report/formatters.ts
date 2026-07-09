@@ -108,8 +108,8 @@ export function indexLatestHistoryByReportId(
       latestByReportId.set(record.reportId, record);
       continue;
     }
-    const recordTime = record.startedAt ?? record.finishedAt ?? "";
-    const existingTime = existing.startedAt ?? existing.finishedAt ?? "";
+    const recordTime = record.finishedAt ?? record.startedAt;
+    const existingTime = existing.finishedAt ?? existing.startedAt;
     if (recordTime > existingTime) {
       latestByReportId.set(record.reportId, record);
     }

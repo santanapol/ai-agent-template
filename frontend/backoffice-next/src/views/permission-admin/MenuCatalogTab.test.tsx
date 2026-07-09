@@ -10,14 +10,59 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import type { AdminMenuNode } from "../../types/permissionAdmin";
 import MenuCatalogTab from "./MenuCatalogTab";
 
+const sampleMenus: AdminMenuNode[] = [
+  {
+    key: "settings",
+    label: "Settings",
+    type: "menu",
+    parent_key: null,
+    sort_order: 90,
+    upd_date: "2026-06-10T10:00:00.000Z",
+  },
+  {
+    key: "permissions:manage",
+    label: "Permissions",
+    type: "action",
+    parent_key: "settings",
+    sort_order: 10,
+    upd_date: "2026-06-10T11:00:00.000Z",
+  },
+  {
+    key: "sit:test",
+    label: "SIT Test",
+    type: "action",
+    parent_key: "settings",
+    sort_order: 20,
+    upd_date: "2026-06-10T12:00:00.000Z",
+  },
+];
+
+function renderMenuCatalogTab(overrides: Partial<React.ComponentProps<typeof MenuCatalogTab>> = {}) {
+  const reloadMenus = vi.fn().mockResolvedValue(undefined);
+  const props: React.ComponentProps<typeof MenuCatalogTab> = {
+    menus: sampleMenus,
+    menusLoading: false,
+    menusForbidden: false,
+    reloadMenus,
+    ...overrides,
+  };
+  renderWithProviders(<MenuCatalogTab {...props} />);
+  return { reloadMenus };
+}
+
 function MenuCatalogTabTestHarness() {
   const openCreateRef = useRef<(() => void) | null>(null);
+  const reloadMenus = vi.fn().mockResolvedValue(undefined);
   return (
     <>
       <Button type="button" onClick={() => openCreateRef.current?.()}>
         Create menu node
       </Button>
       <MenuCatalogTab
+        menus={sampleMenus}
+        menusLoading={false}
+        menusForbidden={false}
+        reloadMenus={reloadMenus}
         onCreateActionReady={(open) => {
           openCreateRef.current = open;
         }}
@@ -47,33 +92,6 @@ vi.mock("../../hooks/useAppFeedback", () => ({
   useAppFeedback: () => mockFeedback,
 }));
 
-const sampleMenus: AdminMenuNode[] = [
-  {
-    key: "settings",
-    label: "Settings",
-    type: "menu",
-    parent_key: null,
-    sort_order: 90,
-    upd_date: "2026-06-10T10:00:00.000Z",
-  },
-  {
-    key: "permissions:manage",
-    label: "Permissions",
-    type: "action",
-    parent_key: "settings",
-    sort_order: 10,
-    upd_date: "2026-06-10T11:00:00.000Z",
-  },
-  {
-    key: "sit:test",
-    label: "SIT Test",
-    type: "action",
-    parent_key: "settings",
-    sort_order: 20,
-    upd_date: "2026-06-10T12:00:00.000Z",
-  },
-];
-
 function axios403() {
   const err = new Error("Forbidden") as import("axios").AxiosError;
   err.isAxiosError = true;
@@ -99,20 +117,19 @@ describe("MenuCatalogTab", () => {
   });
 
   it("loads and displays menu tree", async () => {
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     expect(await screen.findByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("Permissions")).toBeInTheDocument();
-    expect(listAdminMenus).toHaveBeenCalled();
+    expect(listAdminMenus).not.toHaveBeenCalled();
   });
 
-  it("shows forbidden result when API returns 403", async () => {
-    listAdminMenus.mockRejectedValue(axios403());
-    renderWithProviders(<MenuCatalogTab />);
+  it("shows forbidden result when menusForbidden is true", async () => {
+    renderMenuCatalogTab({ menusForbidden: true });
     expect(await screen.findByText("403 Forbidden")).toBeInTheDocument();
   });
 
   it("disables edit and delete for permissions:manage", async () => {
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     await screen.findByText("Permissions");
 
     expect(screen.getByRole("button", { name: /edit permissions/i })).toBeDisabled();
@@ -159,7 +176,7 @@ describe("MenuCatalogTab", () => {
       label: "SIT Test Updated",
     });
 
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     await screen.findByText("SIT Test");
 
     await user.click(screen.getByRole("button", { name: /edit sit test/i }));
@@ -219,7 +236,7 @@ describe("MenuCatalogTab", () => {
     const user = userEvent.setup();
     deleteAdminMenu.mockResolvedValue(undefined);
 
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     await screen.findByText("SIT Test");
 
     await user.click(screen.getByRole("button", { name: /delete sit test/i }));
@@ -244,7 +261,7 @@ describe("MenuCatalogTab", () => {
     };
     updateAdminMenu.mockRejectedValue(err);
 
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     await screen.findByText("SIT Test");
 
     await user.click(screen.getByRole("button", { name: /edit sit test/i }));
@@ -277,7 +294,7 @@ describe("MenuCatalogTab", () => {
     };
     deleteAdminMenu.mockRejectedValue(err);
 
-    renderWithProviders(<MenuCatalogTab />);
+    renderMenuCatalogTab();
     await screen.findByText("SIT Test");
 
     await user.click(screen.getByRole("button", { name: /delete sit test/i }));

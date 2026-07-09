@@ -6,6 +6,7 @@ const ouIdQuerySchema = {
     type: "object",
     properties: {
       ou_id: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+      fields: { type: "string", enum: ["full", "matrix"], default: "full" },
     },
   },
 };

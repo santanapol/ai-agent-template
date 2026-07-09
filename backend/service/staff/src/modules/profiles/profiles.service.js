@@ -17,6 +17,7 @@ export {
   getProfileById,
   lookupProfileByUserId,
   listProfiles,
+  countProfiles,
 } from "./profiles.read.js";
 
 export {

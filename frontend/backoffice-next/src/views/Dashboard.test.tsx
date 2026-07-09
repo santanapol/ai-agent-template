@@ -27,7 +27,7 @@ describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     testNavigation.reset();
-    vi.mocked(staffApi.listProfiles).mockResolvedValue(mockPaginatedResponse([], 5));
+    vi.mocked(staffApi.getProfileCounts).mockResolvedValue({ total: 5 });
   });
 
   it("loads stat cards for admin roles", async () => {
@@ -36,9 +36,9 @@ describe("Dashboard", () => {
       permissions: ["profiles:list"],
     } as ReturnType<typeof useAuth>);
 
-    vi.mocked(staffApi.listProfiles)
-      .mockResolvedValueOnce(mockPaginatedResponse([], 12))
-      .mockResolvedValueOnce(mockPaginatedResponse([], 3));
+    vi.mocked(staffApi.getProfileCounts)
+      .mockResolvedValueOnce({ total: 12 })
+      .mockResolvedValueOnce({ total: 3 });
 
     renderWithRouter(<Dashboard />);
 
@@ -48,7 +48,7 @@ describe("Dashboard", () => {
       expect(screen.getByText("3")).toBeInTheDocument();
     });
 
-    expect(staffApi.listProfiles).toHaveBeenCalledTimes(2);
+    expect(staffApi.getProfileCounts).toHaveBeenCalledTimes(2);
   });
 
   it("shows staff shortcuts when permitted", async () => {
@@ -63,14 +63,14 @@ describe("Dashboard", () => {
       expect(screen.getByRole("button", { name: /my profile/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /smart reports/i })).toBeInTheDocument();
     });
-    expect(staffApi.listProfiles).not.toHaveBeenCalled();
+    expect(staffApi.getProfileCounts).not.toHaveBeenCalled();
   });
 
   it("shows error toast when stats fetch fails", async () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockAuthUser("branch_admin"),
     } as ReturnType<typeof useAuth>);
-    vi.mocked(staffApi.listProfiles).mockRejectedValue(new Error("network"));
+    vi.mocked(staffApi.getProfileCounts).mockRejectedValue(new Error("network"));
 
     renderWithRouter(<Dashboard />);
 

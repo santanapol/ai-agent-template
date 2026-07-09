@@ -21,6 +21,9 @@
 | TD-017 | Harness | P2 | Post-seed validator + index gates (`verify-harness-schema.sh`, `verify-staging-schema.sh`) | closed (2026-07-09; wired seed-all + staging-seed-all — [`collection-validators-rollout`](../exec-plans/completed/collection-validators-rollout-2026-07-09.md)) |
 | TD-018 | Data | P3 | Orphan `agent_fees` row without `agents` parent — read-only audit + cleanup ticket | open |
 | TD-019 | Spec | P3 | `spec:consistency` validator checks for staff / agent-invoice / smart-report (auth done) | closed (2026-07-09; validator↔ERD gates in all 4 services) |
+| TD-020 | Frontend | P3 | NET-006 Option A — remove `AdminLayout` `key={branch_id}` remount; use `branchId` context instead | open — defer [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) Phase 2 |
+| TD-021 | API | P3 | Batch `GET /invoices?ids=` for bulk export (ลด N× detail fetch) | open — [`api-network-audit-backend`](../exec-plans/completed/api-network-audit-backend-2026-07-09.md) future |
+| TD-022 | Frontend | P3 | Smart Report drawer `listHistory(limit=100)` → paginated `limit=20` | open — [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) FE-4.1 |
 
 ## How to use
 

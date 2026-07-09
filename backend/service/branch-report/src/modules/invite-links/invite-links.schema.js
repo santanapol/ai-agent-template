@@ -1,4 +1,14 @@
+export const inviteLinksListQuerySchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    q: { type: "string", minLength: 1, maxLength: 64 },
+    limit: { type: "integer", minimum: 1, maximum: 100 },
+  },
+};
+
 export const inviteLinksListSchema = {
+  querystring: inviteLinksListQuerySchema,
   response: {
     200: {
       type: "object",

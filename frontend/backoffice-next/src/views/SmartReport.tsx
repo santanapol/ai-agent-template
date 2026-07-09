@@ -66,6 +66,7 @@ const INITIAL_FORM: ReportFormValues = {
 
 const SMART_REPORT_PAGE_SIZE = 20;
 const REPORT_HISTORY_ENRICHMENT_LIMIT = 100;
+const SMART_REPORT_DRAWER_HISTORY_LIMIT = 20;
 
 const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
@@ -115,6 +116,9 @@ const SmartReport: React.FC = () => {
   const scriptEditorScrollRef = useRef<HTMLDivElement | null>(null);
   const scriptScrollTopRef = useRef(0);
   const validationAlertRef = useRef<HTMLDivElement | null>(null);
+  const messageRef = useRef(message);
+  messageRef.current = message;
+  const isInitialReportsLoadRef = useRef(true);
 
   const setField = <K extends keyof ReportFormValues>(key: K, value: ReportFormValues[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -144,40 +148,46 @@ const SmartReport: React.FC = () => {
     return { formValues: form, script: form.query };
   }, [form]);
 
-  const fetchEnrichmentHistory = useCallback(async () => {
+  const fetchEnrichmentHistory = useCallback(async (signal?: AbortSignal) => {
     try {
       const enrichRes = await listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT });
+      if (signal?.aborted) return;
       setEnrichmentHistory(enrichRes.data);
     } catch (err) {
-      message.error(apiErrorMessage(err, "Failed to load report run history"));
+      if (signal?.aborted) return;
+      messageRef.current.error(apiErrorMessage(err, "Failed to load report run history"));
     }
-  }, [message]);
+  }, []);
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async (signal?: AbortSignal) => {
     setReportsLoading(true);
     try {
       const reportsRes = await listReports({ page: reportsPage, limit: reportsPageSize });
+      if (signal?.aborted) return;
       setReports(reportsRes.data);
       setReportsTotal(reportsRes.pagination.total);
     } catch (err) {
-      message.error(apiErrorMessage(err, "Failed to load reports"));
+      if (signal?.aborted) return;
+      messageRef.current.error(apiErrorMessage(err, "Failed to load reports"));
     } finally {
-      setReportsLoading(false);
+      if (!signal?.aborted) setReportsLoading(false);
     }
-  }, [reportsPage, reportsPageSize, message]);
+  }, [reportsPage, reportsPageSize]);
 
-  const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(async (signal?: AbortSignal) => {
     setHistoryLoading(true);
     try {
       const historyRes = await listHistory({ page: historyPage, limit: historyPageSize });
+      if (signal?.aborted) return;
       setHistory(historyRes.data);
       setHistoryTotal(historyRes.pagination.total);
     } catch (err) {
-      message.error(apiErrorMessage(err, "Failed to load download history"));
+      if (signal?.aborted) return;
+      messageRef.current.error(apiErrorMessage(err, "Failed to load download history"));
     } finally {
-      setHistoryLoading(false);
+      if (!signal?.aborted) setHistoryLoading(false);
     }
-  }, [historyPage, historyPageSize, message]);
+  }, [historyPage, historyPageSize]);
 
   const refresh = useCallback(() => {
     void fetchEnrichmentHistory();
@@ -188,16 +198,24 @@ const SmartReport: React.FC = () => {
   }, [activeTab, fetchEnrichmentHistory, fetchReports, fetchHistory]);
 
   useEffect(() => {
-    void fetchEnrichmentHistory();
-  }, [fetchEnrichmentHistory]);
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-  useEffect(() => {
-    void fetchReports();
-  }, [fetchReports]);
+    if (isInitialReportsLoadRef.current) {
+      isInitialReportsLoadRef.current = false;
+      void Promise.all([fetchEnrichmentHistory(signal), fetchReports(signal)]);
+    } else {
+      void fetchReports(signal);
+    }
+
+    return () => controller.abort();
+  }, [fetchEnrichmentHistory, fetchReports]);
 
   useEffect(() => {
     if (activeTab !== "history") return;
-    void fetchHistory();
+    const controller = new AbortController();
+    void fetchHistory(controller.signal);
+    return () => controller.abort();
   }, [activeTab, fetchHistory]);
 
   const handleReportsPaginationChange = useCallback((pageIndex: number, pageSize: number) => {
@@ -520,7 +538,7 @@ const SmartReport: React.FC = () => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
     try {
-      const response = await listHistory({ page: 1, limit: REPORT_HISTORY_ENRICHMENT_LIMIT });
+      const response = await listHistory({ page: 1, limit: SMART_REPORT_DRAWER_HISTORY_LIMIT });
       setDrawerDownloads(response.data.filter((record) => record.reportId === reportId));
     } catch (err) {
       message.error(apiErrorMessage(err, "Failed to load report history"));

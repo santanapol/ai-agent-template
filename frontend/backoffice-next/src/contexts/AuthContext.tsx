@@ -8,6 +8,7 @@ import axios from "axios";
 import * as authApi from "../lib/authApiClient";
 import { setAccessToken, setRefreshCallback } from "../lib/baseApiClient";
 import { clearBranchCaches } from "../lib/branchOptions";
+import { invalidateBranchCatalog } from "../lib/branchCatalogCache";
 import type { DecodedUser, MenuNode, TokenResponse } from "../types/auth";
 
 export interface AuthContextValue {
@@ -75,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenuLoading(false);
     setMenuError(false);
     clearBranchCaches();
+    invalidateBranchCatalog();
   }, []);
 
   // Register the refresh callback so staffApiClient and agentsApiClient can retry on 401
@@ -180,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const data = await authApi.switchActiveBranch(branchId);
         applyToken(data);
+        invalidateBranchCatalog(decodeJwt(data.access_token)?.ou_id ?? user?.ou_id);
         setLastBranchSwitchAt(Date.now());
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.data?.code === "AUTH_NOT_READY") {
@@ -187,6 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!token) throw err;
           const data = await authApi.switchActiveBranch(branchId);
           applyToken(data);
+          invalidateBranchCatalog(decodeJwt(data.access_token)?.ou_id ?? user?.ou_id);
           setLastBranchSwitchAt(Date.now());
           return;
         }
@@ -195,7 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setBranchSwitching(false);
       }
     },
-    [applyToken, refreshFn],
+    [applyToken, refreshFn, user?.ou_id],
   );
 
   return (

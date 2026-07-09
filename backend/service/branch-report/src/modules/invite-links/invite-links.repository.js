@@ -20,7 +20,7 @@ export function mapInviteLinkDoc(doc) {
 export function createInviteLinksRepository(getDb) {
   return {
     /**
-     * @param {{ ouId: string; branchId: string }} tenant
+     * @param {{ ouId: string; branchId: string; q?: string; limit?: number }} tenant
      */
     async findByTenant(tenant) {
       const ouId = parseObjectId(tenant.ouId, "ou_id");
@@ -31,11 +31,25 @@ export function createInviteLinksRepository(getDb) {
         branch_id: branchId,
       };
 
-      const docs = await getDb()
+      const q = tenant.q?.trim();
+      if (q) {
+        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+        filter.$or = [
+          { invite_code: regex },
+          { username: regex },
+          { description: regex },
+        ];
+      }
+
+      let cursor = getDb()
         .collection(COLLECTION)
         .find(filter)
-        .sort({ invite_code: 1 })
-        .toArray();
+        .sort({ invite_code: 1 });
+      if (tenant.limit !== undefined && tenant.limit !== null) {
+        cursor = cursor.limit(Math.min(Math.max(1, Number(tenant.limit)), 100));
+      }
+
+      const docs = await cursor.toArray();
 
       return { filter, docs };
     },

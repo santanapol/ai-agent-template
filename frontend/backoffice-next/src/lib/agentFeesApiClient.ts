@@ -44,9 +44,9 @@ export async function deleteAgentFee(agentId: string, feeId: string, dateISO: st
   });
 }
 
-export async function getGameCompanies(ou_id?: string, signal?: AbortSignal) {
+export async function getGameCompanies(ou_id?: string, signal?: AbortSignal, fields: "full" | "matrix" = "full") {
   const res = await client.get<ApiEnvelope<GameCompany[]>>("/api/v1/agent-invoice/master-data/game-companies", {
-    params: { ou_id },
+    params: { ou_id, fields: fields === "matrix" ? "matrix" : undefined },
     signal,
   });
   return res.data.data;

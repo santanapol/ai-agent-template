@@ -165,7 +165,10 @@ describe("authApiClient admin methods", () => {
     ];
     mockGet.mockResolvedValue({ data: { branches } });
     const result = await listMyBranches();
-    expect(mockGet).toHaveBeenCalledWith("/auth/me/branches", { signal: undefined });
+    expect(mockGet).toHaveBeenCalledWith("/auth/me/branches", {
+      params: { q: undefined, limit: undefined },
+      signal: undefined,
+    });
     expect(result).toEqual(branches);
   });
 });

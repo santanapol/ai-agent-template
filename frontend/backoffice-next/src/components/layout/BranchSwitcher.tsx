@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { formatBranchOptionLabel } from "@/lib/branchOptions";
 import type { InvoiceAgentBranch } from "@/types/invoice";
@@ -20,9 +21,13 @@ export function BranchSwitcher({
   activeBranchSelectLabel,
   branches,
   branchSelectLoading,
+  branchSearchQuery = "",
+  branchSearchLoading = false,
   viewingOtherBranch,
   homeBranchId,
   onBranchSwitch,
+  onBranchSearchQueryChange,
+  onDropdownOpenChange,
   roleLabel,
 }: {
   showBranchSwitcher: boolean;
@@ -31,9 +36,13 @@ export function BranchSwitcher({
   activeBranchSelectLabel: string;
   branches: InvoiceAgentBranch[];
   branchSelectLoading: boolean;
+  branchSearchQuery?: string;
+  branchSearchLoading?: boolean;
   viewingOtherBranch: boolean;
   homeBranchId: string | undefined;
   onBranchSwitch: (branchId: string) => void;
+  onBranchSearchQueryChange?: (query: string) => void;
+  onDropdownOpenChange?: (open: boolean) => void;
   roleLabel: string;
 }) {
   const { isMobile } = useSidebar();
@@ -63,7 +72,7 @@ export function BranchSwitcher({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={onDropdownOpenChange}>
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
@@ -89,6 +98,18 @@ export function BranchSwitcher({
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
+            {onBranchSearchQueryChange ? (
+              <div className="p-2">
+                <Input
+                  value={branchSearchQuery}
+                  onChange={(e) => onBranchSearchQueryChange(e.target.value)}
+                  placeholder="Search branches…"
+                  aria-label="Search branches"
+                  className="h-8"
+                  disabled={branchSearchLoading}
+                />
+              </div>
+            ) : null}
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-muted-foreground text-xs">Branches</DropdownMenuLabel>
               {branches.map((branch) => (

@@ -3,7 +3,15 @@ import { useCallback, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 
+import { useAuth } from "@/contexts/AuthContext";
 import { apiErrorMessage } from "@/lib/apiError";
+import * as authApi from "@/lib/authApiClient";
+import {
+  authBranchesToInvoiceBranches,
+  branchCatalogCacheKey,
+  getBranchCatalog,
+} from "@/lib/branchCatalogCache";
+import { canSwitchActiveBranch } from "@/lib/branchOptions";
 import * as api from "@/lib/invoicesApiClient";
 import type {
   GenerateInvoicesPayload,
@@ -16,7 +24,15 @@ import type {
 
 import { buildInvoiceEtag } from "../bulk/invoiceEtag";
 
+let invoiceAgentsInflight: Promise<InvoiceAgentBranch[]> | null = null;
+
+/** @internal Test helper — resets module-level in-flight dedupe state. */
+export function __resetInvoiceAgentsInflightForTests() {
+  invoiceAgentsInflight = null;
+}
+
 export function useInvoices() {
+  const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -31,19 +47,42 @@ export function useInvoices() {
   const [loadingBranches, setLoadingBranches] = useState(false);
 
   const fetchInvoiceAgents = useCallback(async () => {
-    setLoadingBranches(true);
-    try {
-      const res = await api.listInvoiceAgents();
-      const items = Array.isArray(res.data) ? res.data : [];
-      setBranches(items);
-      return items;
-    } catch (error: unknown) {
-      toast.error(apiErrorMessage(error, "Failed to fetch branches"));
-      return [];
-    } finally {
-      setLoadingBranches(false);
+    if (invoiceAgentsInflight != null) {
+      return invoiceAgentsInflight;
     }
-  }, []);
+
+    setLoadingBranches(true);
+    invoiceAgentsInflight = (async () => {
+      try {
+        let items: InvoiceAgentBranch[] = [];
+        const ouId = user?.ou_id;
+        if (ouId && canSwitchActiveBranch(user?.role)) {
+          const authKey = branchCatalogCacheKey(ouId, "auth");
+          const authBranches = await getBranchCatalog(authKey, () => authApi.listMyBranches());
+          items = authBranchesToInvoiceBranches(authBranches);
+        } else if (ouId) {
+          const agentKey = branchCatalogCacheKey(ouId, "invoice-agent");
+          items = await getBranchCatalog(agentKey, async () => {
+            const res = await api.listInvoiceAgents();
+            return Array.isArray(res.data) ? res.data : [];
+          });
+        } else {
+          const res = await api.listInvoiceAgents();
+          items = Array.isArray(res.data) ? res.data : [];
+        }
+        setBranches(items);
+        return items;
+      } catch (error: unknown) {
+        toast.error(apiErrorMessage(error, "Failed to fetch branches"));
+        return [];
+      } finally {
+        setLoadingBranches(false);
+        invoiceAgentsInflight = null;
+      }
+    })();
+
+    return invoiceAgentsInflight;
+  }, [user?.ou_id, user?.role]);
 
   const fetchInvoices = useCallback(async (params: ListInvoicesParams = {}, signal?: AbortSignal) => {
     setLoading(true);

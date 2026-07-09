@@ -1,7 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { ObjectId } from 'mongodb'
-import { sortBranchDisplayList } from '../src/modules/auth/branch-display-sort.js'
+import {
+  sortBranchDisplayList,
+  applyBranchListQuery,
+  branchMatchesQuery
+} from '../src/modules/auth/branch-display-sort.js'
 import { BranchAccessResolver } from '../src/modules/auth/branch-access.resolver.js'
 import { ZERO_HQ_BRANCH_ID } from '../scripts/seed-data/zero-hq.js'
 
@@ -71,4 +75,47 @@ test('BranchAccessResolver.listBranchesForOu merges platform and customer branch
   assert.equal(branches.length, 2)
   assert.equal(branches[0]?.branch_id, ZERO_HQ_BRANCH_ID)
   assert.equal(branches[1]?.branch_code, '7W')
+})
+
+test('branchMatchesQuery matches branch_code and branch_name case-insensitively', () => {
+  const branch = {
+    branch_id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    branch_code: 'H01',
+    branch_name: 'Home Branch',
+    active: true
+  }
+  assert.equal(branchMatchesQuery(branch, 'h01'), true)
+  assert.equal(branchMatchesQuery(branch, 'HOME'), true)
+  assert.equal(branchMatchesQuery(branch, 'nomatch'), false)
+})
+
+test('applyBranchListQuery preserves order, filters by q, and caps limit', () => {
+  const branches = sortBranchDisplayList([
+    {
+      branch_id: ZERO_HQ_BRANCH_ID,
+      branch_code: 'ZERO',
+      branch_name: 'Zero HQ',
+      active: true
+    },
+    {
+      branch_id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+      branch_code: 'T01',
+      branch_name: 'Target Branch',
+      active: true
+    },
+    {
+      branch_id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+      branch_code: 'H01',
+      branch_name: 'Home Branch',
+      active: true
+    }
+  ])
+
+  const filtered = applyBranchListQuery(branches, { q: 'H01' })
+  assert.equal(filtered.length, 1)
+  assert.equal(filtered[0].branch_code, 'H01')
+
+  const limited = applyBranchListQuery(branches, { limit: 2 })
+  assert.equal(limited.length, 2)
+  assert.equal(limited[0].branch_id, ZERO_HQ_BRANCH_ID)
 })

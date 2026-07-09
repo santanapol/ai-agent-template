@@ -106,6 +106,7 @@ Prefix ผ่าน gateway: `/api/v1/staff`
 | Method | Path | Permission | หมายเหตุ |
 |--------|------|------------|----------|
 | GET | `/api/v1/staff/profiles` | `profiles:list` / `profiles:lookup` | list vs `?user_id` |
+| GET | `/api/v1/staff/profiles/count` | `profiles:list` | `{ data: { total } }` by `status=active\|archived` |
 | GET | `/api/v1/staff/profiles/{id}` | `profiles:read` | own profile bypass |
 | POST | `/api/v1/staff/profiles` | `profiles:create` | provision หรือ link |
 | PATCH | `/api/v1/staff/profiles/{id}` | `profiles:edit` | If-Match required |

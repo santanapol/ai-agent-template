@@ -43,6 +43,18 @@ export const listOrLookupProfilesSchema = {
   },
 };
 
+export const countProfilesSchema = {
+  querystring: {
+    type: "object",
+    required: ["status"],
+    additionalProperties: false,
+    properties: {
+      status: { type: "string", enum: ["active", "archived"] },
+      branch_id: { type: "string", pattern: objectIdPattern },
+    },
+  },
+};
+
 export const getProfileByIdSchema = {
   params: profileIdParamsSchema,
 };

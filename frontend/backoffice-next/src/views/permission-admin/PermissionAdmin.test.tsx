@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -43,17 +43,16 @@ describe("PermissionAdmin", () => {
     expect(screen.getByTestId("role-permissions-tab")).toBeInTheDocument();
   });
 
-  it("lazy-mounts role tab so listAdminMenus is not called until that tab opens", async () => {
+  it("does not refetch menus when switching tabs", async () => {
     const user = userEvent.setup();
     renderWithProviders(<PermissionAdmin />);
 
-    expect(screen.getByTestId("menu-catalog-tab")).toBeInTheDocument();
-    const callsBeforeRoleTab = listAdminMenus.mock.calls.length;
-    expect(callsBeforeRoleTab).toBeGreaterThanOrEqual(1);
+    await screen.findByTestId("menu-catalog-tab");
+    expect(listAdminMenus).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole("tab", { name: /role permissions/i }));
     expect(screen.getByTestId("role-permissions-tab")).toBeInTheDocument();
-    expect(listAdminMenus.mock.calls.length).toBeGreaterThan(callsBeforeRoleTab);
+    expect(listAdminMenus).toHaveBeenCalledTimes(1);
   });
 
   it("shows API error toast when menu catalog load fails", async () => {

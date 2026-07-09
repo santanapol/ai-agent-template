@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import dynamic from "next/dynamic";
 
@@ -147,6 +147,7 @@ const InvoiceList: React.FC = () => {
   const [exportRunning, setExportRunning] = useState(false);
   const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
   const [statusRunning, setStatusRunning] = useState(false);
+  const invoiceAgentsRequestedRef = useRef(false);
 
   const bulkBusy = exportRunning || statusRunning;
 
@@ -172,6 +173,8 @@ const InvoiceList: React.FC = () => {
   }, [fetchInvoices, invoiceListQuery]);
 
   useEffect(() => {
+    if (invoiceAgentsRequestedRef.current) return;
+    invoiceAgentsRequestedRef.current = true;
     void fetchInvoiceAgents();
   }, [fetchInvoiceAgents]);
 

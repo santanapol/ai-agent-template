@@ -6,7 +6,8 @@ import {
   refreshBodySchema,
   logoutBodySchema,
   changeOwnPasswordBodySchema,
-  switchActiveBranchBodySchema
+  switchActiveBranchBodySchema,
+  listMyBranchesQuerySchema
 } from './auth.schema.js'
 /** Per-route caps (per IP) — สอดคล้อง `_coding-standards/auth/api.md` (default แนะนำ) */
 const RATE_LIMIT_LOGIN = { max: 30, timeWindow: '1 minute' }
@@ -56,6 +57,7 @@ export default async function authRoutePlugin(fastify, opts) {
     scope.get(
       '/auth/me/branches',
       {
+        schema: { querystring: listMyBranchesQuerySchema },
         config: { rateLimit: RATE_LIMIT_ME_BRANCHES },
         preHandler: requireAccessBearer
       },

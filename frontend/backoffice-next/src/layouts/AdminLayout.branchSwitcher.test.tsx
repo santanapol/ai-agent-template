@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthContextValue } from "../contexts/AuthContext";
 import { useAuth } from "../contexts/AuthContext";
 import * as authApi from "../lib/authApiClient";
+import { clearBranchCatalogCacheForTests } from "../lib/branchCatalogCache";
 import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
 import { renderWithProviders } from "../test/renderWithProviders";
 import type { DecodedUser } from "../types/auth";
@@ -82,6 +83,7 @@ function mockAuth(user: DecodedUser, extra: Partial<AuthContextValue> = {}) {
 describe("AdminLayout branch switcher", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearBranchCatalogCacheForTests();
     messageError.mockReset();
     messageSuccess.mockReset();
     vi.mocked(authApi.listMyBranches).mockResolvedValue(branches);

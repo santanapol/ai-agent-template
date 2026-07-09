@@ -27,9 +27,12 @@ function unwrapEnvelope<T>(envelope: BranchReportEnvelope<T>): T {
   return envelope.data;
 }
 
-export async function getInviteLinks(signal?: AbortSignal): Promise<InviteLinkItem[]> {
+export async function getInviteLinks(
+  options?: { q?: string; limit?: number; signal?: AbortSignal },
+): Promise<InviteLinkItem[]> {
   const res = await client.get<BranchReportEnvelope<InviteLinkItem[]>>(`${BASE_PATH}/invite-links`, {
-    signal,
+    params: { q: options?.q, limit: options?.limit },
+    signal: options?.signal,
   });
   return unwrapEnvelope(res.data);
 }

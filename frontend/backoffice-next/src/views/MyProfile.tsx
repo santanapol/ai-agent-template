@@ -38,7 +38,7 @@ const MyProfile: React.FC = () => {
   const [changingPassword, setChangingPassword] = useState(false);
   const [profile, setProfile] = useState<StaffProfile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [_reloadKey, setReloadKey] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
   const currentEtag = useRef<string | null>(null);
 
   const [code, setCode] = useState("");
@@ -56,6 +56,7 @@ const MyProfile: React.FC = () => {
   const userSub = user?.sub;
 
   useEffect(() => {
+    void reloadKey;
     let cancelled = false;
     const load = async () => {
       if (!userSub) {
@@ -90,7 +91,7 @@ const MyProfile: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [message, userSub]);
+  }, [message, userSub, reloadKey]);
 
   const clearProfileError = (field: string) => {
     if (!profileErrors[field]) return;

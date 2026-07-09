@@ -1,7 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import axios from "axios";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { MenuTree } from "@/components/MenuTree";
@@ -20,40 +19,26 @@ import MenuNodeFormModal, { type MenuNodeFormMode } from "./MenuNodeFormModal";
 import { buildMenuTree, isProtectedMenuKey } from "./permissionAdminUtils";
 
 interface MenuCatalogTabProps {
+  menus: AdminMenuNode[];
+  menusLoading: boolean;
+  menusForbidden: boolean;
+  reloadMenus: () => Promise<void>;
   onCreateActionReady?: (openCreate: () => void) => void;
 }
 
-const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({ onCreateActionReady }) => {
+const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({
+  menus,
+  menusLoading,
+  menusForbidden,
+  reloadMenus,
+  onCreateActionReady,
+}) => {
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
-  const [menus, setMenus] = useState<AdminMenuNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [forbidden, setForbidden] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<MenuNodeFormMode>("create");
   const [editingNode, setEditingNode] = useState<AdminMenuNode | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const loadMenus = useCallback(async () => {
-    setLoading(true);
-    setForbidden(false);
-    try {
-      const data = await authApi.listAdminMenus();
-      setMenus(data);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 403) {
-        setForbidden(true);
-        return;
-      }
-      message.error(apiErrorMessage(err, "Failed to load menu catalog"));
-    } finally {
-      setLoading(false);
-    }
-  }, [message]);
-
-  useEffect(() => {
-    void loadMenus();
-  }, [loadMenus]);
 
   const menuParents = useMemo(
     () => menus.filter((m) => m.type === "menu").sort((a, b) => a.sort_order - b.sort_order),
@@ -82,7 +67,7 @@ const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({ onCreateActionReady }) 
         try {
           await authApi.deleteAdminMenu(node.key, node.upd_date);
           message.success("Menu node deleted");
-          await loadMenus();
+          await reloadMenus();
         } catch (err) {
           message.error(apiErrorMessage(err, "Failed to delete menu node"));
           throw err;
@@ -102,7 +87,7 @@ const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({ onCreateActionReady }) 
         message.success("Menu node updated");
       }
       setModalOpen(false);
-      await loadMenus();
+      await reloadMenus();
     } catch (err) {
       message.error(apiErrorMessage(err, "Failed to save menu node"));
     } finally {
@@ -110,13 +95,13 @@ const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({ onCreateActionReady }) 
     }
   };
 
-  if (forbidden) {
+  if (menusForbidden) {
     return <AdminApiForbidden />;
   }
 
   return (
     <div data-testid="menu-catalog-tab">
-      {loading ? (
+      {menusLoading ? (
         <Skeleton className="h-48 w-full" aria-busy="true" />
       ) : menus.length === 0 ? (
         <Empty>

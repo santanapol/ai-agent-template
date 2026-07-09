@@ -67,6 +67,17 @@ export async function listOrLookupProfiles(request, reply) {
     );
 }
 
+export async function countProfiles(request, reply) {
+  const result = await service.countProfiles(
+    request.query,
+    request.userContext,
+    {
+      log: request.log,
+    },
+  );
+  return reply.status(200).send(successEnvelope(result, null, CODES.SUCCESS));
+}
+
 export async function createProfile(request, reply) {
   const result = await service.createProfile(
     request.body,
