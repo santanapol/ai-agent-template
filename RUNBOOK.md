@@ -156,7 +156,21 @@ Harness smoke login: `platform_admin` / `1234` (ค่า default ใน `dev-li
 
 `seed-all.sh` seed: auth users + permissions, staff profiles, demo items, smart reports, agent-invoice sample, branch-report `gpp_777ww` minimal data
 
-**branch-report:** seed เขียนลง Mongo **localhost เท่านั้น**. ถ้า `MONGODB_URI_READ` ใน `.env.harness` เป็น Atlas → script ข้ามพร้อมเหตุผล (ไม่พัง `seed-all`). ต้องการข้อมูล domain: ตั้งค่าตาม [backend/ENV.md](./backend/ENV.md) (localhost + `gpp_777ww`) แล้วรัน seed ใหม่. Checklist หลัง seed + active branch `777WW`:
+**branch-report:** seed เขียนลง Mongo **localhost เท่านั้น**. ถ้า `MONGODB_URI_READ` ใน `.env.harness` เป็น Atlas → script ข้ามพร้อมเหตุผล (ไม่พัง `seed-all`). ต้องการข้อมูล domain: ตั้งค่าตาม [backend/ENV.md](./backend/ENV.md) (localhost + `gpp_777ww`) แล้วรัน seed ใหม่.
+
+#### Quick start: local domain data
+
+สามคำสั่งสำหรับ Channel Performance / invite-links บน localhost (ต้องมี Mongo Docker รันอยู่):
+
+```bash
+cp backend/service/branch-report/.env.harness.example backend/service/branch-report/.env.harness
+cd backend/service/branch-report && npm run seed:example
+curl -s "http://127.0.0.1:3000/api/v1/branch-report/invite-links" -H "Authorization: Bearer <token>"
+```
+
+`<token>` จาก `./scripts/dev/smoke.sh` หรือ login curl ด้านล่าง · ตรวจ Mongo counts (+ optional gateway): `./scripts/dev/verify-branch-report-seed.sh`
+
+Checklist หลัง seed + active branch `777WW`:
 
 ```bash
 # หลัง login + switch branch (777WW / 5f4fb5bb3156af7a2db9e5a0)
