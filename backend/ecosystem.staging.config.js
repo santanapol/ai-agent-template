@@ -1,3 +1,6 @@
 const { createEcosystemConfig } = require("./ecosystem.factory");
 
-module.exports = createEcosystemConfig(".env.staging", { appEnv: "staging" });
+module.exports = createEcosystemConfig(".env.staging", {
+  appEnv: "staging",
+  memoryProfile: "small-with-deps",
+});

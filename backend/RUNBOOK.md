@@ -99,6 +99,7 @@ curl -X GET http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_to
 - `[ ]` **Claims Mapping:** `JWT_CLAIM_USER_ID`, `ROLE`, `OU`, `BRANCH` ตั้งชื่อ field ตรงกันหมด
 - `[ ]` **Redis:** `REDIS_URL` ชี้ไปที่เดียวกัน (เพื่อเช็ค `token_gen`)
 - `[ ]` **Gateway Secret:** `GATEWAY_SECRET` ต้องยาวเกิน 32 ตัวอักษร และตรงกับค่าของ Upstream
+- `[ ]` **PM2 memory:** หลัง `git pull` รัน `pm2 reload backend/ecosystem.config.js` (โปรไฟล์ `small` สำหรับ 2GB — ดู `backend/ecosystem.factory.js`)
 
 ### Shared package `@zero-platform/roles`
 

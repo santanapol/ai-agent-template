@@ -53,4 +53,40 @@ describe('ecosystem.factory', () => {
       'zero-staff',
     ]);
   });
+
+  it('production small profile caps memory per process', () => {
+    const config = createEcosystemConfig('.env.prod', {
+      appEnv: 'production',
+      memoryProfile: 'small',
+    });
+    const auth = config.apps.find((a) => a.name === 'zero-auth');
+    const gateway = config.apps.find((a) => a.name === 'zero-gateway');
+    const front = config.apps.find((a) => a.name === 'zero-backoffice');
+
+    assert.equal(auth.max_memory_restart, '200M');
+    assert.match(auth.env.NODE_OPTIONS, /--max-old-space-size=144/);
+    assert.equal(gateway.max_memory_restart, '140M');
+    assert.equal(front.max_memory_restart, '380M');
+    assert.match(front.env.NODE_OPTIONS, /--max-old-space-size=300/);
+  });
+
+  it('staging small-with-deps profile is tighter than production small', () => {
+    const prod = createEcosystemConfig('.env.prod', { memoryProfile: 'small' });
+    const staging = createEcosystemConfig('.env.staging', {
+      appEnv: 'staging',
+      memoryProfile: 'small-with-deps',
+    });
+
+    const prodAuth = prod.apps.find((a) => a.name === 'zero-auth');
+    const stagingAuth = staging.apps.find((a) => a.name === 'zero-auth');
+    assert.equal(prodAuth.max_memory_restart, '200M');
+    assert.equal(stagingAuth.max_memory_restart, '160M');
+  });
+
+  it('ecosystem.config.js wires production small profile', () => {
+    const prodConfig = require(path.join(backendRoot, 'ecosystem.config.js'));
+    const auth = prodConfig.apps.find((a) => a.name === 'zero-auth');
+    assert.equal(auth.max_memory_restart, '200M');
+    assert.equal(auth.env.APP_ENV, 'production');
+  });
 });

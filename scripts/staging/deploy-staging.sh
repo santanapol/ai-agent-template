@@ -10,7 +10,13 @@ LOCK_HASH_FILE="$ROOT/.staging-package-lock.sha256"
 
 echo "==> deploy-staging"
 bash "$SCRIPT_DIR/ensure-staging-swap.sh"
-export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
+# shellcheck source=../ci/low-resource-env.sh
+source "$SCRIPT_DIR/../ci/low-resource-env.sh"
+if ci_detect_low_resource; then
+  ci_apply_low_resource_env
+else
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
+fi
 
 hash_lockfiles() {
   {

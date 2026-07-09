@@ -15,6 +15,7 @@ Product and engineering docs live in different places — by design.
 | **Core beliefs** | [`../harness-engineering/core-beliefs.md`](../harness-engineering/core-beliefs.md) | หลักการที่ไม่ควรฝ่าฝืน |
 | **How to build** (domain rules) | [`../coding-standard/`](../coding-standard/) | Changing org-wide backend/auth/gateway/frontend/testing standards |
 | **How agents verify** (checklists) | [`../references/`](../references/) | Synced from [agent-skills](https://github.com/addyosmani/agent-skills) — do not edit by hand |
+| **QA code audit** (draft manual) | [`qa/qa-code-audit-common.md`](./qa/qa-code-audit-common.md) + [backend](./qa/qa-code-audit-backend.md) + [frontend](./qa/qa-code-audit-frontend.md) | Bug-hunt workflow — spec as SoT, not code; split BE/FE for separate skills; intent in [`intent/qa-code-audit-skill.md`](./intent/qa-code-audit-skill.md) |
 | **Slash-command standards map** | [`../scripts/agent/agent-skills-standards/`](../scripts/agent/agent-skills-standards/) | Telling `/plan`, `/build`, etc. which `coding-standard/` files apply |
 
 ## Specs (`docs/specs/`)

@@ -210,6 +210,17 @@ curl -s http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer <access_token>
 ./scripts/ci/ci-all.sh --only backend   # เฉพาะ phase ที่ต้องการ
 ```
 
+**เครื่องเล็ก (2 vCPU / 2GB RAM — production/staging droplet):** `ci-all` จะ **auto-detect** และจำกัด CPU/RAM (Vitest 1 worker, Node heap 1024MB, swap ถ้ายังไม่มี) หรือบังคับด้วย `--low-resource`:
+
+```bash
+./scripts/ci/ci-all.sh --skip-smoke --low-resource
+# หรือ export ก่อนรัน test/build แยก:
+export CI_LOW_RESOURCE=1
+cd frontend/backoffice-next && npm test && npm run build
+```
+
+บนเครื่อง 2GB **ไม่แนะนำ** รัน `ci-all` ครบพร้อม smoke — ใช้ `--skip-smoke --only backend` หรือ `--only frontend` แทน
+
 Install รันผ่าน `backend/scripts/install-all-deps.sh` — ลบ `node_modules` ก่อน `npm ci` ต่อ package และ retry ครั้งเดียวถ้า extract ไม่ครบ (TD-012). ถ้ายัง flake:
 
 ```bash

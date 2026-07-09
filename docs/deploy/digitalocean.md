@@ -92,6 +92,13 @@ pm2 save
 pm2 startup
 ```
 
+**หมายเหตุ (เครื่อง 2 vCPU / 2GB):** `ecosystem.config.js` ใช้โปรไฟล์ `small` — จำกัด RAM ต่อ process ผ่าน `max_memory_restart` + `NODE_OPTIONS=--max-old-space-size=…` (ดูตารางใน `backend/ecosystem.factory.js`) หลัง deploy ให้ reload config:
+
+```bash
+pm2 reload backend/ecosystem.config.js
+pm2 monit   # ดู RSS ต่อ app
+```
+
 ---
 
 ## ขั้นที่ 2: ผูกกุญแจรีโมท (GitHub Secrets)
