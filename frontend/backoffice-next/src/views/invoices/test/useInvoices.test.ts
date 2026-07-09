@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { clearBranchCatalogCacheForTests } from "@/lib/branchCatalogCache";
 import * as api from "../../../lib/invoicesApiClient";
 import type { InvoiceAgentBranch } from "../../../types/invoice";
 import { __resetInvoiceAgentsInflightForTests, useInvoices } from "../hooks/useInvoices";
@@ -20,6 +21,7 @@ vi.mock("sonner", () => ({
 describe("useInvoices", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearBranchCatalogCacheForTests();
     __resetInvoiceAgentsInflightForTests();
   });
 

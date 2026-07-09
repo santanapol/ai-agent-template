@@ -157,7 +157,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   } | null>(null);
   const [branches, setBranches] = useState<InvoiceAgentBranch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
-  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [branchSearchQuery, setBranchSearchQuery] = useState("");
   const [debouncedBranchSearch, setDebouncedBranchSearch] = useState("");
   const [activeBranch, setActiveBranch] = useState<InvoiceAgentBranch | null>(() => getCachedMyBranch(user?.branch_id));
@@ -177,7 +176,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [branchSearchQuery]);
 
   const handleBranchDropdownOpenChange = useCallback((open: boolean) => {
-    setBranchDropdownOpen(open);
     if (!open) setBranchSearchQuery("");
   }, []);
 
@@ -266,16 +264,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       return;
     }
 
-    if (!branchDropdownOpen) {
-      if (activeBranch) {
-        setBranches(mergePlatformBranches([activeBranch]));
-      } else {
-        setBranches([]);
-      }
-      setBranchesLoading(false);
-      return;
-    }
-
     let cancelled = false;
     setBranchesLoading(true);
     const loadSwitcherBranches = async () => {
@@ -304,7 +292,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch, branchDropdownOpen, debouncedBranchSearch]);
+  }, [user?.sub, user?.ou_id, showBranchSwitcher, activeBranch, debouncedBranchSearch]);
 
   const branchDisplayLabel = formatActiveBranchLabel(activeBranch, user?.branch_id, activeBranchLoading);
 
@@ -374,7 +362,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     branches,
     branchSelectLoading,
     branchSearchQuery,
-    branchSearchLoading: branchesLoading && branchDropdownOpen,
+    branchSearchLoading: branchesLoading,
     viewingOtherBranch,
     homeBranchId,
     onBranchSwitch: (branchId: string) => void handleBranchSwitch(branchId),

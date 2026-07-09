@@ -57,12 +57,10 @@ describe("ChannelPerformancePage", () => {
     expect(screen.getByText("To")).toBeInTheDocument();
   });
 
-  it("does not fetch royalty report on mount (AC-9)", async () => {
+  it("does not fetch royalty report or invite links on mount (AC-9)", async () => {
     renderWithProviders(<ChannelPerformancePage />);
 
-    await waitFor(() => {
-      expect(mockGetInviteLinks).toHaveBeenCalled();
-    });
+    expect(mockGetInviteLinks).not.toHaveBeenCalled();
     expect(mockGetRoyalty21Times).not.toHaveBeenCalled();
     expect(screen.getByText("Select channel and click Search")).toBeInTheDocument();
   });
@@ -94,10 +92,6 @@ describe("ChannelPerformancePage", () => {
   it("fetches royalty report when search is submitted", async () => {
     const user = userEvent.setup();
     renderWithProviders(<ChannelPerformancePage />);
-
-    await waitFor(() => {
-      expect(mockGetInviteLinks).toHaveBeenCalled();
-    });
 
     await user.click(screen.getByRole("button", { name: /^direct$/i }));
     await user.click(screen.getByRole("button", { name: /^search$/i }));

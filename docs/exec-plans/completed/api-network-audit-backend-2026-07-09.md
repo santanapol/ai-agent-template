@@ -88,6 +88,10 @@ flowchart TB
 - 2026-07-09: แผนสร้างจาก API Network Audit (report-only pass)
 - 2026-07-09: ปรับตาม plan review — BE-2 โฟกัส q/limit, BE-4 backward compat, BE-3 optional, Phase 0 parallel
 - 2026-07-09: sync [Parallel Build plan](../../../.cursor/plans/api_audit_parallel_build_d1c19150.plan.md) — BE-1 ย้ายเข้า Wave 1
+- 2026-07-09: **BE-2/BE-5/BE-1** shipped Wave 1 (`dc1279a`, `1e0183d`, `6423563`)
+- 2026-07-09: **BE-4** invite-links `q`/`limit` shipped; **BE-3 skipped** (FE cache + parity)
+- 2026-07-09: **BE-6** `scripts/ops/payload-benchmark-api-audit.mjs` delivered
+- 2026-07-09: Plan moved to `completed/`
 
 ## Decision log
 
