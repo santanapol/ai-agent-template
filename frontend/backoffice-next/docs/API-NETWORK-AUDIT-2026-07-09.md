@@ -262,7 +262,7 @@ Detail routes and `my_profile` — not sidebar leaves; listed above.
 | PAY-004 | **Fixed** | `fields=matrix` BE-5 + FE agent fees matrix consumer |
 | PAY-005 | **Fixed** | `GET /profiles/count` BE-1 + Dashboard consumer |
 
-**Prod `:3006` gate (Wave 1):** Server build OK; live re-verify blocked by `AUTH_TOO_MANY_ATTEMPTS` on harness auth — re-run per [`NETWORK-VERIFY-CHECKLIST.md`](./NETWORK-VERIFY-CHECKLIST.md) after rate limit clears.
+**Prod `:3006` gate (Wave 1):** **PASS** 2026-07-09 — smoke + mandatory NET/PAY on `next start -p 3006`; see [`NETWORK-VERIFY-CHECKLIST.md`](./NETWORK-VERIFY-CHECKLIST.md) verification run. Remaining manual UAT: `/agents/:id/fees`, `/invoices/:id`, static error pages.
 
 **Deferred:** TD-020 (NET-006 Option A), TD-021 (bulk export batch), BE-3 skipped (FE cache + parity sufficient).
 
