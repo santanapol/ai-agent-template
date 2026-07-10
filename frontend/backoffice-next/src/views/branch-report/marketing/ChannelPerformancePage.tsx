@@ -181,27 +181,30 @@ const ChannelPerformancePage: React.FC = () => {
     getRowId: (row) => `${row.username}::${row.register}`,
   });
 
+  const branchAlert = !hasActiveBranch ? (
+    <Alert>
+      <AlertTitle>Branch required</AlertTitle>
+      <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
+    </Alert>
+  ) : showBranchSwitchNotice ? (
+    <Alert>
+      <AlertTitle>Branch changed</AlertTitle>
+      <AlertDescription>Please search again to refresh this report.</AlertDescription>
+    </Alert>
+  ) : null;
+
   return (
     <ListPageCard
       title="Channel Performance"
       description="Analyze and query Royalty 21 performance marketing statistics by channels."
-      toolbar={<DataTableToolbarActions table={table} exportFileName="royalty21-channel-performance" showColumnVisibility={false} />}
-      headerAddon={
-        <>
-          {!hasActiveBranch ? (
-            <Alert>
-              <AlertTitle>Branch required</AlertTitle>
-              <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
-            </Alert>
-          ) : null}
-          {showBranchSwitchNotice && hasActiveBranch ? (
-            <Alert>
-              <AlertTitle>Branch changed</AlertTitle>
-              <AlertDescription>Please search again to refresh this report.</AlertDescription>
-            </Alert>
-          ) : null}
-        </>
+      toolbar={
+        <DataTableToolbarActions
+          table={table}
+          exportFileName="royalty21-channel-performance"
+          showColumnVisibility={false}
+        />
       }
+      headerAddon={branchAlert}
       filterRow={
         <Royalty21SearchForm
           inviteLinkOptions={inviteLinkOptions}

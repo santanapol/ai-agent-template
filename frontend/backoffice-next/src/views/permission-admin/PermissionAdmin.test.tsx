@@ -31,16 +31,21 @@ describe("PermissionAdmin", () => {
     expect(screen.getByRole("tab", { name: /role permissions/i })).toBeInTheDocument();
   });
 
-  it("shows menu catalog panel by default", () => {
+  it("shows menu catalog panel and Create in toolbar by default", () => {
     renderWithProviders(<PermissionAdmin />);
     expect(screen.getByTestId("menu-catalog-tab")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create menu node/i })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: /role:/i })).not.toBeInTheDocument();
   });
 
-  it("switches to role permissions tab", async () => {
+  it("switches to role permissions tab with Save and Role select in content", async () => {
     const user = userEvent.setup();
     renderWithProviders(<PermissionAdmin />);
     await user.click(screen.getByRole("tab", { name: /role permissions/i }));
     expect(screen.getByTestId("role-permissions-tab")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create menu node/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /role:/i })).toBeInTheDocument();
   });
 
   it("does not refetch menus when switching tabs", async () => {
