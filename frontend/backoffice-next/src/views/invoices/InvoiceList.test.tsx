@@ -18,7 +18,7 @@ vi.mock("../../hooks/usePermission", () => ({
 }));
 
 vi.mock("../../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: mockAuthUser() }),
+  useAuth: vi.fn(() => ({ user: mockAuthUser() })),
 }));
 
 vi.mock("../../hooks/useAppFeedback", () => ({
@@ -168,6 +168,28 @@ describe("InvoiceList page", () => {
 
     await waitFor(() => {
       expect(fetchInvoiceAgents).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("refetches invoice agents when ou_id or role changes (FE-REV-002)", async () => {
+    const { useAuth } = await import("../../contexts/AuthContext");
+    const useAuthMock = vi.mocked(useAuth);
+    useAuthMock.mockReturnValue({
+      user: mockAuthUser("platform_admin", [], { ou_id: "ou-1" }),
+    } as ReturnType<typeof useAuth>);
+
+    const { rerender } = renderWithRouter(<InvoiceList />);
+    await waitFor(() => {
+      expect(fetchInvoiceAgents).toHaveBeenCalledTimes(1);
+    });
+
+    useAuthMock.mockReturnValue({
+      user: mockAuthUser("platform_admin", [], { ou_id: "ou-2" }),
+    } as ReturnType<typeof useAuth>);
+    rerender(<InvoiceList />);
+
+    await waitFor(() => {
+      expect(fetchInvoiceAgents).toHaveBeenCalledTimes(2);
     });
   });
 

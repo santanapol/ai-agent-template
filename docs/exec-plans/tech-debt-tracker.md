@@ -24,6 +24,9 @@
 | TD-020 | Frontend | P3 | NET-006 Option A — remove `AdminLayout` `key={branch_id}` remount; use `branchId` context instead | open — defer [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) Phase 2 |
 | TD-021 | API | P3 | Batch `GET /invoices?ids=` for bulk export (ลด N× detail fetch) | open — [`api-network-audit-backend`](../exec-plans/completed/api-network-audit-backend-2026-07-09.md) future |
 | TD-022 | Frontend | P3 | Smart Report drawer `listHistory(limit=100)` → paginated `limit=20` | open — [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) FE-4.1 |
+| TD-023 | Frontend | P1 | Branch switcher `limit:20` writes into shared invoice agent cache — incomplete filter for orgs with >20 branches (FE-REV-001/004) | fixed on `fix/fe-network-audit-review-followups-2026-07-10` — [`fe-network-audit-review-followups`](./active/fe-network-audit-review-followups-2026-07-10.md) |
+| TD-024 | Frontend | P1 | `InvoiceList` `invoiceAgentsRequestedRef` blocks refetch when `ou_id`/`role` changes while mounted (FE-REV-002) | fixed on `fix/fe-network-audit-review-followups-2026-07-10` — [`fe-network-audit-review-followups`](./active/fe-network-audit-review-followups-2026-07-10.md) |
+| TD-025 | Frontend | P2 | `StaffManagement` same-key fetch guard can drop reload after cancelled in-flight request (FE-REV-003) | fixed on `fix/fe-network-audit-review-followups-2026-07-10` — [`fe-network-audit-review-followups`](./active/fe-network-audit-review-followups-2026-07-10.md) |
 
 ## How to use
 

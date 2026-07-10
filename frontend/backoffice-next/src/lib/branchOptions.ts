@@ -112,7 +112,9 @@ export function clearCachedMyBranch(): void {
   cachedMyBranch = null;
 }
 
-/** Returns cached OU branch list when available (avoids refetch on remount). */
+/** Returns cached OU branch list when available (avoids refetch on remount).
+ * Ownership: full invoice/agent catalog only — never write limited switcher (`limit:20`) results here.
+ */
 export function getCachedInvoiceAgentBranches(ouId: string | undefined): InvoiceAgentBranch[] | null {
   if (!ouId || !cachedBranchesByOu || cachedBranchesByOu.ouId !== ouId) return null;
   return cachedBranchesByOu.branches;
@@ -148,6 +150,7 @@ export function resolveInvoiceFilterBranches(
 }
 
 export function setCachedInvoiceAgentBranches(ouId: string, branches: InvoiceAgentBranch[]): void {
+  // Callers must pass the full catalog (auth OU list or invoices/agent), not typeahead slices.
   cachedBranchesByOu = { ouId, branches };
 }
 

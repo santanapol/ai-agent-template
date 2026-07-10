@@ -6,7 +6,11 @@ import type { AuthContextValue } from "../contexts/AuthContext";
 import { useAuth } from "../contexts/AuthContext";
 import * as authApi from "../lib/authApiClient";
 import { clearBranchCatalogCacheForTests } from "../lib/branchCatalogCache";
-import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
+import {
+  clearCachedInvoiceAgentBranches,
+  getCachedInvoiceAgentBranches,
+  ZERO_HQ_BRANCH_ID,
+} from "../lib/branchOptions";
 import { renderWithProviders } from "../test/renderWithProviders";
 import type { DecodedUser } from "../types/auth";
 import AdminLayout from "./AdminLayout";
@@ -84,10 +88,35 @@ describe("AdminLayout branch switcher", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearBranchCatalogCacheForTests();
+    clearCachedInvoiceAgentBranches();
     messageError.mockReset();
     messageSuccess.mockReset();
     vi.mocked(authApi.listMyBranches).mockResolvedValue(branches);
     vi.mocked(authApi.getMyBranch).mockResolvedValue(homeBranch);
+  });
+
+  it("does not write limit:20 switcher results into invoice agent cache (FE-REV-001)", async () => {
+    mockAuth({
+      sub: "user-1",
+      role: "platform_admin",
+      ou_id: "ou-1",
+      branch_id: "b-home",
+      home_branch_id: "b-home",
+      token_gen: 0,
+      exp: 9999999999,
+      iat: 0,
+    });
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(authApi.listMyBranches).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(branchSwitcherTrigger()).toBeInTheDocument();
+    });
+
+    expect(getCachedInvoiceAgentBranches("ou-1")).toBeNull();
   });
 
   it("shows branch Select for platform_admin and calls switchBranch on change", async () => {

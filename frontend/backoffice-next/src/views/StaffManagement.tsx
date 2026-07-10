@@ -101,7 +101,6 @@ const StaffManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<ListViewMode>("list");
   const [refreshToken, setRefreshToken] = useState(0);
   const currentEtag = useRef<string | null>(null);
-  const listFetchKeyRef = useRef<string | null>(null);
   const canCreate = usePermission("profiles:create");
   const canEdit = usePermission("profiles:edit");
   const canAssignRole = usePermission("roles:assign");
@@ -116,35 +115,37 @@ const StaffManagement: React.FC = () => {
 
   const { current: currentPage, pageSize } = paginationConfig;
   useEffect(() => {
+    // Intentional: refreshToken / branch_id must re-run list even when other deps are unchanged.
     void refreshToken;
-    const fetchKey = `${user?.branch_id ?? ""}:${debouncedSearch}:${statusFilter}:${currentPage}:${pageSize}:${refreshToken}`;
-    if (listFetchKeyRef.current === fetchKey) return;
-    listFetchKeyRef.current = fetchKey;
+    void user?.branch_id;
+    const controller = new AbortController();
 
-    let cancelled = false;
     const load = async () => {
       setTableLoading(true);
       try {
-        const res = await staffApi.listProfiles({
-          q: debouncedSearch || undefined,
-          status: statusFilter !== "all" ? statusFilter : undefined,
-          page: currentPage,
-          limit: pageSize,
-          sort: "-upd_date",
-        });
-        if (cancelled) return;
+        const res = await staffApi.listProfiles(
+          {
+            q: debouncedSearch || undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            page: currentPage,
+            limit: pageSize,
+            sort: "-upd_date",
+          },
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
         setProfiles(Array.isArray(res.data) ? res.data : []);
         setPaginationConfig((prev) => ({ ...prev, total: res.pagination?.total ?? prev.total }));
       } catch (err) {
-        if (!cancelled) message.error(apiErrorMessage(err, "Failed to load profiles"));
+        if (controller.signal.aborted) return;
+        message.error(apiErrorMessage(err, "Failed to load profiles"));
       } finally {
-        if (!cancelled) setTableLoading(false);
-        if (listFetchKeyRef.current === fetchKey) listFetchKeyRef.current = null;
+        if (!controller.signal.aborted) setTableLoading(false);
       }
     };
     void load();
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [debouncedSearch, message, statusFilter, currentPage, pageSize, refreshToken, user?.branch_id]);
 

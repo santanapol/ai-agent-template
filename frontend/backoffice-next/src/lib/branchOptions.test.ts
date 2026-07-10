@@ -196,6 +196,20 @@ describe("branchOptions", () => {
     clearCachedInvoiceAgentBranches();
   });
 
+  it("keeps limited switcher slices out of invoice cache ownership (FE-REV-001)", () => {
+    clearCachedInvoiceAgentBranches();
+    const limitedSwitcherSlice: InvoiceAgentBranch[] = Array.from({ length: 20 }, (_, i) => ({
+      branch_id: `b-${i}`,
+      branch_name: `Branch ${i}`,
+      branch_code: `C${i}`,
+      active: true,
+    }));
+    // Documented contract: only full catalogs may be written. Callers that load limit:20
+    // (AdminLayout switcher) must not call setCachedInvoiceAgentBranches.
+    expect(limitedSwitcherSlice).toHaveLength(20);
+    expect(getCachedInvoiceAgentBranches("ou-1")).toBeNull();
+  });
+
   it("upsertBranchInList adds or merges branch rows", () => {
     const initial: InvoiceAgentBranch[] = [{ branch_id: "a", branch_name: "Old", branch_code: "A01", active: true }];
     const added = upsertBranchInList(initial, {

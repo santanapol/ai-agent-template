@@ -210,4 +210,59 @@ describe("StaffManagement", () => {
       expect(mockFeedback.message.error).toHaveBeenCalled();
     });
   });
+
+  test("aborts in-flight list and reloads when branch changes (FE-REV-003)", async () => {
+    vi.mocked(usePermission).mockReturnValue(true);
+
+    let resolveFirst!: (value: Awaited<ReturnType<typeof staffApi.listProfiles>>) => void;
+    const first = new Promise<Awaited<ReturnType<typeof staffApi.listProfiles>>>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const signals: AbortSignal[] = [];
+    vi.mocked(staffApi.listProfiles)
+      .mockImplementationOnce((_params, signal) => {
+        if (signal) signals.push(signal);
+        return first;
+      })
+      .mockResolvedValue({
+        success: true,
+        code: "OK",
+        message: null,
+        data: [mockProfile],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        requestId: "2",
+      });
+
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: "u1", branch_id: "branch-1" },
+    } as never);
+
+    const { rerender } = renderWithProviders(<StaffManagement />);
+    await waitFor(() => {
+      expect(staffApi.listProfiles).toHaveBeenCalledTimes(1);
+    });
+
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: "u1", branch_id: "branch-2" },
+    } as never);
+    rerender(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(staffApi.listProfiles).toHaveBeenCalledTimes(2);
+    });
+    expect(signals[0]?.aborted).toBe(true);
+
+    resolveFirst({
+      success: true,
+      code: "OK",
+      message: null,
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
+      requestId: "1",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("EMP-001")).toBeInTheDocument();
+    });
+  });
 });
