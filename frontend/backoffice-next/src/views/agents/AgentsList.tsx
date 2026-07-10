@@ -15,7 +15,7 @@ import {
 import { FilterSelect } from "@/components/FilterSelect";
 import { LoadingButton } from "@/components/LoadingButton";
 import { ListPageCard } from "@/components/layout";
-import { ListPageSearch } from "@/components/list-page";
+import { type InlineFilterOption, InlineFilterSelect, ListPageSearch } from "@/components/list-page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +42,11 @@ import type { Agent } from "@/types/agents";
 
 import { createAgentsColumns } from "./agents-columns";
 import { useAgents } from "./hooks/useAgents";
+
+const BRANCH_FILTER_OPTIONS: InlineFilterOption[] = [
+  { value: "active", label: "Active only" },
+  { value: "all", label: "Active + inactive" },
+];
 
 const AgentsList: React.FC = () => {
   const {
@@ -180,18 +184,17 @@ const AgentsList: React.FC = () => {
           </>
         }
         filterRow={
-          <Field orientation="horizontal">
-            <Checkbox
-              id="agents-show-inactive"
-              checked={showInactive}
-              onCheckedChange={(checked) => {
-                const next = checked === true;
-                setShowInactive(next);
-                void fetchUnsyncedBranches(next);
-              }}
-            />
-            <FieldLabel htmlFor="agents-show-inactive">Show inactive branches</FieldLabel>
-          </Field>
+          <InlineFilterSelect
+            id="agents-branch-status"
+            prefix="Branches:"
+            value={showInactive ? "all" : "active"}
+            options={BRANCH_FILTER_OPTIONS}
+            onChange={(value) => {
+              const next = value === "all";
+              setShowInactive(next);
+              void fetchUnsyncedBranches(next);
+            }}
+          />
         }
       >
         <DataTableView table={table} loading={loading} />

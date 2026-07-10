@@ -45,6 +45,13 @@ describe("AgentsList page", () => {
     expect(fetchAgents).toHaveBeenCalled();
   });
 
+  it("renders branch status filter as inline select", async () => {
+    renderWithRouter(<AgentsList />);
+
+    expect(screen.getByRole("combobox", { name: /branches:/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/show inactive branches/i)).not.toBeInTheDocument();
+  });
+
   it("opens sync modal and shows inline error when branch not selected", async () => {
     const user = userEvent.setup();
     renderWithRouter(<AgentsList />);

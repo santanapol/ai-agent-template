@@ -120,26 +120,12 @@ describe("SmartReport (list mode)", () => {
     });
   });
 
-  it("shows search unavailable hint", async () => {
+  it("renders reports list without global history tab or search placeholder", async () => {
     renderSmartReport();
 
-    expect(screen.getByText(/search will be available in a future update/i)).toBeInTheDocument();
-  });
-
-  it("lazy-loads paginated history when history tab is selected", async () => {
-    const user = userEvent.setup();
-    renderSmartReport();
-
-    await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
-    });
-
-    vi.mocked(listHistory).mockClear();
-    await user.click(screen.getByRole("tab", { name: /download history/i }));
-
-    await waitFor(() => {
-      expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 20 });
-    });
+    expect(screen.queryByRole("tab", { name: /download history/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /report scripts/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/search will be available in a future update/i)).not.toBeInTheDocument();
   });
 
   it("shows empty table state", async () => {

@@ -72,20 +72,13 @@ const SmartReport: React.FC = () => {
   const isMobile = useIsMobile();
   const { message, notification } = useAppFeedback();
   const { confirm } = useConfirmDialog();
-  const [activeTab, setActiveTab] = useState("reports");
-
   const [reports, setReports] = useState<Report[]>([]);
-  const [history, setHistory] = useState<DownloadHistoryRecord[]>([]);
   const [enrichmentHistory, setEnrichmentHistory] = useState<DownloadHistoryRecord[]>([]);
   const [drawerDownloads, setDrawerDownloads] = useState<DownloadHistoryRecord[]>([]);
   const [reportsPage, setReportsPage] = useState(1);
   const [reportsPageSize, setReportsPageSize] = useState(SMART_REPORT_PAGE_SIZE);
   const [reportsTotal, setReportsTotal] = useState(0);
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [historyPageSize, setHistoryPageSize] = useState(SMART_REPORT_PAGE_SIZE);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
 
@@ -174,28 +167,10 @@ const SmartReport: React.FC = () => {
     }
   }, [reportsPage, reportsPageSize]);
 
-  const fetchHistory = useCallback(async (signal?: AbortSignal) => {
-    setHistoryLoading(true);
-    try {
-      const historyRes = await listHistory({ page: historyPage, limit: historyPageSize });
-      if (signal?.aborted) return;
-      setHistory(historyRes.data);
-      setHistoryTotal(historyRes.pagination.total);
-    } catch (err) {
-      if (signal?.aborted) return;
-      messageRef.current.error(apiErrorMessage(err, "Failed to load download history"));
-    } finally {
-      if (!signal?.aborted) setHistoryLoading(false);
-    }
-  }, [historyPage, historyPageSize]);
-
   const refresh = useCallback(() => {
     void fetchEnrichmentHistory();
     void fetchReports();
-    if (activeTab === "history") {
-      void fetchHistory();
-    }
-  }, [activeTab, fetchEnrichmentHistory, fetchReports, fetchHistory]);
+  }, [fetchEnrichmentHistory, fetchReports]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -211,21 +186,9 @@ const SmartReport: React.FC = () => {
     return () => controller.abort();
   }, [fetchEnrichmentHistory, fetchReports]);
 
-  useEffect(() => {
-    if (activeTab !== "history") return;
-    const controller = new AbortController();
-    void fetchHistory(controller.signal);
-    return () => controller.abort();
-  }, [activeTab, fetchHistory]);
-
   const handleReportsPaginationChange = useCallback((pageIndex: number, pageSize: number) => {
     setReportsPage(pageIndex + 1);
     setReportsPageSize(pageSize);
-  }, []);
-
-  const handleHistoryPaginationChange = useCallback((pageIndex: number, pageSize: number) => {
-    setHistoryPage(pageIndex + 1);
-    setHistoryPageSize(pageSize);
   }, []);
 
   const handleQueryScriptChange = (value: string) => {
@@ -595,20 +558,12 @@ const SmartReport: React.FC = () => {
   return (
     <SmartReportList
       isMobile={isMobile}
-      activeTab={activeTab}
-      onActiveTabChange={setActiveTab}
       reportRows={reportRows}
-      history={history}
       reportsPage={reportsPage}
       reportsPageSize={reportsPageSize}
       reportsTotal={reportsTotal}
       onReportsPaginationChange={handleReportsPaginationChange}
-      historyPage={historyPage}
-      historyPageSize={historyPageSize}
-      historyTotal={historyTotal}
-      onHistoryPaginationChange={handleHistoryPaginationChange}
       reportsLoading={reportsLoading}
-      historyLoading={historyLoading}
       runningId={runningId}
       loadingEditId={loadingEditId}
       isDrawerOpen={isDrawerOpen}

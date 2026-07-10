@@ -56,24 +56,11 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
       cell: ({ row }) => {
         const record = row.original;
         return (
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="font-medium">{record.name}</span>
-              {record.enabled === false ? <Badge variant="outline">Disabled</Badge> : null}
-              <Badge variant={validationBadgeVariant(record.validationStatus)}>
-                {formatValidationStatusLabel(record.validationStatus)}
-              </Badge>
-              {record.lastTestRunMeta?.recordCount != null ? (
-                <Badge variant="secondary">Test: {record.lastTestRunMeta.recordCount}</Badge>
-              ) : null}
-            </div>
-            {record.description ? <p className="truncate text-muted-foreground text-xs">{record.description}</p> : null}
-            {isMobile ? (
-              <p className="flex items-center gap-1 text-muted-foreground text-xs">
-                <Clock className="size-3" />
-                {formatScheduleLabel(record.schedule)}
-              </p>
-            ) : null}
+          <div className="flex max-w-[18rem] items-center gap-1.5">
+            <span className="truncate font-medium" title={record.description ?? undefined}>
+              {record.name}
+            </span>
+            {record.enabled === false ? <Badge variant="outline">Disabled</Badge> : null}
           </div>
         );
       },
@@ -87,9 +74,9 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
       enableHiding: true,
       accessorFn: (record) => formatScheduleLabel(record.schedule),
       cell: ({ row }) => (
-        <span className="flex items-center gap-1 text-sm">
-          <Clock className="size-3.5 text-muted-foreground" />
-          {formatScheduleLabel(row.original.schedule)}
+        <span className="inline-flex max-w-[14rem] items-center gap-1 truncate text-sm">
+          <Clock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="truncate">{formatScheduleLabel(row.original.schedule)}</span>
         </span>
       ),
     });
@@ -97,13 +84,13 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
 
   columns.push(
     {
-      id: "outputFormat",
-      accessorKey: "outputFormat",
-      header: "Output Format",
+      id: "validation",
+      header: "Validation",
       enableHiding: true,
+      accessorFn: (record) => record.validationStatus,
       cell: ({ row }) => (
-        <Badge variant={row.original.outputFormat === "csv" ? "secondary" : "default"}>
-          {row.original.outputFormat.toUpperCase()}
+        <Badge variant={validationBadgeVariant(row.original.validationStatus)}>
+          {formatValidationStatusLabel(row.original.validationStatus)}
         </Badge>
       ),
     },
@@ -128,7 +115,7 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
       cell: ({ row }) => {
         const record = row.original;
         return (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex items-center gap-1">
             <AlertDialog>
               <Tooltip>
                 <TooltipTrigger
