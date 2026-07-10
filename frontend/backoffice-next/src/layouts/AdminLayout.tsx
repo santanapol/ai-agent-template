@@ -35,10 +35,8 @@ import {
   findInvoiceAgentBranch,
   formatActiveBranchLabel,
   formatBranchOptionLabel,
-  getCachedInvoiceAgentBranches,
   getCachedMyBranch,
   mergePlatformBranches,
-  setCachedInvoiceAgentBranches,
   setCachedMyBranch,
   upsertBranchInList,
 } from "@/lib/branchOptions";
@@ -284,7 +282,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
       const sorted = mergePlatformBranches(list);
-      if (user.ou_id && !debouncedBranchSearch) setCachedInvoiceAgentBranches(user.ou_id, sorted);
+      // Do not write limit:20 switcher results into the invoice shared cache (FE-REV-001).
       setBranches(sorted);
       setBranchesLoading(false);
     };

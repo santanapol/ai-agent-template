@@ -56,6 +56,7 @@ const MyProfile: React.FC = () => {
   const userSub = user?.sub;
 
   useEffect(() => {
+    // Intentional: reloadKey bumps force a remount-style profile reload after save/password.
     void reloadKey;
     let cancelled = false;
     const load = async () => {

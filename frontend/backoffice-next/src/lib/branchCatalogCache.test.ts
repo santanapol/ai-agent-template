@@ -48,6 +48,24 @@ describe("branchCatalogCache", () => {
     expect(next[0]?.branch_id).toBe("b2");
   });
 
+  it("invalidates switcher typeahead keys without false-matching other OUs", async () => {
+    const fetcherOu1 = vi.fn().mockResolvedValue([{ branch_id: "b1", branch_code: "A", branch_name: "A", active: true }]);
+    const fetcherOu2 = vi.fn().mockResolvedValue([{ branch_id: "b2", branch_code: "B", branch_name: "B", active: true }]);
+
+    const switcherKey = `${branchCatalogCacheKey("ou1", "auth")}:77`;
+    const otherOuKey = branchCatalogCacheKey("ou177", "auth");
+    await getBranchCatalog(switcherKey, fetcherOu1);
+    await getBranchCatalog(otherOuKey, fetcherOu2);
+
+    invalidateBranchCatalog("ou1");
+
+    await getBranchCatalog(switcherKey, fetcherOu1);
+    await getBranchCatalog(otherOuKey, fetcherOu2);
+
+    expect(fetcherOu1).toHaveBeenCalledTimes(2);
+    expect(fetcherOu2).toHaveBeenCalledTimes(1);
+  });
+
   it("maps auth branch shape to invoice dropdown shape", () => {
     expect(
       authBranchToInvoiceBranch({

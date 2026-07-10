@@ -108,11 +108,6 @@ const ChannelPerformancePage: React.FC = () => {
     }
   }, [hasActiveBranch, message]);
 
-  useEffect(() => {
-    if (!hasActiveBranch) return;
-    // Lazy: invite links load when user opens affiliate filter (see Royalty21SearchForm).
-  }, [hasActiveBranch]);
-
   const handleInviteLinksOpen = useCallback(() => {
     if (inviteLinks.length > 0 || inviteLinksLoading) return;
     void loadInviteLinks();

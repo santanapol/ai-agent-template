@@ -35,16 +35,15 @@ export function invalidateBranchCatalog(ouId?: string): void {
     inflightByKey.clear();
     return;
   }
+  const authKey = branchCatalogCacheKey(ouId, "auth");
+  const agentKey = branchCatalogCacheKey(ouId, "invoice-agent");
+  const authPrefix = `${authKey}:`;
   for (const key of [...cacheByKey.keys()]) {
-    if (key.endsWith(`:${ouId}`) || key.includes(`:${ouId}`)) {
+    if (key === authKey || key === agentKey || key.startsWith(authPrefix)) {
       cacheByKey.delete(key);
       inflightByKey.delete(key);
     }
   }
-  cacheByKey.delete(branchCatalogCacheKey(ouId, "auth"));
-  cacheByKey.delete(branchCatalogCacheKey(ouId, "invoice-agent"));
-  inflightByKey.delete(branchCatalogCacheKey(ouId, "auth"));
-  inflightByKey.delete(branchCatalogCacheKey(ouId, "invoice-agent"));
 }
 
 /**

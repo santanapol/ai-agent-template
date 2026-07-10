@@ -147,7 +147,7 @@ const InvoiceList: React.FC = () => {
   const [exportRunning, setExportRunning] = useState(false);
   const [statusJob, setStatusJob] = useState<StatusJobState | null>(null);
   const [statusRunning, setStatusRunning] = useState(false);
-  const invoiceAgentsRequestedRef = useRef(false);
+  const invoiceAgentsAuthKeyRef = useRef<string | null>(null);
 
   const bulkBusy = exportRunning || statusRunning;
 
@@ -173,12 +173,14 @@ const InvoiceList: React.FC = () => {
   }, [fetchInvoices, invoiceListQuery]);
 
   useEffect(() => {
-    if (invoiceAgentsRequestedRef.current) return;
-    invoiceAgentsRequestedRef.current = true;
+    const authKey = `${user?.ou_id ?? ""}:${user?.role ?? ""}`;
+    if (invoiceAgentsAuthKeyRef.current === authKey) return;
+    invoiceAgentsAuthKeyRef.current = authKey;
     void fetchInvoiceAgents();
-  }, [fetchInvoiceAgents]);
+  }, [fetchInvoiceAgents, user?.ou_id, user?.role]);
 
   useEffect(() => {
+    // Only persist full catalog results from fetchInvoiceAgents — never limited switcher lists.
     if (!user?.ou_id || branches.length === 0) return;
     setCachedInvoiceAgentBranches(user.ou_id, branches);
   }, [branches, user?.ou_id]);

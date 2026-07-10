@@ -8,8 +8,8 @@ import type {
 } from "../types/staff";
 import { baseClient as client, extractETag } from "./baseApiClient";
 
-export async function listProfiles(params: ListProfilesParams = {}) {
-  const res = await client.get<ApiEnvelope<StaffProfile[]>>("/api/v1/staff/profiles", { params });
+export async function listProfiles(params: ListProfilesParams = {}, signal?: AbortSignal) {
+  const res = await client.get<ApiEnvelope<StaffProfile[]>>("/api/v1/staff/profiles", { params, signal });
   return res.data;
 }
 
