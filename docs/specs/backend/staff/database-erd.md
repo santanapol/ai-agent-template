@@ -85,8 +85,8 @@ erDiagram
 | `code`          | string      |   yes    | 1–32 chars; **unique** with `ou_id`+`branch_id`                                            |
 | `firstname`     | string      |   yes    | 1–128                                                                                      |
 | `lastname`      | string      |   yes    | 1–128                                                                                      |
-| `email`         | string      |   yes    | max 254; lowercase; **not unique** in MVP                                                  |
-| `tel`           | string      |   yes    | E.164, max 16                                                                              |
+| `email`         | string      |   no     | optional; max 254; lowercase; **not unique** in MVP                                        |
+| `tel`           | string      |   no     | optional; E.164, max 16                                                                    |
 | `cr_*`, `upd_*` | string/date |   yes    | [`12-data-management.md`](../../../../coding-standard/backend/12-data-management.md) |
 
 **Out of scope:** `display_name`, `job_title`, `department`, `employment_status`
@@ -142,7 +142,8 @@ MVP แนะนำ **case-insensitive regex** บนฟิลด์ที่ม
 
 `validationLevel: "moderate"` — SoT: [`collection-validators.mjs`](../../../../backend/service/staff/scripts/collection-validators.mjs). Applied by [`init-db.mjs`](../../../../backend/service/staff/scripts/init-db.mjs). Policy: [ADR 005](../../../adrs/005-mongodb-collection-validators-policy.md).
 
-**Required:** `user_id`, `ou_id`, `branch_id`, `status`, `code`, `firstname`, `lastname`, `email`, `tel`, audit (`cr_*`, `upd_*`).  
+**Required:** `user_id`, `ou_id`, `branch_id`, `status`, `code`, `firstname`, `lastname`, audit (`cr_*`, `upd_*`).  
+**Optional:** `email`, `tel`  
 **Properties:** `status` enum `active` \| `archived`; string length bounds on `code`, `firstname`, `lastname`, `email`, `tel`.
 
 ## Collection: `auth_users` (auth-owned)

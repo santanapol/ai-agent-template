@@ -14,7 +14,6 @@ export function formatTelephoneToE164(tel: string): string {
 }
 
 export const telephoneRules = [
-  { required: true, message: "Please enter telephone number" },
   {
     validator(_: unknown, value: string) {
       if (!value) return Promise.resolve();

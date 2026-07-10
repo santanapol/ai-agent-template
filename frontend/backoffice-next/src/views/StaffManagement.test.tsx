@@ -8,6 +8,8 @@ import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
 import * as staffApi from "../lib/staffApiClient";
 import { useAuth } from "../contexts/AuthContext";
 import { renderWithProviders } from "../test/renderWithProviders";
+import { renderWithRouter } from "../test/renderWithRouter";
+import { testNavigation } from "../test/mockNavigation";
 import type { StaffProfile } from "../types/staff";
 import StaffManagement from "./StaffManagement";
 
@@ -59,6 +61,7 @@ const mockProfile: StaffProfile = {
 describe("StaffManagement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testNavigation.reset();
     vi.mocked(staffApi.listProfiles).mockResolvedValue({
       success: true,
       code: "OK",
@@ -160,14 +163,14 @@ describe("StaffManagement", () => {
     });
   });
 
-  test("shows System Role in create drawer when roles:assign is granted", async () => {
+  test("navigates to create page when Create staff is clicked", async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === "profiles:create") return true;
       if (permission === "roles:assign") return true;
       return false;
     });
 
-    renderWithProviders(<StaffManagement />);
+    renderWithRouter(<StaffManagement />, { initialEntries: ["/staff"] });
 
     await waitFor(() => {
       expect(screen.getAllByRole("button", { name: /Create staff/i }).length).toBeGreaterThan(0);
@@ -176,7 +179,7 @@ describe("StaffManagement", () => {
     screen.getAllByRole("button", { name: /Create staff/i })[0].click();
 
     await waitFor(() => {
-      expect(screen.getByText("System Role")).toBeInTheDocument();
+      expect(testNavigation.push).toHaveBeenCalledWith("/staff/new", undefined);
     });
   });
 

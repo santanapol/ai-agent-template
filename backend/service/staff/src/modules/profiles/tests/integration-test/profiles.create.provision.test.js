@@ -128,6 +128,29 @@ if (!RUN) {
       assert.ok(audit);
     });
 
+    test("POST provision without email and tel returns 201", async () => {
+      const body = provisionBody({
+        code: `PROV-NOCONTACT-${suffix}`,
+        username: `prov.nocontact.${suffix}@test.invalid`,
+      });
+      delete body.email;
+      delete body.tel;
+
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/staff/profiles",
+        headers: buildMeshHeaders({ role: "platform_admin" }),
+        payload: body,
+      });
+
+      assert.strictEqual(res.statusCode, 201, JSON.stringify(res.json()));
+      const envelope = res.json();
+      assert.strictEqual(envelope.data.email, null);
+      assert.strictEqual(envelope.data.tel, null);
+      createdProfileIds.push(envelope.data.id);
+      createdUserIds.push(envelope.data.user_id);
+    });
+
     test("user_id with username returns 400 INVALID_PARAM", async () => {
       const res = await app.inject({
         method: "POST",

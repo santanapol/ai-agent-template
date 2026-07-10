@@ -20,7 +20,7 @@ import {
 } from "@/lib/formValidation";
 import { notifyProfileRefresh } from "@/lib/profileRefresh";
 import * as staffApi from "@/lib/staffApiClient";
-import { formatTelephoneToE164 } from "@/lib/telephone";
+import { buildProfileContactPayload } from "@/lib/staffProfileForm";
 import { useNavigate } from "@/navigation/compat";
 import type { PatchProfilePayload, StaffProfile } from "@/types/staff";
 
@@ -76,8 +76,8 @@ const MyProfile: React.FC = () => {
         setCode(data.code);
         setFirstname(data.firstname);
         setLastname(data.lastname);
-        setEmail(data.email);
-        setTel(data.tel);
+        setEmail(data.email ?? "");
+        setTel(data.tel ?? "");
       } catch (err) {
         if (cancelled) return;
         setProfile(null);
@@ -124,8 +124,11 @@ const MyProfile: React.FC = () => {
     const payload: PatchProfilePayload = {
       firstname,
       lastname,
-      email,
-      tel: formatTelephoneToE164(tel),
+      ...buildProfileContactPayload(
+        { email, tel },
+        { email: profile.email, tel: profile.tel },
+        "patch",
+      ),
     };
 
     setSaving(true);
@@ -136,8 +139,8 @@ const MyProfile: React.FC = () => {
       setCode(updated.code);
       setFirstname(updated.firstname);
       setLastname(updated.lastname);
-      setEmail(updated.email);
-      setTel(updated.tel);
+      setEmail(updated.email ?? "");
+      setTel(updated.tel ?? "");
       message.success("Profile updated");
       notifyProfileRefresh();
     } catch (err) {

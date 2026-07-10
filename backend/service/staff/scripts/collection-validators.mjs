@@ -8,8 +8,6 @@ export const STAFF_PROFILES_JSON_SCHEMA = {
     "code",
     "firstname",
     "lastname",
-    "email",
-    "tel",
     "cr_by",
     "cr_date",
     "cr_prog",
@@ -22,8 +20,8 @@ export const STAFF_PROFILES_JSON_SCHEMA = {
     code: { bsonType: "string", minLength: 1, maxLength: 32 },
     firstname: { bsonType: "string", minLength: 1, maxLength: 128 },
     lastname: { bsonType: "string", minLength: 1, maxLength: 128 },
-    email: { bsonType: "string", maxLength: 254 },
-    tel: { bsonType: "string", maxLength: 16 },
+    email: { bsonType: ["string", "null"], maxLength: 254 },
+    tel: { bsonType: ["string", "null"], maxLength: 16 },
   },
 };
 

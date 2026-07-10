@@ -28,8 +28,8 @@ export interface StaffProfile {
   code: string;
   firstname: string;
   lastname: string;
-  email: string;
-  tel: string;
+  email: string | null;
+  tel: string | null;
   user: UserSnippet;
 }
 
@@ -37,8 +37,8 @@ export interface CreateProfilePayload {
   code: string;
   firstname: string;
   lastname: string;
-  email: string;
-  tel: string;
+  email?: string | null;
+  tel?: string | null;
   /** Required when provisioning a new auth user (no `user_id`). */
   username?: string;
   password?: string;
@@ -54,8 +54,8 @@ export interface PatchProfilePayload {
   code?: string;
   firstname?: string;
   lastname?: string;
-  email?: string;
-  tel?: string;
+  email?: string | null;
+  tel?: string | null;
 }
 
 export type ProfileStatus = "active" | "archived" | "all";

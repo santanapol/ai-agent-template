@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Route, Routes } from "@/navigation/compat";
 
 import { renderWithRouter } from "../../test/renderWithRouter";
+import { testNavigation } from "../../test/mockNavigation";
 import AgentFeesPage from "./AgentFeesPage";
 
 function renderAgentFees(initialEntry = "/agents/agent-1/fees") {
@@ -82,6 +83,7 @@ vi.mock("@/hooks/useConfirmDialog", async (importOriginal) => {
 describe("AgentFeesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testNavigation.reset();
     bulkSave.mockResolvedValue(true);
     listAgents.mockResolvedValue({
       data: [
@@ -202,6 +204,16 @@ describe("AgentFeesPage", () => {
       );
     });
     expect(bulkSave).not.toHaveBeenCalled();
+  });
+
+  it("navigates back to agents when Back is clicked", async () => {
+    const user = userEvent.setup();
+    renderAgentFees();
+    await screen.findByRole("heading", { name: /Branch One · B001 · MA/i });
+
+    await user.click(screen.getByRole("button", { name: /^back$/i }));
+
+    expect(testNavigation.push).toHaveBeenCalledWith("/agents", undefined);
   });
 
   it("filters providers by search", async () => {

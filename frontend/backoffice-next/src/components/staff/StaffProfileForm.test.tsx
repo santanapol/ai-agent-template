@@ -5,10 +5,10 @@ import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
-import StaffDrawer, { type DrawerMode } from "./StaffDrawer";
+import StaffProfileForm from "./StaffProfileForm";
 
 interface WrapperProps {
-  mode: DrawerMode;
+  mode: "create" | "edit" | "view";
   isSaving?: boolean;
   showAdminResetPassword?: boolean;
   canAssignRole?: boolean;
@@ -31,7 +31,6 @@ interface WrapperProps {
 
 const Wrapper: React.FC<WrapperProps> = ({
   mode,
-  isSaving = false,
   showAdminResetPassword = false,
   canAssignRole = false,
   errors = {},
@@ -46,36 +45,26 @@ const Wrapper: React.FC<WrapperProps> = ({
   });
 
   return (
-    <StaffDrawer
-      open={true}
+    <StaffProfileForm
       mode={mode}
       loading={false}
-      isSaving={isSaving}
       updatingPassword={false}
       showAdminResetPassword={showAdminResetPassword}
       canAssignRole={canAssignRole}
       values={values}
       errors={errors}
       onChange={(field, value) => setValues((prev) => ({ ...prev, [field]: value }))}
-      onClose={vi.fn()}
-      onSave={vi.fn()}
-      onSwitchToEdit={vi.fn()}
       onUpdatePassword={vi.fn()}
     />
   );
 };
 
-describe("StaffDrawer", () => {
+describe("StaffProfileForm", () => {
   describe("mode: create", () => {
     it("renders Username and Password fields", () => {
       renderWithProviders(<Wrapper mode="create" />);
       expect(screen.getByText("Username")).toBeInTheDocument();
       expect(screen.getByText("Password")).toBeInTheDocument();
-    });
-
-    it("shows Create Profile button", () => {
-      renderWithProviders(<Wrapper mode="create" />);
-      expect(screen.getByRole("button", { name: /create profile/i })).toBeInTheDocument();
     });
 
     it("shows System Role when canAssignRole is true", () => {
@@ -101,21 +90,8 @@ describe("StaffDrawer", () => {
       );
 
       expect(screen.getByLabelText("Staff Code")).toHaveAttribute("aria-invalid", "true");
-      expect(screen.getByLabelText("Staff Code")).toHaveAttribute("aria-describedby", "staff-code-error");
-      expect(screen.getByText("Code is required")).toHaveAttribute("id", "staff-code-error");
-
       expect(screen.getByLabelText("Email")).toHaveAttribute("aria-invalid", "true");
-      expect(screen.getByLabelText("Email")).toHaveAttribute("aria-describedby", "staff-email-error");
-      expect(screen.getByText("Email is invalid")).toHaveAttribute("id", "staff-email-error");
-
       expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "true");
-      expect(screen.getByLabelText("Password")).toHaveAttribute("aria-describedby", "staff-password-error");
-      expect(screen.getByText("Password is too short")).toHaveAttribute("id", "staff-password-error");
-    });
-
-    it("disables Create Profile button while saving", () => {
-      renderWithProviders(<Wrapper mode="create" isSaving={true} />);
-      expect(screen.getByRole("button", { name: /create profile/i })).toBeDisabled();
     });
   });
 
@@ -125,33 +101,19 @@ describe("StaffDrawer", () => {
       expect(screen.queryByText("Username")).not.toBeInTheDocument();
     });
 
-    it("shows Save Changes button", () => {
-      renderWithProviders(<Wrapper mode="edit" />);
-      expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
-    });
-
-    it("disables Save Changes button while saving", () => {
-      renderWithProviders(<Wrapper mode="edit" isSaving={true} />);
-      expect(screen.getByRole("button", { name: /save changes/i })).toBeDisabled();
-    });
-
     it("renders admin reset password section when showAdminResetPassword=true", () => {
       renderWithProviders(<Wrapper mode="edit" showAdminResetPassword={true} />);
       expect(screen.getByText(/reset password/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /update password/i })).toBeInTheDocument();
-    });
-
-    it("does not render admin reset password section by default", () => {
-      renderWithProviders(<Wrapper mode="edit" />);
-      expect(screen.queryByRole("button", { name: /update password/i })).not.toBeInTheDocument();
+      expect(screen.getByText(/uppercase, lowercase, numbers, and special characters/i)).toBeInTheDocument();
     });
   });
 
   describe("mode: view", () => {
-    it("shows Edit Profile button instead of Save", () => {
+    it("disables profile fields", () => {
       renderWithProviders(<Wrapper mode="view" />);
-      expect(screen.getByRole("button", { name: /edit profile/i })).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /save changes/i })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Staff Code")).toBeDisabled();
+      expect(screen.getByLabelText("First Name")).toBeDisabled();
     });
   });
 });

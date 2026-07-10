@@ -266,6 +266,20 @@ const AgentFeesPage: React.FC = () => {
     return creates.length > 0 || updates.length > 0 || deletes.length > 0;
   }, [agent, isRefMode, draftRate, draftRefFeeBranchId, savedRefFeeBranchId, collectChanges, changeTick]);
 
+  const handleBack = useCallback(() => {
+    if (!isDirty()) {
+      navigate("/agents");
+      return;
+    }
+    void confirm({
+      title: "Discard unsaved changes?",
+      content: "You have unsaved fee changes that will be lost.",
+      okText: "Discard",
+      danger: true,
+      onOk: () => navigate("/agents"),
+    });
+  }, [isDirty, navigate, confirm]);
+
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!isDirty()) return;
@@ -456,7 +470,7 @@ const AgentFeesPage: React.FC = () => {
 
   if (agentLoading) {
     return (
-      <DetailContainer title="Agent fees" description="Loading agent details…">
+      <DetailContainer title="Agent fees" description="Loading agent details…" onBack={handleBack}>
         <div className="flex flex-col gap-6" role="status" aria-busy="true" aria-label="Loading agent fees">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full rounded-xl" />
@@ -481,6 +495,7 @@ const AgentFeesPage: React.FC = () => {
     <DetailContainer
       title={pageTitle}
       status={<ActiveBadge active={!!agent?.active} />}
+      onBack={handleBack}
       extra={
         <LoadingButton
           size="default"

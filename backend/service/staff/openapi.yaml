@@ -789,8 +789,6 @@ components:
         - code
         - firstname
         - lastname
-        - email
-        - tel
         - user
       properties:
         id:
@@ -819,9 +817,11 @@ components:
           maxLength: 128
         email:
           type: string
+          nullable: true
           maxLength: 254
         tel:
           type: string
+          nullable: true
           maxLength: 16
         user:
           $ref: "#/components/schemas/UserSnippet"
@@ -867,7 +867,7 @@ components:
     CreateProfile:
       type: object
       additionalProperties: false
-      required: [code, firstname, lastname, email, tel]
+      required: [code, firstname, lastname]
       properties:
         code:
           type: string
@@ -880,9 +880,11 @@ components:
           maxLength: 128
         email:
           type: string
+          nullable: true
           maxLength: 254
         tel:
           type: string
+          nullable: true
           maxLength: 16
         user_id:
           type: string

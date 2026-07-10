@@ -6,9 +6,15 @@ import {
   optionalNewPasswordRules,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  PASSWORD_REQUIREMENTS_DESCRIPTION,
 } from "./passwordPolicy";
 
 describe("passwordPolicy", () => {
+  it("exposes helper text aligned with validation rules", () => {
+    expect(PASSWORD_REQUIREMENTS_DESCRIPTION).toContain(String(PASSWORD_MIN_LENGTH));
+    expect(PASSWORD_REQUIREMENTS_DESCRIPTION).toMatch(/uppercase/i);
+    expect(PASSWORD_REQUIREMENTS_DESCRIPTION).toMatch(/special characters/i);
+  });
   describe("optionalNewPasswordRules", () => {
     const validator = optionalNewPasswordRules[0].validator;
 

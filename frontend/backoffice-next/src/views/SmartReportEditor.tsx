@@ -120,6 +120,8 @@ export interface SmartReportEditorProps {
   onTestRunScript: () => void;
   onCancelTestRun: () => void;
   onQueryScriptChange: (value: string) => void;
+  /** When false, omit the outer card header (title/actions) for DetailContainer pages. */
+  showHeader?: boolean;
 }
 
 export function SmartReportEditor({
@@ -152,6 +154,7 @@ export function SmartReportEditor({
   onTestRunScript,
   onCancelTestRun,
   onQueryScriptChange,
+  showHeader = true,
 }: SmartReportEditorProps) {
   const editActions = (
     <div className="flex gap-2">
@@ -179,15 +182,17 @@ export function SmartReportEditor({
 
   return (
     <Card>
-      <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
-        <CardTitle className="text-xl leading-none">{editingReport?.name ?? "New report"}</CardTitle>
-        <CardDescription className="max-w-sm leading-snug">
-          Configure report script, validation, and schedule.
-        </CardDescription>
-        <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap items-end justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
-          {editActions}
-        </CardAction>
-      </CardHeader>
+      {showHeader ? (
+        <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
+          <CardTitle className="text-xl leading-none">{editingReport?.name ?? "New report"}</CardTitle>
+          <CardDescription className="max-w-sm leading-snug">
+            Configure report script, validation, and schedule.
+          </CardDescription>
+          <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap items-end justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
+            {editActions}
+          </CardAction>
+        </CardHeader>
+      ) : null}
       <CardContent className="flex flex-col gap-6 pt-6">
         {showGateAlert ? (
           <Alert variant="default">

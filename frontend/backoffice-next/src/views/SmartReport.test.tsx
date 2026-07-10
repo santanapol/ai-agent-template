@@ -179,6 +179,34 @@ describe("SmartReport (list mode)", () => {
     });
   });
 
+  it("returns to list view when Back is clicked in edit mode", async () => {
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    vi.mocked(getReport).mockResolvedValue({
+      ...sampleReport,
+      script: "return [];",
+      compiledScript: "compiled",
+    });
+
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/edit report/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText(/edit report/i));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^back$/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /^back$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/edit report/i)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^back$/i })).not.toBeInTheDocument();
+    });
+  });
+
   it(
     "refetches reports on page 2 without re-fetching enrichment history",
     async () => {

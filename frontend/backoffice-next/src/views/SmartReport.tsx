@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 
+import { LoadingButton } from "@/components/LoadingButton";
+import { DetailContainer } from "@/components/layout";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -521,37 +524,64 @@ const SmartReport: React.FC = () => {
 
   if (viewMode === "edit") {
     return (
-      <SmartReportEditor
-        editingReport={editingReport}
-        form={form}
-        formErrors={formErrors}
-        onFieldChange={setField}
-        showGateAlert={showGateAlert}
-        saveGateHint={saveGateHint}
-        scriptGateStep={scriptGateStep}
-        editorTab={editorTab}
-        onEditorTabChange={handleEditorTabChange}
-        compiledScript={compiledScript}
-        validationErrors={validationErrors}
-        isValidating={isValidating}
-        isTestRunning={isTestRunning}
-        scriptGateStatus={scriptGateStatus}
-        testRunPreview={testRunPreview}
-        testRunPreviewTable={testRunPreviewTable}
-        testRunDateTagLabel={testRunDateTagLabel}
-        scriptEditorScrollRef={scriptEditorScrollRef}
-        validationAlertRef={validationAlertRef}
-        canSaveScript={canSaveScript}
-        saveButtonTooltip={saveButtonTooltip}
-        isSaving={isSaving}
-        onCancelEdit={handleCancelEdit}
-        onSaveReport={() => void handleSaveReport()}
-        onResetToExample={handleResetToExample}
-        onValidateScript={() => void handleValidateScript()}
-        onTestRunScript={() => void handleTestRunScript()}
-        onCancelTestRun={handleCancelTestRun}
-        onQueryScriptChange={handleQueryScriptChange}
-      />
+      <DetailContainer
+        title={editingReport?.name ?? "New report"}
+        description="Configure report script, validation, and schedule."
+        onBack={handleCancelEdit}
+        maxWidth={null}
+        className="gap-4"
+        extra={
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span>
+                  <LoadingButton
+                    loading={isSaving}
+                    disabled={!canSaveScript}
+                    onClick={() => void handleSaveReport()}
+                  >
+                    Save Report Script
+                  </LoadingButton>
+                </span>
+              }
+            />
+            {saveButtonTooltip ? <TooltipContent>{saveButtonTooltip}</TooltipContent> : null}
+          </Tooltip>
+        }
+      >
+        <SmartReportEditor
+          editingReport={editingReport}
+          form={form}
+          formErrors={formErrors}
+          onFieldChange={setField}
+          showGateAlert={showGateAlert}
+          saveGateHint={saveGateHint}
+          scriptGateStep={scriptGateStep}
+          editorTab={editorTab}
+          onEditorTabChange={handleEditorTabChange}
+          compiledScript={compiledScript}
+          validationErrors={validationErrors}
+          isValidating={isValidating}
+          isTestRunning={isTestRunning}
+          scriptGateStatus={scriptGateStatus}
+          testRunPreview={testRunPreview}
+          testRunPreviewTable={testRunPreviewTable}
+          testRunDateTagLabel={testRunDateTagLabel}
+          scriptEditorScrollRef={scriptEditorScrollRef}
+          validationAlertRef={validationAlertRef}
+          canSaveScript={canSaveScript}
+          saveButtonTooltip={saveButtonTooltip}
+          isSaving={isSaving}
+          onCancelEdit={handleCancelEdit}
+          onSaveReport={() => void handleSaveReport()}
+          onResetToExample={handleResetToExample}
+          onValidateScript={() => void handleValidateScript()}
+          onTestRunScript={() => void handleTestRunScript()}
+          onCancelTestRun={handleCancelTestRun}
+          onQueryScriptChange={handleQueryScriptChange}
+          showHeader={false}
+        />
+      </DetailContainer>
     );
   }
 

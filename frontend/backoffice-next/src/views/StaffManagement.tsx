@@ -7,7 +7,6 @@ import { Plus } from "lucide-react";
 import { DataTableToolbarActions, useServerDataTable } from "@/components/data-table";
 import { ListPageCard } from "@/components/layout";
 import { InlineFilterSelect, ListPageSearch } from "@/components/list-page";
-import StaffDrawerComponent, { type DrawerFormValues, type DrawerMode } from "@/components/staff/StaffDrawer";
 import StaffTable from "@/components/staff/StaffTable";
 import { createStaffColumns } from "@/components/staff/staff-columns";
 import { Button } from "@/components/ui/button";
@@ -17,10 +16,9 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
 import { apiErrorMessage } from "@/lib/apiError";
 import { resolveBranchScopedEmptyState } from "@/lib/branchScopedEmptyState";
-import { passwordFieldRules } from "@/lib/passwordPolicy";
 import * as staffApi from "@/lib/staffApiClient";
-import { formatTelephoneToE164 } from "@/lib/telephone";
-import type { PatchProfilePayload, ProfileStatus, StaffProfile } from "@/types/staff";
+import { useNavigate } from "@/navigation/compat";
+import type { ProfileStatus, StaffProfile } from "@/types/staff";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Status" },
@@ -34,70 +32,21 @@ async function withProfileEtag(record: StaffProfile, action: (id: string, etag: 
   await action(record.id, etag);
 }
 
-const emptyForm: DrawerFormValues = {
-  code: "",
-  firstname: "",
-  lastname: "",
-  email: "",
-  tel: "",
-  username: "",
-  password: "",
-  confirmPassword: "",
-  role: "staff",
-};
-
-function validateField(field: keyof DrawerFormValues, values: DrawerFormValues): string | undefined {
-  const v = values[field];
-  if (field === "code" && !v?.trim()) return "Please enter staff code";
-  if (field === "firstname" && !v?.trim()) return "Please enter first name";
-  if (field === "lastname" && !v?.trim()) return "Please enter last name";
-  if (field === "email") {
-    if (!v?.trim()) return "Please enter a valid email";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Please enter a valid email";
-  }
-  // ST-03: tel validation deferred
-  if (field === "username" && values.password !== undefined) {
-    if (!v?.trim()) return "Please enter username";
-    if (!/^[a-zA-Z0-9_]+$/.test(v)) return "Only English letters, numbers, and underscores allowed";
-  }
-  if (field === "password" && values.username !== undefined) {
-    for (const rule of passwordFieldRules) {
-      if (typeof rule === "object" && "min" in rule && (v?.length ?? 0) < (rule.min as number)) {
-        return `Password must be at least ${rule.min} characters`;
-      }
-    }
-  }
-  if (field === "confirmPassword" && values.password) {
-    if (v !== values.password) return "Passwords do not match";
-  }
-  return undefined;
-}
-
 const StaffManagement: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
   const [profiles, setProfiles] = useState<StaffProfile[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
-  const [drawerLoading, setDrawerLoading] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<DrawerMode>("create");
-  const [formValues, setFormValues] = useState<DrawerFormValues>(emptyForm);
-  const [formErrors, setFormErrors] = useState<Partial<Record<keyof DrawerFormValues, string>>>({});
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [updatingPassword, setUpdatingPassword] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [paginationConfig, setPaginationConfig] = useState({ current: 1, pageSize: 10, total: 0 });
   const [rawSearch, setRawSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProfileStatus | "all">("active");
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [refreshToken, setRefreshToken] = useState(0);
-  const currentEtag = useRef<string | null>(null);
   const canCreate = usePermission("profiles:create");
   const canEdit = usePermission("profiles:edit");
-  const canAssignRole = usePermission("roles:assign");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -145,174 +94,6 @@ const StaffManagement: React.FC = () => {
 
   const refresh = useCallback(() => setRefreshToken((t) => t + 1), []);
 
-  const handleFieldChange = (field: keyof DrawerFormValues, value: string) => {
-    setFormValues((prev) => ({ ...prev, [field]: value }));
-    setFormErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const handleOpenDrawer = useCallback(
-    async (mode: DrawerMode, record?: StaffProfile) => {
-      setDrawerMode(mode);
-      setIsDrawerOpen(true);
-      currentEtag.current = null;
-      setFormErrors({});
-
-      if (!record || mode === "create") {
-        setEditingId(null);
-        setEditingUserId(null);
-        setFormValues({ ...emptyForm, role: "staff" });
-        return;
-      }
-
-      setEditingId(record.id);
-      setEditingUserId(record.user_id);
-
-      if (mode === "view") {
-        setFormValues({
-          code: record.code,
-          firstname: record.firstname,
-          lastname: record.lastname,
-          email: record.email,
-          tel: record.tel,
-          role: record.user?.role,
-        });
-        return;
-      }
-
-      setDrawerLoading(true);
-      try {
-        const { profile, etag } = await staffApi.getProfileById(record.id);
-        currentEtag.current = etag;
-        setFormValues({
-          code: profile.code,
-          firstname: profile.firstname,
-          lastname: profile.lastname,
-          email: profile.email,
-          tel: profile.tel,
-          role: profile.user?.role,
-        });
-      } catch (err) {
-        message.error(apiErrorMessage(err, "Failed to load profile"));
-        setIsDrawerOpen(false);
-      } finally {
-        setDrawerLoading(false);
-      }
-    },
-    [message],
-  );
-
-  const handleCloseDrawer = useCallback(() => {
-    setIsDrawerOpen(false);
-    setFormValues(emptyForm);
-    currentEtag.current = null;
-    setEditingId(null);
-    setEditingUserId(null);
-  }, []);
-
-  const showAdminResetPassword =
-    drawerMode === "edit" && editingUserId !== null && user?.sub !== undefined && editingUserId !== user.sub;
-
-  const validateForm = useCallback(
-    (isCreate: boolean): boolean => {
-      const fields: (keyof DrawerFormValues)[] = isCreate
-        ? ["code", "firstname", "lastname", "email", "tel", "username", "password", "confirmPassword"]
-        : ["firstname", "lastname", "email", "tel"];
-      const errors: Partial<Record<keyof DrawerFormValues, string>> = {};
-      fields.forEach((f) => {
-        const err = validateField(f, formValues);
-        if (err) errors[f] = err;
-      });
-      setFormErrors(errors);
-      return Object.keys(errors).length === 0;
-    },
-    [formValues],
-  );
-
-  const handleUpdatePassword = useCallback(async () => {
-    if (!editingId) return;
-    const newPassword = formValues.newPassword?.trim();
-    if (!newPassword) {
-      setFormErrors((prev) => ({ ...prev, newPassword: "Enter a new password to update it." }));
-      message.warning("Enter a new password to update, or leave the fields empty.");
-      return;
-    }
-    if (formValues.confirmNewPassword !== newPassword) {
-      setFormErrors((prev) => ({ ...prev, confirmNewPassword: "Passwords do not match" }));
-      return;
-    }
-    setFormErrors((prev) => ({ ...prev, newPassword: undefined, confirmNewPassword: undefined }));
-    await confirm({
-      title: "Reset password?",
-      content: "This will sign the user out of all devices.",
-      okText: "Update password",
-      onOk: async () => {
-        setUpdatingPassword(true);
-        try {
-          await staffApi.resetProfilePassword(editingId, { password: newPassword, revoke_sessions: true });
-          message.success("Password updated");
-          setFormValues((prev) => ({ ...prev, newPassword: "", confirmNewPassword: "" }));
-        } catch (err) {
-          message.error(apiErrorMessage(err, "Failed to update password"));
-        } finally {
-          setUpdatingPassword(false);
-        }
-      },
-    });
-  }, [confirm, editingId, formValues.confirmNewPassword, formValues.newPassword, message]);
-
-  const handleSave = useCallback(async () => {
-    const isCreate = drawerMode === "create";
-    if (!validateForm(isCreate)) return;
-
-    setIsSaving(true);
-    try {
-      if (isCreate) {
-        const { code, firstname, lastname, email, tel, username, password } = formValues;
-        if (!code || !firstname || !lastname || !email || !tel || !username || !password) return;
-        await staffApi.createProfile({
-          code,
-          firstname,
-          lastname,
-          email,
-          tel: formatTelephoneToE164(tel),
-          username,
-          password,
-          ...(canAssignRole && formValues.role ? { role: formValues.role } : {}),
-        });
-        message.success("Profile created");
-        handleCloseDrawer();
-        setPaginationConfig((prev) => ({ ...prev, current: 1 }));
-        refresh();
-        return;
-      }
-
-      if (editingId && currentEtag.current) {
-        const { firstname, lastname, email, tel } = formValues;
-        if (!firstname || !lastname || !email || !tel) return;
-        const payload: PatchProfilePayload = {
-          firstname,
-          lastname,
-          email,
-          tel: formatTelephoneToE164(tel),
-        };
-        await staffApi.patchProfile(editingId, payload, currentEtag.current);
-        const existingRecord = profiles.find((p) => p.id === editingId);
-        if (canAssignRole && formValues.role && formValues.role !== existingRecord?.user?.role) {
-          await staffApi.changeProfileRole(editingId, formValues.role);
-        }
-        message.success("Profile updated");
-        handleCloseDrawer();
-        refresh();
-      } else if (!currentEtag.current) {
-        message.error("Cannot save: version token missing. Please close and reopen the form.");
-      }
-    } catch (err) {
-      message.error(apiErrorMessage(err, isCreate ? "Failed to create profile" : "Failed to update profile"));
-    } finally {
-      setIsSaving(false);
-    }
-  }, [canAssignRole, drawerMode, editingId, formValues, handleCloseDrawer, message, profiles, refresh, validateForm]);
-
   const handleArchive = useCallback(
     (record: StaffProfile) => {
       void confirm({
@@ -349,12 +130,12 @@ const StaffManagement: React.FC = () => {
 
   const columnHandlers = useMemo(
     () => ({
-      onView: (record: StaffProfile) => void handleOpenDrawer("view", record),
-      onEdit: canEdit ? (record: StaffProfile) => void handleOpenDrawer("edit", record) : undefined,
+      onView: (record: StaffProfile) => navigate(`/staff/${record.id}`),
+      onEdit: canEdit ? (record: StaffProfile) => navigate(`/staff/${record.id}/edit`) : undefined,
       onArchive: canEdit ? handleArchive : undefined,
       onRestore: canEdit ? handleRestore : undefined,
     }),
-    [canEdit, handleArchive, handleOpenDrawer, handleRestore],
+    [canEdit, handleArchive, handleRestore, navigate],
   );
 
   const columns = useMemo(() => createStaffColumns(columnHandlers), [columnHandlers]);
@@ -391,78 +172,55 @@ const StaffManagement: React.FC = () => {
   );
 
   return (
-    <>
-      <ListPageCard
-        title="Staff Management"
-        description="Profiles, roles, and credentials for the active branch."
-        toolbar={
-          <>
-            <ListPageSearch
-              id="staff-search"
-              placeholder="Search code, name, username…"
-              value={rawSearch}
-              onChange={setRawSearch}
-            />
-            <DataTableToolbarActions table={table} exportFileName="staff" showColumnVisibility={false} />
-            {canCreate ? (
-              <Button onClick={() => void handleOpenDrawer("create")}>
-                <Plus data-icon="inline-start" aria-hidden="true" />
-                Create staff
-              </Button>
-            ) : null}
-          </>
-        }
-        filterRow={
-          <InlineFilterSelect
-            id="staff-status"
-            prefix="Status:"
-            value={statusFilter}
-            options={STATUS_OPTIONS}
-            onChange={(value) => {
-              setStatusFilter(value as ProfileStatus | "all");
-              setPaginationConfig((prev) => ({ ...prev, current: 1 }));
-            }}
+    <ListPageCard
+      title="Staff Management"
+      description="Profiles, roles, and credentials for the active branch."
+      toolbar={
+        <>
+          <ListPageSearch
+            id="staff-search"
+            placeholder="Search code, name, username…"
+            value={rawSearch}
+            onChange={setRawSearch}
           />
-        }
-      >
-        <StaffTable
-          table={table}
-          loading={tableLoading}
-          pagination={paginationConfig}
-          emptyTitle={branchScopedEmpty?.emptyTitle}
-          emptyDescription={branchScopedEmpty?.emptyDescription}
-          emptyAction={
-            canCreate
-              ? {
-                  label: "Create staff",
-                  onClick: () => void handleOpenDrawer("create"),
-                }
-              : undefined
-          }
+          <DataTableToolbarActions table={table} exportFileName="staff" showColumnVisibility={false} />
+          {canCreate ? (
+            <Button onClick={() => navigate("/staff/new")}>
+              <Plus data-icon="inline-start" aria-hidden="true" />
+              Create staff
+            </Button>
+          ) : null}
+        </>
+      }
+      filterRow={
+        <InlineFilterSelect
+          id="staff-status"
+          prefix="Status:"
+          value={statusFilter}
+          options={STATUS_OPTIONS}
+          onChange={(value) => {
+            setStatusFilter(value as ProfileStatus | "all");
+            setPaginationConfig((prev) => ({ ...prev, current: 1 }));
+          }}
         />
-      </ListPageCard>
-
-      <StaffDrawerComponent
-        open={isDrawerOpen}
-        mode={drawerMode}
-        loading={drawerLoading}
-        isSaving={isSaving}
-        updatingPassword={updatingPassword}
-        showAdminResetPassword={showAdminResetPassword}
-        canAssignRole={canAssignRole}
-        values={formValues}
-        errors={formErrors}
-        onChange={handleFieldChange}
-        onClose={handleCloseDrawer}
-        onSave={() => void handleSave()}
-        onSwitchToEdit={() => {
-          const record = profiles.find((p) => p.id === editingId);
-          if (record) void handleOpenDrawer("edit", record);
-          else message.error("Profile not found in current list. Please refresh.");
-        }}
-        onUpdatePassword={() => void handleUpdatePassword()}
+      }
+    >
+      <StaffTable
+        table={table}
+        loading={tableLoading}
+        pagination={paginationConfig}
+        emptyTitle={branchScopedEmpty?.emptyTitle}
+        emptyDescription={branchScopedEmpty?.emptyDescription}
+        emptyAction={
+          canCreate
+            ? {
+                label: "Create staff",
+                onClick: () => navigate("/staff/new"),
+              }
+            : undefined
+        }
       />
-    </>
+    </ListPageCard>
   );
 };
 
