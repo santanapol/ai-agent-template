@@ -289,21 +289,22 @@ test('POST /auth/me/active-branch', { timeout: 180_000 }, async (t) => {
     assert.equal((await r.json()).code, 'AUTH_BRANCH_FORBIDDEN')
   })
 
-  await t.test('switches to inactive branch in same OU returns 403', async () => {
+  await t.test('switches to inactive branch in same OU', async () => {
     const login = await loginNative(base, PLATFORM_USER)
     const r = await switchBranch(base, {
       accessToken: login.access_token,
       refreshToken: login.refresh_token,
       branchId: INACTIVE_BRANCH_ID.toHexString()
     })
-    assert.equal(r.status, 403)
-    const body = await r.json()
-    assert.equal(body.code, 'AUTH_BRANCH_FORBIDDEN')
+    assert.equal(r.status, 200)
+    const claims = decodeJwt((await r.json()).access_token)
+    assert.equal(claims.branch_id, INACTIVE_BRANCH_ID.toHexString())
+    assert.equal(claims.home_branch_id, HOME_BRANCH_ID.toHexString())
 
-    const denied = await db
+    const changed = await db
       .collection(AUTH_COLLECTIONS.AUDIT_EVENTS)
-      .findOne({ event_type: 'auth.active_branch_denied', 'detail_safe.reason': 'branch_inactive' })
-    assert.ok(denied)
+      .findOne({ event_type: 'auth.active_branch_changed', outcome: 'success' })
+    assert.ok(changed)
   })
 
   await t.test('support role switches to target branch in same OU', async () => {

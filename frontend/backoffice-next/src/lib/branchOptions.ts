@@ -41,8 +41,7 @@ export function sortInvoiceAgentBranches(branches: InvoiceAgentBranch[]): Invoic
 export function formatBranchOptionLabel(branch: InvoiceAgentBranch): string {
   const name = branch.branch_name ?? branch.branch_id;
   const prefix = branch.branch_code ? `${branch.branch_code} - ` : "";
-  const inactive = branch.active === false ? " (Inactive)" : "";
-  return `${prefix}${name}${inactive}`;
+  return `${prefix}${name}`;
 }
 
 export function findInvoiceAgentBranch(

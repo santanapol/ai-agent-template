@@ -95,7 +95,7 @@ describe("AdminLayout branch switcher", () => {
     vi.mocked(authApi.getMyBranch).mockResolvedValue(homeBranch);
   });
 
-  it("does not write limit:20 switcher results into invoice agent cache (FE-REV-001)", async () => {
+  it("does not write switcher results into invoice agent cache (FE-REV-001)", async () => {
     mockAuth({
       sub: "user-1",
       role: "platform_admin",
@@ -117,6 +117,29 @@ describe("AdminLayout branch switcher", () => {
     });
 
     expect(getCachedInvoiceAgentBranches("ou-1")).toBeNull();
+  });
+
+  it("loads the full branch list without limit or offset", async () => {
+    mockAuth({
+      sub: "user-full-list",
+      role: "platform_admin",
+      ou_id: "ou-1",
+      branch_id: "b-home",
+      home_branch_id: "b-home",
+      token_gen: 0,
+      exp: 9999999999,
+      iat: 0,
+    });
+
+    renderWithProviders(<AdminLayout />);
+
+    await waitFor(() => {
+      expect(authApi.listMyBranches).toHaveBeenCalled();
+    });
+
+    const call = vi.mocked(authApi.listMyBranches).mock.calls[0]?.[0];
+    expect(call?.limit).toBeUndefined();
+    expect(call?.offset).toBeUndefined();
   });
 
   it("shows branch Select for platform_admin and calls switchBranch on change", async () => {
@@ -182,28 +205,7 @@ describe("AdminLayout branch switcher", () => {
     });
   });
 
-  it("shows clear control when active branch differs from home", async () => {
-    mockAuth({
-      sub: "user-home-hint",
-      role: "platform_admin",
-      ou_id: "ou-1",
-      branch_id: "b-target",
-      home_branch_id: "b-home",
-      token_gen: 0,
-      exp: 9999999999,
-      iat: 0,
-    });
-
-    renderWithProviders(<AdminLayout />);
-
-    const user = userEvent.setup();
-    await user.click(await waitFor(() => branchSwitcherTrigger()));
-    await waitFor(() => {
-      expect(screen.getByRole("menuitem", { name: "Reset to home branch" })).toBeInTheDocument();
-    });
-  });
-
-  it("clearing branch select switches back to home branch", async () => {
+  it("does not show Reset to home branch; selecting home from the list switches back", async () => {
     const switchBranch = vi.fn().mockResolvedValue(undefined);
     mockAuth(
       {
@@ -223,8 +225,8 @@ describe("AdminLayout branch switcher", () => {
     renderWithProviders(<AdminLayout />);
 
     await user.click(await waitFor(() => branchSwitcherTrigger()));
-    const resetItem = await screen.findByRole("menuitem", { name: "Reset to home branch" });
-    await user.click(resetItem);
+    expect(screen.queryByRole("menuitem", { name: "Reset to home branch" })).not.toBeInTheDocument();
+    await user.click(await screen.findByText("H01 - Home Branch"));
 
     await waitFor(() => {
       expect(switchBranch).toHaveBeenCalledWith("b-home");
@@ -253,16 +255,20 @@ describe("AdminLayout branch switcher", () => {
     expect(authApi.getMyBranch).toHaveBeenCalled();
   });
 
-  it("lists inactive branches with (Inactive) label but disabled", async () => {
-    mockAuth({
-      sub: "user-3",
-      role: "support",
-      ou_id: "ou-1",
-      branch_id: "b-home",
-      token_gen: 0,
-      exp: 9999999999,
-      iat: 0,
-    });
+  it("lists inactive branches without suffix and keeps them selectable", async () => {
+    const switchBranch = vi.fn().mockResolvedValue(undefined);
+    mockAuth(
+      {
+        sub: "user-3",
+        role: "support",
+        ou_id: "ou-1",
+        branch_id: "b-home",
+        token_gen: 0,
+        exp: 9999999999,
+        iat: 0,
+      },
+      { switchBranch },
+    );
 
     const user = userEvent.setup();
     renderWithProviders(<AdminLayout />);
@@ -272,8 +278,17 @@ describe("AdminLayout branch switcher", () => {
     });
 
     await user.click(branchSwitcherTrigger());
-    const inactive = await screen.findByText("X01 - Closed Branch (Inactive)");
-    expect(inactive.closest("[data-disabled]") ?? inactive.closest('[aria-disabled="true"]')).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "X01 - Closed Branch (inactive)" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: /show all branches/i }));
+    const inactive = await screen.findByRole("menuitem", { name: "X01 - Closed Branch (inactive)" });
+    expect(inactive).not.toHaveAttribute("aria-disabled", "true");
+    expect(inactive).toHaveClass("text-muted-foreground");
+
+    await user.click(inactive);
+    await waitFor(() => {
+      expect(switchBranch).toHaveBeenCalledWith("b-off");
+    });
   });
 
   it("reverts optimistic selection when switchBranch fails", async () => {

@@ -265,6 +265,12 @@ test('GET /auth/me/branches', { timeout: 180_000 }, async (t) => {
     const limitedBody = await limited.json()
     assert.equal(limitedBody.branches.length, 2)
     assert.equal(limitedBody.branches[0].branch_id, ZERO_HQ_ID.toHexString())
+
+    const page2 = await listBranches(base, login.access_token, 'limit=1&offset=1')
+    assert.equal(page2.status, 200)
+    const page2Body = await page2.json()
+    assert.equal(page2Body.branches.length, 1)
+    assert.notEqual(page2Body.branches[0].branch_id, ZERO_HQ_ID.toHexString())
   })
 
   await t.test('returns 401 when access token_gen is stale', async () => {

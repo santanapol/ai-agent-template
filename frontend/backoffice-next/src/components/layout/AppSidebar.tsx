@@ -1,10 +1,19 @@
 import { useShallow } from "zustand/react/shallow";
 
+import { AppBrand } from "@/components/layout/AppBrand";
 import { BranchSwitcher } from "@/components/layout/BranchSwitcher";
 import { NavMain } from "@/components/layout/NavMain";
 import { NavUser } from "@/components/layout/NavUser";
 import type { MenuItemType } from "@/components/layout/types";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar";
 import type { SidebarCollapsible, SidebarVariant } from "@/lib/preferences/layout";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 import type { DecodedUser } from "@/types/auth";
@@ -20,9 +29,13 @@ export interface AppSidebarProps {
   activeBranchSelectLabel: string;
   branches: InvoiceAgentBranch[];
   branchSelectLoading: boolean;
+  branchSearchQuery?: string;
+  branchSearchLoading?: boolean;
   viewingOtherBranch: boolean;
   homeBranchId: string | undefined;
   onBranchSwitch: (branchId: string) => void;
+  onBranchSearchQueryChange?: (query: string) => void;
+  onDropdownOpenChange?: (open: boolean) => void;
   roleLabel: string;
   displayName: string | null;
   headerProfile: { firstname: string; lastname: string; username: string } | null;
@@ -43,9 +56,13 @@ export function AppSidebar({
   activeBranchSelectLabel,
   branches,
   branchSelectLoading,
+  branchSearchQuery,
+  branchSearchLoading,
   viewingOtherBranch,
   homeBranchId,
   onBranchSwitch,
+  onBranchSearchQueryChange,
+  onDropdownOpenChange,
   roleLabel,
   displayName,
   headerProfile,
@@ -69,20 +86,29 @@ export function AppSidebar({
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <BranchSwitcher
-          showBranchSwitcher={showBranchSwitcher}
-          branchDisplayLabel={branchDisplayLabel}
-          activeBranchId={activeBranchId}
-          activeBranchSelectLabel={activeBranchSelectLabel}
-          branches={branches}
-          branchSelectLoading={branchSelectLoading}
-          viewingOtherBranch={viewingOtherBranch}
-          homeBranchId={homeBranchId}
-          onBranchSwitch={onBranchSwitch}
-          roleLabel={roleLabel}
-        />
+        <AppBrand />
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent className="flex flex-col gap-2">
+            <BranchSwitcher
+              showBranchSwitcher={showBranchSwitcher}
+              branchDisplayLabel={branchDisplayLabel}
+              activeBranchId={activeBranchId}
+              activeBranchSelectLabel={activeBranchSelectLabel}
+              branches={branches}
+              branchSelectLoading={branchSelectLoading}
+              branchSearchQuery={branchSearchQuery}
+              branchSearchLoading={branchSearchLoading}
+              viewingOtherBranch={viewingOtherBranch}
+              homeBranchId={homeBranchId}
+              onBranchSwitch={onBranchSwitch}
+              onBranchSearchQueryChange={onBranchSearchQueryChange}
+              onDropdownOpenChange={onDropdownOpenChange}
+              roleLabel={roleLabel}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
         <NavMain items={menuTree} selectedPath={selectedPath} onNavigate={onNavigate} />
       </SidebarContent>
       <SidebarFooter>

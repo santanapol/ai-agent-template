@@ -191,6 +191,9 @@ export function NavMain({
     <>
       {dashboardItems.length > 0 ? (
         <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+            Dashboard
+          </SidebarGroupLabel>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               <NavMenuItems items={dashboardItems} {...sharedItemProps} />
