@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildInvoiceListQuery,
   buildInvoiceListSearchParams,
+  formatBillingMonth,
   formatDate,
+  formatInvoiceStatusLabel,
   formatMoney,
+  formatMoneyWithCurrency,
   isDueDateOverdue,
   parseInvoiceListSearchParams,
 } from "./utils";
@@ -17,6 +20,45 @@ describe("formatMoney", () => {
   it("returns dash for nullish values", () => {
     expect(formatMoney(null)).toBe("-");
     expect(formatMoney(undefined)).toBe("-");
+  });
+});
+
+describe("formatMoneyWithCurrency", () => {
+  it("prefixes uppercase currency when present", () => {
+    expect(formatMoneyWithCurrency(1234, "thb")).toBe("THB 1,234.00");
+    expect(formatMoneyWithCurrency(1234, "THB")).toBe("THB 1,234.00");
+  });
+
+  it("falls back to formatMoney when currency missing", () => {
+    expect(formatMoneyWithCurrency(1234, null)).toBe("1,234.00");
+    expect(formatMoneyWithCurrency(1234, undefined)).toBe("1,234.00");
+    expect(formatMoneyWithCurrency(1234, "  ")).toBe("1,234.00");
+  });
+
+  it("returns dash for nullish amounts", () => {
+    expect(formatMoneyWithCurrency(null, "THB")).toBe("-");
+  });
+});
+
+describe("formatBillingMonth", () => {
+  it("formats YYYY-MM as a readable month label", () => {
+    expect(formatBillingMonth("2026-07")).toBe("July 2026");
+  });
+
+  it("returns dash for empty values and passes through unknown formats", () => {
+    expect(formatBillingMonth(null)).toBe("-");
+    expect(formatBillingMonth("custom")).toBe("custom");
+  });
+});
+
+describe("formatInvoiceStatusLabel", () => {
+  it("maps known invoice statuses to readable labels", () => {
+    expect(formatInvoiceStatusLabel("READY")).toBe("Ready to pay");
+    expect(formatInvoiceStatusLabel("PAID")).toBe("Paid");
+  });
+
+  it("falls back to the raw status for unknown values", () => {
+    expect(formatInvoiceStatusLabel("CUSTOM")).toBe("CUSTOM");
   });
 });
 

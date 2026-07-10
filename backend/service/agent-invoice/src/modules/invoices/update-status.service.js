@@ -6,6 +6,8 @@ import { ROUTE_PROG } from "../../lib/route-prog.js";
 
 import { decodeEtag } from "../../lib/etag.js";
 
+import { findAgentByBranchId } from "./agents.repository.js";
+
 import * as invoiceRepo from "./invoice.repository.js";
 
 import * as masterDataRepo from "./master-data.repository.js";
@@ -29,6 +31,8 @@ export async function updateInvoiceStatus({
   const repoInvoice = _repos?.invoice ?? invoiceRepo;
 
   const repoMasterData = _repos?.masterData ?? masterDataRepo;
+
+  const repoFindAgent = _repos?.findAgentByBranchId ?? findAgentByBranchId;
 
   if (!isValidObjectId(id)) {
     return { success: false, code: "INVALID_PARAM" };
@@ -99,11 +103,14 @@ export async function updateInvoiceStatus({
   const updated = await repoInvoice.findDetailById(id, ouId, scopeBranchId);
 
   const recordOuId = String(updated.ou_id);
+  const branchId = String(updated.branch_id);
 
-  const [branchName, ouName] = await Promise.all([
-    repoMasterData.findBranchDisplayName(String(updated.branch_id)),
+  const [branchName, ouName, agent] = await Promise.all([
+    repoMasterData.findBranchDisplayName(branchId),
 
     repoMasterData.findOuDisplayName(recordOuId),
+
+    repoFindAgent(branchId),
   ]);
 
   return {
@@ -111,6 +118,10 @@ export async function updateInvoiceStatus({
 
     code: "SUCCESS",
 
-    data: mapInvoiceForApi(updated, { branchName, ouName }),
+    data: mapInvoiceForApi(updated, {
+      branchName,
+      ouName,
+      currency: agent?.currency ?? null,
+    }),
   };
 }

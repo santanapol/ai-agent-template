@@ -14,6 +14,18 @@ export function formatMoney(val: number | null | undefined): string {
   }).format(val);
 }
 
+/** Prefix amount with currency code when present (e.g. `THB 1,234.00`). */
+export function formatMoneyWithCurrency(
+  val: number | null | undefined,
+  currency: string | null | undefined,
+): string {
+  const amount = formatMoney(val);
+  if (amount === "-") return amount;
+  const code = currency?.trim();
+  if (!code) return amount;
+  return `${code.toUpperCase()} ${amount}`;
+}
+
 export function formatDate(val: string | null | undefined): string {
   if (!val) return "-";
   const date = new Date(val);
@@ -23,6 +35,32 @@ export function formatDate(val: string | null | undefined): string {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+/** `YYYY-MM` → readable month label (e.g. `July 2026`). */
+export function formatBillingMonth(val: string | null | undefined): string {
+  if (!val) return "-";
+  const match = /^(\d{4})-(\d{2})$/.exec(val.trim());
+  if (!match) return val;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return val;
+  const date = new Date(year, month - 1, 1);
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+}
+
+const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  PENDING: "Pending",
+  VOID: "Void",
+  CAL: "Calculating",
+  MISSING_FEE: "Missing fee",
+  READY: "Ready to pay",
+  ERROR: "Error",
+  PAID: "Paid",
+};
+
+export function formatInvoiceStatusLabel(status: string): string {
+  return INVOICE_STATUS_LABELS[status as InvoiceStatus] ?? status;
 }
 
 export function isDueDateOverdue(dueDate: string | null | undefined, status: string): boolean {

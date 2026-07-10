@@ -1,7 +1,14 @@
 import type React from "react";
 import { useEffect, useMemo } from "react";
 
-import { CheckCircle, ChevronDown, FileQuestion, FileSpreadsheet, FileText, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  FileQuestion,
+  FileSpreadsheet,
+  FileText,
+  XCircle,
+} from "lucide-react";
 
 import { DataTable } from "@/components/DataTable";
 import { DescriptionList } from "@/components/DescriptionList";
@@ -9,9 +16,11 @@ import { LoadingButton } from "@/components/LoadingButton";
 import { DetailContainer } from "@/components/layout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -28,14 +37,15 @@ import { Link, useParams, useSearchParams } from "@/navigation/compat";
 
 import { useInvoices } from "./hooks/useInvoices";
 import { invoiceTransactionColumns } from "./invoiceTransactionColumns";
-import { formatDate, formatMoney, isDueDateOverdue, sortInvoiceTransactions, statusTagColor } from "./utils";
+import { formatDate, formatBillingMonth, formatInvoiceStatusLabel, formatMoney, formatMoneyWithCurrency, isDueDateOverdue, sortInvoiceTransactions, statusTagColor } from "./utils";
 
 const TRANSACTION_PAGE_SIZE = 20;
 
 function InvoiceDetailSkeleton() {
   return (
-    <DetailContainer title="Invoice Details" maxWidth={null}>
+    <DetailContainer title="Invoice" maxWidth={null} className="gap-4">
       <div className="flex flex-col gap-4">
+        <Skeleton className="h-5 w-32" />
         <Skeleton className="h-10 w-full max-w-md" />
         <Skeleton className="h-48 w-full rounded-xl" />
         <Skeleton className="h-80 w-full rounded-xl" />
@@ -189,28 +199,39 @@ const InvoiceDetail: React.FC = () => {
       <TableCell className="text-right tabular-nums">{formatMoney(totals.totalBet)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatMoney(totals.totalNetWin)}</TableCell>
       <TableCell />
-      <TableCell className="text-right tabular-nums">{formatMoney(totals.totalAmount)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatMoneyWithCurrency(totals.totalAmount, invoice.currency)}</TableCell>
     </TableRow>
   );
 
+  const amountDue = invoice.amount ?? totals.totalAmount;
+
   const metadataItems = [
-    { label: "Invoice No", value: invoice.iv_no },
-    { label: "Billing Month", value: invoice.billing_month || "-" },
-    { label: "Created Date", value: formatDate(invoice.cr_date) },
-    { label: "Bill To", value: invoice.branch_name || "-" },
+    {
+      label: "Billing Month",
+      value: <span className="tabular-nums">{formatBillingMonth(invoice.billing_month)}</span>,
+    },
+    { label: "Issue Date", value: <span className="tabular-nums">{formatDate(invoice.cr_date)}</span> },
     {
       label: "Due Date",
       value: (
-        <span className={dueDateOverdue ? "font-semibold text-destructive" : undefined}>
+        <span className={cn("tabular-nums", dueDateOverdue && "font-semibold text-destructive")}>
           {formatDate(invoice.due_date)}
         </span>
       ),
     },
+    ...(invoice.currency
+      ? [
+          {
+            label: "Currency",
+            value: <span className="tabular-nums">{invoice.currency.toUpperCase()}</span>,
+          },
+        ]
+      : []),
     ...(invoice.status === "PAID" && invoice.upd_date
       ? [
           {
             label: "Paid Date",
-            value: <span className="font-semibold text-success">{formatDate(invoice.upd_date)}</span>,
+            value: <span className="font-semibold text-success tabular-nums">{formatDate(invoice.upd_date)}</span>,
           },
         ]
       : []),
@@ -220,9 +241,16 @@ const InvoiceDetail: React.FC = () => {
 
   return (
     <DetailContainer
-      title={`Invoice Details: #${invoice.iv_no}`}
+      title="Invoice"
+      description={`#${invoice.iv_no}`}
       backUrl={invoicesBackUrl}
-      status={<StatusBadge status={invoice.status} variant={statusTagColor(invoice.status)} />}
+      status={
+        <StatusBadge
+          status={formatInvoiceStatusLabel(invoice.status)}
+          variant={statusTagColor(invoice.status)}
+          ariaLabel={`Status: ${invoice.status}`}
+        />
+      }
       extra={
         showActions ? (
           <div className="no-print flex flex-wrap items-center gap-2">
@@ -233,14 +261,16 @@ const InvoiceDetail: React.FC = () => {
                   <ChevronDown data-icon="inline-end" aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleExportPDF}>
-                    <FileText aria-hidden="true" />
-                    Export PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportExcel}>
-                    <FileSpreadsheet aria-hidden="true" />
-                    Export Excel
-                  </DropdownMenuItem>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={handleExportPDF}>
+                      <FileText aria-hidden="true" />
+                      Export PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportExcel}>
+                      <FileSpreadsheet aria-hidden="true" />
+                      Export Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
@@ -250,7 +280,19 @@ const InvoiceDetail: React.FC = () => {
                 Mark as PAID
               </LoadingButton>
             ) : null}
-            {canWrite && canCancel ? (
+            {canWrite && canCancel && isReady ? (
+              <LoadingButton
+                size="default"
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={promptCancelInvoice}
+                loading={updatingStatus}
+              >
+                <XCircle data-icon="inline-start" aria-hidden="true" />
+                Cancel Invoice
+              </LoadingButton>
+            ) : null}
+            {canWrite && canCancel && !isReady ? (
               <LoadingButton
                 size="default"
                 variant="destructive"
@@ -265,26 +307,44 @@ const InvoiceDetail: React.FC = () => {
         ) : null
       }
       maxWidth={null}
+      className="gap-4"
     >
-      <div className="flex min-w-0 flex-col gap-6 rounded-xl border bg-card p-6 shadow-sm">
-        <div className="border-b pb-4">
-          <h2 className="font-bold text-2xl text-primary">Invoice</h2>
-          <p className="text-muted-foreground text-sm">Zero Platform</p>
-        </div>
-
-        <DescriptionList title="Invoice Metadata" items={metadataItems} />
-        <Separator />
-        <DataTable
-          columns={invoiceTransactionColumns}
-          data={sortedTransactions}
-          loading={transactionsLoading}
-          rowKey="_id"
-          pageSize={TRANSACTION_PAGE_SIZE}
-          footer={summaryFooter}
-          emptyTitle="No transactions"
-          emptyDescription="This invoice has no line items yet."
-        />
-      </div>
+      <Card className="min-w-0 gap-0 py-0 shadow-sm">
+        <CardHeader className="border-b py-4 [.border-b]:pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <p className="text-muted-foreground text-sm">Zero Platform</p>
+              <h2 className="text-balance font-semibold text-xl">Invoice #{invoice.iv_no}</h2>
+              {invoice.branch_name ? (
+                <p className="truncate text-muted-foreground text-sm">Bill to {invoice.branch_name}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-col items-end gap-0.5 text-right">
+              <p className="text-muted-foreground text-sm">Amount due</p>
+              <p className="font-semibold text-2xl tabular-nums">
+                {formatMoneyWithCurrency(amountDue, invoice.currency)}
+              </p>
+              {dueDateOverdue ? (
+                <p className="font-medium text-destructive text-sm">Overdue</p>
+              ) : null}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 py-4">
+          <DescriptionList variant="plain" items={metadataItems} />
+          <Separator />
+          <DataTable
+            columns={invoiceTransactionColumns}
+            data={sortedTransactions}
+            loading={transactionsLoading}
+            rowKey="_id"
+            pageSize={TRANSACTION_PAGE_SIZE}
+            footer={summaryFooter}
+            emptyTitle="No transactions"
+            emptyDescription="This invoice has no line items yet."
+          />
+        </CardContent>
+      </Card>
     </DetailContainer>
   );
 };

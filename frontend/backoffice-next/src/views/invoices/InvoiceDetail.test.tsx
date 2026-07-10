@@ -41,6 +41,7 @@ const defaultInvoiceState = {
     iv_no: "INV-001",
     status: "READY",
     amount: 1234,
+    currency: "THB",
     billing_month: "2026-07",
     cr_date: "2026-07-01",
     due_date: "2026-07-15",
@@ -98,9 +99,17 @@ describe("InvoiceDetail", () => {
     expect(screen.getByRole("heading", { name: /invoice not found/i })).toBeInTheDocument();
   });
 
-  it("renders invoice number in the page title", () => {
+  it("keeps invoice identity in the document letterhead with amount due", () => {
     renderInvoiceDetail();
-    expect(screen.getByRole("heading", { name: /invoice details: #inv-001/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^invoice$/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText("#INV-001")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^invoice #inv-001$/i, level: 2 })).toBeInTheDocument();
+    expect(screen.getByText("Bill to Branch One")).toBeInTheDocument();
+    expect(screen.getByText("Amount due")).toBeInTheDocument();
+    expect(screen.getByText("THB 1,234.00")).toBeInTheDocument();
+    expect(screen.getByText("July 2026")).toBeInTheDocument();
+    expect(screen.getByText("Ready to pay")).toBeInTheDocument();
+    expect(screen.queryByText("Bill To")).not.toBeInTheDocument();
   });
 
   it("navigates back to invoices list when back is clicked", async () => {
@@ -163,7 +172,7 @@ describe("InvoiceDetail", () => {
     expect(fetchInvoiceDetail).toHaveBeenCalledWith("invoice-1");
   });
 
-  it("confirms before canceling an invoice", async () => {
+  it("confirms before canceling a READY invoice from the demoted cancel button", async () => {
     const user = userEvent.setup();
 
     renderInvoiceDetail();

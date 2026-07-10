@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "@/navigation/compat";
 import type { Invoice } from "@/types/invoice";
 
-import { formatDate, formatMoney, statusTagColor } from "./utils";
+import { formatDate, formatInvoiceStatusLabel, formatMoney, statusTagColor } from "./utils";
 
 export interface InvoiceColumnHandlers {
   listSearch: string;
@@ -68,7 +68,13 @@ export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef
       header: "Status",
       enableHiding: true,
       accessorKey: "status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} variant={statusTagColor(row.original.status)} />,
+      cell: ({ row }) => (
+        <StatusBadge
+          status={formatInvoiceStatusLabel(row.original.status)}
+          variant={statusTagColor(row.original.status)}
+          ariaLabel={`Status: ${row.original.status}`}
+        />
+      ),
     },
     {
       id: "billing_month",
