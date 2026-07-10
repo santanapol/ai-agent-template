@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import type { VisibilityState } from "@tanstack/react-table";
 import { RefreshCw } from "lucide-react";
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { usePermission } from "@/hooks/usePermission";
 import { fieldErrorIds } from "@/lib/fieldA11y";
 import { useNavigate } from "@/navigation/compat";
 import type { Agent } from "@/types/agents";
@@ -60,11 +62,14 @@ const AgentsList: React.FC = () => {
     syncData,
     deleteData,
   } = useAgents();
+  const canWrite = usePermission("agents:write");
+  const syncIncludeInactiveId = useId();
   const [rawSearch, setRawSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [paginationConfig, setPaginationConfig] = useState({ current: 1, pageSize: 10, total: 0 });
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [syncIncludeInactive, setSyncIncludeInactive] = useState(false);
   const [branchId, setBranchId] = useState<string | undefined>();
   const [branchError, setBranchError] = useState<string | undefined>();
   const [syncing, setSyncing] = useState(false);
@@ -83,8 +88,13 @@ const AgentsList: React.FC = () => {
   const { current: currentPage, pageSize } = paginationConfig;
 
   const refreshAgents = useCallback(() => {
-    void fetchAgents({ page: currentPage, limit: pageSize, search: debouncedSearch || undefined });
-  }, [fetchAgents, currentPage, pageSize, debouncedSearch]);
+    void fetchAgents({
+      page: currentPage,
+      limit: pageSize,
+      search: debouncedSearch || undefined,
+      includeInactive: showInactive || undefined,
+    });
+  }, [fetchAgents, currentPage, pageSize, debouncedSearch, showInactive]);
 
   useEffect(() => {
     void refreshAgents();
@@ -96,9 +106,17 @@ const AgentsList: React.FC = () => {
 
   const handleOpenSyncModal = () => {
     setIsSyncModalOpen(true);
+    setSyncIncludeInactive(false);
     setBranchId(undefined);
     setBranchError(undefined);
-    void fetchUnsyncedBranches(showInactive);
+    void fetchUnsyncedBranches(false);
+  };
+
+  const handleSyncIncludeInactiveChange = (checked: boolean) => {
+    setSyncIncludeInactive(checked);
+    setBranchId(undefined);
+    if (branchError) setBranchError(undefined);
+    void fetchUnsyncedBranches(checked);
   };
 
   const handleSync = async () => {
@@ -132,8 +150,9 @@ const AgentsList: React.FC = () => {
     () => ({
       onManageFees: (record: Agent) => navigate(`/agents/${record._id}/fees`),
       onDelete: (record: Agent) => setDeleteTarget(record),
+      canWrite,
     }),
-    [navigate],
+    [navigate, canWrite],
   );
 
   const columns = useMemo(() => createAgentsColumns(columnHandlers), [columnHandlers]);
@@ -158,10 +177,16 @@ const AgentsList: React.FC = () => {
     getRowId: (row) => row._id,
   });
 
-  const branchOptions = unsyncedBranches.map((b) => ({
-    value: b.branch_id,
-    label: `${b.branch_code} - ${b.branch_name}${b.active === false ? " [Inactive]" : ""}`,
-  }));
+  const branchOptions = useMemo(
+    () =>
+      [...unsyncedBranches]
+        .sort((a, b) => a.branch_code.localeCompare(b.branch_code, undefined, { sensitivity: "base" }))
+        .map((b) => ({
+          value: b.branch_id,
+          label: `${b.branch_code} - ${b.branch_name}${b.active === false ? " [Inactive]" : ""}`,
+        })),
+    [unsyncedBranches],
+  );
 
   return (
     <>
@@ -177,10 +202,12 @@ const AgentsList: React.FC = () => {
               onChange={setRawSearch}
             />
             <DataTableToolbarActions table={table} exportFileName="agents" showColumnVisibility={false} />
-            <Button onClick={handleOpenSyncModal}>
-              <RefreshCw data-icon="inline-start" />
-              Sync Branch
-            </Button>
+            {canWrite ? (
+              <Button onClick={handleOpenSyncModal}>
+                <RefreshCw data-icon="inline-start" />
+                Sync Branch
+              </Button>
+            ) : null}
           </>
         }
         filterRow={
@@ -190,22 +217,37 @@ const AgentsList: React.FC = () => {
             value={showInactive ? "all" : "active"}
             options={BRANCH_FILTER_OPTIONS}
             onChange={(value) => {
-              const next = value === "all";
-              setShowInactive(next);
-              void fetchUnsyncedBranches(next);
+              setShowInactive(value === "all");
+              setPaginationConfig((prev) => ({ ...prev, current: 1 }));
             }}
           />
         }
       >
-        <DataTableView table={table} loading={loading} />
+        <DataTableView
+          table={table}
+          loading={loading}
+          emptyTitle="No agents yet"
+          emptyDescription="Sync a branch from master data to create an agent record."
+          emptyAction={canWrite ? { label: "Sync Branch", onClick: handleOpenSyncModal } : undefined}
+        />
         <DataTablePagination table={table} total={paginationConfig.total} pageSizeOptions={[10, 20, 50]} />
       </ListPageCard>
 
-      <Dialog open={isSyncModalOpen} onOpenChange={(open) => !open && setIsSyncModalOpen(false)}>
+      <Dialog
+        open={isSyncModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsSyncModalOpen(false);
+            setSyncIncludeInactive(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Sync Agent Branch</DialogTitle>
-            <DialogDescription>Select a branch to sync as an agent record.</DialogDescription>
+            <DialogDescription className="text-pretty">
+              Select a branch from master data to sync as an agent record.
+            </DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Field data-invalid={!!branchError}>
@@ -215,6 +257,9 @@ const AgentsList: React.FC = () => {
                 placeholder={loadingUnsynced ? "Loading branches…" : "Select a branch to sync"}
                 value={branchId}
                 disabled={loadingUnsynced}
+                includeAllOption={false}
+                searchable
+                searchPlaceholder="Search by branch code or name…"
                 onChange={(val) => {
                   setBranchId(val);
                   if (branchError) setBranchError(undefined);
@@ -229,6 +274,15 @@ const AgentsList: React.FC = () => {
                   {branchError}
                 </FieldDescription>
               ) : null}
+            </Field>
+            <Field orientation="horizontal">
+              <Checkbox
+                id={syncIncludeInactiveId}
+                checked={syncIncludeInactive}
+                disabled={loadingUnsynced}
+                onCheckedChange={(value) => handleSyncIncludeInactiveChange(value === true)}
+              />
+              <FieldLabel htmlFor={syncIncludeInactiveId}>Include inactive branches</FieldLabel>
             </Field>
           </FieldGroup>
           <DialogFooter>

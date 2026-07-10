@@ -88,7 +88,7 @@ const StaffManagement: React.FC = () => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [paginationConfig, setPaginationConfig] = useState({ current: 1, pageSize: 20, total: 0 });
+  const [paginationConfig, setPaginationConfig] = useState({ current: 1, pageSize: 10, total: 0 });
   const [rawSearch, setRawSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProfileStatus | "all">("active");
@@ -351,8 +351,8 @@ const StaffManagement: React.FC = () => {
     () => ({
       onView: (record: StaffProfile) => void handleOpenDrawer("view", record),
       onEdit: canEdit ? (record: StaffProfile) => void handleOpenDrawer("edit", record) : undefined,
-      onArchive: handleArchive,
-      onRestore: handleRestore,
+      onArchive: canEdit ? handleArchive : undefined,
+      onRestore: canEdit ? handleRestore : undefined,
     }),
     [canEdit, handleArchive, handleOpenDrawer, handleRestore],
   );
@@ -399,7 +399,7 @@ const StaffManagement: React.FC = () => {
           <>
             <ListPageSearch
               id="staff-search"
-              placeholder="Search code, name…"
+              placeholder="Search code, name, username…"
               value={rawSearch}
               onChange={setRawSearch}
             />

@@ -49,6 +49,40 @@ test("getAgentsHandler — returns success envelope when service succeeds", asyn
   assert.ok(Array.isArray(body.data));
 });
 
+test("getAgentsHandler — forwards includeInactive query to list without active filter", async () => {
+  let capturedMatch;
+  const app = Fastify({ logger: false });
+
+  app.decorateRequest("requestId", null);
+  app.addHook("onRequest", async (request) => {
+    request.requestId = request.headers["x-request-id"] ?? "test-req";
+  });
+
+  app.decorate("db", {
+    collection: () => ({
+      aggregate: (pipeline) => {
+        capturedMatch = pipeline.find((s) => s.$match)?.$match;
+        return { toArray: async () => [] };
+      },
+      countDocuments: async () => 0,
+    }),
+  });
+
+  app.get("/agents", { handler: getAgentsHandler });
+  await app.ready();
+
+  const res = await app.inject({
+    method: "GET",
+    url: "/agents?page=1&limit=10&includeInactive=true",
+    headers: { "x-user-ou": "000000000000000000000123" },
+  });
+
+  await app.close();
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(!capturedMatch?.active);
+});
+
 test("getAgentsHandler — returns structured error envelope when service throws", async () => {
   const app = await buildTestApp({ dbThrows: true });
 

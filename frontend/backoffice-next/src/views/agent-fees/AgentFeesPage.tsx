@@ -1,20 +1,21 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ArrowLeftRight, Check, Inbox, Link2, Pencil, Save, X } from "lucide-react";
+import { Inbox, Save } from "lucide-react";
 
 import { MatrixCell, type MatrixCellRef } from "@/components/agent-fees/MatrixCell";
+import { FilterSelect } from "@/components/FilterSelect";
 import { LoadingButton } from "@/components/LoadingButton";
-import { DetailContainer, PageContentCard } from "@/components/layout";
+import { DetailContainer, ListPageCard } from "@/components/layout";
+import { ListPageSearch } from "@/components/list-page";
 import { ActiveBadge } from "@/components/StatusBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
@@ -23,10 +24,26 @@ import { deleteAgentFee, listAgentFees } from "@/lib/agentFeesApiClient";
 import { getAgentById, listAgents, updateAgent } from "@/lib/agentsApiClient";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "@/navigation/compat";
-import type { AgentFee, CreateFeePayload } from "@/types/agentFees";
+import type { AgentFee, CreateFeePayload, GameCategory, GameCompany } from "@/types/agentFees";
 import type { Agent } from "@/types/agents";
 
 import { useAgentFees } from "../agents/hooks/useAgentFees";
+
+const REF_NONE_VALUE = "__none__";
+const REF_NONE_LABEL = "None";
+
+function clampFeeRate(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(99, Math.max(0, Math.round(value * 100) / 100));
+}
+
+function categoryLabel(cat: GameCategory): string {
+  return cat.main_cate_name?.en || cat.manin_cate_name?.en || cat.name || "";
+}
+
+function companyLabel(company: GameCompany): string {
+  return company.provider_name?.en || company.name || "";
+}
 
 const AgentFeesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,19 +54,30 @@ const AgentFeesPage: React.FC = () => {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [agentLoading, setAgentLoading] = useState(true);
   const [hideEmptyProviders, setHideEmptyProviders] = useState(false);
+  const [providerSearch, setProviderSearch] = useState("");
   const agentEtagRef = useRef<string | null>(null);
 
-  const [editingRate, setEditingRate] = useState(false);
   const [draftRate, setDraftRate] = useState<number>(0);
-  const [savingAgent, setSavingAgent] = useState(false);
+  const [isSavingChanges, setIsSavingChanges] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [changeTick, setChangeTick] = useState(0);
 
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
   const [refFees, setRefFees] = useState<AgentFee[]>([]);
   const [refFeesLoading, setRefFeesLoading] = useState(false);
-  const [savingRef, setSavingRef] = useState(false);
+  const [draftRefFeeBranchId, setDraftRefFeeBranchId] = useState<string | null>(null);
 
-  const { fees, companies, categories, loading, fetchFees, fetchMasterData, bulkSave } = useAgentFees(id || "");
+  const {
+    fees,
+    companies,
+    categories,
+    fetching,
+    masterDataLoading,
+    saving,
+    fetchFees,
+    fetchMasterData,
+    bulkSave,
+  } = useAgentFees(id || "");
 
   const matrixCellRefs = useRef<Record<string, MatrixCellRef | null>>({});
   const originalFeesRef = useRef<Map<string, AgentFee>>(new Map());
@@ -58,6 +86,13 @@ const AgentFeesPage: React.FC = () => {
   const refAgentName = isRefMode
     ? (allAgents.find((a) => a.branch_id === agent.ref_fee_branch_id)?.branch_name ?? agent.ref_fee_branch_id)
     : null;
+
+  const isSaving = isSavingChanges || saving;
+  const matrixDefaultRate = isRefMode ? (agent?.default_fee_rate ?? 0) : draftRate;
+
+  const markDirty = useCallback(() => {
+    setChangeTick((tick) => tick + 1);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -70,6 +105,7 @@ const AgentFeesPage: React.FC = () => {
         setAgent(data.agent);
         agentEtagRef.current = data.etag;
         setDraftRate(data.agent.default_fee_rate);
+        setDraftRefFeeBranchId(data.agent.ref_fee_branch_id ?? null);
       } catch (err: unknown) {
         if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
         message.error("Failed to load agent details");
@@ -131,14 +167,15 @@ const AgentFeesPage: React.FC = () => {
   }, [agent?.ref_fee_branch_id, allAgents, message]);
 
   useEffect(() => {
-    const displayLoading = loading || refFeesLoading;
+    const displayLoading = fetching || refFeesLoading;
     if (displayLoading) return;
 
     const displayFees = isRefMode ? refFees : fees;
+    const resetRate = agent?.default_fee_rate ?? 0;
     originalFeesRef.current = new Map();
 
     Object.values(matrixCellRefs.current).forEach((cell) => {
-      cell?.reset(agent?.default_fee_rate ?? 0);
+      cell?.reset(resetRate);
     });
 
     displayFees.forEach((f) => {
@@ -146,82 +183,19 @@ const AgentFeesPage: React.FC = () => {
       if (!isRefMode) originalFeesRef.current.set(key, f);
       matrixCellRefs.current[key]?.setValues(f.gcomp_cost, f.agent_known_fee, f.agent_fee);
     });
-  }, [fees, refFees, isRefMode, loading, refFeesLoading, agent?.default_fee_rate]);
+  }, [fees, refFees, isRefMode, fetching, refFeesLoading, agent?.default_fee_rate]);
 
-  const handleSaveAgentInfo = useCallback(async () => {
-    if (!agent?.upd_date) return;
-    setSavingAgent(true);
-    try {
-      const result = await updateAgent(agent._id, { default_fee_rate: draftRate }, agent.upd_date);
-      const newUpdDate = result.etag ? atob(result.etag.replace(/^W\/"|"/g, "")) : agent.upd_date;
-      setAgent((prev) => (prev ? { ...prev, default_fee_rate: draftRate, upd_date: newUpdDate } : prev));
-      agentEtagRef.current = result.etag;
-      setEditingRate(false);
-      Object.values(matrixCellRefs.current).forEach((cell) => {
-        const vals = cell?.getValues();
-        if (vals && !vals.enabled) {
-          cell?.reset(draftRate);
-        }
-      });
-      message.success("Agent updated successfully");
-    } catch (err: unknown) {
-      message.error(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update agent",
-      );
-    } finally {
-      setSavingAgent(false);
-    }
-  }, [agent, draftRate, message]);
-
-  const handleRefChange = useCallback(
-    (newRefId: string | undefined) => {
-      if (!agent || !id) return;
-      const normalized = newRefId ?? null;
-      const refAgent = normalized ? allAgents.find((a) => a.branch_id === normalized) : null;
-
-      void confirm({
-        title: normalized ? "Set Reference Agent" : "Remove Reference",
-        content: normalized
-          ? `Fee configuration will reference "${refAgent?.branch_name ?? normalized}". Your ${fees.length} own fee override(s) will be deleted. Continue?`
-          : "Remove reference and manage fee overrides independently?",
-        okText: "Confirm",
-        danger: true,
-        onOk: async () => {
-          setSavingRef(true);
-          try {
-            const result = await updateAgent(agent._id, { ref_fee_branch_id: normalized }, agent.upd_date);
-            const newUpdDate = result.etag ? atob(result.etag.replace(/^W\/"|"/g, "")) : agent.upd_date;
-            setAgent((prev) => (prev ? { ...prev, ref_fee_branch_id: normalized, upd_date: newUpdDate } : prev));
-            agentEtagRef.current = result.etag;
-
-            if (normalized && fees.length > 0) {
-              await Promise.allSettled(fees.map((f) => deleteAgentFee(id, f._id, f.upd_date)));
-              await fetchFees({ page: 1, limit: 100 });
-            }
-
-            if (!normalized) {
-              await fetchFees({ page: 1, limit: 100 });
-            }
-
-            message.success(
-              normalized
-                ? `Now referencing ${refAgent?.branch_name ?? normalized}`
-                : "Reference removed — you can now configure fees independently",
-            );
-          } catch (err: unknown) {
-            message.error(
-              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-                "Failed to update reference",
-            );
-            throw err;
-          } finally {
-            setSavingRef(false);
-          }
-        },
-      });
-    },
-    [agent, id, allAgents, fees, fetchFees, message, confirm],
-  );
+  const applyRateSaveSuccess = useCallback((savedRate: number, newUpdDate: string, etag: string | null) => {
+    setAgent((prev) => (prev ? { ...prev, default_fee_rate: savedRate, upd_date: newUpdDate } : prev));
+    if (etag) agentEtagRef.current = etag;
+    setDraftRate(savedRate);
+    Object.values(matrixCellRefs.current).forEach((cell) => {
+      const vals = cell?.getValues();
+      if (vals && !vals.enabled) {
+        cell?.reset(savedRate);
+      }
+    });
+  }, []);
 
   const collectChanges = useCallback(() => {
     const creates: CreateFeePayload[] = [];
@@ -247,9 +221,7 @@ const AgentFeesPage: React.FC = () => {
         const isValid = (r: number) => r >= 0 && r <= 100;
 
         if (!isValid(gcompCost) || !isValid(agentKnownFee) || !isValid(agentFee)) {
-          errors.push(
-            `${company.provider_name?.en || company.name} / ${category.main_cate_name?.en || category.manin_cate_name?.en || category.name}: must be 0–100`,
-          );
+          errors.push(`${companyLabel(company)} / ${categoryLabel(category)}: must be 0–100`);
           return;
         }
 
@@ -282,26 +254,17 @@ const AgentFeesPage: React.FC = () => {
     matrixCellRefs.current[key] = el;
   }, []);
 
+  const savedRefFeeBranchId = agent?.ref_fee_branch_id ?? null;
+
   const isDirty = useCallback(() => {
-    if (!agent || isRefMode) return false;
+    void changeTick;
+    if (!agent) return false;
+    if (draftRefFeeBranchId !== savedRefFeeBranchId) return true;
+    if (isRefMode) return false;
     if (draftRate !== (agent.default_fee_rate ?? 0)) return true;
     const { creates, updates, deletes } = collectChanges();
     return creates.length > 0 || updates.length > 0 || deletes.length > 0;
-  }, [agent, isRefMode, draftRate, collectChanges]);
-
-  const handleBack = useCallback(() => {
-    if (!isDirty()) {
-      navigate("/agents");
-      return;
-    }
-    void confirm({
-      title: "Discard unsaved changes?",
-      content: "You have unsaved fee changes that will be lost.",
-      okText: "Discard",
-      danger: true,
-      onOk: () => navigate("/agents"),
-    });
-  }, [isDirty, navigate, confirm]);
+  }, [agent, isRefMode, draftRate, draftRefFeeBranchId, savedRefFeeBranchId, collectChanges, changeTick]);
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -313,77 +276,187 @@ const AgentFeesPage: React.FC = () => {
   }, [isDirty]);
 
   const handleRefSelectChange = useCallback(
-    (value: string | null) => {
-      const newRefId = value == null || value === "__none__" ? undefined : value;
-      if (isDirty()) {
-        void confirm({
-          title: "Discard unsaved changes?",
-          content: "Changing reference fees will discard unsaved matrix changes.",
-          okText: "Continue",
-          danger: true,
-          onOk: () => handleRefChange(newRefId),
-        });
-        return;
-      }
-      handleRefChange(newRefId);
+    (value: string | undefined) => {
+      const newRefId = value === undefined || value === REF_NONE_VALUE ? null : value;
+      setDraftRefFeeBranchId(newRefId);
+      markDirty();
     },
-    [isDirty, handleRefChange, confirm],
+    [markDirty],
   );
 
-  const handleSaveFees = useCallback(async () => {
-    if (!agent || isRefMode) return;
-    const { creates, updates, deletes, errors } = collectChanges();
+  const handleSaveChanges = useCallback(async () => {
+    if (!agent?.upd_date || !id) return;
 
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-    setValidationErrors([]);
-    if (!creates.length && !updates.length && !deletes.length) {
+    const refChanged = draftRefFeeBranchId !== savedRefFeeBranchId;
+    const enteringRefMode = refChanged && draftRefFeeBranchId !== null;
+    const { creates, updates, deletes, errors } = collectChanges();
+    const rateChanged = !isRefMode && draftRate !== (agent.default_fee_rate ?? 0);
+    const matrixChanged =
+      !isRefMode && !enteringRefMode && (creates.length > 0 || updates.length > 0 || deletes.length > 0);
+
+    if (!refChanged && !rateChanged && !matrixChanged) {
       message.info("No changes to save");
       return;
     }
 
-    const doSave = async () => {
-      const success = await bulkSave(creates, updates, deletes);
-      if (success) await fetchFees({ page: 1, limit: 100 });
+    if (!enteringRefMode && errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors([]);
+
+    const refAgent = draftRefFeeBranchId
+      ? allAgents.find((a) => a.branch_id === draftRefFeeBranchId)
+      : null;
+
+    const runSave = async () => {
+      setIsSavingChanges(true);
+      try {
+        let currentUpdDate = agent.upd_date;
+        let currentEtag = agentEtagRef.current;
+
+        const agentPayload: { default_fee_rate?: number; ref_fee_branch_id?: string | null } = {};
+        if (refChanged) agentPayload.ref_fee_branch_id = draftRefFeeBranchId;
+        if (rateChanged) agentPayload.default_fee_rate = draftRate;
+
+        if (Object.keys(agentPayload).length > 0) {
+          const result = await updateAgent(agent._id, agentPayload, currentUpdDate);
+          currentUpdDate = result.etag ? atob(result.etag.replace(/^W\/"|"/g, "")) : currentUpdDate;
+          currentEtag = result.etag;
+          setAgent((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  ...agentPayload,
+                  upd_date: currentUpdDate,
+                }
+              : prev,
+          );
+          agentEtagRef.current = currentEtag;
+          if (rateChanged) {
+            applyRateSaveSuccess(draftRate, currentUpdDate, currentEtag);
+          }
+        }
+
+        if (refChanged && draftRefFeeBranchId && fees.length > 0) {
+          await Promise.allSettled(fees.map((f) => deleteAgentFee(id, f._id, f.upd_date)));
+        }
+
+        if (matrixChanged) {
+          const success = await bulkSave(creates, updates, deletes);
+          if (!success) {
+            await fetchFees({ page: 1, limit: 100 });
+            return;
+          }
+        }
+
+        if (refChanged || matrixChanged) {
+          await fetchFees({ page: 1, limit: 100 });
+        }
+
+        message.success("Changes saved successfully");
+      } catch (err: unknown) {
+        message.error(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to save changes",
+        );
+      } finally {
+        setIsSavingChanges(false);
+      }
     };
 
-    if (deletes.length > 0) {
+    const needsRefConfirm = enteringRefMode && fees.length > 0;
+    const needsDeleteConfirm = matrixChanged && deletes.length > 0;
+
+    if (needsRefConfirm) {
+      void confirm({
+        title: "Set reference agent?",
+        content: `Fee configuration will reference "${refAgent?.branch_name ?? draftRefFeeBranchId}". Your ${fees.length} own fee override${fees.length > 1 ? "s" : ""} will be deleted. Continue?`,
+        okText: "Confirm",
+        danger: true,
+        onOk: runSave,
+      });
+      return;
+    }
+
+    if (needsDeleteConfirm) {
       void confirm({
         title: "Remove fee overrides?",
         content: `${deletes.length} fee override${deletes.length > 1 ? "s" : ""} will be deleted. Continue?`,
         okText: "Delete",
         danger: true,
-        onOk: doSave,
+        onOk: runSave,
       });
       return;
     }
-    await doSave();
-  }, [agent, isRefMode, collectChanges, bulkSave, fetchFees, message, confirm]);
+
+    await runSave();
+  }, [
+    agent,
+    id,
+    isRefMode,
+    draftRate,
+    draftRefFeeBranchId,
+    savedRefFeeBranchId,
+    allAgents,
+    fees,
+    collectChanges,
+    bulkSave,
+    fetchFees,
+    message,
+    confirm,
+    applyRateSaveSuccess,
+  ]);
 
   const feesByCompany = useMemo(
     () => new Set((isRefMode ? refFees : fees).map((f) => f.game_company_id)),
     [isRefMode, refFees, fees],
   );
 
+  const refFeeOptions = useMemo(() => {
+    const sorted = [...allAgents]
+      .filter((a) => a._id !== id)
+      .sort((a, b) => a.branch_code.localeCompare(b.branch_code));
+    return [
+      { value: REF_NONE_VALUE, label: REF_NONE_LABEL },
+      ...sorted.map((a) => ({ value: a.branch_id, label: `${a.branch_code} · ${a.branch_name}` })),
+    ];
+  }, [allAgents, id]);
+
   const filteredCompanies = useMemo(() => {
-    const sorted = [...companies].sort((a, b) => {
-      const nameA = a.provider_name?.en || a.name || "";
-      const nameB = b.provider_name?.en || b.name || "";
-      return nameA.localeCompare(nameB);
-    });
-    return hideEmptyProviders ? sorted.filter((company) => feesByCompany.has(company._id)) : sorted;
-  }, [companies, feesByCompany, hideEmptyProviders]);
+    let sorted = [...companies].sort((a, b) => companyLabel(a).localeCompare(companyLabel(b)));
+    if (hideEmptyProviders) {
+      sorted = sorted.filter((company) => feesByCompany.has(company._id));
+    }
+    const query = providerSearch.trim().toLowerCase();
+    if (query) {
+      sorted = sorted.filter((company) => companyLabel(company).toLowerCase().includes(query));
+    }
+    return sorted;
+  }, [companies, feesByCompany, hideEmptyProviders, providerSearch]);
 
   const usedCompaniesCount = useMemo(
     () => companies.filter((company) => feesByCompany.has(company._id)).length,
     [companies, feesByCompany],
   );
 
+  const emptyDescription = useMemo(() => {
+    if (providerSearch.trim() && !isRefMode) {
+      return "No providers match your search.";
+    }
+    if (isRefMode) {
+      return `${refAgentName} has no fee overrides configured — providers will use the default fee rate.`;
+    }
+    if (hideEmptyProviders) {
+      return 'No providers have fee overrides yet. Uncheck "Hide providers without fees" to see all providers.';
+    }
+    return "No providers found.";
+  }, [providerSearch, isRefMode, refAgentName, hideEmptyProviders]);
+
+  const dirty = isDirty();
+
   if (agentLoading) {
     return (
-      <DetailContainer title="Agent Fees" onBack={handleBack} description="Loading agent details...">
+      <DetailContainer title="Agent fees" description="Loading agent details…">
         <div className="flex flex-col gap-6" role="status" aria-busy="true" aria-label="Loading agent fees">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full rounded-xl" />
@@ -393,136 +466,94 @@ const AgentFeesPage: React.FC = () => {
     );
   }
 
-  const dropdownOptions = allAgents
-    .filter((a) => a._id !== id)
-    .map((a) => ({ value: a.branch_id, label: `${a.branch_code} · ${a.branch_name}` }));
+  const tableLoading = (fetching || masterDataLoading || refFeesLoading) && companies.length === 0;
 
-  const tableLoading = (loading || refFeesLoading) && companies.length === 0;
+  const matrixDescription =
+    filteredCompanies.length > 0 && categories.length > 0
+      ? `${filteredCompanies.length} provider${filteredCompanies.length === 1 ? "" : "s"} × ${categories.length} categor${categories.length === 1 ? "y" : "ies"}. Check a cell to override the default fee rate.`
+      : "Provider and category fee overrides. Check a cell to override the default fee rate.";
 
-  const emptyDescription = isRefMode
-    ? `${refAgentName} has no fee overrides configured — providers will use the default fee rate.`
-    : hideEmptyProviders
-      ? 'No providers have fee overrides yet. Uncheck "Hide providers without fees" to see all providers.'
-      : "No providers found.";
-
-  const headerTitle = (
-    <div>
-      <span className="font-bold text-2xl">{agent?.branch_name}</span>
-      <div className="mt-1 font-normal text-muted-foreground text-sm">
-        {agent?.branch_code} · {agent?.branch_type}
-      </div>
-    </div>
-  );
+  const pageTitle = agent
+    ? `${agent.branch_name} · ${agent.branch_code} · ${agent.branch_type}`
+    : "Agent fees";
 
   return (
     <DetailContainer
-      title={headerTitle}
+      title={pageTitle}
       status={<ActiveBadge active={!!agent?.active} />}
-      onBack={handleBack}
       extra={
-        !isRefMode ? (
-          <LoadingButton size="lg" loading={loading} onClick={() => void handleSaveFees()}>
-            <Save data-icon="inline-start" />
-            Save Fees
-          </LoadingButton>
-        ) : undefined
+        <LoadingButton
+          size="default"
+          loading={isSaving}
+          disabled={!dirty}
+          onClick={() => void handleSaveChanges()}
+        >
+          <Save data-icon="inline-start" />
+          Save changes
+        </LoadingButton>
       }
       maxWidth={1200}
+      className="gap-4"
     >
-      <Card>
-        <CardContent className="grid gap-6 pt-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-muted-foreground text-sm">Default Fee Rate</p>
-            <div className="mt-1 flex items-center gap-2">
-              {editingRate ? (
-                <>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    value={draftRate}
-                    onChange={(e) => setDraftRate(Number(e.target.value) || 0)}
-                    className="w-24 tabular-nums"
-                    autoFocus
-                  />
-                  <span className="text-muted-foreground text-sm">%</span>
-                  <LoadingButton
-                    size="icon-sm"
-                    loading={savingAgent}
-                    onClick={() => void handleSaveAgentInfo()}
-                    aria-label="Save rate"
-                  >
-                    <Check data-icon="inline-start" aria-hidden="true" />
-                  </LoadingButton>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingRate(false);
-                      setDraftRate(agent?.default_fee_rate ?? 0);
-                    }}
-                    aria-label="Cancel edit"
-                  >
-                    <X data-icon="inline-start" aria-hidden="true" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold text-2xl tabular-nums">{agent?.default_fee_rate ?? 0}%</span>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingRate(true);
-                      setDraftRate(agent?.default_fee_rate ?? 0);
-                    }}
-                    aria-label="Edit default fee rate"
-                  >
-                    <Pencil data-icon="inline-start" aria-hidden="true" />
-                  </Button>
-                </>
-              )}
-            </div>
+      <Card className="min-w-0 shadow-sm">
+        <CardHeader className="border-b">
+          <CardTitle className="text-base">Configuration</CardTitle>
+          <CardDescription className="text-pretty">
+            Default fee rate, reference fees, and matrix overrides are saved together with Save changes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="py-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <Field>
+              <FieldLabel>Currency</FieldLabel>
+              <p className="font-medium text-sm uppercase tabular-nums">{agent?.currency || "—"}</p>
+            </Field>
+            <Field>
+              <FieldLabel>Companies configured</FieldLabel>
+              <p className="font-medium text-sm tabular-nums">
+                {usedCompaniesCount} / {companies.length}
+              </p>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="default-fee-rate">Default fee rate</FieldLabel>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="default-fee-rate"
+                  type="number"
+                  min={0}
+                  max={99}
+                  step={0.01}
+                  inputMode="decimal"
+                  value={draftRate}
+                  disabled={isRefMode || isSaving}
+                  onChange={(e) => {
+                    setDraftRate(clampFeeRate(Number(e.target.value)));
+                    markDirty();
+                  }}
+                  onBlur={(e) => {
+                    setDraftRate(clampFeeRate(Number(e.target.value)));
+                  }}
+                  className="w-full tabular-nums"
+                />
+                <span className="shrink-0 text-muted-foreground text-sm">%</span>
+              </div>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="reference-fees">Reference fees</FieldLabel>
+              <FilterSelect
+                id="reference-fees"
+                placeholder={REF_NONE_LABEL}
+                value={draftRefFeeBranchId ?? REF_NONE_VALUE}
+                onChange={(value) => handleRefSelectChange(value ?? REF_NONE_VALUE)}
+                options={refFeeOptions}
+                includeAllOption={false}
+                searchable
+                searchPlaceholder="Search branches…"
+                width="w-full"
+                disabled={isSaving}
+              />
+            </Field>
           </div>
-
-          <div>
-            <p className="text-muted-foreground text-sm">Currency</p>
-            <p className="mt-1 font-semibold text-2xl uppercase">{agent?.currency || "—"}</p>
-          </div>
-
-          <div>
-            <p className="text-muted-foreground text-sm">Companies</p>
-            <p className="mt-1 font-semibold text-2xl tabular-nums">
-              {usedCompaniesCount} / {companies.length}
-            </p>
-          </div>
-
-          <Field>
-            <FieldLabel htmlFor="reference-fees" className="mb-1 flex items-center gap-1 text-muted-foreground text-sm">
-              <Link2 data-icon="inline-start" aria-hidden="true" />
-              Reference Fees
-            </FieldLabel>
-            <Select
-              value={agent?.ref_fee_branch_id ?? "__none__"}
-              disabled={savingRef}
-              onValueChange={handleRefSelectChange}
-            >
-              <SelectTrigger id="reference-fees" className="w-full">
-                <SelectValue placeholder="None — use own fee overrides" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="__none__">None — use own fee overrides</SelectItem>
-                  {dropdownOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
         </CardContent>
       </Card>
 
@@ -530,8 +561,8 @@ const AgentFeesPage: React.FC = () => {
         <Alert>
           <AlertTitle>Referenced fee configuration</AlertTitle>
           <AlertDescription>
-            Fee configuration is referenced from <strong>{refAgentName}</strong>. To edit fees independently, clear the
-            reference above.
+            Fee configuration is referenced from <strong>{refAgentName}</strong>. To edit fees independently, set
+            reference to none and save changes.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -540,7 +571,7 @@ const AgentFeesPage: React.FC = () => {
         <Alert variant="destructive">
           <AlertTitle>Fix invalid fee values</AlertTitle>
           <AlertDescription>
-            <ul className="mt-2 flex flex-col gap-1">
+            <ul className="flex flex-col gap-1">
               {validationErrors.map((error) => (
                 <li key={error}>{error}</li>
               ))}
@@ -549,94 +580,100 @@ const AgentFeesPage: React.FC = () => {
         </Alert>
       ) : null}
 
-      <PageContentCard
+      <ListPageCard
         title="Fee matrix"
-        description={
-          filteredCompanies.length > 0 && categories.length > 0
-            ? `${filteredCompanies.length} provider${filteredCompanies.length === 1 ? "" : "s"} × ${categories.length} categor${categories.length === 1 ? "y" : "ies"}`
-            : "Provider and category fee overrides"
-        }
-        extra={
-          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-            <Field orientation="horizontal" className="items-center gap-2">
+        description={matrixDescription}
+        descriptionClassName="max-w-none leading-snug"
+        filterRow={
+          <div className="flex w-full min-w-0 flex-nowrap items-center gap-3">
+            <ListPageSearch
+              id="provider-search"
+              placeholder="Search providers…"
+              value={providerSearch}
+              onChange={setProviderSearch}
+              className="min-w-0 flex-1 sm:max-w-xs"
+            />
+            <Field orientation="horizontal" className="w-auto shrink-0 items-center gap-2">
               <Checkbox
                 id="hide-empty-providers"
                 checked={hideEmptyProviders}
                 onCheckedChange={(value) => setHideEmptyProviders(value === true)}
               />
-              <FieldLabel htmlFor="hide-empty-providers" className="font-normal text-sm">
+              <FieldLabel htmlFor="hide-empty-providers" className="font-normal text-sm whitespace-nowrap">
                 Hide providers without fees
               </FieldLabel>
             </Field>
-            <p className="flex items-center gap-1.5 text-muted-foreground text-xs sm:hidden" role="note">
-              <ArrowLeftRight className="size-3.5 shrink-0" aria-hidden="true" />
-              Swipe sideways to view all categories
-            </p>
           </div>
         }
-        className="overflow-hidden py-0"
       >
-        <div className="p-0">
-          {tableLoading ? (
-            <Skeleton className="m-4 h-64 w-[calc(100%-2rem)]" role="status" aria-busy="true" />
-          ) : filteredCompanies.length === 0 ? (
-            <Empty className="py-12">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Inbox aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>No providers</EmptyTitle>
-                <EmptyDescription>{emptyDescription}</EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button type="button" variant="outline" onClick={() => navigate("/agents")}>
-                  Back to agents
-                </Button>
-              </EmptyContent>
-            </Empty>
-          ) : (
-            <section
-              className="max-h-[600px] overflow-x-auto overflow-y-auto"
-              aria-label="Agent fee matrix by provider and category"
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-10 min-w-[180px] bg-card">Provider Name</TableHead>
-                    {categories.map((cat) => (
-                      <TableHead key={cat._id} className="min-w-[150px] text-center">
-                        {cat.main_cate_name?.en || cat.manin_cate_name?.en || cat.name}
+        {tableLoading ? (
+          <Skeleton className="m-4 h-64" role="status" aria-busy="true" />
+        ) : filteredCompanies.length === 0 ? (
+          <Empty className="py-12">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Inbox aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle>No providers</EmptyTitle>
+              <EmptyDescription>{emptyDescription}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button type="button" variant="outline" onClick={() => navigate("/agents")}>
+                Back to agents
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <section aria-label="Agent fee matrix by provider and category">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 z-10 min-w-[180px] bg-card">Provider</TableHead>
+                  {categories.map((cat) => {
+                    const label = categoryLabel(cat);
+                    return (
+                      <TableHead
+                        key={cat._id}
+                        className="max-w-[120px] min-w-[120px] truncate text-center"
+                        title={label}
+                      >
+                        {label}
                       </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCompanies.map((company) => (
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCompanies.map((company) => {
+                  const provider = companyLabel(company);
+                  return (
                     <TableRow key={company._id}>
-                      <TableCell className="sticky left-0 z-10 bg-card font-medium">
-                        {company.provider_name?.en || company.name}
-                      </TableCell>
+                      <TableCell className="sticky left-0 z-10 bg-card font-medium">{provider}</TableCell>
                       {categories.map((cat) => {
                         const key = `${company._id}_${cat._id}`;
+                        const catLabel = categoryLabel(cat);
                         return (
                           <TableCell key={cat._id} className={cn("text-center", isRefMode && "bg-muted/30")}>
                             <MatrixCell
                               key={key}
-                              defaultRate={agent?.default_fee_rate ?? 0}
+                              defaultRate={matrixDefaultRate}
                               readOnly={isRefMode}
+                              providerLabel={provider}
+                              categoryLabel={catLabel}
+                              onChange={markDirty}
                               ref={(el) => setMatrixCellRef(key, el)}
                             />
                           </TableCell>
                         );
                       })}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </section>
-          )}
-        </div>
-      </PageContentCard>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </section>
+        )}
+      </ListPageCard>
     </DetailContainer>
   );
 };

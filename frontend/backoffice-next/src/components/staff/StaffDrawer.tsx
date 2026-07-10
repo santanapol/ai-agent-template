@@ -3,7 +3,7 @@ import type React from "react";
 import { LoadingButton } from "@/components/LoadingButton";
 import { StaffFormField } from "@/components/staff/StaffFormField";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -141,13 +141,13 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
               </StaffFormField>
               {canAssignRole ? (
                 <Field>
-                  <FieldLabel>System Role</FieldLabel>
+                  <FieldLabel htmlFor="staff-role">System Role</FieldLabel>
                   <Select
                     value={values.role ?? "staff"}
                     onValueChange={(v) => onChange("role", v ?? "staff")}
                     disabled={disabled}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="staff-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -165,7 +165,6 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
               {mode === "create" ? (
                 <>
                   <Separator />
-                  <p className="text-muted-foreground text-sm">Minimum {PASSWORD_MIN_LENGTH} characters.</p>
                   <StaffFormField id="staff-username" label="Username" error={errors.username}>
                     <Input
                       value={values.username ?? ""}
@@ -174,7 +173,12 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
                       autoComplete="off"
                     />
                   </StaffFormField>
-                  <StaffFormField id="staff-password" label="Password" error={errors.password}>
+                  <StaffFormField
+                    id="staff-password"
+                    label="Password"
+                    error={errors.password}
+                    description={`Minimum ${PASSWORD_MIN_LENGTH} characters.`}
+                  >
                     <Input
                       type="password"
                       value={values.password ?? ""}
@@ -197,7 +201,7 @@ const StaffDrawer: React.FC<StaffDrawerProps> = ({
               {showAdminResetPassword ? (
                 <>
                   <Separator />
-                  <p className="font-medium text-sm">Reset password (admin)</p>
+                  <FieldTitle>Reset password (admin)</FieldTitle>
                   <StaffFormField id="staff-new-password" label="New password" error={errors.newPassword}>
                     <Input
                       type="password"

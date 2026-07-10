@@ -7,7 +7,7 @@ import {
 import { buildEtag } from "../../lib/etag.js";
 
 export const getAgentsHandler = async (request, reply) => {
-  const { page, limit, search } = request.query;
+  const { page, limit, search, includeInactive } = request.query;
   const { ouId, requestId } = extractContext(request);
   const db = request.server.db;
 
@@ -18,6 +18,7 @@ export const getAgentsHandler = async (request, reply) => {
       search,
       page,
       limit,
+      includeInactive,
     );
 
     return reply.status(200).send({

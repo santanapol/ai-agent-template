@@ -94,6 +94,57 @@ describe("StaffManagement", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Edit profile/i })).toBeInTheDocument();
     });
+
+    expect(screen.queryByRole("columnheader", { name: /^Email$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /^Tel$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /^Action$/i })).toBeInTheDocument();
+  });
+
+  test("uses primary Create staff toolbar button when profiles exist", async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => permission === "profiles:create");
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: "OK",
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: "123",
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Create staff/i })).toBeInTheDocument();
+    });
+
+    const createButton = screen.getByRole("button", { name: /Create staff/i });
+    expect(createButton.className).toMatch(/bg-primary/);
+  });
+
+  test("hides archive and restore actions when profiles:edit is missing", async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === "profiles:edit") return false;
+      return true;
+    });
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: "OK",
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: "123",
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: /Archive profile/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restore profile/i })).not.toBeInTheDocument();
   });
 
   test("hides Create staff button when profiles:create is missing", async () => {

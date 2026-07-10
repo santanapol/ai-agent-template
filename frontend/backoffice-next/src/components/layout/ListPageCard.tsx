@@ -5,6 +5,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 interface ListPageCardProps {
   title: string;
   description?: string;
+  descriptionClassName?: string;
   toolbar?: ReactNode;
   filterRow?: ReactNode;
   selectionBar?: ReactNode;
@@ -17,6 +18,7 @@ interface ListPageCardProps {
 export function ListPageCard({
   title,
   description,
+  descriptionClassName,
   toolbar,
   filterRow,
   selectionBar,
@@ -30,7 +32,7 @@ export function ListPageCard({
       <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
         <CardTitle className="text-xl leading-none">{title}</CardTitle>
         {description != null ? (
-          <CardDescription className="max-w-sm leading-snug">{description}</CardDescription>
+          <CardDescription className={descriptionClassName ?? "max-w-sm leading-snug"}>{description}</CardDescription>
         ) : null}
         {toolbar != null ? (
           <CardAction className="col-start-1 row-start-auto flex w-full min-w-0 flex-wrap items-end justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:max-w-none md:flex-wrap md:justify-end md:justify-self-end">

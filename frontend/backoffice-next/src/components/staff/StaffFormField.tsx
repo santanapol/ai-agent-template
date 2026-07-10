@@ -10,15 +10,17 @@ interface StaffFormFieldProps {
   id: string;
   label: string;
   error?: string;
+  description?: string;
   children: React.ReactElement<InputChildProps>;
 }
 
-export function StaffFormField({ id, label, error, children }: StaffFormFieldProps) {
+export function StaffFormField({ id, label, error, description, children }: StaffFormFieldProps) {
   const a11y = error ? fieldErrorIds(id) : undefined;
 
   return (
     <Field data-invalid={!!error}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
       {React.cloneElement(children, {
         id,
         "aria-invalid": a11y?.ariaInvalid,

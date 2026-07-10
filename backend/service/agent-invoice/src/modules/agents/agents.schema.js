@@ -56,6 +56,7 @@ export const getAgentsSchema = {
       page: { type: "number", minimum: 1, default: 1 },
       limit: { type: "number", minimum: 1, maximum: 100, default: 20 },
       search: { type: "string" },
+      includeInactive: { type: "boolean", default: false },
     },
   },
   response: {

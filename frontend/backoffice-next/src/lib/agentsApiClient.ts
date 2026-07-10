@@ -2,7 +2,18 @@ import type { Agent, ApiEnvelope, ListAgentsParams, UpdateAgentPayload } from ".
 import { baseClient as client, extractETag } from "./baseApiClient";
 
 export async function listAgents(params: ListAgentsParams = {}, signal?: AbortSignal) {
-  const res = await client.get<ApiEnvelope<Agent[]>>("/api/v1/agent-invoice/agents", { params, signal });
+  const query: ListAgentsParams = {
+    page: params.page,
+    limit: params.limit,
+    search: params.search,
+  };
+  if (params.includeInactive) {
+    query.includeInactive = true;
+  }
+  const res = await client.get<ApiEnvelope<Agent[]>>("/api/v1/agent-invoice/agents", {
+    params: query,
+    signal,
+  });
   return {
     data: res.data.data,
     total: res.data.pagination?.total || 0,

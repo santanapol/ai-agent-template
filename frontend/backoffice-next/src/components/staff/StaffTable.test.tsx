@@ -21,10 +21,16 @@ const mockProfiles = [
   },
 ];
 
-function StaffTableHarness({ onEdit }: { onEdit?: (record: (typeof mockProfiles)[0]) => void }) {
+function StaffTableHarness({
+  onEdit,
+  onArchive,
+}: {
+  onEdit?: (record: (typeof mockProfiles)[0]) => void;
+  onArchive?: (record: (typeof mockProfiles)[0]) => void;
+}) {
   const handlers = {
     onView: vi.fn(),
-    onArchive: vi.fn(),
+    onArchive,
     onRestore: vi.fn(),
     onEdit,
   };
@@ -38,6 +44,13 @@ function StaffTableHarness({ onEdit }: { onEdit?: (record: (typeof mockProfiles)
 }
 
 describe("StaffTable", () => {
+  test("does not render Email or Tel column headers", () => {
+    render(<StaffTableHarness onEdit={vi.fn()} onArchive={vi.fn()} />);
+    expect(screen.queryByRole("columnheader", { name: /^Email$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /^Tel$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /^Action$/i })).toBeInTheDocument();
+  });
+
   test("renders edit button when onEdit is provided", () => {
     render(<StaffTableHarness onEdit={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Edit profile/i })).toBeInTheDocument();
@@ -46,5 +59,15 @@ describe("StaffTable", () => {
   test("does not render edit button when onEdit is omitted", () => {
     render(<StaffTableHarness />);
     expect(screen.queryByRole("button", { name: /Edit profile/i })).not.toBeInTheDocument();
+  });
+
+  test("does not render archive button when onArchive is omitted", () => {
+    render(<StaffTableHarness onEdit={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /Archive profile/i })).not.toBeInTheDocument();
+  });
+
+  test("renders archive button when onArchive is provided", () => {
+    render(<StaffTableHarness onArchive={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Archive profile/i })).toBeInTheDocument();
   });
 });
