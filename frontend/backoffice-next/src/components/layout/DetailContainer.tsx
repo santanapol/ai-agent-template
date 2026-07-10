@@ -10,9 +10,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "@/navigation/compat";
+import { Link, useNavigate } from "@/navigation/compat";
 
 interface BreadcrumbEntry {
   title: React.ReactNode;
@@ -29,7 +29,8 @@ interface DetailContainerProps {
   extra?: React.ReactNode;
   status?: React.ReactNode;
   children: React.ReactNode;
-  maxWidth?: number;
+  /** Omit or pass `null` for full content width (no max-width clamp). */
+  maxWidth?: number | null;
   className?: string;
 }
 
@@ -56,7 +57,10 @@ export function DetailContainer({
   };
 
   return (
-    <div className={cn("mx-auto flex w-full max-w-full flex-col gap-6", className)} style={{ maxWidth }}>
+    <div
+      className={cn("mx-auto flex w-full min-w-0 max-w-full flex-col gap-6", className)}
+      style={maxWidth == null ? undefined : { maxWidth }}
+    >
       {breadcrumbItems && breadcrumbItems.length > 0 ? (
         <Breadcrumb>
           <BreadcrumbList>
@@ -91,9 +95,14 @@ export function DetailContainer({
         </Breadcrumb>
       ) : null}
       <div className="flex flex-col gap-2">
-        {onBack || backUrl ? (
+        {backUrl ? (
+          <Link to={backUrl} className={cn(buttonVariants({ variant: "link" }), "h-auto w-fit px-0")}>
+            <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+            Back
+          </Link>
+        ) : onBack ? (
           <Button variant="link" className="h-auto w-fit px-0" onClick={handleBack}>
-            <ArrowLeft data-icon="inline-start" />
+            <ArrowLeft data-icon="inline-start" aria-hidden="true" />
             Back
           </Button>
         ) : null}

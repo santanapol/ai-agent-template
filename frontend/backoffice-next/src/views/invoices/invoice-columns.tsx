@@ -4,16 +4,21 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Link } from "@/navigation/compat";
 import type { Invoice } from "@/types/invoice";
 
 import { formatDate, formatMoney, statusTagColor } from "./utils";
 
 export interface InvoiceColumnHandlers {
-  onView: (invoice: Invoice, listSearch: string) => void;
   listSearch: string;
+}
+
+export function invoiceDetailHref(invoiceId: string, listSearch: string): string {
+  if (!listSearch) return `/invoices/${invoiceId}`;
+  return `/invoices/${invoiceId}?${new URLSearchParams({ return: listSearch }).toString()}`;
 }
 
 export function createInvoiceSelectColumn(): ColumnDef<Invoice> {
@@ -41,7 +46,7 @@ export function createInvoiceSelectColumn(): ColumnDef<Invoice> {
 }
 
 export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef<Invoice>[] {
-  const { onView, listSearch } = handlers;
+  const { listSearch } = handlers;
 
   return [
     createInvoiceSelectColumn(),
@@ -81,32 +86,25 @@ export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef
     },
     {
       id: "amount",
-      header: "Amount",
+      header: () => <div className="text-right">Amount</div>,
       enableHiding: true,
       meta: { align: "right" },
       accessorFn: (record) => formatMoney(record.amount),
-      cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.amount)}</span>,
+      cell: ({ row }) => <div className="text-right tabular-nums">{formatMoney(row.original.amount)}</div>,
     },
     {
       id: "action",
       header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label={`View invoice ${row.original.iv_no}`}
-                onClick={() => onView(row.original, listSearch)}
-              >
-                <Eye />
-              </Button>
-            }
-          />
-          <TooltipContent>View details</TooltipContent>
-        </Tooltip>
+        <Link
+          to={invoiceDetailHref(row.original._id, listSearch)}
+          aria-label={`View invoice ${row.original.iv_no}`}
+          title="View details"
+          className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }))}
+        >
+          <Eye aria-hidden="true" />
+        </Link>
       ),
     },
   ];

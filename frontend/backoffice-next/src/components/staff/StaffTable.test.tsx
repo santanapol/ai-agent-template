@@ -34,15 +34,7 @@ function StaffTableHarness({ onEdit }: { onEdit?: (record: (typeof mockProfiles)
     getCoreRowModel: getCoreRowModel(),
   });
 
-  return (
-    <StaffTable
-      table={table}
-      loading={false}
-      pagination={{ current: 1, pageSize: 10, total: 1 }}
-      viewMode="list"
-      handlers={handlers}
-    />
-  );
+  return <StaffTable table={table} loading={false} pagination={{ current: 1, pageSize: 10, total: 1 }} />;
 }
 
 describe("StaffTable", () => {

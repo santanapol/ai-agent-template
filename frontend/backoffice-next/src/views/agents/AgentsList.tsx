@@ -172,7 +172,7 @@ const AgentsList: React.FC = () => {
               value={rawSearch}
               onChange={setRawSearch}
             />
-            <DataTableToolbarActions table={table} exportFileName="agents" />
+            <DataTableToolbarActions table={table} exportFileName="agents" showColumnVisibility={false} />
             <Button onClick={handleOpenSyncModal}>
               <RefreshCw data-icon="inline-start" />
               Sync Branch

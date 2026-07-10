@@ -1,40 +1,40 @@
 import type React from "react";
 import { useEffect, useMemo } from "react";
 
-import { CheckCircle, FileQuestion, FileSpreadsheet, FileText, XCircle } from "lucide-react";
+import { CheckCircle, ChevronDown, FileQuestion, FileSpreadsheet, FileText, XCircle } from "lucide-react";
 
 import { DataTable } from "@/components/DataTable";
 import { DescriptionList } from "@/components/DescriptionList";
 import { LoadingButton } from "@/components/LoadingButton";
 import { DetailContainer } from "@/components/layout";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { useAuth } from "@/contexts/AuthContext";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
-import { isZeroHqBranchId } from "@/lib/branchOptions";
 import { triggerBlobDownload } from "@/lib/downloadBlob";
-import { useLocation, useNavigate, useParams } from "@/navigation/compat";
+import { cn } from "@/lib/utils";
+import { Link, useParams, useSearchParams } from "@/navigation/compat";
 
 import { useInvoices } from "./hooks/useInvoices";
 import { invoiceTransactionColumns } from "./invoiceTransactionColumns";
-import { formatDate, formatMoney, sortInvoiceTransactions, statusTagColor } from "./utils";
+import { formatDate, formatMoney, isDueDateOverdue, sortInvoiceTransactions, statusTagColor } from "./utils";
 
 const TRANSACTION_PAGE_SIZE = 20;
 
-type InvoiceListLocationState = {
-  listSearch?: string;
-};
-
 function InvoiceDetailSkeleton() {
   return (
-    <DetailContainer title="Invoice Details" maxWidth={900}>
+    <DetailContainer title="Invoice Details" maxWidth={null}>
       <div className="flex flex-col gap-4">
         <Skeleton className="h-10 w-full max-w-md" />
         <Skeleton className="h-48 w-full rounded-xl" />
@@ -45,12 +45,10 @@ function InvoiceDetailSkeleton() {
 }
 
 const InvoiceDetail: React.FC = () => {
-  const { user } = useAuth();
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const canExport = usePermission("invoices:read");
   const canWrite = usePermission("invoices:write");
   const {
@@ -66,9 +64,9 @@ const InvoiceDetail: React.FC = () => {
   } = useInvoices();
 
   const invoicesBackUrl = useMemo(() => {
-    const listSearch = (location.state as InvoiceListLocationState | null)?.listSearch;
-    return listSearch ? `/invoices?${listSearch}` : "/invoices";
-  }, [location.state]);
+    const returnSearch = searchParams.get("return");
+    return returnSearch ? `/invoices?${returnSearch}` : "/invoices";
+  }, [searchParams]);
 
   useEffect(() => {
     if (!id) return;
@@ -96,7 +94,7 @@ const InvoiceDetail: React.FC = () => {
 
   if (!invoice) {
     return (
-      <DetailContainer title="Invoice Not Found">
+      <DetailContainer title="Invoice Not Found" backUrl={invoicesBackUrl}>
         <Empty className="border">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -105,15 +103,12 @@ const InvoiceDetail: React.FC = () => {
             <EmptyTitle>Invoice not found</EmptyTitle>
             <EmptyDescription>
               The invoice may have been removed or you may not have access to view it.
-              {isZeroHqBranchId(user?.branch_id)
-                ? " Billing seed data is on customer branches — switch to 777WW in the branch switcher and try again."
-                : null}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button variant="outline" onClick={() => navigate(invoicesBackUrl)}>
+            <Link to={invoicesBackUrl} className={cn(buttonVariants({ variant: "outline" }))}>
               Back to Invoices
-            </Button>
+            </Link>
           </EmptyContent>
         </Empty>
       </DetailContainer>
@@ -185,8 +180,8 @@ const InvoiceDetail: React.FC = () => {
   };
 
   const isReady = invoice.status === "READY";
-  const amount = invoice.amount ?? 0;
   const canCancel = ["READY", "PENDING", "MISSING_FEE", "ERROR"].includes(invoice.status);
+  const dueDateOverdue = isDueDateOverdue(invoice.due_date, invoice.status);
 
   const summaryFooter = (
     <TableRow className="bg-muted/50 font-semibold hover:bg-muted/50">
@@ -206,7 +201,9 @@ const InvoiceDetail: React.FC = () => {
     {
       label: "Due Date",
       value: (
-        <span className={isReady ? "font-semibold text-destructive" : undefined}>{formatDate(invoice.due_date)}</span>
+        <span className={dueDateOverdue ? "font-semibold text-destructive" : undefined}>
+          {formatDate(invoice.due_date)}
+        </span>
       ),
     },
     ...(invoice.status === "PAID" && invoice.upd_date
@@ -230,16 +227,22 @@ const InvoiceDetail: React.FC = () => {
         showActions ? (
           <div className="no-print flex flex-wrap items-center gap-2">
             {canExport ? (
-              <>
-                <Button size="default" variant="outline" onClick={handleExportPDF}>
-                  <FileText data-icon="inline-start" aria-hidden="true" />
-                  Export PDF
-                </Button>
-                <Button size="default" variant="outline" onClick={handleExportExcel}>
-                  <FileSpreadsheet data-icon="inline-start" aria-hidden="true" />
-                  Export Excel
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button size="default" variant="outline" aria-label="Export invoice" />}>
+                  Export
+                  <ChevronDown data-icon="inline-end" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPDF}>
+                    <FileText aria-hidden="true" />
+                    Export PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportExcel}>
+                    <FileSpreadsheet aria-hidden="true" />
+                    Export Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
             {canWrite && isReady ? (
               <LoadingButton size="default" onClick={promptUpdateStatus} loading={updatingStatus}>
@@ -261,40 +264,26 @@ const InvoiceDetail: React.FC = () => {
           </div>
         ) : null
       }
-      maxWidth={900}
+      maxWidth={null}
     >
-      <div className="flex justify-center">
-        <Card className="w-full max-w-[900px] shadow-sm">
-          <CardHeader className="border-b">
-            <CardTitle className="font-bold text-2xl text-primary tracking-widest">INVOICE</CardTitle>
-            <CardDescription>Zero Platform</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-6 pt-6">
-            <DescriptionList title="Invoice Metadata" items={metadataItems} />
-            <Separator />
-            <DataTable
-              columns={invoiceTransactionColumns}
-              data={sortedTransactions}
-              loading={transactionsLoading}
-              rowKey="_id"
-              pageSize={TRANSACTION_PAGE_SIZE}
-              footer={summaryFooter}
-              emptyTitle="No transactions"
-              emptyDescription="This invoice has no line items yet."
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3 border-t">
-            <Separator />
-            <div className="flex w-full justify-end">
-              <div className="flex w-full max-w-xs items-center justify-between">
-                <span className="font-semibold">Total Amount</span>
-                <span className={`font-bold text-xl tabular-nums ${amount < 0 ? "text-destructive" : "text-success"}`}>
-                  {formatMoney(amount)}
-                </span>
-              </div>
-            </div>
-          </CardFooter>
-        </Card>
+      <div className="flex min-w-0 flex-col gap-6 rounded-xl border bg-card p-6 shadow-sm">
+        <div className="border-b pb-4">
+          <h2 className="font-bold text-2xl text-primary">Invoice</h2>
+          <p className="text-muted-foreground text-sm">Zero Platform</p>
+        </div>
+
+        <DescriptionList title="Invoice Metadata" items={metadataItems} />
+        <Separator />
+        <DataTable
+          columns={invoiceTransactionColumns}
+          data={sortedTransactions}
+          loading={transactionsLoading}
+          rowKey="_id"
+          pageSize={TRANSACTION_PAGE_SIZE}
+          footer={summaryFooter}
+          emptyTitle="No transactions"
+          emptyDescription="This invoice has no line items yet."
+        />
       </div>
     </DetailContainer>
   );

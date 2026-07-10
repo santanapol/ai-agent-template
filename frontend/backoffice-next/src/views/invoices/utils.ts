@@ -8,17 +8,31 @@ import { INVOICE_STATUSES } from "../../types/invoice";
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return "-";
-  return val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(val);
 }
 
 export function formatDate(val: string | null | undefined): string {
   if (!val) return "-";
   const date = new Date(val);
   if (Number.isNaN(date.getTime())) return "-";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+export function isDueDateOverdue(dueDate: string | null | undefined, status: string): boolean {
+  if (!dueDate || status === "PAID" || status === "VOID") return false;
+  const due = new Date(dueDate);
+  if (Number.isNaN(due.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
+  return due.getTime() < today.getTime();
 }
 
 export function formatFee(fee: number | "N/A"): string {

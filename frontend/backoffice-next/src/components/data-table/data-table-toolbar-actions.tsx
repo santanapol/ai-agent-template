@@ -11,17 +11,19 @@ import { exportVisibleRowsToCsv } from "./export-visible-rows";
 interface DataTableToolbarActionsProps<TData> {
   table: Table<TData>;
   exportFileName?: string;
+  showColumnVisibility?: boolean;
   extra?: ReactNode;
 }
 
 export function DataTableToolbarActions<TData>({
   table,
   exportFileName = "export",
+  showColumnVisibility = true,
   extra,
 }: DataTableToolbarActionsProps<TData>) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <DataTableColumnVisibility table={table} />
+      {showColumnVisibility ? <DataTableColumnVisibility table={table} /> : null}
       <Button
         type="button"
         variant="outline"

@@ -137,19 +137,15 @@ describe("InvoiceList page", () => {
     });
   });
 
-  it("navigates to invoice detail on row action", async () => {
-    const user = userEvent.setup();
+  it("links to invoice detail from row action", async () => {
     renderWithRouter(<InvoiceList />, { initialEntries: ["/invoices"] });
 
     await waitFor(() => {
       expect(screen.getByLabelText(/view invoice inv-001/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByLabelText(/view invoice inv-001/i));
-    expect(testNavigation.push).toHaveBeenCalledWith(
-      "/invoices/invoice-1",
-      expect.objectContaining({ state: expect.any(Object) }),
-    );
+    const viewLink = screen.getByRole("link", { name: /view invoice inv-001/i });
+    expect(viewLink).toHaveAttribute("href", expect.stringMatching(/^\/invoices\/invoice-1/));
   });
 
   it("reads filters from URL search params", async () => {

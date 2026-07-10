@@ -1,6 +1,50 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInvoiceListQuery, buildInvoiceListSearchParams, parseInvoiceListSearchParams } from "./utils";
+import {
+  buildInvoiceListQuery,
+  buildInvoiceListSearchParams,
+  formatDate,
+  formatMoney,
+  isDueDateOverdue,
+  parseInvoiceListSearchParams,
+} from "./utils";
+
+describe("formatMoney", () => {
+  it("formats with two fraction digits", () => {
+    expect(formatMoney(12500)).toBe("12,500.00");
+  });
+
+  it("returns dash for nullish values", () => {
+    expect(formatMoney(null)).toBe("-");
+    expect(formatMoney(undefined)).toBe("-");
+  });
+});
+
+describe("formatDate", () => {
+  it("formats valid dates as YYYY-MM-DD", () => {
+    expect(formatDate("2026-07-24T00:00:00.000Z")).toMatch(/2026-07-2[34]/);
+  });
+
+  it("returns dash for invalid dates", () => {
+    expect(formatDate("not-a-date")).toBe("-");
+    expect(formatDate(null)).toBe("-");
+  });
+});
+
+describe("isDueDateOverdue", () => {
+  it("is true when due date is before today and unpaid", () => {
+    expect(isDueDateOverdue("2000-01-01", "READY")).toBe(true);
+  });
+
+  it("is false for paid or void invoices", () => {
+    expect(isDueDateOverdue("2000-01-01", "PAID")).toBe(false);
+    expect(isDueDateOverdue("2000-01-01", "VOID")).toBe(false);
+  });
+
+  it("is false for future due dates", () => {
+    expect(isDueDateOverdue("2099-12-31", "READY")).toBe(false);
+  });
+});
 
 describe("buildInvoiceListQuery", () => {
   const base = {

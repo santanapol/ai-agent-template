@@ -114,8 +114,34 @@ describe("InvoiceDetail", () => {
       { initialEntries: ["/invoices/invoice-1"] },
     );
 
-    await user.click(screen.getByRole("button", { name: /back/i }));
+    await user.click(screen.getByRole("link", { name: /back/i }));
     expect(screen.getByText("Invoices list")).toBeInTheDocument();
+  });
+
+  it("uses return query for back link", () => {
+    renderWithRouter(
+      <Routes>
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
+      </Routes>,
+      { initialEntries: ["/invoices/invoice-1?return=branch_id%3Dall%26billing_month%3D2026-07"] },
+    );
+
+    expect(screen.getByRole("link", { name: /^back$/i })).toHaveAttribute(
+      "href",
+      "/invoices?branch_id=all&billing_month=2026-07",
+    );
+  });
+
+  it("omits environment-specific copy from not found state", () => {
+    mockUseInvoices.mockReturnValue({
+      ...defaultInvoiceState,
+      invoice: null,
+      detailLoading: false,
+    });
+
+    renderInvoiceDetail();
+    expect(screen.queryByText(/777WW/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/seed/i)).not.toBeInTheDocument();
   });
 
   it("confirms before marking an invoice as paid", async () => {

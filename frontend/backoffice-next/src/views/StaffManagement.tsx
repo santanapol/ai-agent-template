@@ -4,12 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 
-import {
-  DataTableSelectionBar,
-  DataTableToolbarActions,
-  type ListViewMode,
-  useServerDataTable,
-} from "@/components/data-table";
+import { DataTableToolbarActions, useServerDataTable } from "@/components/data-table";
 import { ListPageCard } from "@/components/layout";
 import { InlineFilterSelect, ListPageSearch } from "@/components/list-page";
 import StaffDrawerComponent, { type DrawerFormValues, type DrawerMode } from "@/components/staff/StaffDrawer";
@@ -98,7 +93,6 @@ const StaffManagement: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProfileStatus | "all">("active");
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [viewMode, setViewMode] = useState<ListViewMode>("list");
   const [refreshToken, setRefreshToken] = useState(0);
   const currentEtag = useRef<string | null>(null);
   const canCreate = usePermission("profiles:create");
@@ -409,7 +403,7 @@ const StaffManagement: React.FC = () => {
               value={rawSearch}
               onChange={setRawSearch}
             />
-            <DataTableToolbarActions table={table} exportFileName="staff" />
+            <DataTableToolbarActions table={table} exportFileName="staff" showColumnVisibility={false} />
             {canCreate ? (
               <Button onClick={() => void handleOpenDrawer("create")}>
                 <Plus data-icon="inline-start" aria-hidden="true" />
@@ -430,16 +424,11 @@ const StaffManagement: React.FC = () => {
             }}
           />
         }
-        selectionBar={
-          <DataTableSelectionBar table={table} viewMode={viewMode} onViewModeChange={setViewMode} showViewToggle />
-        }
       >
         <StaffTable
           table={table}
           loading={tableLoading}
           pagination={paginationConfig}
-          viewMode={viewMode}
-          handlers={columnHandlers}
           emptyTitle={branchScopedEmpty?.emptyTitle}
           emptyDescription={branchScopedEmpty?.emptyDescription}
           emptyAction={

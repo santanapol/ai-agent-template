@@ -1,3 +1,5 @@
+"use no memo";
+
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -52,8 +54,7 @@ import {
 import { resolveBranchScopedEmptyState } from "@/lib/branchScopedEmptyState";
 import { formatDisplayMonth } from "@/lib/dateUtils";
 import { fieldErrorIds } from "@/lib/fieldA11y";
-import { useNavigate } from "@/navigation/compat";
-import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from "@/types/invoice";
+import { INVOICE_STATUSES, type InvoiceStatus } from "@/types/invoice";
 
 import { MAX_BULK_INVOICE_SELECTION } from "./bulk/constants";
 import { BulkInvoiceActionBar } from "./components/BulkInvoiceActionBar";
@@ -105,7 +106,6 @@ const InvoiceList: React.FC = () => {
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const canExport = usePermission("invoices:read");
   const canWrite = usePermission("invoices:write");
   const canFilterBranch = canSwitchActiveBranch(user?.role);
@@ -281,17 +281,7 @@ const InvoiceList: React.FC = () => {
     [searchText, selectedBranchId, selectedStatus, billingMonth, page, pageSize],
   );
 
-  const columnHandlers = useMemo(
-    () => ({
-      onView: (invoice: Invoice, search: string) => {
-        navigate(`/invoices/${invoice._id}`, {
-          state: { listSearch: search },
-        });
-      },
-      listSearch,
-    }),
-    [listSearch, navigate],
-  );
+  const columnHandlers = useMemo(() => ({ listSearch }), [listSearch]);
 
   const columns = useMemo(() => createInvoiceColumns(columnHandlers), [columnHandlers]);
 
@@ -358,9 +348,11 @@ const InvoiceList: React.FC = () => {
                 setPage(1);
               }}
             />
-            {canExport ? <DataTableToolbarActions table={table} exportFileName="invoices" /> : null}
+            {canExport ? (
+              <DataTableToolbarActions table={table} exportFileName="invoices" showColumnVisibility={false} />
+            ) : null}
             {canWrite ? (
-              <Button onClick={() => setIsModalVisible(true)}>
+              <Button className="shrink-0" onClick={() => setIsModalVisible(true)}>
                 <Plus data-icon="inline-start" aria-hidden="true" />
                 Create Invoice
               </Button>
@@ -407,6 +399,7 @@ const InvoiceList: React.FC = () => {
       >
         <DataTableView
           table={table}
+          rowSelection={rowSelection}
           loading={loading}
           emptyTitle={branchScopedEmpty?.emptyTitle}
           emptyDescription={branchScopedEmpty?.emptyDescription}
