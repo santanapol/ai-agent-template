@@ -1,32 +1,26 @@
-# React + TypeScript + Vite
+# live-demo-shadcn
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Minimal **Vite + React + shadcn** scaffold for layout/template previews only.
 
-Currently, two official plugins are available:
+## Not production
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Use this for | Do not use this for |
+| :--- | :--- |
+| Visual reference of page templates under `src/templates/` | Org coding rules, lint, auth, API, or deploy |
+| Trying a layout composition before porting to Next | A second backoffice app |
 
-## React Compiler
+**Source of truth for agents and PRs:**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. [`../01-tech-stack.md`](../01-tech-stack.md) … [`../10-code-quality.md`](../10-code-quality.md)
+2. Production app: [`frontend/backoffice-next`](../../../../frontend/backoffice-next/)
 
-## Expanding the Oxlint configuration
+Org lint/format is **Biome** in `backoffice-next`. This scaffold may ship Oxlint/Vite defaults — ignore those as org policy.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Run (optional)
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+When porting UI into production, follow `backoffice-next` patterns (`views/`, `components/layout`, `list-page`, API menus) — not this Vite entrypoint.
