@@ -16,10 +16,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Report } from "@/types/smartReport";
 
-import { formatScheduleLabel, formatValidationStatusLabel, type ReportRow, type ReportStatus } from "./formatters";
+import {
+  formatScheduleLabel,
+  formatScheduleShort,
+  formatValidationStatusLabel,
+  type ReportRow,
+  type ReportStatus,
+} from "./formatters";
 
 function validationBadgeVariant(status: Report["validationStatus"] | undefined) {
   if (status === "valid") return "default" as const;
@@ -56,11 +63,14 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
       cell: ({ row }) => {
         const record = row.original;
         return (
-          <div className="flex max-w-[18rem] items-center gap-1.5">
-            <span className="truncate font-medium" title={record.description ?? undefined}>
-              {record.name}
-            </span>
-            {record.enabled === false ? <Badge variant="outline">Disabled</Badge> : null}
+          <div className="flex min-w-0 max-w-xs flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-medium">{record.name}</span>
+              {record.enabled === false ? <Badge variant="outline">Disabled</Badge> : null}
+            </div>
+            {record.description ? (
+              <span className="truncate text-muted-foreground text-sm">{record.description}</span>
+            ) : null}
           </div>
         );
       },
@@ -73,12 +83,23 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
       header: "Schedule",
       enableHiding: true,
       accessorFn: (record) => formatScheduleLabel(record.schedule),
-      cell: ({ row }) => (
-        <span className="inline-flex max-w-[14rem] items-center gap-1 truncate text-sm">
-          <Clock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <span className="truncate">{formatScheduleLabel(row.original.schedule)}</span>
-        </span>
-      ),
+      cell: ({ row }) => {
+        const fullLabel = formatScheduleLabel(row.original.schedule);
+        const shortLabel = formatScheduleShort(row.original.schedule);
+        return (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="inline-flex min-w-0 items-center gap-1 text-sm">
+                  <Clock className="shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="truncate">{shortLabel}</span>
+                </span>
+              }
+            />
+            <TooltipContent>{fullLabel}</TooltipContent>
+          </Tooltip>
+        );
+      },
     });
   }
 
@@ -133,7 +154,7 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
                   }
                 >
                   {runningId === record.id ? (
-                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <Spinner data-icon="inline-start" />
                   ) : (
                     <Play data-icon="inline-start" aria-hidden="true" />
                   )}
@@ -166,7 +187,7 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
                 }
               >
                 {loadingEditId === record.id ? (
-                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <Spinner data-icon="inline-start" />
                 ) : (
                   <Pencil data-icon="inline-start" aria-hidden="true" />
                 )}
@@ -188,22 +209,42 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
               </TooltipTrigger>
               <TooltipContent>View download history</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label="Delete report"
-                    disabled={record.derivedStatus === "running"}
-                    onClick={() => onDeleteReport(record)}
-                  />
-                }
-              >
-                <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
-              </TooltipTrigger>
-              <TooltipContent>Delete report</TooltipContent>
-            </Tooltip>
+            <AlertDialog>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <AlertDialogTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label="Delete report"
+                          disabled={record.derivedStatus === "running"}
+                        />
+                      }
+                    />
+                  }
+                >
+                  <Trash2 data-icon="inline-start" aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent>Delete report</TooltipContent>
+              </Tooltip>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Delete Report</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete report &quot;{record.name}&quot;? This script will be permanently
+                    deleted, but previously generated report files will remain on the server.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" onClick={() => void onDeleteReport(record)}>
+                    Delete Report
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         );
       },

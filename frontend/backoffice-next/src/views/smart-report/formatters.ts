@@ -77,6 +77,36 @@ export function formatScheduleLabel(schedule: ReportSchedule | null): string {
   return "Manual (No schedule)";
 }
 
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+/** Compact label for table cells; use formatScheduleLabel for tooltips. */
+export function formatScheduleShort(schedule: ReportSchedule | null): string {
+  if (!schedule) return "Manual";
+  const hourStr = String(schedule.hour ?? 0).padStart(2, "0");
+  const minStr = String(schedule.minute ?? 0).padStart(2, "0");
+  const timeStr = `${hourStr}:${minStr}`;
+
+  if (schedule.frequency === "daily") {
+    return `Daily · ${timeStr}`;
+  }
+  if (schedule.frequency === "weekly") {
+    const dayName = WEEKDAY_SHORT[schedule.dayOfWeek ?? 1] ?? "Mon";
+    return `Weekly · ${dayName} ${timeStr}`;
+  }
+  if (schedule.frequency === "monthly") {
+    if (schedule.dayOfMonth === "last") {
+      return `Monthly · Last day ${timeStr}`;
+    }
+    return `Monthly · Day ${schedule.dayOfMonth ?? 1} ${timeStr}`;
+  }
+  return "Manual";
+}
+
+export function formatLastRunDisplay(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  return formatDateTime(iso);
+}
+
 export function scheduleToUiValue(schedule: ReportSchedule | null): ScheduleOption {
   if (!schedule) return "manual";
   if (schedule.frequency === "daily" || schedule.frequency === "weekly" || schedule.frequency === "monthly") {

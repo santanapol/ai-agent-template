@@ -15,8 +15,14 @@ const CONTENT_TYPES = {
 
 export async function listReportsHandler(request, reply) {
   assertPermission(request.userContext, "reports:smart");
-  const { page, limit } = request.query;
-  const { data, pagination } = await service.listReports({ page, limit });
+  const { page, limit, q, enabled, schedule } = request.query;
+  const { data, pagination } = await service.listReports({
+    page,
+    limit,
+    q,
+    enabled,
+    schedule,
+  });
   return reply
     .status(200)
     .send(successEnvelope(data, null, CODES.SUCCESS, pagination));
@@ -86,8 +92,12 @@ export async function runReportHandler(request, reply) {
 
 export async function listHistoryHandler(request, reply) {
   assertPermission(request.userContext, "reports:smart");
-  const { page, limit } = request.query;
-  const { data, pagination } = await service.listHistory({ page, limit });
+  const { page, limit, reportId } = request.query;
+  const { data, pagination } = await service.listHistory({
+    page,
+    limit,
+    reportId,
+  });
   return reply
     .status(200)
     .send(successEnvelope(data, null, CODES.SUCCESS, pagination));

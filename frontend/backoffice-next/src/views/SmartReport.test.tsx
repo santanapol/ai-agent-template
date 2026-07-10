@@ -86,7 +86,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { getReport, listHistory, listReports, createReport, validateReport, testRunReport } from "../lib/smartReportApiClient";
+import { getReport, listHistory, listReports, createReport, deleteReport, validateReport, testRunReport } from "../lib/smartReportApiClient";
 
 function renderSmartReport() {
   return renderWithRouter(<SmartReport />);
@@ -107,32 +107,33 @@ describe("SmartReport (list mode)", () => {
       expect(listHistory).toHaveBeenCalledTimes(1);
     });
     expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
-    expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+    expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
   });
 
   it("renders list view with title and create button", async () => {
     renderSmartReport();
 
-    expect(screen.getByText("Smart Report")).toBeInTheDocument();
+    expect(screen.getByText("Smart Reports")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create report/i })).toBeInTheDocument();
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
     });
   });
 
-  it("renders reports list without global history tab or search placeholder", async () => {
+  it("renders search and filter controls", async () => {
     renderSmartReport();
 
-    expect(screen.queryByRole("tab", { name: /download history/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: /report scripts/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/search will be available in a future update/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/search report name or description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/enabled:\s*all/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/schedule:\s*all/i)).toBeInTheDocument();
   });
 
-  it("shows empty table state", async () => {
+  it("shows empty table state with create action", async () => {
     renderSmartReport();
 
     await waitFor(() => {
-      expect(screen.getByText("No data found")).toBeInTheDocument();
+      expect(screen.getByText("No reports yet")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /^create report$/i }).length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -143,8 +144,9 @@ describe("SmartReport (list mode)", () => {
     expect(document.querySelector('[aria-busy="true"], .animate-pulse')).toBeTruthy();
   });
 
-  it("opens confirm dialog before delete", async () => {
+  it("opens delete dialog and deletes report", async () => {
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    vi.mocked(deleteReport).mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     renderSmartReport();
@@ -154,7 +156,13 @@ describe("SmartReport (list mode)", () => {
     });
 
     await user.click(screen.getByLabelText(/delete report/i));
-    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: "Confirm Delete Report", danger: true }));
+    expect(screen.getByText("Confirm Delete Report")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^delete report$/i }));
+
+    await waitFor(() => {
+      expect(deleteReport).toHaveBeenCalledWith(sampleReport.id, "etag");
+    });
+    expect(mockConfirm).not.toHaveBeenCalled();
   });
 
   it("switches to edit view when row edit is clicked", async () => {
@@ -234,7 +242,7 @@ describe("SmartReport (list mode)", () => {
     renderSmartReport();
 
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
       expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
     });
 
@@ -247,12 +255,30 @@ describe("SmartReport (list mode)", () => {
     await user.click(screen.getByRole("button", { name: "2" }));
 
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 2, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }));
     });
     expect(vi.mocked(listHistory).mock.calls.length).toBe(enrichmentCalls);
   },
   10000,
   );
+
+  it("loads drawer history filtered by report id", async () => {
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/view download history/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText(/view download history/i));
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+  });
 
   it("shows fixed toast when report run returns a failed status", async () => {
     const { runReport } = await import("../lib/smartReportApiClient");

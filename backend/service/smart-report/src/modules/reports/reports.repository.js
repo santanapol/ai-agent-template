@@ -1,5 +1,37 @@
 export const REPORTS_COLLECTION = "reports";
 
+/** @param {string} value */
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * @param {{ q?: string, enabled?: boolean, schedule?: "manual"|"daily"|"weekly"|"monthly" }} query
+ * @returns {import('mongodb').Filter<Report>}
+ */
+export function buildListFilter(query = {}) {
+  /** @type {import('mongodb').Filter<Report>} */
+  const filter = {};
+  const searchTerm = query.q?.trim();
+  if (searchTerm) {
+    const regex = { $regex: escapeRegex(searchTerm), $options: "i" };
+    filter.$or = [{ name: regex }, { description: regex }];
+  }
+  if (query.enabled === true || query.enabled === false) {
+    filter.enabled = query.enabled;
+  }
+  if (query.schedule === "manual") {
+    filter.schedule = null;
+  } else if (
+    query.schedule === "daily" ||
+    query.schedule === "weekly" ||
+    query.schedule === "monthly"
+  ) {
+    filter["schedule.frequency"] = query.schedule;
+  }
+  return filter;
+}
+
 /**
  * @typedef {object} Report
  * @property {import('mongodb').ObjectId} [_id]
@@ -60,15 +92,22 @@ export async function findReports(db) {
  * @param {object} [options]
  * @param {number} [options.page] - 1-based page number
  * @param {number} [options.limit] - page size
+ * @param {string} [options.q]
+ * @param {boolean} [options.enabled]
+ * @param {"manual"|"daily"|"weekly"|"monthly"} [options.schedule]
  * @returns {Promise<{ items: Report[], total: number }>}
  */
-export async function findReportsPage(db, { page = 1, limit = 20 } = {}) {
+export async function findReportsPage(
+  db,
+  { page = 1, limit = 20, q, enabled, schedule } = {},
+) {
   const collection = db.collection(REPORTS_COLLECTION);
   const skip = (page - 1) * limit;
+  const filter = buildListFilter({ q, enabled, schedule });
 
   const [items, total] = await Promise.all([
-    collection.find({}).sort({ name: 1 }).skip(skip).limit(limit).toArray(),
-    collection.countDocuments({}),
+    collection.find(filter).sort({ name: 1 }).skip(skip).limit(limit).toArray(),
+    collection.countDocuments(filter),
   ]);
 
   return { items, total };

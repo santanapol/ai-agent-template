@@ -44,7 +44,7 @@ import type {
 } from "@/types/smartReport";
 
 import { type ReportFormValues, SmartReportEditor } from "./SmartReportEditor";
-import { SmartReportList } from "./SmartReportList";
+import { SmartReportList, type EnabledFilter, type ScheduleFilter } from "./SmartReportList";
 import {
   DEFAULT_QUERY_EXAMPLE,
   deriveReportStatusFromHistory,
@@ -78,6 +78,11 @@ const SmartReport: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [enrichmentHistory, setEnrichmentHistory] = useState<DownloadHistoryRecord[]>([]);
   const [drawerDownloads, setDrawerDownloads] = useState<DownloadHistoryRecord[]>([]);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [rawSearch, setRawSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [enabledFilter, setEnabledFilter] = useState<EnabledFilter>("all");
+  const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>("all");
   const [reportsPage, setReportsPage] = useState(1);
   const [reportsPageSize, setReportsPageSize] = useState(SMART_REPORT_PAGE_SIZE);
   const [reportsTotal, setReportsTotal] = useState(0);
@@ -115,6 +120,14 @@ const SmartReport: React.FC = () => {
   const messageRef = useRef(message);
   messageRef.current = message;
   const isInitialReportsLoadRef = useRef(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(rawSearch);
+      setReportsPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [rawSearch]);
 
   const setField = <K extends keyof ReportFormValues>(key: K, value: ReportFormValues[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -158,7 +171,13 @@ const SmartReport: React.FC = () => {
   const fetchReports = useCallback(async (signal?: AbortSignal) => {
     setReportsLoading(true);
     try {
-      const reportsRes = await listReports({ page: reportsPage, limit: reportsPageSize });
+      const reportsRes = await listReports({
+        page: reportsPage,
+        limit: reportsPageSize,
+        q: debouncedSearch.trim() || undefined,
+        enabled: enabledFilter === "all" ? undefined : enabledFilter === "enabled",
+        schedule: scheduleFilter === "all" ? undefined : scheduleFilter,
+      });
       if (signal?.aborted) return;
       setReports(reportsRes.data);
       setReportsTotal(reportsRes.pagination.total);
@@ -168,7 +187,7 @@ const SmartReport: React.FC = () => {
     } finally {
       if (!signal?.aborted) setReportsLoading(false);
     }
-  }, [reportsPage, reportsPageSize]);
+  }, [reportsPage, reportsPageSize, debouncedSearch, enabledFilter, scheduleFilter]);
 
   const refresh = useCallback(() => {
     void fetchEnrichmentHistory();
@@ -224,7 +243,7 @@ const SmartReport: React.FC = () => {
     return reports.map((report) => {
       const latest = latestRunByReportId.get(report.id);
       if (!latest) {
-        return { ...report, derivedStatus: "idle", lastRun: "—" };
+        return { ...report, derivedStatus: "idle", lastRun: "Never" };
       }
       return {
         ...report,
@@ -481,33 +500,32 @@ const SmartReport: React.FC = () => {
     }
   };
 
-  const handleDeleteReport = (report: Report) => {
-    void confirm({
-      title: "Confirm Delete Report",
-      content: `Are you sure you want to delete report "${report.name}"? This script will be permanently deleted, but previously generated report files will remain on the server.`,
-      okText: "Delete Report",
-      danger: true,
-      onOk: async () => {
-        try {
-          await deleteReport(report.id, buildEtagFromUpdDate(report.upd_date));
-          message.success("Report deleted successfully");
-          refresh();
-        } catch (err) {
-          message.error(apiErrorMessage(err, "Failed to delete report"));
-          throw err;
-        }
-      },
-    });
+  const handleDeleteReport = async (report: Report) => {
+    try {
+      await deleteReport(report.id, buildEtagFromUpdDate(report.upd_date));
+      message.success("Report deleted successfully");
+      refresh();
+    } catch (err) {
+      message.error(apiErrorMessage(err, "Failed to delete report"));
+    }
   };
 
   const handleViewFiles = async (reportId: string) => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
+    setDrawerLoading(true);
+    setDrawerDownloads([]);
     try {
-      const response = await listHistory({ page: 1, limit: SMART_REPORT_DRAWER_HISTORY_LIMIT });
-      setDrawerDownloads(response.data.filter((record) => record.reportId === reportId));
+      const response = await listHistory({
+        page: 1,
+        limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
+        reportId,
+      });
+      setDrawerDownloads(response.data);
     } catch (err) {
       message.error(apiErrorMessage(err, "Failed to load report history"));
+    } finally {
+      setDrawerLoading(false);
     }
   };
 
@@ -520,7 +538,7 @@ const SmartReport: React.FC = () => {
     }
   };
 
-  const selectedReportName = reports.find((r) => r.id === selectedReportId)?.name || "";
+  const selectedReport = reports.find((r) => r.id === selectedReportId) ?? null;
 
   if (viewMode === "edit") {
     return (
@@ -594,17 +612,30 @@ const SmartReport: React.FC = () => {
       reportsTotal={reportsTotal}
       onReportsPaginationChange={handleReportsPaginationChange}
       reportsLoading={reportsLoading}
+      searchValue={rawSearch}
+      onSearchChange={setRawSearch}
+      enabledFilter={enabledFilter}
+      onEnabledFilterChange={(value) => {
+        setEnabledFilter(value);
+        setReportsPage(1);
+      }}
+      scheduleFilter={scheduleFilter}
+      onScheduleFilterChange={(value) => {
+        setScheduleFilter(value);
+        setReportsPage(1);
+      }}
       runningId={runningId}
       loadingEditId={loadingEditId}
       isDrawerOpen={isDrawerOpen}
       onDrawerOpenChange={setIsDrawerOpen}
-      selectedReportName={selectedReportName}
+      drawerLoading={drawerLoading}
+      selectedReport={selectedReport}
       selectedReportDownloads={drawerDownloads}
       onCreateNew={handleCreateNew}
       onRunReport={(report) => void handleRunReport(report)}
       onEditReport={(report) => void handleEditReport(report)}
-      onViewFiles={handleViewFiles}
-      onDeleteReport={handleDeleteReport}
+      onViewFiles={(reportId) => void handleViewFiles(reportId)}
+      onDeleteReport={(report) => void handleDeleteReport(report)}
       onDownload={(record) => void handleDownload(record)}
     />
   );

@@ -64,23 +64,25 @@ export async function findDownloadHistory(db) {
  * @param {object} [options]
  * @param {number} [options.page] - 1-based page number
  * @param {number} [options.limit] - page size
+ * @param {import('mongodb').ObjectId} [options.reportId]
  * @returns {Promise<{ items: DownloadHistory[], total: number }>}
  */
 export async function findDownloadHistoryPage(
   db,
-  { page = 1, limit = 20 } = {},
+  { page = 1, limit = 20, reportId } = {},
 ) {
   const collection = db.collection(DOWNLOAD_HISTORY_COLLECTION);
   const skip = (page - 1) * limit;
+  const filter = reportId ? { reportId } : {};
 
   const [items, total] = await Promise.all([
     collection
-      .find({})
+      .find(filter)
       .sort({ startedAt: -1 })
       .skip(skip)
       .limit(limit)
       .toArray(),
-    collection.countDocuments({}),
+    collection.countDocuments(filter),
   ]);
 
   return { items, total };
