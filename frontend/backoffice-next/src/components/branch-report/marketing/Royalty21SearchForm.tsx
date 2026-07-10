@@ -7,9 +7,9 @@ import dayjs, { type Dayjs } from "dayjs";
 
 import { DateFilterField } from "@/components/DateFilterField";
 import { FilterSelectField } from "@/components/FilterSelectField";
+import { type InlineFilterOption, InlineFilterSelect } from "@/components/list-page";
 import { Button } from "@/components/ui/button";
 import { FieldDescription } from "@/components/ui/field";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   getRoyalty21DefaultSearchValues,
   isRegDateRangeValid,
@@ -41,7 +41,7 @@ interface Royalty21SearchFormProps {
   onInviteLinksOpen?: () => void;
 }
 
-const CHANNEL_TYPE_OPTIONS = [
+const CHANNEL_TYPE_OPTIONS: InlineFilterOption[] = [
   { value: "affiliate_link", label: "Affiliate Link" },
   { value: "member_referral", label: "Member Referral" },
   { value: "direct", label: "Direct" },
@@ -105,26 +105,19 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
       <div className="flex flex-wrap items-end gap-2">
-        <ToggleGroup
-          value={[channelType]}
-          onValueChange={(value) => {
-            const next = value[0];
-            if (!next) return;
-            setChannelType(next as ChannelType);
+        <InlineFilterSelect
+          id="royalty21-channel-type"
+          prefix="Channel:"
+          value={channelType}
+          options={CHANNEL_TYPE_OPTIONS}
+          disabled={disabled}
+          onChange={(value) => {
+            const next = value as ChannelType;
+            setChannelType(next);
             if (next !== "affiliate_link") setInviteLinkId(undefined);
             if (next === "affiliate_link") onInviteLinksOpen?.();
           }}
-          disabled={disabled}
-          variant="outline"
-          size="sm"
-          className="flex flex-wrap"
-        >
-          {CHANNEL_TYPE_OPTIONS.map((opt) => (
-            <ToggleGroupItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        />
 
         {channelType === "affiliate_link" ? (
           <FilterSelectField

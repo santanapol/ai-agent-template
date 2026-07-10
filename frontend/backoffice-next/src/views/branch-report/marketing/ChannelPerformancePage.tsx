@@ -185,9 +185,7 @@ const ChannelPerformancePage: React.FC = () => {
     <ListPageCard
       title="Channel Performance"
       description="Analyze and query Royalty 21 performance marketing statistics by channels."
-      toolbar={
-        hasSearched ? <DataTableToolbarActions table={table} exportFileName="royalty21-channel-performance" /> : null
-      }
+      toolbar={<DataTableToolbarActions table={table} exportFileName="royalty21-channel-performance" showColumnVisibility={false} />}
       headerAddon={
         <>
           {!hasActiveBranch ? (
@@ -216,9 +214,7 @@ const ChannelPerformancePage: React.FC = () => {
         />
       }
     >
-      <div className="px-4">
-        <Royalty21Table table={table} loading={tableLoading} hasSearched={hasSearched} total={total} />
-      </div>
+      <Royalty21Table table={table} loading={tableLoading} hasSearched={hasSearched} total={total} />
     </ListPageCard>
   );
 };
