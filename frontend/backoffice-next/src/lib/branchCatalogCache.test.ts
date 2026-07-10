@@ -6,6 +6,7 @@ import {
   clearBranchCatalogCacheForTests,
   getBranchCatalog,
   invalidateBranchCatalog,
+  peekBranchCatalog,
 } from "./branchCatalogCache";
 
 describe("branchCatalogCache", () => {
@@ -31,6 +32,19 @@ describe("branchCatalogCache", () => {
 
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(a).toEqual(b);
+  });
+
+  it("peeks cached branches without fetching (FE-REV-008)", async () => {
+    const key = branchCatalogCacheKey("ou1", "auth");
+    expect(peekBranchCatalog(key)).toBeNull();
+
+    await getBranchCatalog(key, async () => [
+      { branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true },
+    ]);
+
+    expect(peekBranchCatalog(key)).toEqual([
+      { branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true },
+    ]);
   });
 
   it("invalidates cache on branch switch helper", async () => {

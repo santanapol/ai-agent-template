@@ -19,6 +19,7 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 
 - 2026-07-10: บันทึก findings จาก five-axis review ของ `frontend/backoffice-next` (scope PR #54 / merge `5123b2e`); verdict = **Request changes**; รอ batch fix
 - 2026-07-10: branch `fix/fe-network-audit-review-followups-2026-07-10` — แก้ FE-REV-001…007 + เทส; รอ CI / PR
+- 2026-07-10: แก้ FE-REV-008 (peek cache ก่อน loading) + FE-REV-009 (branch search a11y) + เทส
 
 ## Decision log
 
@@ -114,7 +115,9 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 - [x] **FE-REV-003 / TD-025:** แก้ StaffManagement fetch-key / abort cleanup
 - [x] **FE-REV-004:** รวมหรือเอกสาร dual branch caches (ทำคู่กับ 001)
 - [x] เพิ่มเทส: switcher ไม่ poison invoice cache; InvoiceList refetch on auth change; StaffManagement cancel race
-- [x] (Optional) FE-REV-005, FE-REV-006, FE-REV-007 — FE-REV-008/009 ยังไม่ทำ
+- [x] (Optional) FE-REV-005, FE-REV-006, FE-REV-007
+- [x] (Consider/Optional) FE-REV-008: paint switcher จาก `peekBranchCatalog` ก่อน fetch; loading เฉพาะเมื่อไม่มี cache
+- [x] (Optional) FE-REV-009: focus search on open, `<search>`, empty/loading status, keyboard stopPropagation
 - [ ] อัปเดต `NETWORK-VERIFY-CHECKLIST.md` ถ้าพฤติกรรม network เปลี่ยน — ไม่เปลี่ยน network shape; skip
 - [ ] ปิด TD-023/024/025 + ย้ายแผนนี้ไป `completed/` — หลัง merge
 

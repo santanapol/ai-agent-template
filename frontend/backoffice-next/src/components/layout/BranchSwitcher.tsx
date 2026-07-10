@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from "react";
 import { ChevronsUpDown, Store } from "lucide-react";
 
 import {
@@ -46,9 +47,22 @@ export function BranchSwitcher({
   roleLabel: string;
 }) {
   const { isMobile } = useSidebar();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputId = useId();
+  const [menuOpen, setMenuOpen] = useState(false);
   const hasMultipleBranches = branches.length > 1;
   const showDropdown = showBranchSwitcher && (hasMultipleBranches || viewingOtherBranch);
-  const subtitle = showBranchSwitcher ? (viewingOtherBranch ? "Viewing other branch" : "Branch") : roleLabel;
+  let subtitle = roleLabel;
+  if (showBranchSwitcher) {
+    subtitle = viewingOtherBranch ? "Viewing other branch" : "Branch";
+  }
+
+  useEffect(() => {
+    if (!menuOpen || !onBranchSearchQueryChange) return;
+    // Focus search when the menu opens so keyboard users can type immediately (FE-REV-009).
+    const id = window.setTimeout(() => searchInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(id);
+  }, [menuOpen, onBranchSearchQueryChange]);
 
   if (!showDropdown) {
     const title = showBranchSwitcher ? activeBranchSelectLabel : branchDisplayLabel;
@@ -72,7 +86,12 @@ export function BranchSwitcher({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu onOpenChange={onDropdownOpenChange}>
+        <DropdownMenu
+          onOpenChange={(open) => {
+            setMenuOpen(open);
+            onDropdownOpenChange?.(open);
+          }}
+        >
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
@@ -99,36 +118,54 @@ export function BranchSwitcher({
             sideOffset={4}
           >
             {onBranchSearchQueryChange ? (
-              <div className="p-2">
+              <search className="p-2">
+                <label htmlFor={searchInputId} className="sr-only">
+                  Search branches
+                </label>
                 <Input
+                  ref={searchInputRef}
+                  id={searchInputId}
+                  type="search"
                   value={branchSearchQuery}
                   onChange={(e) => onBranchSearchQueryChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Keep typing in the search field; do not let menu typeahead steal keys.
+                    e.stopPropagation();
+                  }}
                   placeholder="Search branches…"
                   aria-label="Search branches"
+                  aria-controls="branch-switcher-options"
+                  autoComplete="off"
                   className="h-8"
                   disabled={branchSearchLoading}
                 />
-              </div>
+              </search>
             ) : null}
-            <DropdownMenuGroup>
+            <DropdownMenuGroup id="branch-switcher-options">
               <DropdownMenuLabel className="text-muted-foreground text-xs">Branches</DropdownMenuLabel>
-              {branches.map((branch) => (
-                <DropdownMenuItem
-                  key={branch.branch_id}
-                  disabled={branch.active === false}
-                  className="gap-2 p-2"
-                  onClick={() => {
-                    if (branch.branch_id !== activeBranchId) {
-                      onBranchSwitch(branch.branch_id);
-                    }
-                  }}
-                >
-                  <div className="flex size-6 items-center justify-center rounded-md border">
-                    <Store aria-hidden="true" />
-                  </div>
-                  <span className="truncate">{formatBranchOptionLabel(branch)}</span>
-                </DropdownMenuItem>
-              ))}
+              {branches.length === 0 ? (
+                <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
+                  {branchSearchLoading ? "Searching…" : "No branches found"}
+                </div>
+              ) : (
+                branches.map((branch) => (
+                  <DropdownMenuItem
+                    key={branch.branch_id}
+                    disabled={branch.active === false}
+                    className="gap-2 p-2"
+                    onClick={() => {
+                      if (branch.branch_id !== activeBranchId) {
+                        onBranchSwitch(branch.branch_id);
+                      }
+                    }}
+                  >
+                    <div className="flex size-6 items-center justify-center rounded-md border">
+                      <Store aria-hidden="true" />
+                    </div>
+                    <span className="truncate">{formatBranchOptionLabel(branch)}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
             </DropdownMenuGroup>
             {viewingOtherBranch && homeBranchId ? (
               <>

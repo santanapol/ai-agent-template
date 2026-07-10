@@ -49,6 +49,10 @@ export function invalidateBranchCatalog(ouId?: string): void {
 /**
  * Session-scoped in-memory catalog with single-flight dedupe per cache key.
  */
+export function peekBranchCatalog(cacheKey: string): InvoiceAgentBranch[] | null {
+  return cacheByKey.get(cacheKey)?.branches ?? null;
+}
+
 export async function getBranchCatalog(
   cacheKey: string,
   fetcher: BranchCatalogFetcher,

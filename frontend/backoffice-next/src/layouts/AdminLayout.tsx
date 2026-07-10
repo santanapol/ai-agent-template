@@ -43,6 +43,7 @@ import {
 import {
   branchCatalogCacheKey,
   getBranchCatalog,
+  peekBranchCatalog,
 } from "@/lib/branchCatalogCache";
 import { subscribeProfileRefresh } from "@/lib/profileRefresh";
 import * as staffApi from "@/lib/staffApiClient";
@@ -263,16 +264,33 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
 
     let cancelled = false;
-    setBranchesLoading(true);
+    const searchParams = debouncedBranchSearch
+      ? { q: debouncedBranchSearch, limit: 20 }
+      : { limit: 20 };
+    const cacheKey = user.ou_id
+      ? `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}`
+      : null;
+
+    // FE-REV-008: paint cached switcher results immediately to avoid empty flicker.
+    if (cacheKey) {
+      const cached = peekBranchCatalog(cacheKey);
+      if (cached) {
+        let list = cached;
+        if (activeBranch) list = upsertBranchInList(list, activeBranch);
+        setBranches(mergePlatformBranches(list));
+        setBranchesLoading(false);
+      } else {
+        setBranchesLoading(true);
+      }
+    } else {
+      setBranchesLoading(true);
+    }
+
     const loadSwitcherBranches = async () => {
       let list: InvoiceAgentBranch[] = [];
       try {
-        const searchParams = debouncedBranchSearch
-          ? { q: debouncedBranchSearch, limit: 20 }
-          : { limit: 20 };
-        if (user.ou_id) {
-          const key = `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}`;
-          list = await getBranchCatalog(key, () => authApi.listMyBranches(searchParams));
+        if (cacheKey) {
+          list = await getBranchCatalog(cacheKey, () => authApi.listMyBranches(searchParams));
         } else {
           list = await authApi.listMyBranches(searchParams);
         }
