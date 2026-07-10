@@ -2,14 +2,16 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import axios from "axios";
+import { FolderTree } from "lucide-react";
 
 import { LoadingButton } from "@/components/LoadingButton";
 import { MenuTree } from "@/components/MenuTree";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
@@ -46,9 +48,15 @@ interface RolePermissionsTabProps {
   menus: AdminMenuNode[];
   menusLoading: boolean;
   menusForbidden: boolean;
+  onGoToCatalog?: () => void;
 }
 
-const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoading, menusForbidden }) => {
+const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
+  menus,
+  menusLoading,
+  menusForbidden,
+  onGoToCatalog,
+}) => {
   const { message } = useAppFeedback();
   const messageRef = useRef(message);
   messageRef.current = message;
@@ -196,11 +204,13 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {KNOWN_ROLES.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                {KNOWN_ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
@@ -231,9 +241,19 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
       {!loading && menus.length === 0 && (
         <Empty>
           <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderTree aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>No menu nodes in registry</EmptyTitle>
             <EmptyDescription>Add menu nodes in the catalog tab first.</EmptyDescription>
           </EmptyHeader>
+          {onGoToCatalog ? (
+            <EmptyContent>
+              <Button type="button" variant="outline" onClick={onGoToCatalog}>
+                Open menu catalog
+              </Button>
+            </EmptyContent>
+          ) : null}
         </Empty>
       )}
       {!loading && menus.length > 0 && (

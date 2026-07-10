@@ -1,23 +1,22 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 
-import { Archive, Users } from "lucide-react";
+import { Archive, LayoutDashboard, Users } from "lucide-react";
 
 import { ListPageCard } from "@/components/layout";
-import { StatCard } from "@/components/StatCard";
-import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { buttonVariants } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { apiErrorMessage } from "@/lib/apiError";
 import { getDashboardShortcuts } from "@/lib/dashboardShortcuts";
 import * as staffApi from "@/lib/staffApiClient";
-import { useNavigate } from "@/navigation/compat";
+import { cn } from "@/lib/utils";
+import { Link } from "@/navigation/compat";
 
 const Dashboard: React.FC = () => {
   const { message } = useAppFeedback();
-  const navigate = useNavigate();
   const { user, permissions } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
@@ -57,10 +56,10 @@ const Dashboard: React.FC = () => {
   }, [user?.role, message]);
 
   return (
-    <ListPageCard title="Dashboard" description="Welcome to Zero Platform Admin. Here is an overview of your system.">
+    <ListPageCard title="Dashboard" description="Jump to common admin tasks for your role.">
       <div className="flex flex-col gap-6 px-4 pb-4">
         {isAdmin ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             {loading ? (
               <>
                 <Skeleton className="h-28 rounded-xl" />
@@ -68,8 +67,20 @@ const Dashboard: React.FC = () => {
               </>
             ) : (
               <>
-                <StatCard title="Total Active Staff" value={activeCount} icon={Users} />
-                <StatCard title="Archived Profiles" value={archivedCount} icon={Archive} iconTone="warning" />
+                <div className="flex flex-col gap-2 rounded-xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-muted-foreground text-sm">Total Active Staff</p>
+                    <Users className="text-primary" aria-hidden="true" />
+                  </div>
+                  <p className="font-bold text-2xl tabular-nums">{activeCount}</p>
+                </div>
+                <div className="flex flex-col gap-2 rounded-xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-muted-foreground text-sm">Archived Profiles</p>
+                    <Archive className="text-warning" aria-hidden="true" />
+                  </div>
+                  <p className="font-bold text-2xl tabular-nums">{archivedCount}</p>
+                </div>
               </>
             )}
           </div>
@@ -78,19 +89,25 @@ const Dashboard: React.FC = () => {
         {shortcuts.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {shortcuts.map((shortcut) => (
-              <Button key={shortcut.href} variant="outline" onClick={() => navigate(shortcut.href)}>
+              <Link key={shortcut.href} to={shortcut.href} className={cn(buttonVariants({ variant: "outline" }))}>
                 {shortcut.label}
-              </Button>
+              </Link>
             ))}
           </div>
         ) : (
           <Empty>
             <EmptyHeader>
-              <EmptyTitle>More dashboard widgets coming soon</EmptyTitle>
-              <EmptyDescription>
-                Additional insights and shortcuts will appear here in a future release.
-              </EmptyDescription>
+              <EmptyMedia variant="icon">
+                <LayoutDashboard aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle>No shortcuts available</EmptyTitle>
+              <EmptyDescription>Your role does not include dashboard shortcuts yet.</EmptyDescription>
             </EmptyHeader>
+            <EmptyContent>
+              <Link to="/profile" className={cn(buttonVariants({ variant: "outline" }))}>
+                Open my profile
+              </Link>
+            </EmptyContent>
           </Empty>
         )}
       </div>

@@ -10,11 +10,11 @@ export interface BranchScopedEmptyState {
 const RESOURCE_LABELS: Record<BranchScopedResource, { noun: string; detail: string }> = {
   staff: {
     noun: "staff profiles",
-    detail: "Staff profiles are scoped to the active branch. Seed data lives on customer branches such as 777WW.",
+    detail: "Staff profiles are scoped to the active branch.",
   },
   invoices: {
     noun: "invoices",
-    detail: "Invoices are scoped to the active branch. Seed data lives on customer branches such as 777WW.",
+    detail: "Invoices are scoped to the active branch.",
   },
 };
 

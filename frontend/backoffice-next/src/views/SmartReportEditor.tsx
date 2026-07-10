@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 
-import { CheckCircle2, Code2, FileText, FlaskConical, RotateCcw, Square } from "lucide-react";
+import { CheckCircle2, Code2, FileText, FlaskConical, Inbox, RotateCcw, Square } from "lucide-react";
 
 import { DescriptionList } from "@/components/DescriptionList";
 import { LoadingButton } from "@/components/LoadingButton";
@@ -19,10 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -262,10 +262,12 @@ export function SmartReportEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectGroup>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -282,13 +284,15 @@ export function SmartReportEditor({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">Monday</SelectItem>
-                            <SelectItem value="2">Tuesday</SelectItem>
-                            <SelectItem value="3">Wednesday</SelectItem>
-                            <SelectItem value="4">Thursday</SelectItem>
-                            <SelectItem value="5">Friday</SelectItem>
-                            <SelectItem value="6">Saturday</SelectItem>
-                            <SelectItem value="0">Sunday</SelectItem>
+                            <SelectGroup>
+                              <SelectItem value="1">Monday</SelectItem>
+                              <SelectItem value="2">Tuesday</SelectItem>
+                              <SelectItem value="3">Wednesday</SelectItem>
+                              <SelectItem value="4">Thursday</SelectItem>
+                              <SelectItem value="5">Friday</SelectItem>
+                              <SelectItem value="6">Saturday</SelectItem>
+                              <SelectItem value="0">Sunday</SelectItem>
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </Field>
@@ -306,12 +310,14 @@ export function SmartReportEditor({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="last">Last day of month</SelectItem>
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                              <SelectItem key={day} value={String(day)}>
-                                Day {day}
-                              </SelectItem>
-                            ))}
+                            <SelectGroup>
+                              <SelectItem value="last">Last day of month</SelectItem>
+                              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                <SelectItem key={day} value={String(day)}>
+                                  Day {day}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </Field>
@@ -413,7 +419,7 @@ export function SmartReportEditor({
                       value={form.query}
                       onChange={(e) => onQueryScriptChange(e.target.value)}
                       className="min-h-[280px] rounded-t-none font-mono text-xs"
-                      placeholder="// Query example..."
+                      placeholder="// Query example…"
                       aria-invalid={!!formErrors.query}
                       aria-describedby={queryA11y?.describedBy}
                     />
@@ -516,6 +522,9 @@ export function SmartReportEditor({
               ) : (
                 <Empty className="mt-4">
                   <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Inbox aria-hidden="true" />
+                    </EmptyMedia>
                     <EmptyTitle>No rows</EmptyTitle>
                     <EmptyDescription>
                       {testRunDateTagLabel
@@ -523,6 +532,9 @@ export function SmartReportEditor({
                         : "Query returned no rows"}
                     </EmptyDescription>
                   </EmptyHeader>
+                  <EmptyContent>
+                    <p className="text-muted-foreground text-sm">Adjust the query or date range and run again.</p>
+                  </EmptyContent>
                 </Empty>
               )}
             </CardContent>

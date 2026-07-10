@@ -346,12 +346,12 @@ const InvoiceList: React.FC = () => {
     <>
       <ListPageCard
         title="Invoice Management"
-        description="Manage invoices, search, and view historical billing details."
+        description="Search, generate, and review billing invoices."
         toolbar={
           <>
             <ListPageSearch
               id="invoice-search"
-              placeholder="Search Invoice No"
+              placeholder="Search Invoice No…"
               value={searchText}
               onChange={(value) => {
                 setSearchText(value);
@@ -410,6 +410,14 @@ const InvoiceList: React.FC = () => {
           loading={loading}
           emptyTitle={branchScopedEmpty?.emptyTitle}
           emptyDescription={branchScopedEmpty?.emptyDescription}
+          emptyAction={
+            canWrite
+              ? {
+                  label: "Create Invoice",
+                  onClick: () => setIsModalVisible(true),
+                }
+              : undefined
+          }
         />
         <DataTablePagination table={table} total={total} pageSizeOptions={[10, 20, 50]} />
       </ListPageCard>

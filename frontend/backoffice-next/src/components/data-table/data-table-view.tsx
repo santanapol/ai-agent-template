@@ -1,7 +1,9 @@
 import type { Table } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
+import type { LucideIcon } from "lucide-react";
 
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table as UiTable } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -11,6 +13,8 @@ interface DataTableViewProps<TData> {
   loading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  emptyAction?: { label: string; onClick: () => void };
+  emptyIcon?: LucideIcon;
   className?: string;
 }
 
@@ -19,6 +23,8 @@ export function DataTableView<TData>({
   loading = false,
   emptyTitle = "No data found",
   emptyDescription = "Try adjusting your filters.",
+  emptyAction,
+  emptyIcon: EmptyIcon,
   className,
 }: DataTableViewProps<TData>) {
   const columnCount = table.getVisibleLeafColumns().length;
@@ -26,7 +32,7 @@ export function DataTableView<TData>({
 
   if (loading) {
     return (
-      <div className={cn("space-y-2 px-4", className)}>
+      <div className={cn("flex flex-col gap-2 px-4", className)}>
         {Array.from({ length: 5 }).map((_, index) => (
           <Skeleton key={index} className="h-10 w-full rounded-md" />
         ))}
@@ -64,9 +70,21 @@ export function DataTableView<TData>({
               <TableCell colSpan={columnCount} className="h-32 p-0">
                 <Empty>
                   <EmptyHeader>
+                    {EmptyIcon ? (
+                      <EmptyMedia variant="icon">
+                        <EmptyIcon aria-hidden="true" />
+                      </EmptyMedia>
+                    ) : null}
                     <EmptyTitle>{emptyTitle}</EmptyTitle>
                     <EmptyDescription>{emptyDescription}</EmptyDescription>
                   </EmptyHeader>
+                  {emptyAction ? (
+                    <EmptyContent>
+                      <Button type="button" variant="outline" onClick={emptyAction.onClick}>
+                        {emptyAction.label}
+                      </Button>
+                    </EmptyContent>
+                  ) : null}
                 </Empty>
               </TableCell>
             </TableRow>

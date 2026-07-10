@@ -23,6 +23,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Link } from "@/navigation/compat";
 
 function isPathInSubtree(item: MenuItemType, path: string): boolean {
   if (item.route === path) return true;
@@ -49,11 +50,23 @@ function NavDropdownItem({
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start" sideOffset={12} className="w-48">
           <DropdownMenuGroup>
-            {item.children?.map((child) => (
-              <DropdownMenuItem key={child.key} onClick={() => child.route && onNavigate(child.route)}>
-                <span>{child.label}</span>
-              </DropdownMenuItem>
-            ))}
+            {item.children?.map((child) =>
+              child.route ? (
+                <DropdownMenuItem key={child.key} className="p-0">
+                  <Link
+                    to={child.route}
+                    onClick={() => onNavigate(child.route!)}
+                    className="flex w-full items-center px-2 py-1.5"
+                  >
+                    <span>{child.label}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem key={child.key}>
+                  <span>{child.label}</span>
+                </DropdownMenuItem>
+              ),
+            )}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -106,12 +119,18 @@ function NavMenuItems({
                 <SidebarMenuSub>
                   {item.children.map((child) => (
                     <SidebarMenuSubItem key={child.key}>
-                      <SidebarMenuSubButton
-                        isActive={child.route === selectedPath}
-                        onClick={() => child.route && onNavigate(child.route)}
-                      >
-                        <span>{child.label}</span>
-                      </SidebarMenuSubButton>
+                      {child.route ? (
+                        <SidebarMenuSubButton
+                          isActive={child.route === selectedPath}
+                          render={<Link to={child.route} onClick={() => onNavigate(child.route!)} />}
+                        >
+                          <span>{child.label}</span>
+                        </SidebarMenuSubButton>
+                      ) : (
+                        <SidebarMenuSubButton isActive={false}>
+                          <span>{child.label}</span>
+                        </SidebarMenuSubButton>
+                      )}
                     </SidebarMenuSubItem>
                   ))}
                 </SidebarMenuSub>
@@ -122,14 +141,21 @@ function NavMenuItems({
 
         return (
           <SidebarMenuItem key={item.key}>
-            <SidebarMenuButton
-              isActive={item.route === selectedPath}
-              tooltip={item.label}
-              onClick={() => item.route && onNavigate(item.route)}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </SidebarMenuButton>
+            {item.route ? (
+              <SidebarMenuButton
+                isActive={item.route === selectedPath}
+                tooltip={item.label}
+                render={<Link to={item.route} onClick={() => onNavigate(item.route!)} />}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            ) : (
+              <SidebarMenuButton isActive={false} tooltip={item.label}>
+                {item.icon}
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         );
       })}

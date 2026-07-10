@@ -15,7 +15,7 @@ import {
 import { ListPageCard } from "@/components/layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DownloadHistoryRecord, Report } from "@/types/smartReport";
@@ -213,9 +213,15 @@ export function SmartReportList({
           ) : (
             <Empty className="mt-8">
               <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <History aria-hidden="true" />
+                </EmptyMedia>
                 <EmptyTitle>No history</EmptyTitle>
                 <EmptyDescription>No execution history or saved files for this script.</EmptyDescription>
               </EmptyHeader>
+              <EmptyContent>
+                <p className="text-muted-foreground text-sm">Run a report to see execution history here.</p>
+              </EmptyContent>
             </Empty>
           )}
         </SheetContent>

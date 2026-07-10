@@ -1,9 +1,8 @@
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as staffApi from "../lib/staffApiClient";
-import { mockAuthUser, mockPaginatedResponse } from "../test/mockFactories";
+import { mockAuthUser } from "../test/mockFactories";
 import { testNavigation } from "../test/mockNavigation";
 import { renderWithRouter } from "../test/renderWithRouter";
 import Dashboard from "./Dashboard";
@@ -36,9 +35,7 @@ describe("Dashboard", () => {
       permissions: ["profiles:list"],
     } as ReturnType<typeof useAuth>);
 
-    vi.mocked(staffApi.getProfileCounts)
-      .mockResolvedValueOnce({ total: 12 })
-      .mockResolvedValueOnce({ total: 3 });
+    vi.mocked(staffApi.getProfileCounts).mockResolvedValueOnce({ total: 12 }).mockResolvedValueOnce({ total: 3 });
 
     renderWithRouter(<Dashboard />);
 
@@ -60,8 +57,8 @@ describe("Dashboard", () => {
     renderWithRouter(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /my profile/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /smart reports/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /my profile/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /smart reports/i })).toBeInTheDocument();
     });
     expect(staffApi.getProfileCounts).not.toHaveBeenCalled();
   });
@@ -85,10 +82,9 @@ describe("Dashboard", () => {
       permissions: ["profiles:list"],
     } as ReturnType<typeof useAuth>);
 
-    const user = userEvent.setup();
     renderWithRouter(<Dashboard />);
 
-    await user.click(screen.getByRole("button", { name: /staff management/i }));
-    expect(testNavigation.push).toHaveBeenCalledWith("/staff", undefined);
+    const staffLink = await screen.findByRole("link", { name: /staff management/i });
+    expect(staffLink).toHaveAttribute("href", "/staff");
   });
 });

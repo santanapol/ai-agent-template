@@ -400,19 +400,19 @@ const StaffManagement: React.FC = () => {
     <>
       <ListPageCard
         title="Staff Management"
-        description="Manage staff profiles, system roles, and authentication credentials."
+        description="Profiles, roles, and credentials for the active branch."
         toolbar={
           <>
             <ListPageSearch
               id="staff-search"
-              placeholder="Search code, name..."
+              placeholder="Search code, name…"
               value={rawSearch}
               onChange={setRawSearch}
             />
             <DataTableToolbarActions table={table} exportFileName="staff" />
             {canCreate ? (
               <Button onClick={() => void handleOpenDrawer("create")}>
-                <Plus data-icon="inline-start" />
+                <Plus data-icon="inline-start" aria-hidden="true" />
                 Create staff
               </Button>
             ) : null}
@@ -442,6 +442,14 @@ const StaffManagement: React.FC = () => {
           handlers={columnHandlers}
           emptyTitle={branchScopedEmpty?.emptyTitle}
           emptyDescription={branchScopedEmpty?.emptyDescription}
+          emptyAction={
+            canCreate
+              ? {
+                  label: "Create staff",
+                  onClick: () => void handleOpenDrawer("create"),
+                }
+              : undefined
+          }
         />
       </ListPageCard>
 

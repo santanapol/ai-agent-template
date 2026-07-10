@@ -33,6 +33,9 @@ const Login: React.FC = () => {
       if (!username.trim()) nextErrors.username = "Please enter username";
       if (!password) nextErrors.password = "Please enter password";
       setFormErrors(nextErrors);
+      queueMicrotask(() => {
+        document.getElementById(nextErrors.username ? "username" : "password")?.focus();
+      });
       return;
     }
     setFormErrors({});

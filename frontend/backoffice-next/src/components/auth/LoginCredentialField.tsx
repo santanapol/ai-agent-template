@@ -17,6 +17,7 @@ interface LoginCredentialFieldProps {
   error?: string;
   showPasswordToggle?: boolean;
   showPassword?: boolean;
+  spellCheck?: boolean;
   onShowPasswordToggle?: () => void;
   onChange: (value: string) => void;
   onClearError?: () => void;
@@ -33,6 +34,7 @@ export function LoginCredentialField({
   error,
   showPasswordToggle = false,
   showPassword = false,
+  spellCheck,
   onShowPasswordToggle,
   onChange,
   onClearError,
@@ -57,6 +59,7 @@ export function LoginCredentialField({
           }}
           aria-invalid={!!error}
           aria-describedby={a11y?.describedBy}
+          spellCheck={spellCheck}
         />
         {showPasswordToggle ? (
           <InputGroupAddon align="inline-end">

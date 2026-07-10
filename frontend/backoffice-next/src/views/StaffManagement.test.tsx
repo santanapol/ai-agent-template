@@ -119,10 +119,10 @@ describe("StaffManagement", () => {
     renderWithProviders(<StaffManagement />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Create staff/i })).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /Create staff/i }).length).toBeGreaterThan(0);
     });
 
-    screen.getByRole("button", { name: /Create staff/i }).click();
+    screen.getAllByRole("button", { name: /Create staff/i })[0].click();
 
     await waitFor(() => {
       expect(screen.getByText("System Role")).toBeInTheDocument();

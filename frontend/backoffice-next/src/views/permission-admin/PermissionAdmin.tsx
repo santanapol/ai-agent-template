@@ -12,9 +12,9 @@ import { apiErrorMessage } from "@/lib/apiError";
 import * as authApi from "@/lib/authApiClient";
 import type { AdminMenuNode } from "@/types/permissionAdmin";
 
+import AdminApiForbidden from "./AdminApiForbidden";
 import MenuCatalogTab from "./MenuCatalogTab";
 import RolePermissionsTab from "./RolePermissionsTab";
-import AdminApiForbidden from "./AdminApiForbidden";
 
 const PermissionAdmin: React.FC = () => {
   const { message } = useAppFeedback();
@@ -54,10 +54,7 @@ const PermissionAdmin: React.FC = () => {
 
   if (menusForbidden) {
     return (
-      <ListPageCard
-        title="Permissions"
-        description="Manage system menu catalog and role permissions mapping."
-      >
+      <ListPageCard title="Permissions" description="Manage system menu catalog and role permissions mapping.">
         <div className="px-4">
           <AdminApiForbidden />
         </div>
@@ -93,7 +90,12 @@ const PermissionAdmin: React.FC = () => {
           />
         </TabsContent>
         <TabsContent value="roles" keepMounted className="mt-4">
-          <RolePermissionsTab menus={menus} menusLoading={menusLoading} menusForbidden={menusForbidden} />
+          <RolePermissionsTab
+            menus={menus}
+            menusLoading={menusLoading}
+            menusForbidden={menusForbidden}
+            onGoToCatalog={() => setActiveTab("menus")}
+          />
         </TabsContent>
       </Tabs>
     </ListPageCard>

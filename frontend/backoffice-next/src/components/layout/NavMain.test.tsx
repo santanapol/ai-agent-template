@@ -53,8 +53,9 @@ describe("NavMain", () => {
   it("marks active item based on selectedPath", () => {
     renderWithRouter(<NavMain items={flatItems} selectedPath="/" onNavigate={vi.fn()} />, { withSidebar: true });
 
-    const dashboardButton = screen.getByText("Dashboard").closest("button");
-    expect(dashboardButton).toHaveAttribute("data-active");
+    const dashboardLink = screen.getByRole("link", { name: "Dashboard" });
+    expect(dashboardLink).toHaveAttribute("href", "/");
+    expect(dashboardLink).toHaveAttribute("data-active");
   });
 
   it("expands collapsible group and navigates child", async () => {

@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ArrowLeftRight, Check, Link2, Pencil, Save, X } from "lucide-react";
+import { ArrowLeftRight, Check, Inbox, Link2, Pencil, Save, X } from "lucide-react";
 
 import { MatrixCell, type MatrixCellRef } from "@/components/agent-fees/MatrixCell";
 import { LoadingButton } from "@/components/LoadingButton";
@@ -11,10 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
@@ -512,12 +512,14 @@ const AgentFeesPage: React.FC = () => {
                 <SelectValue placeholder="None — use own fee overrides" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">None — use own fee overrides</SelectItem>
-                {dropdownOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectItem value="__none__">None — use own fee overrides</SelectItem>
+                  {dropdownOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </Field>
@@ -580,9 +582,17 @@ const AgentFeesPage: React.FC = () => {
           ) : filteredCompanies.length === 0 ? (
             <Empty className="py-12">
               <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Inbox aria-hidden="true" />
+                </EmptyMedia>
                 <EmptyTitle>No providers</EmptyTitle>
                 <EmptyDescription>{emptyDescription}</EmptyDescription>
               </EmptyHeader>
+              <EmptyContent>
+                <Button type="button" variant="outline" onClick={() => navigate("/agents")}>
+                  Back to agents
+                </Button>
+              </EmptyContent>
             </Empty>
           ) : (
             <section

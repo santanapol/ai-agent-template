@@ -168,7 +168,7 @@ const AgentsList: React.FC = () => {
           <>
             <ListPageSearch
               id="agent-search"
-              placeholder="Search by branch code or name..."
+              placeholder="Search by branch code or name…"
               value={rawSearch}
               onChange={setRawSearch}
             />

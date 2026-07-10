@@ -53,18 +53,19 @@ export function LoginForm({
               <LoginCredentialField
                 id="username"
                 label="Username"
-                placeholder="Username"
+                placeholder="e.g. platform_admin"
                 autoComplete="username"
                 icon={<User aria-hidden="true" />}
                 value={username}
                 error={formErrors.username}
+                spellCheck={false}
                 onChange={onUsernameChange}
                 onClearError={onClearUsernameError}
               />
               <LoginCredentialField
                 id="password"
                 label="Password"
-                placeholder="Password"
+                placeholder="Enter your password"
                 autoComplete="current-password"
                 icon={<Lock aria-hidden="true" />}
                 value={password}

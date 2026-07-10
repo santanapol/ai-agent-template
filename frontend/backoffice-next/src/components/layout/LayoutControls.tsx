@@ -109,12 +109,12 @@ export function LayoutControls() {
       </PopoverTrigger>
       <PopoverContent align="end">
         <div className="flex flex-col gap-5">
-          <div className="space-y-1.5">
+          <div className="flex flex-col gap-1.5">
             <h4 className="font-medium text-sm leading-none">Preferences</h4>
             <p className="text-muted-foreground text-xs">Customize your dashboard layout preferences.</p>
           </div>
-          <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
-            <div className="space-y-1">
+          <div className="flex flex-col gap-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Theme Preset</Label>
               <Select value={themePreset} onValueChange={onThemePresetChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
@@ -142,7 +142,7 @@ export function LayoutControls() {
               </Select>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Fonts</Label>
               <Select value={font} onValueChange={onFontChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
@@ -162,7 +162,7 @@ export function LayoutControls() {
               </Select>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Theme Mode</Label>
               <ToggleGroup
                 size="sm"
@@ -183,7 +183,7 @@ export function LayoutControls() {
               </ToggleGroup>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Page Layout</Label>
               <ToggleGroup
                 size="sm"
@@ -201,7 +201,7 @@ export function LayoutControls() {
               </ToggleGroup>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Navbar Behavior</Label>
               <ToggleGroup
                 size="sm"
@@ -219,7 +219,7 @@ export function LayoutControls() {
               </ToggleGroup>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Sidebar Style</Label>
               <ToggleGroup
                 size="sm"
@@ -240,7 +240,7 @@ export function LayoutControls() {
               </ToggleGroup>
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Label className="font-medium text-xs">Sidebar Collapse Mode</Label>
               <ToggleGroup
                 size="sm"

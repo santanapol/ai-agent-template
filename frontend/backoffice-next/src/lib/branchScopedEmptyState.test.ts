@@ -13,6 +13,7 @@ describe("resolveBranchScopedEmptyState", () => {
 
     expect(result?.emptyTitle).toMatch(/staff profiles at Zero HQ/i);
     expect(result?.emptyDescription).toMatch(/branch switcher/i);
+    expect(result?.emptyDescription).not.toMatch(/777WW|seed data/i);
   });
 
   it("returns null for customer branch", () => {
