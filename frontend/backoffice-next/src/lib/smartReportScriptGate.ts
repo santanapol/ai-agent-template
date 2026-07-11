@@ -92,7 +92,7 @@ export function getSaveGateHint(requiresGate: boolean, gateStatus: ScriptGateSta
   return null;
 }
 
-/** Maps gate status to antd Steps `current` (0 = Edit script … 3 = Save). */
+/** Maps gate status to step index (0 = Script … 2 = Preview; 3 = all complete). */
 export function getScriptGateStep(
   gateStatus: ScriptGateStatus,
   hasValidationErrors: boolean,

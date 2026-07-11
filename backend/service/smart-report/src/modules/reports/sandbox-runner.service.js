@@ -14,6 +14,56 @@ export {
 
 const DEFAULT_REPORT_SCRIPT_TIMEOUT_MS = 120_000;
 
+/** Top-level keys that indicate a MongoDB Node driver FindOptions object. */
+export const FIND_DRIVER_OPTION_KEYS = new Set([
+  "projection",
+  "sort",
+  "limit",
+  "skip",
+  "hint",
+  "maxTimeMS",
+  "batchSize",
+  "collation",
+  "comment",
+  "allowDiskUse",
+  "max",
+  "min",
+  "returnKey",
+  "showRecordId",
+]);
+
+/**
+ * Map mongo shell `find(filter, projection)` second arg to driver `{ projection }`.
+ * @param {unknown} secondArg
+ * @returns {Record<string, unknown>}
+ */
+export function normalizeFindSecondArg(secondArg) {
+  if (secondArg == null) {
+    return {};
+  }
+  if (typeof secondArg !== "object" || Array.isArray(secondArg)) {
+    return secondArg;
+  }
+
+  const keys = Object.keys(secondArg);
+  if (keys.length === 0) {
+    return secondArg;
+  }
+
+  if (keys.some((key) => FIND_DRIVER_OPTION_KEYS.has(key))) {
+    return secondArg;
+  }
+
+  const isShellProjection = keys.every(
+    (key) => secondArg[key] === 0 || secondArg[key] === 1,
+  );
+  if (isShellProjection) {
+    return { projection: secondArg };
+  }
+
+  return secondArg;
+}
+
 /**
  * @param {number | undefined} [overrideMs]
  * @returns {number}
@@ -50,7 +100,8 @@ const withReport = makeSafeFunction(function withReport(fn) {
 });
 
 /** ครอบ collection — aggregate คืน Promise<array>; find คืน cursor chain ที่ await ได้ */
-function createFindCursor(collection, query = {}, options = {}) {
+function createFindCursor(collection, query = {}, secondArg = {}) {
+  const options = normalizeFindSecondArg(secondArg);
   let cursor = collection.find(query, options);
   const chain = Object.create(null);
 
@@ -78,16 +129,17 @@ function createFindCursor(collection, query = {}, options = {}) {
 
 function wrapCollection(collection) {
   const wrapped = Object.create(null);
-  wrapped.find = makeSafeFunction((query = {}, options = {}) =>
-    createFindCursor(collection, query, options),
+  wrapped.find = makeSafeFunction((query = {}, secondArg = {}) =>
+    createFindCursor(collection, query, secondArg),
   );
   wrapped.aggregate = makeSafeFunction((pipeline = [], options = {}) => {
     assertPipelineStagesSafe(pipeline);
     return collection.aggregate(pipeline, options).toArray();
   });
-  wrapped.findOne = makeSafeFunction((query = {}, options = {}) =>
-    collection.findOne(query, options),
-  );
+  wrapped.findOne = makeSafeFunction((query = {}, secondArg = {}) => {
+    const options = normalizeFindSecondArg(secondArg);
+    return collection.findOne(query, options);
+  });
   return wrapped;
 }
 

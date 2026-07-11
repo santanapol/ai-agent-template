@@ -25,8 +25,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@/navigation/compat";
 
+function isRouteActive(menuRoute: string, selectedPath: string): boolean {
+  if (menuRoute === selectedPath) return true;
+  if (menuRoute !== "/" && selectedPath.startsWith(`${menuRoute}/`)) return true;
+  return false;
+}
+
 function isPathInSubtree(item: MenuItemType, path: string): boolean {
-  if (item.route === path) return true;
+  if (item.route && isRouteActive(item.route, path)) return true;
   return item.children?.some((child) => isPathInSubtree(child, path)) ?? false;
 }
 
@@ -121,7 +127,7 @@ function NavMenuItems({
                     <SidebarMenuSubItem key={child.key}>
                       {child.route ? (
                         <SidebarMenuSubButton
-                          isActive={child.route === selectedPath}
+                          isActive={child.route ? isRouteActive(child.route, selectedPath) : false}
                           render={<Link to={child.route} onClick={() => onNavigate(child.route!)} />}
                         >
                           <span>{child.label}</span>
@@ -143,7 +149,7 @@ function NavMenuItems({
           <SidebarMenuItem key={item.key}>
             {item.route ? (
               <SidebarMenuButton
-                isActive={item.route === selectedPath}
+                isActive={item.route ? isRouteActive(item.route, selectedPath) : false}
                 tooltip={item.label}
                 render={<Link to={item.route} onClick={() => onNavigate(item.route!)} />}
               >
@@ -191,9 +197,7 @@ export function NavMain({
     <>
       {dashboardItems.length > 0 ? (
         <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
-            Dashboard
-          </SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">Dashboard</SidebarGroupLabel>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               <NavMenuItems items={dashboardItems} {...sharedItemProps} />

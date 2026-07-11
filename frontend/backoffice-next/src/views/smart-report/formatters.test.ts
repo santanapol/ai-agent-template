@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatDateTime,
+  formatDateTimeCompact,
+  formatDownloadTrigger,
   formatLastRunDisplay,
+  formatRecordCount,
   formatScheduleLabel,
   formatScheduleShort,
   formatValidationStatusLabel,
@@ -79,5 +82,20 @@ describe("smartReport/formatters", () => {
     expect(formatDateTime("2026-06-30T12:48:53.000Z")).toMatch(/^2026-06-30 /);
     expect(formatDateTime(null)).toBe("—");
     expect(formatDateTime("invalid")).toBe("—");
+  });
+
+  it("formats compact datetime for drawer panels", () => {
+    expect(formatDateTimeCompact("2026-07-11T03:58:10.000Z")).toMatch(/^Jul 11, /);
+    expect(formatDateTimeCompact(null)).toBe("—");
+  });
+
+  it("formats download trigger labels", () => {
+    expect(formatDownloadTrigger("manual")).toBe("Manual");
+    expect(formatDownloadTrigger("scheduler")).toBe("Scheduled");
+  });
+
+  it("formats record counts", () => {
+    expect(formatRecordCount(1200)).toBe("1,200");
+    expect(formatRecordCount(null)).toBe("—");
   });
 });

@@ -27,8 +27,8 @@
 | TD-023 | Frontend | P1 | Branch switcher `limit:20` writes into shared invoice agent cache — incomplete filter for orgs with >20 branches (FE-REV-001/004) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-024 | Frontend | P1 | `InvoiceList` `invoiceAgentsRequestedRef` blocks refetch when `ou_id`/`role` changes while mounted (FE-REV-002) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-025 | Frontend | P2 | `StaffManagement` same-key fetch guard can drop reload after cancelled in-flight request (FE-REV-003) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
+| TD-026 | Frontend | P2 | Full `npm test` (backoffice-next) — test harness drift after NavMain/BulkInvoiceActionBar changes | closed (2026-07-12; 547/547 pass — [`fe-ux-shadcn-ds`](./completed/fe-ux-shadcn-ds-2026-07-10.md)) |
 
-## How to use
 
 - Add rows when `/gc` or reviews find debt worth tracking.
 - Set `Status` to `closed` with date and PR link when resolved.

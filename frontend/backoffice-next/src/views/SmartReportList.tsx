@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import type { DownloadHistoryRecord, Report } from "@/types/smartReport";
 
 import { createDownloadHistoryColumns } from "./smart-report/downloadHistoryColumns";
@@ -56,12 +57,13 @@ export interface SmartReportListProps {
   scheduleFilter: ScheduleFilter;
   onScheduleFilterChange: (value: ScheduleFilter) => void;
   runningId: string | null;
-  loadingEditId: string | null;
   isDrawerOpen: boolean;
   onDrawerOpenChange: (open: boolean) => void;
   drawerLoading: boolean;
   selectedReport: Report | null;
   selectedReportDownloads: DownloadHistoryRecord[];
+  drawerHistoryTotal: number;
+  drawerHistoryLimit: number;
   onCreateNew: () => void;
   onRunReport: (report: Report) => void;
   onEditReport: (report: Report) => void;
@@ -85,12 +87,13 @@ export function SmartReportList({
   scheduleFilter,
   onScheduleFilterChange,
   runningId,
-  loadingEditId,
   isDrawerOpen,
   onDrawerOpenChange,
   drawerLoading,
   selectedReport,
   selectedReportDownloads,
+  drawerHistoryTotal,
+  drawerHistoryLimit,
   onCreateNew,
   onRunReport,
   onEditReport,
@@ -104,17 +107,19 @@ export function SmartReportList({
     () => ({
       isMobile,
       runningId,
-      loadingEditId,
       onRunReport,
       onEditReport,
       onViewFiles,
       onDeleteReport,
     }),
-    [isMobile, runningId, loadingEditId, onRunReport, onEditReport, onViewFiles, onDeleteReport],
+    [isMobile, runningId, onRunReport, onEditReport, onViewFiles, onDeleteReport],
   );
 
   const reportColumns = useMemo(() => createReportColumns(reportColumnHandlers), [reportColumnHandlers]);
-  const drawerColumns = useMemo(() => createDownloadHistoryColumns(onDownload), [onDownload]);
+  const drawerColumns = useMemo(
+    () => createDownloadHistoryColumns(onDownload, { variant: "drawer" }),
+    [onDownload],
+  );
   const reportsPageCount = Math.max(1, Math.ceil(reportsTotal / reportsPageSize));
 
   const reportsTable = useServerDataTable({
@@ -132,11 +137,15 @@ export function SmartReportList({
   const drawerTable = useClientDataTable({
     data: selectedReportDownloads,
     columns: drawerColumns,
-    initialPageSize: 8,
+    initialPageSize: 10,
     getRowId: (row) => row.id,
   });
 
   const selectedReportName = selectedReport?.name ?? "";
+  const drawerPageCount = drawerTable.getPageCount();
+  const showDrawerPagination = drawerPageCount > 1;
+  const drawerShownCount = selectedReportDownloads.length;
+  const drawerTruncated = drawerHistoryTotal > drawerHistoryLimit;
 
   return (
     <>
@@ -189,21 +198,38 @@ export function SmartReportList({
       </ListPageCard>
 
       <Sheet open={isDrawerOpen} onOpenChange={onDrawerOpenChange}>
-        <SheetContent className={isMobile ? "w-full" : "sm:max-w-xl"}>
-          <SheetHeader>
-            <SheetTitle>Download History: {selectedReportName}</SheetTitle>
+        <SheetContent
+          className={cn(
+            "flex w-full flex-col gap-0 overflow-hidden p-0",
+            isMobile ? "max-w-full" : "data-[side=right]:sm:max-w-xl",
+          )}
+        >
+          <SheetHeader className="shrink-0 border-b">
+            <SheetTitle className="truncate pr-8">Download History: {selectedReportName}</SheetTitle>
             <SheetDescription>Execution history and saved downloads for this report script.</SheetDescription>
           </SheetHeader>
           {drawerLoading ? (
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="flex flex-col gap-2 px-4 py-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <Skeleton key={index} className="h-10 w-full rounded-md" />
               ))}
             </div>
           ) : selectedReportDownloads.length > 0 ? (
-            <div className="mt-4">
-              <DataTableView table={drawerTable} />
-              <DataTablePagination table={drawerTable} pageSizeOptions={[8, 10, 20]} />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+                <DataTableView
+                  table={drawerTable}
+                  className="**:data-[slot=table-cell]:px-2 **:data-[slot=table-head]:px-2"
+                />
+              </div>
+              {drawerTruncated ? (
+                <p className="text-muted-foreground shrink-0 px-4 pt-3 text-xs">
+                  Showing latest {Math.min(drawerShownCount, drawerHistoryLimit)} of {drawerHistoryTotal} runs.
+                </p>
+              ) : null}
+              {showDrawerPagination ? (
+                <DataTablePagination table={drawerTable} pageSizeOptions={[10, 20]} total={drawerHistoryTotal} />
+              ) : null}
             </div>
           ) : (
             <Empty className="mt-8">
@@ -216,9 +242,7 @@ export function SmartReportList({
               </EmptyHeader>
               <EmptyContent>
                 <p className="text-muted-foreground text-sm">Run a report to see execution history here.</p>
-                {selectedReport ? (
-                  <Button onClick={() => onRunReport(selectedReport)}>Run report</Button>
-                ) : null}
+                {selectedReport ? <Button onClick={() => onRunReport(selectedReport)}>Run report</Button> : null}
               </EmptyContent>
             </Empty>
           )}

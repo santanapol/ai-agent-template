@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Report } from "@/types/smartReport";
 
 import { mockPaginatedResponse } from "../test/mockFactories";
+import { testNavigation } from "../test/mockNavigation";
 import { renderWithRouter } from "../test/renderWithRouter";
 import SmartReport from "./SmartReport";
 
@@ -86,7 +87,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { getReport, listHistory, listReports, createReport, deleteReport, validateReport, testRunReport } from "../lib/smartReportApiClient";
+import { deleteReport, listHistory, listReports } from "../lib/smartReportApiClient";
 
 function renderSmartReport() {
   return renderWithRouter(<SmartReport />);
@@ -95,6 +96,7 @@ function renderSmartReport() {
 describe("SmartReport (list mode)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testNavigation.reset();
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([]));
     vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
   });
@@ -165,13 +167,17 @@ describe("SmartReport (list mode)", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  it("switches to edit view when row edit is clicked", async () => {
+  it("navigates to create route when Create report is clicked", async () => {
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await user.click(screen.getByRole("button", { name: /create report/i }));
+
+    expect(testNavigation.push).toHaveBeenCalledWith("/smart-reports/new", undefined);
+  });
+
+  it("navigates to edit route when row edit is clicked", async () => {
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
-    vi.mocked(getReport).mockResolvedValue({
-      ...sampleReport,
-      script: "return [];",
-      compiledScript: "compiled",
-    });
 
     const user = userEvent.setup();
     renderSmartReport();
@@ -182,42 +188,10 @@ describe("SmartReport (list mode)", () => {
 
     await user.click(screen.getByLabelText(/edit report/i));
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
-    });
+    expect(testNavigation.push).toHaveBeenCalledWith(`/smart-reports/${sampleReport.id}/edit`, undefined);
   });
 
-  it("returns to list view when Back is clicked in edit mode", async () => {
-    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
-    vi.mocked(getReport).mockResolvedValue({
-      ...sampleReport,
-      script: "return [];",
-      compiledScript: "compiled",
-    });
-
-    const user = userEvent.setup();
-    renderSmartReport();
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/edit report/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByLabelText(/edit report/i));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^back$/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /^back$/i }));
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/edit report/i)).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /^back$/i })).not.toBeInTheDocument();
-    });
-  });
-
-  it(
-    "refetches reports on page 2 without re-fetching enrichment history",
-    async () => {
+  it("refetches reports on page 2 without re-fetching enrichment history", async () => {
     const pageOneReports = Array.from({ length: 20 }, (_, index) => ({
       ...sampleReport,
       id: `report-${index + 1}`,
@@ -258,9 +232,7 @@ describe("SmartReport (list mode)", () => {
       expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }));
     });
     expect(vi.mocked(listHistory).mock.calls.length).toBe(enrichmentCalls);
-  },
-  10000,
-  );
+  }, 10000);
 
   it("loads drawer history filtered by report id", async () => {
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
@@ -323,75 +295,6 @@ describe("SmartReport (list mode)", () => {
 
     await waitFor(() => {
       expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to load reports");
-    });
-  });
-});
-
-describe("SmartReport (create flow)", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([]));
-    vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
-    vi.mocked(validateReport).mockResolvedValue({
-      valid: true,
-      compiledScript: "compiled-script",
-      errors: [],
-    });
-    vi.mocked(testRunReport).mockResolvedValue({
-      success: true,
-      recordCount: 1,
-      durationMs: 12,
-      sample: [{ id: "1" }],
-      testRunToken: "test-token",
-      errors: [],
-    });
-    vi.mocked(createReport).mockResolvedValue({
-      ...sampleReport,
-      id: "report-new",
-      name: "AUDIT-report-001",
-    });
-  });
-
-  it("completes validate → test-run → save for a new report", async () => {
-    const user = userEvent.setup();
-    renderSmartReport();
-
-    await user.click(screen.getByRole("button", { name: /create report/i }));
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
-    });
-
-    await user.type(screen.getByLabelText(/report name/i), "AUDIT-report-001");
-    await user.click(screen.getByRole("button", { name: /^validate$/i }));
-
-    await waitFor(() => {
-      expect(validateReport).toHaveBeenCalled();
-      expect(mockFeedback.message.success).toHaveBeenCalledWith("Script validated successfully");
-    });
-
-    await user.click(screen.getByRole("button", { name: /test run/i }));
-
-    await waitFor(() => {
-      expect(testRunReport).toHaveBeenCalled();
-    });
-
-    const saveButton = screen.getByRole("button", { name: /save report script/i });
-    await waitFor(() => {
-      expect(saveButton).not.toBeDisabled();
-    });
-
-    await user.click(saveButton);
-
-    await waitFor(() => {
-      expect(createReport).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "AUDIT-report-001",
-          compiledScript: "compiled-script",
-          testRunToken: "test-token",
-        }),
-      );
-      expect(mockFeedback.message.success).toHaveBeenCalledWith("Report created successfully");
     });
   });
 });

@@ -44,7 +44,6 @@ function derivedStatusBadge(status: ReportStatus) {
 export interface ReportColumnHandlers {
   isMobile: boolean;
   runningId: string | null;
-  loadingEditId: string | null;
   onRunReport: (report: Report) => void;
   onEditReport: (report: Report) => void;
   onViewFiles: (reportId: string) => void;
@@ -52,7 +51,7 @@ export interface ReportColumnHandlers {
 }
 
 export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<ReportRow>[] {
-  const { isMobile, runningId, loadingEditId, onRunReport, onEditReport, onViewFiles, onDeleteReport } = handlers;
+  const { isMobile, runningId, onRunReport, onEditReport, onViewFiles, onDeleteReport } = handlers;
 
   const columns: ColumnDef<ReportRow>[] = [
     {
@@ -179,18 +178,12 @@ export function createReportColumns(handlers: ReportColumnHandlers): ColumnDef<R
                     variant="outline"
                     size="icon-sm"
                     aria-label="Edit report"
-                    disabled={
-                      record.derivedStatus === "running" || (loadingEditId !== null && loadingEditId !== record.id)
-                    }
+                    disabled={record.derivedStatus === "running"}
                     onClick={() => void onEditReport(record)}
                   />
                 }
               >
-                {loadingEditId === record.id ? (
-                  <Spinner data-icon="inline-start" />
-                ) : (
-                  <Pencil data-icon="inline-start" aria-hidden="true" />
-                )}
+                <Pencil data-icon="inline-start" aria-hidden="true" />
               </TooltipTrigger>
               <TooltipContent>Edit report</TooltipContent>
             </Tooltip>

@@ -31,6 +31,7 @@ interface DetailContainerProps {
   children: React.ReactNode;
   /** Omit or pass `null` for full content width (no max-width clamp). */
   maxWidth?: number | null;
+  stickyChrome?: boolean;
   className?: string;
 }
 
@@ -44,6 +45,7 @@ export function DetailContainer({
   status,
   children,
   maxWidth = 1000,
+  stickyChrome = false,
   className,
 }: DetailContainerProps) {
   const navigate = useNavigate();
@@ -94,7 +96,13 @@ export function DetailContainer({
           </BreadcrumbList>
         </Breadcrumb>
       ) : null}
-      <div className="flex flex-col gap-2">
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          stickyChrome &&
+            "sticky top-0 z-10 -mx-1 border-border/60 border-b bg-background/95 px-1 pb-3 backdrop-blur-sm supports-backdrop-filter:bg-background/80",
+        )}
+      >
         {backUrl ? (
           <Link to={backUrl} className={cn(buttonVariants({ variant: "link" }), "h-auto w-fit px-0")}>
             <ArrowLeft data-icon="inline-start" aria-hidden="true" />

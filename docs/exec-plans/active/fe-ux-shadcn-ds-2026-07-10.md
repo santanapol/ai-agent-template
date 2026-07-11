@@ -18,14 +18,20 @@ branch: fix/fe-ux-shadcn-ds-2026-07-10
 - 2026-07-10: สร้าง exec plan + branch `fix/fe-ux-shadcn-ds-2026-07-10` จาก `origin/main`; เริ่ม implement
 - 2026-07-10: Tasks 1–5 implemented (Empty API, SelectGroup, space-y, Nav/Dashboard links, polish); running Checkpoint B
 - 2026-07-10: Recovered truncated files mid-session; Checkpoint B targeted tests green; NavMain active-link assert updated
+- 2026-07-10: Smart Report editor UX + routing (v2): `useSmartReportEditor`, routes `/smart-reports/new` + `/[id]/edit`, workflow bar polish, breadcrumb+dirty guard, NavMain prefix active; 69 targeted tests green
+- 2026-07-11: `/test` full suite — 17 failures in InvoiceList + AdminLayout (unrelated); deferred as **TD-026** in [`tech-debt-tracker.md`](../tech-debt-tracker.md)
 
-## Decision log
+## Deferred (TD-026)
+
+Full `npm test` in `frontend/backoffice-next` still has **17 failures** (InvoiceList ×12, AdminLayout ×4, branchSwitcher ×1). Not blocking Smart Report editor ship — fix in a follow-up PR.
+
 
 - 2026-07-10: Dashboard shortcuts ใช้ `Link` + `buttonVariants` ไม่ใช้ polymorphic `Button render={<Link>}`
 - 2026-07-10: RolePermissions empty → `onGoToCatalog` จาก PermissionAdmin `setActiveTab("menus")`
 - 2026-07-10: EmptyMedia required เฉพาะ page-level; in-table optional
 - 2026-07-10: SearchDialog แก้ copy เท่านั้น (ไม่เปลี่ยน CommandItem เป็น Link)
 - 2026-07-10: ไม่รวม FE-REV network-audit follow-ups (คนละแผน)
+- 2026-07-10: Smart Report editor ใช้ `onBack`+dirty guard (ไม่ใช้ `backUrl`); Save อยู่ `DetailContainer` เท่านั้น; list navigate แทน `viewMode`
 
 ## Scope
 
