@@ -1,7 +1,7 @@
 ---
-status: active
+status: completed
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-12
 services: [backoffice-next]
 source-review: UX/UI + shadcn DS review (ui-skills-root + shadcn)
 branch: fix/fe-ux-shadcn-ds-2026-07-10
@@ -19,12 +19,10 @@ branch: fix/fe-ux-shadcn-ds-2026-07-10
 - 2026-07-10: Tasks 1–5 implemented (Empty API, SelectGroup, space-y, Nav/Dashboard links, polish); running Checkpoint B
 - 2026-07-10: Recovered truncated files mid-session; Checkpoint B targeted tests green; NavMain active-link assert updated
 - 2026-07-10: Smart Report editor UX + routing (v2): `useSmartReportEditor`, routes `/smart-reports/new` + `/[id]/edit`, workflow bar polish, breadcrumb+dirty guard, NavMain prefix active; 69 targeted tests green
-- 2026-07-11: `/test` full suite — 17 failures in InvoiceList + AdminLayout (unrelated); deferred as **TD-026** in [`tech-debt-tracker.md`](../tech-debt-tracker.md)
+- 2026-07-11: `/test` full suite — 17 failures deferred as **TD-026**
+- 2026-07-12: Smart Report sandbox projection fix, download history sheet polish, ToggleGroup border fix; TD-026 closed (547/547 tests); **ปิดแผน**
 
-## Deferred (TD-026)
-
-Full `npm test` in `frontend/backoffice-next` still has **17 failures** (InvoiceList ×12, AdminLayout ×4, branchSwitcher ×1). Not blocking Smart Report editor ship — fix in a follow-up PR.
-
+## Decision log
 
 - 2026-07-10: Dashboard shortcuts ใช้ `Link` + `buttonVariants` ไม่ใช้ polymorphic `Button render={<Link>}`
 - 2026-07-10: RolePermissions empty → `onGoToCatalog` จาก PermissionAdmin `setActiveTab("menus")`
@@ -45,10 +43,25 @@ Full `npm test` in `frontend/backoffice-next` still has **17 failures** (Invoice
 
 ## Tasks
 
-1. Shared Empty API + call-site CTAs
-2. SelectGroup compliance
-3. Replace `space-y-*` outside `ui/`
-4. NavMain/Dashboard Link + SearchDialog copy
-5. Copy / a11y polish
+- [x] 1. Shared Empty API + call-site CTAs
+- [x] 2. SelectGroup compliance
+- [x] 3. Replace `space-y-*` outside `ui/`
+- [x] 4. NavMain/Dashboard Link + SearchDialog copy
+- [x] 5. Copy / a11y polish
+- [x] Smart Report editor v2 (routes, hook, workflow bar, dirty guard)
+- [x] Smart Report sandbox projection parity (backend `normalizeFindSecondArg`)
+- [x] Download history sheet UX polish
+- [x] TD-026: test harness fixes (`InvoiceList` SidebarProvider, `AdminLayout` Dashboard link query, branchSwitcher flake)
 
-Checkpoints: A after 1–3; B after 4–5 (`npm test` + `npm run check` in `frontend/backoffice-next`)
+## Verification
+
+| Gate | Result |
+|------|--------|
+| `npm test` (backoffice-next) | **547/547 pass** (2026-07-12) |
+| Smart Report targeted suite | 69/69 pass |
+| Commit | `bd7079f` on `fix/fe-ux-shadcn-ds-2026-07-10` |
+
+## Related
+
+- Tech debt: [`../tech-debt-tracker.md`](../tech-debt-tracker.md) (TD-026 closed)
+- Network follow-ups (separate): [`fe-network-audit-review-followups-2026-07-10.md`](./fe-network-audit-review-followups-2026-07-10.md)

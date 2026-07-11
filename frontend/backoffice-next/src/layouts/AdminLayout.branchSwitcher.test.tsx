@@ -278,9 +278,12 @@ describe("AdminLayout branch switcher", () => {
     });
 
     await user.click(branchSwitcherTrigger());
+    await waitFor(() => {
+      expect(screen.getByRole("menuitem", { name: "H01 - Home Branch" })).toBeInTheDocument();
+    });
     expect(screen.queryByRole("menuitem", { name: "X01 - Closed Branch (inactive)" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("checkbox", { name: /show all branches/i }));
+    await user.click(await screen.findByRole("checkbox", { name: /show all branches/i }));
     const inactive = await screen.findByRole("menuitem", { name: "X01 - Closed Branch (inactive)" });
     expect(inactive).not.toHaveAttribute("aria-disabled", "true");
     expect(inactive).toHaveClass("text-muted-foreground");

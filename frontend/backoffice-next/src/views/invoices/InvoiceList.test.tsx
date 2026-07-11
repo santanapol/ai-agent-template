@@ -4,8 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockAuthUser, mockInvoice } from "../../test/mockFactories";
 import { testNavigation } from "../../test/mockNavigation";
-import { renderWithRouter } from "../../test/renderWithRouter";
+import { renderWithRouter, type RenderWithRouterOptions } from "../../test/renderWithRouter";
 import InvoiceList from "./InvoiceList";
+
+function renderInvoiceList(options: RenderWithRouterOptions = {}) {
+  return renderWithRouter(<InvoiceList />, { withSidebar: true, ...options });
+}
 
 const fetchInvoices = vi.fn();
 const fetchInvoiceAgents = vi.fn();
@@ -59,7 +63,7 @@ describe("InvoiceList page", () => {
   });
 
   it("renders page shell with filters and table", async () => {
-    renderWithRouter(<InvoiceList />, { initialEntries: ["/invoices"] });
+    renderInvoiceList({ initialEntries: ["/invoices"] });
 
     expect(screen.getByText("Invoice Management")).toBeInTheDocument();
     expect(screen.getByLabelText(/search invoice no/i)).toBeInTheDocument();
@@ -81,7 +85,7 @@ describe("InvoiceList page", () => {
       generateInvoices,
     });
 
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
     expect(document.querySelector(".animate-pulse")).toBeTruthy();
   });
 
@@ -98,7 +102,7 @@ describe("InvoiceList page", () => {
       generateInvoices,
     });
 
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
     await waitFor(() => {
       expect(screen.getByText("No data found")).toBeInTheDocument();
     });
@@ -107,7 +111,7 @@ describe("InvoiceList page", () => {
   it("hides Create Invoice when write permission is missing", () => {
     mockUsePermission.mockImplementation((permission: string) => permission !== "invoices:write");
 
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
 
     expect(screen.queryByRole("button", { name: /create invoice/i })).not.toBeInTheDocument();
   });
@@ -115,7 +119,7 @@ describe("InvoiceList page", () => {
   it("hides toolbar CSV export when read permission is missing", async () => {
     mockUsePermission.mockImplementation((permission: string) => permission !== "invoices:read");
 
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
 
     await waitFor(() => {
       expect(screen.getByText("INV-001")).toBeInTheDocument();
@@ -130,7 +134,7 @@ describe("InvoiceList page", () => {
       return false;
     });
 
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
 
     await waitFor(() => {
       expect(screen.getByText("INV-001")).toBeInTheDocument();
@@ -138,7 +142,7 @@ describe("InvoiceList page", () => {
   });
 
   it("links to invoice detail from row action", async () => {
-    renderWithRouter(<InvoiceList />, { initialEntries: ["/invoices"] });
+    renderInvoiceList({ initialEntries: ["/invoices"] });
 
     await waitFor(() => {
       expect(screen.getByLabelText(/view invoice inv-001/i)).toBeInTheDocument();
@@ -149,7 +153,7 @@ describe("InvoiceList page", () => {
   });
 
   it("reads filters from URL search params", async () => {
-    renderWithRouter(<InvoiceList />, {
+    renderInvoiceList({
       initialEntries: ["/invoices?search=INV-999&branch_id=branch-1&status=READY"],
     });
 
@@ -160,7 +164,7 @@ describe("InvoiceList page", () => {
   });
 
   it("calls fetchInvoiceAgents once on initial load", async () => {
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
 
     await waitFor(() => {
       expect(fetchInvoiceAgents).toHaveBeenCalledTimes(1);
@@ -174,7 +178,7 @@ describe("InvoiceList page", () => {
       user: mockAuthUser("platform_admin", [], { ou_id: "ou-1" }),
     } as ReturnType<typeof useAuth>);
 
-    const { rerender } = renderWithRouter(<InvoiceList />);
+    const { rerender } = renderInvoiceList();
     await waitFor(() => {
       expect(fetchInvoiceAgents).toHaveBeenCalledTimes(1);
     });
@@ -190,7 +194,7 @@ describe("InvoiceList page", () => {
   });
 
   it("calls fetchInvoices once on initial load", async () => {
-    renderWithRouter(<InvoiceList />);
+    renderInvoiceList();
 
     await waitFor(() => {
       expect(fetchInvoices).toHaveBeenCalledTimes(1);
@@ -198,7 +202,7 @@ describe("InvoiceList page", () => {
   });
 
   it("calls fetchInvoices once for branch_id=all and billing_month URL", async () => {
-    renderWithRouter(<InvoiceList />, {
+    renderInvoiceList({
       initialEntries: ["/invoices?branch_id=all&billing_month=2026-07"],
     });
 
