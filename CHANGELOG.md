@@ -12,6 +12,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-13
+
+Repository snapshot: **backoffice-next UX/shadcn DS** — Smart Report editor v2 + list server filters, staff profile pages (optional email/tel), shared list-page chrome, permission/invoice/agent polish; backend support in smart-report, staff, agent-invoice.
+
+Handoff: [docs/releases/2026-07-13-user.md](docs/releases/2026-07-13-user.md), [docs/releases/2026-07-13-deploy.md](docs/releases/2026-07-13-deploy.md). Git tag: `v0.6.0` (after staging smoke).
+
+### Added
+
+- **Smart Report editor v2** — dedicated routes `/smart-reports/new`, `/smart-reports/:id/edit`; `useSmartReportEditor` hook; script validate/test gate before save.
+- **Smart Report list** — server-side search/filters; download-history drawer; `formatLastRunDisplay`, `downloadHistoryColumns`.
+- **Staff profile pages** — `/staff/new`, `/staff/:id`, `/staff/:id/edit`; `staffProfileForm` contact normalization; optional email/tel on create/patch.
+- **Invoice** — `resolveInvoiceAmountDue` shared util; PDF/XLSX export; `?return=` list back-navigation; currency on detail from agent-invoice.
+- **Layout** — real `<Link>` in `NavMain`/Dashboard; `PermissionGuard` on new routes; `routeGuardMatrix` tests.
+- **Tests** — `useSmartReportEditor.test.ts`, expanded smart-report/staff/invoice integration coverage; **547** Vitest tests in backoffice-next.
+
+### Changed
+
+- List-page toolkit alignment across Staff, Agents, Invoices, Smart Reports, Channel Performance, Permissions.
+- Permission admin — toolbar Save per tab; role save dialog; wildcard mapping notice restored.
+- Branch switcher — inactive branches selectable; channel performance export gated until search.
+- Removed `next-themes`; in-repo `ThemeContext`.
+- Coding standards synced to backoffice-next reality (`01-tech-stack.md`).
+
+### Fixed
+
+- Branch review findings (FE-BR-001–012): `Link` children optional, drawer stale-response guard, UTC overdue badge, tabpanel ARIA, keyboard nav dropdown, build/type errors in `staffProfileForm`.
+- TD-026 test harness (SidebarProvider, AdminLayout Dashboard link).
+- Smart-report sandbox projection for test-run preview; staff normalize null contacts.
+- Agent-invoice get-detail currency resolution; update-status error paths.
+
+### Removed
+
+- Dead export `ribbonColor` (invoice utils); unused `SmartReportEditor` `mode` prop.
+
 ## [0.5.0] - 2026-07-08
 
 Repository snapshot: **backoffice-next staging cutover** — Next.js backoffice on PM2 `zero-backoffice` (`:3005`), legacy Vite `frontend/backoffice` removed, ship hardening (API error copy, SmartReport server pagination, invoice URL filters, security headers, expanded tests).
