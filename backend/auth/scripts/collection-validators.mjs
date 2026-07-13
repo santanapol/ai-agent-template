@@ -24,7 +24,13 @@ export const COLLECTION_VALIDATORS = [
         username: { bsonType: 'string', minLength: 1 },
         password_hash: { bsonType: 'string', minLength: 1 },
         role: { bsonType: 'string', minLength: 1 },
-        access_token_gen: { bsonType: ['int', 'long'] }
+        access_token_gen: { bsonType: ['int', 'long'] },
+        cr_by: { bsonType: 'string', minLength: 1 },
+        cr_date: { bsonType: 'date' },
+        cr_prog: { bsonType: 'string', minLength: 1 },
+        upd_by: { bsonType: 'string', minLength: 1 },
+        upd_date: { bsonType: 'date' },
+        upd_prog: { bsonType: 'string', minLength: 1 }
       }
     }
   },

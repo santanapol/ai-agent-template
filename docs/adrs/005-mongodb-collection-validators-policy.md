@@ -65,5 +65,5 @@ Adding tenant/audit to these in future **requires a new ADR**.
 ## Consequences
 
 - New collections with tenant data should plan validator in ERD from day one.
-- CI/harness `init-db` applies same validators as staging/prod; `verify-harness-schema.sh` gates after seed.
+- CI/harness gates: `seed-all.sh`, GHA job `harness-schema-verify`, and optional local `VERIFY_HARNESS_SCHEMA=1` in `ci-all.sh`.
 - Auth ERD “Deviation — Operational collections” defers to this ADR for validator scope.

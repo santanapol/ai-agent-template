@@ -59,4 +59,16 @@ console.log("=== สรุป ===");
 console.log(`  documents ใน reports: ${reportsCount}`);
 console.log(`  documents ใน download_history: ${historyCount}`);
 
+if (reportsCount > 0) {
+  const missingOutputFormat = await db
+    .collection(REPORTS_COLLECTION)
+    .countDocuments({ outputFormat: { $exists: false } });
+  if (missingOutputFormat > 0) {
+    console.error(
+      `❌ ${missingOutputFormat} report(s) missing required outputFormat`,
+    );
+    process.exit(1);
+  }
+}
+
 await client.close();

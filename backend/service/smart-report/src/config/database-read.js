@@ -45,7 +45,9 @@ export function getReadClient() {
 
 export async function closeReadDatabase() {
   if (client) {
-    await client.close();
+    const closeOptions =
+      process.env.NODE_ENV === "test" ? { force: true } : undefined;
+    await client.close(closeOptions);
     client = null;
   }
 }
