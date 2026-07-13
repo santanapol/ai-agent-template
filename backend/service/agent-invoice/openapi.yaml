@@ -556,6 +556,39 @@ components:
             data:
               $ref: "#/components/schemas/AgentInvoiceDetail"
 
+    BatchInvoicesResultData:
+      type: object
+      required: [items, missing]
+      properties:
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/AgentInvoiceDetail"
+              - type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentInvoiceTransaction"
+        missing:
+          type: array
+          items:
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: "^[a-f0-9]{24}$"
+
+    BatchInvoicesSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+        - type: object
+          properties:
+            success:
+              const: true
+            data:
+              $ref: "#/components/schemas/BatchInvoicesResultData"
+
   responses:
     BadRequest:
       description: Invalid request
@@ -1568,6 +1601,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListInvoiceAgentsSuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/invoices/batch:
+    get:
+      operationId: getInvoicesBatch
+      tags: [invoices]
+      summary: Batch fetch invoice details for export
+      description: |
+        Returns enriched invoice detail rows for up to 50 ids in one request.
+        IDs not found or outside tenant/branch scope are listed in `missing` (partial success).
+        Optional `include=transactions` embeds transaction rows per invoice.
+      parameters:
+        - $ref: "#/components/parameters/xUserOu"
+        - $ref: "#/components/parameters/xUserBranch"
+        - $ref: "#/components/parameters/xUserId"
+        - $ref: "#/components/parameters/xUserRole"
+        - $ref: "#/components/parameters/xRequestId"
+        - name: ids
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 24
+          description: Comma-separated invoice ObjectIds (max 50)
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [transactions]
+      responses:
+        "200":
+          description: Batch invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchInvoicesSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":

@@ -18,6 +18,22 @@ export async function findByInvoiceId({ refIvId, missingFeeOnly = false }) {
   return db.collection(COLLECTION).find(filter).toArray();
 }
 
+/**
+ * @param {string[]} refIvIds
+ */
+export async function findByInvoiceIds(refIvIds) {
+  if (!refIvIds.length) return [];
+
+  const db = getInvoiceDatabase();
+
+  return db
+    .collection(COLLECTION)
+    .find({
+      ref_iv_id: { $in: refIvIds.map((id) => new ObjectId(id)) },
+    })
+    .toArray();
+}
+
 export async function insertMany(docs) {
   const db = getInvoiceDatabase();
 

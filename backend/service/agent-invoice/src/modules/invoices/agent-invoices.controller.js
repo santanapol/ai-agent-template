@@ -11,6 +11,7 @@ import { resolveRequestId } from "../../lib/request-id.js";
 
 import { calculateFee } from "./calculate-fee.service.js";
 import { generateInvoices } from "./generate.service.js";
+import { getInvoicesBatch } from "./batch-get.service.js";
 import { getInvoiceDetail } from "./get-detail.service.js";
 import { listInvoiceAgents } from "./list-invoice-agents.service.js";
 import { resolveListInvoicesRequestQuery } from "./list-invoices.query.js";
@@ -204,6 +205,25 @@ export async function getAgentInvoiceDetail(request, reply) {
     return sendServiceResult(reply, result, requestId);
   } catch (err) {
     return sendCaughtError(request, reply, err, "get-detail request failed");
+  }
+}
+
+export async function getInvoicesBatchHandler(request, reply) {
+  const { ouId } = request.userContext;
+  const scopeBranchId = resolveScopeBranchId(request.userContext);
+  const { ids, include } = request.query ?? {};
+  const requestId = resolveRequestId(request.headers["x-request-id"]);
+
+  try {
+    const result = await getInvoicesBatch({
+      idsParam: ids,
+      includeTransactions: include === "transactions",
+      ouId,
+      scopeBranchId,
+    });
+    return sendServiceResult(reply, result, requestId);
+  } catch (err) {
+    return sendCaughtError(request, reply, err, "batch-get request failed");
   }
 }
 
