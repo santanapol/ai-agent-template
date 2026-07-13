@@ -33,6 +33,7 @@ Write-once — no `upd_*`
 |------------|------|------|
 | `reports` | `IDX_REPORTS_NAME_UNIQUE` | `{ name: 1 }` unique |
 | `reports` | `IDX_REPORTS_ENABLED` | `{ enabled: 1 }` |
+| `reports` | `IDX_REPORTS_SCHEDULE_FREQUENCY` | `{ "schedule.frequency": 1 }` |
 | `download_history` | `IDX_DOWNLOAD_HISTORY_REPORT_LIST` | `{ reportId: 1, startedAt: -1 }` |
 | `download_history` | `IDX_DOWNLOAD_HISTORY_RECENT` | `{ startedAt: -1 }` |
 

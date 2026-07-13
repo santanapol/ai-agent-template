@@ -40,6 +40,7 @@ console.log("▶ สร้าง indexes...");
 await ensureReportIndexes(db);
 console.log("  ✔ reports: IDX_REPORTS_NAME_UNIQUE (unique)");
 console.log("  ✔ reports: IDX_REPORTS_ENABLED");
+console.log("  ✔ reports: IDX_REPORTS_SCHEDULE_FREQUENCY");
 
 await ensureDownloadHistoryIndexes(db);
 console.log("  ✔ download_history: IDX_DOWNLOAD_HISTORY_REPORT_LIST");

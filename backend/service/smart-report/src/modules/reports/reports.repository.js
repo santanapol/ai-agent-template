@@ -64,6 +64,10 @@ export async function ensureReportIndexes(db) {
     { unique: true, name: "IDX_REPORTS_NAME_UNIQUE" },
   );
   await collection.createIndex({ enabled: 1 }, { name: "IDX_REPORTS_ENABLED" });
+  await collection.createIndex(
+    { "schedule.frequency": 1 },
+    { name: "IDX_REPORTS_SCHEDULE_FREQUENCY" },
+  );
   return collection;
 }
 
