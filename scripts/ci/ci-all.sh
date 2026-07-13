@@ -35,6 +35,9 @@ Options:
   --only <phase>     Run one phase: backend | frontend | docs | smoke
   -h, --help         Show this help
 
+Environment:
+  VERIFY_HARNESS_SCHEMA=1   After backend CI: dev-generate-env, init-db ×4, verify-harness-schema.sh
+
 Install notes:
   Default install runs backend/scripts/install-all-deps.sh which rm -rf node_modules
   then npm ci per package, with one retry on TAR_ENTRY_ERROR / incomplete extract.
@@ -320,6 +323,41 @@ main() {
       echo "  ⚠ continuing backend CI — integration tests needing MongoDB may fail" >&2
     fi
     run_backend_ci
+
+    if [[ "${VERIFY_HARNESS_SCHEMA:-}" == "1" ]]; then
+      echo ""
+      echo "==> Harness schema verify (VERIFY_HARNESS_SCHEMA=1)"
+      local harness_services=(
+        "auth:auth"
+        "staff:service/staff"
+        "agent-invoice:service/agent-invoice"
+        "smart-report:service/smart-report"
+      )
+      local harness_entry harness_name harness_rel harness_env
+      for harness_entry in "${harness_services[@]}"; do
+        IFS=':' read -r harness_name harness_rel <<<"$harness_entry"
+        harness_env="$ROOT/backend/$harness_rel/.env.harness"
+        if [[ ! -f "$harness_env" ]]; then
+          echo "  · generating harness env (PORT_OFFSET=0)"
+          mkdir -p /tmp/harness-ci
+          node "$ROOT/scripts/dev/dev-generate-env.mjs" /tmp/harness-ci 0
+          break
+        fi
+      done
+      for harness_entry in "${harness_services[@]}"; do
+        IFS=':' read -r harness_name harness_rel <<<"$harness_entry"
+        harness_env="$ROOT/backend/$harness_rel/.env.harness"
+        echo "  · init-db $harness_name"
+        if ! node --env-file="$harness_env" "$ROOT/backend/$harness_rel/scripts/init-db.mjs"; then
+          record_failure "harness-init-db/$harness_name"
+        fi
+      done
+      if ! "$ROOT/scripts/dev/verify-harness-schema.sh"; then
+        record_failure "harness-schema-verify"
+      else
+        echo "  ✓ harness schema verify passed"
+      fi
+    fi
   fi
 
   if run_phase frontend; then

@@ -117,6 +117,47 @@ jobs:
       - name: Run docs-lint
         run: node scripts/ci/docs-lint.mjs
 
+  harness-schema-verify:
+    name: Harness schema verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install backend deps
+        run: ./backend/scripts/install-all-deps.sh
+
+      - name: Generate harness env (PORT_OFFSET=0)
+        run: |
+          mkdir -p /tmp/harness-ci
+          node scripts/dev/dev-generate-env.mjs /tmp/harness-ci 0
+
+      - name: init-db (validator-bearing services)
+        run: |
+          node --env-file=backend/auth/.env.harness backend/auth/scripts/init-db.mjs
+          node --env-file=backend/service/staff/.env.harness backend/service/staff/scripts/init-db.mjs
+          node --env-file=backend/service/agent-invoice/.env.harness backend/service/agent-invoice/scripts/init-db.mjs
+          node --env-file=backend/service/smart-report/.env.harness backend/service/smart-report/scripts/init-db.mjs
+
+      - name: verify harness schema
+        run: ./scripts/dev/verify-harness-schema.sh
+
   redis-revoke-gateway-e2e:
     name: Redis revoke gateway E2E (manual)
     if: github.event_name == 'workflow_dispatch'

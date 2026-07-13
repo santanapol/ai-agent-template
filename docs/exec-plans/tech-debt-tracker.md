@@ -28,6 +28,11 @@
 | TD-024 | Frontend | P1 | `InvoiceList` `invoiceAgentsRequestedRef` blocks refetch when `ou_id`/`role` changes while mounted (FE-REV-002) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-025 | Frontend | P2 | `StaffManagement` same-key fetch guard can drop reload after cancelled in-flight request (FE-REV-003) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-026 | Frontend | P2 | Full `npm test` (backoffice-next) — test harness drift after NavMain/BulkInvoiceActionBar changes | closed (2026-07-12; 547/547 pass — [`fe-ux-shadcn-ds`](./completed/fe-ux-shadcn-ds-2026-07-10.md)) |
+| TD-027 | Harness | P3 | smart-report `schedule.frequency` index — defer (needs init-db + baseline) | open |
+| TD-031 | Auth | P2 | `/auth/me/branches` q/limit/offset contract + integration tests (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR1) |
+| TD-032 | Staff | P2 | profiles count via repository + tel unset + branch_admin scope tests (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR1) |
+| TD-033 | Agent-invoice | P2 | OU-scoped agent currency lookup + matrix OpenAPI (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR2) |
+| TD-034 | CI | P2 | `harness-schema-verify` GHA job + optional `VERIFY_HARNESS_SCHEMA` in ci-all (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR4) |
 
 
 - Add rows when `/gc` or reviews find debt worth tracking.
