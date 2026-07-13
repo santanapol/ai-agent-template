@@ -28,13 +28,13 @@
 | ประเภท | กติกา | ตัวอย่าง |
 | :--- | :--- | :--- |
 | ไฟล์ React component / page | `PascalCase.tsx` | `StaffDrawer.tsx`, `MyProfile.tsx`, `Error403.tsx` |
-| โฟลเดอร์ feature ใน `components/`, `views/` | `kebab-case` | `components/branch-report/`, `views/agent-fees/` |
+| โฟลเดอร์ feature ใน `components/`, `pages/` | `kebab-case` | `components/branch-report/`, `pages/agent-fees/` |
 | Hooks | `useXxx.ts` (camelCase ตามชื่อ hook) | `usePermission.ts`, `useAppFeedback.ts` |
 | Utilities ใน `lib/`, `types/` | `camelCase.ts` | `adminApiUtils.ts`, `types/auth.ts` |
 | Test | ชื่อเดียวกับไฟล์ที่ test + `.test` | `StaffTable.test.tsx`, `usePermission.test.ts` |
 | **ข้อยกเว้น:** `components/ui/` (shadcn) | `kebab-case.tsx` ตามที่ CLI generate — ห้าม rename | `data-table.tsx`, `loading-button.tsx` |
 
-ห้ามตั้งชื่อไฟล์ view ว่า `index.tsx` (ยกเว้น Next.js App Router `page.tsx`/`layout.tsx` ซึ่งเป็นชื่อบังคับของ framework) — ดู [frontend/backoffice/03-routing-and-pages.md](frontend/backoffice/03-routing-and-pages.md)
+ห้ามตั้งชื่อไฟล์ page ว่า `index.tsx` — ดู [frontend/backoffice/03-routing-and-pages.md](frontend/backoffice/303-routing-and-pages.md)
 
 ## เอกสาร (docs, specs)
 

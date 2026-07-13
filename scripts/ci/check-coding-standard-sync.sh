@@ -18,7 +18,11 @@ echo "Vendored: $ROOT/coding-standard"
 echo "Upstream: $UPSTREAM"
 echo ""
 
-if diff -qr "$UPSTREAM" "$ROOT/coding-standard" --exclude=README.md 2>/dev/null; then
+if diff -qr "$UPSTREAM" "$ROOT/coding-standard" \
+  --exclude=README.md \
+  --exclude=node_modules \
+  --exclude=dist \
+  --exclude=reference 2>/dev/null; then
   echo "✓ coding-standard in sync (excluding README vendored note)"
   exit 0
 fi
