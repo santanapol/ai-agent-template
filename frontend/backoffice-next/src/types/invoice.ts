@@ -79,6 +79,15 @@ export interface GenerateInvoicesData {
   generated_count: number;
 }
 
+export interface BatchInvoiceItem extends Invoice {
+  transactions?: InvoiceTransaction[];
+}
+
+export interface BatchInvoicesData {
+  items: BatchInvoiceItem[];
+  missing: string[];
+}
+
 export interface PartialFailureData {
   error_invoice_ids: string[];
   generated_count: number;

@@ -1,5 +1,6 @@
 import type { ApiEnvelope } from "../types/agents";
 import type {
+  BatchInvoicesData,
   GenerateInvoicesData,
   GenerateInvoicesPayload,
   Invoice,
@@ -24,6 +25,24 @@ export async function listInvoiceAgents(signal?: AbortSignal) {
 
 export async function getInvoiceById(id: string, signal?: AbortSignal) {
   const res = await client.get<ApiEnvelope<Invoice>>(`/api/v1/invoices/${id}`, { signal });
+  return res.data;
+}
+
+export async function getInvoicesBatch(
+  ids: string[],
+  options: { includeTransactions?: boolean } = {},
+  signal?: AbortSignal,
+) {
+  const params: Record<string, string> = {
+    ids: ids.join(","),
+  };
+  if (options.includeTransactions) {
+    params.include = "transactions";
+  }
+  const res = await client.get<ApiEnvelope<BatchInvoicesData>>("/api/v1/invoices/batch", {
+    params,
+    signal,
+  });
   return res.data;
 }
 
