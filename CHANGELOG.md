@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Repository snapshot: **Deferred TD closeout** — batch invoice API + FE bulk export, Smart Report drawer server pagination, schedule.frequency index (code), CI baseline validator sync, orphan fee ops runbook.
 
-Handoff: [docs/releases/2026-07-13-2-user.md](docs/releases/2026-07-13-2-user.md), [docs/releases/2026-07-13-2-deploy.md](docs/releases/2026-07-13-2-deploy.md). Git tag: `v0.7.0` (after staging smoke).
+Handoff: [docs/releases/2026-07-13-2-user.md](docs/releases/2026-07-13-2-user.md), [docs/releases/2026-07-13-2-deploy.md](docs/releases/2026-07-13-2-deploy.md). Git tag: `v0.7.0` → `db71e0d` (pushed 2026-07-13).
 
 ### Added
 
@@ -34,6 +34,7 @@ Handoff: [docs/releases/2026-07-13-2-user.md](docs/releases/2026-07-13-2-user.md
 ### Fixed
 
 - GHA `Harness schema verify` on `main` after audit follow-up validator drift (PR #69).
+- PM2 `max_memory_restart` too low on 2GB staging — `zero-gateway` restart loop (`db71e0d`).
 
 ### Deferred / human ops
 

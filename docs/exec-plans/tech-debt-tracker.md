@@ -34,6 +34,7 @@
 | TD-032 | Staff | P2 | profiles count via repository + tel unset + branch_admin scope tests (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR1) |
 | TD-033 | Agent-invoice | P2 | OU-scoped agent currency lookup + matrix OpenAPI (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR2) |
 | TD-034 | CI | P2 | `harness-schema-verify` GHA job + optional `VERIFY_HARNESS_SCHEMA` in ci-all (health audit 2026-07-13) | closed (2026-07-13; audit follow-up PR4) |
+| TD-036 | Harness | P2 | PM2 `max_memory_restart` too low on 2GB staging — `zero-gateway` idle RSS ~130MB vs 120M cap caused restart loop | closed (2026-07-13; `ecosystem.factory.js` caps raised; tagged `v0.7.0` @ `db71e0d`) |
 
 
 - Add rows when `/gc` or reviews find debt worth tracking.
