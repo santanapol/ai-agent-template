@@ -40,6 +40,8 @@ const SmartReport: React.FC = () => {
   const [enrichmentHistory, setEnrichmentHistory] = useState<DownloadHistoryRecord[]>([]);
   const [drawerDownloads, setDrawerDownloads] = useState<DownloadHistoryRecord[]>([]);
   const [drawerHistoryTotal, setDrawerHistoryTotal] = useState(0);
+  const [drawerPage, setDrawerPage] = useState(1);
+  const [drawerPageSize, setDrawerPageSize] = useState(SMART_REPORT_DRAWER_HISTORY_LIMIT);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [rawSearch, setRawSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -138,26 +140,41 @@ const SmartReport: React.FC = () => {
     });
   }, [reports, latestRunByReportId]);
 
-  const loadDrawerHistory = useCallback(async (reportId: string) => {
-    drawerRequestReportIdRef.current = reportId;
-    setDrawerLoading(true);
-    try {
-      const response = await listHistory({
-        page: 1,
-        limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
-        reportId,
-      });
-      // Ignore responses for a report the user has since navigated away from.
-      if (drawerRequestReportIdRef.current !== reportId) return;
-      setDrawerDownloads(response.data);
-      setDrawerHistoryTotal(response.pagination.total);
-    } catch (err) {
-      if (drawerRequestReportIdRef.current !== reportId) return;
-      messageRef.current.error(apiErrorMessage(err, "Failed to load report history"));
-    } finally {
-      if (drawerRequestReportIdRef.current === reportId) setDrawerLoading(false);
-    }
-  }, []);
+  const loadDrawerHistory = useCallback(
+    async (reportId: string, page = 1, limit = SMART_REPORT_DRAWER_HISTORY_LIMIT) => {
+      drawerRequestReportIdRef.current = reportId;
+      setDrawerLoading(true);
+      try {
+        const response = await listHistory({
+          page,
+          limit,
+          reportId,
+        });
+        // Ignore responses for a report the user has since navigated away from.
+        if (drawerRequestReportIdRef.current !== reportId) return;
+        setDrawerDownloads(response.data);
+        setDrawerHistoryTotal(response.pagination.total);
+      } catch (err) {
+        if (drawerRequestReportIdRef.current !== reportId) return;
+        messageRef.current.error(apiErrorMessage(err, "Failed to load report history"));
+      } finally {
+        if (drawerRequestReportIdRef.current === reportId) setDrawerLoading(false);
+      }
+    },
+    [],
+  );
+
+  const handleDrawerPaginationChange = useCallback(
+    (pageIndex: number, pageSize: number) => {
+      const nextPage = pageIndex + 1;
+      setDrawerPage(nextPage);
+      setDrawerPageSize(pageSize);
+      if (selectedReportId) {
+        void loadDrawerHistory(selectedReportId, nextPage, pageSize);
+      }
+    },
+    [loadDrawerHistory, selectedReportId],
+  );
 
   const handleRunReport = async (report: Report) => {
     setRunningId(report.id);
@@ -166,7 +183,7 @@ const SmartReport: React.FC = () => {
       const record = await runReport(report.id);
       refresh();
       if (isDrawerOpen && selectedReportId === report.id) {
-        void loadDrawerHistory(report.id);
+        void loadDrawerHistory(report.id, drawerPage, drawerPageSize);
       }
       if (record.status === "success") {
         toast.success(`Report "${report.name}" generated and saved successfully`, { id: toastId });
@@ -193,9 +210,11 @@ const SmartReport: React.FC = () => {
   const handleViewFiles = async (reportId: string) => {
     setSelectedReportId(reportId);
     setIsDrawerOpen(true);
+    setDrawerPage(1);
+    setDrawerPageSize(SMART_REPORT_DRAWER_HISTORY_LIMIT);
     setDrawerDownloads([]);
     setDrawerHistoryTotal(0);
-    await loadDrawerHistory(reportId);
+    await loadDrawerHistory(reportId, 1, SMART_REPORT_DRAWER_HISTORY_LIMIT);
   };
 
   const handleDownload = async (record: DownloadHistoryRecord) => {
@@ -237,7 +256,9 @@ const SmartReport: React.FC = () => {
       selectedReport={selectedReport}
       selectedReportDownloads={drawerDownloads}
       drawerHistoryTotal={drawerHistoryTotal}
-      drawerHistoryLimit={SMART_REPORT_DRAWER_HISTORY_LIMIT}
+      drawerPage={drawerPage}
+      drawerPageSize={drawerPageSize}
+      onDrawerPaginationChange={handleDrawerPaginationChange}
       onCreateNew={() => navigate("/smart-reports/new")}
       onRunReport={(report) => void handleRunReport(report)}
       onEditReport={(report) => navigate(`/smart-reports/${report.id}/edit`)}

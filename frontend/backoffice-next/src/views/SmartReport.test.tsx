@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -254,6 +254,120 @@ describe("SmartReport (list mode)", () => {
     await waitFor(() => {
       expect(listHistory).toHaveBeenCalledWith(
         expect.objectContaining({ page: 1, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+  });
+
+  it("fetches drawer page 2 when pagination changes", async () => {
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    const pageOneHistory = Array.from({ length: 20 }, (_, index) => ({
+      id: `hist-${index + 1}`,
+      reportId: sampleReport.id,
+      reportName: sampleReport.name,
+      status: "success" as const,
+      error: null,
+      fileName: `file-${index + 1}.csv`,
+      format: "csv" as const,
+      recordCount: 10,
+      triggeredBy: "manual" as const,
+      startedAt: "2026-07-01T00:00:00.000Z",
+      finishedAt: "2026-07-01T00:01:00.000Z",
+    }));
+
+    vi.mocked(listHistory).mockImplementation(async (params) => {
+      if (params?.reportId && params.page === 2) {
+        return {
+          data: [{ ...pageOneHistory[0], id: "hist-page-2", fileName: "page-2.csv" }],
+          pagination: { page: 2, limit: 20, total: 45, totalPages: 3 },
+        };
+      }
+      if (params?.reportId) {
+        return {
+          data: pageOneHistory,
+          pagination: { page: 1, limit: 20, total: 45, totalPages: 3 },
+        };
+      }
+      return mockPaginatedResponse([]);
+    });
+
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/view download history/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText(/view download history/i));
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+
+    const drawerHistoryCallsBeforePage2 = vi.mocked(listHistory).mock.calls.filter((call) => call[0]?.reportId).length;
+
+    await waitFor(() => {
+      expect(screen.getByText("Download History: Daily Sales")).toBeInTheDocument();
+    });
+
+    const drawer = screen.getByRole("dialog");
+    await waitFor(() => {
+      expect(within(drawer).getByRole("button", { name: "2" })).toBeInTheDocument();
+    });
+    await user.click(within(drawer).getByRole("button", { name: "2" }));
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+    expect(vi.mocked(listHistory).mock.calls.filter((call) => call[0]?.reportId).length).toBeGreaterThan(
+      drawerHistoryCallsBeforePage2,
+    );
+  }, 10000);
+
+  it("resets drawer to page 1 when opening history for a different report", async () => {
+    const secondReport = { ...sampleReport, id: "report-2", name: "Weekly Sales" };
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport, secondReport]));
+
+    vi.mocked(listHistory).mockImplementation(async (params) => {
+      if (params?.reportId) {
+        return {
+          data: [],
+          pagination: {
+            page: params.page ?? 1,
+            limit: params.limit ?? 20,
+            total: 0,
+            totalPages: 1,
+          },
+        };
+      }
+      return mockPaginatedResponse([]);
+    });
+
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/view download history/i)).toHaveLength(2);
+    });
+
+    await user.click(screen.getAllByLabelText(/view download history/i)[0]);
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+
+    vi.mocked(listHistory).mockClear();
+
+    await user.click(screen.getAllByLabelText(/view download history/i)[1]);
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20, reportId: secondReport.id }),
       );
     });
   });

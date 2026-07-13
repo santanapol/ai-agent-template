@@ -9,7 +9,6 @@ import {
   DataTablePagination,
   DataTableToolbarActions,
   DataTableView,
-  useClientDataTable,
   useServerDataTable,
 } from "@/components/data-table";
 import { ListPageCard } from "@/components/layout";
@@ -63,7 +62,9 @@ export interface SmartReportListProps {
   selectedReport: Report | null;
   selectedReportDownloads: DownloadHistoryRecord[];
   drawerHistoryTotal: number;
-  drawerHistoryLimit: number;
+  drawerPage: number;
+  drawerPageSize: number;
+  onDrawerPaginationChange: (pageIndex: number, pageSize: number) => void;
   onCreateNew: () => void;
   onRunReport: (report: Report) => void;
   onEditReport: (report: Report) => void;
@@ -93,7 +94,9 @@ export function SmartReportList({
   selectedReport,
   selectedReportDownloads,
   drawerHistoryTotal,
-  drawerHistoryLimit,
+  drawerPage,
+  drawerPageSize,
+  onDrawerPaginationChange,
   onCreateNew,
   onRunReport,
   onEditReport,
@@ -131,18 +134,20 @@ export function SmartReportList({
     getRowId: (row) => row.id,
   });
 
-  const drawerTable = useClientDataTable({
+  const drawerPageCount = Math.max(1, Math.ceil(drawerHistoryTotal / drawerPageSize));
+
+  const drawerTable = useServerDataTable({
     data: selectedReportDownloads,
     columns: drawerColumns,
-    initialPageSize: 10,
+    pageIndex: drawerPage - 1,
+    pageSize: drawerPageSize,
+    pageCount: drawerPageCount,
+    onPaginationChange: (pagination) => onDrawerPaginationChange(pagination.pageIndex, pagination.pageSize),
     getRowId: (row) => row.id,
   });
 
   const selectedReportName = selectedReport?.name ?? "";
-  const drawerPageCount = drawerTable.getPageCount();
-  const showDrawerPagination = drawerPageCount > 1;
-  const drawerShownCount = selectedReportDownloads.length;
-  const drawerTruncated = drawerHistoryTotal > drawerHistoryLimit;
+  const showDrawerPagination = drawerHistoryTotal > drawerPageSize;
 
   return (
     <>
@@ -205,25 +210,21 @@ export function SmartReportList({
             <SheetTitle className="truncate pr-8">Download History: {selectedReportName}</SheetTitle>
             <SheetDescription>Execution history and saved downloads for this report script.</SheetDescription>
           </SheetHeader>
-          {drawerLoading ? (
+          {drawerLoading && selectedReportDownloads.length === 0 ? (
             <div className="flex flex-col gap-2 px-4 py-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <Skeleton key={index} className="h-10 w-full rounded-md" />
               ))}
             </div>
-          ) : selectedReportDownloads.length > 0 ? (
+          ) : selectedReportDownloads.length > 0 || drawerHistoryTotal > 0 ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
                 <DataTableView
                   table={drawerTable}
+                  loading={drawerLoading}
                   className="**:data-[slot=table-cell]:px-2 **:data-[slot=table-head]:px-2"
                 />
               </div>
-              {drawerTruncated ? (
-                <p className="text-muted-foreground shrink-0 px-4 pt-3 text-xs">
-                  Showing latest {Math.min(drawerShownCount, drawerHistoryLimit)} of {drawerHistoryTotal} runs.
-                </p>
-              ) : null}
               {showDrawerPagination ? (
                 <DataTablePagination table={drawerTable} pageSizeOptions={[10, 20]} total={drawerHistoryTotal} />
               ) : null}
