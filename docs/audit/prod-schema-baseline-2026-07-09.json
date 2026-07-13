@@ -1013,6 +1013,16 @@
               "expireAfterSeconds": null,
               "sparse": false,
               "partialFilterExpression": null
+            },
+            {
+              "name": "IDX_REPORTS_SCHEDULE_FREQUENCY",
+              "key": {
+                "schedule.frequency": 1
+              },
+              "unique": false,
+              "expireAfterSeconds": null,
+              "sparse": false,
+              "partialFilterExpression": null
             }
           ],
           "validator": {

@@ -625,4 +625,5 @@ validationLevel: `moderate`
 - `_id_`: `{"_id":1}`
 - `IDX_REPORTS_NAME_UNIQUE`: `{"name":1}` (unique)
 - `IDX_REPORTS_ENABLED`: `{"enabled":1}`
+- `IDX_REPORTS_SCHEDULE_FREQUENCY`: `{"schedule.frequency":1}`
 

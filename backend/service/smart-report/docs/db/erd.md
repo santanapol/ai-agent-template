@@ -130,6 +130,12 @@ db.reports.createIndex(
   { enabled: 1 },
   { name: "IDX_REPORTS_ENABLED" },
 );
+
+// List filter: GET ?schedule=daily|weekly|monthly
+db.reports.createIndex(
+  { "schedule.frequency": 1 },
+  { name: "IDX_REPORTS_SCHEDULE_FREQUENCY" },
+);
 ```
 
 ### Indexes for `download_history`

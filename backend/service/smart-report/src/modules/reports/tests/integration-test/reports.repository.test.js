@@ -30,6 +30,7 @@ if (!RUN) {
 
         assert.ok(names.includes("IDX_REPORTS_NAME_UNIQUE"));
         assert.ok(names.includes("IDX_REPORTS_ENABLED"));
+        assert.ok(names.includes("IDX_REPORTS_SCHEDULE_FREQUENCY"));
       } finally {
         await closeDatabase();
       }
