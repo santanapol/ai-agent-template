@@ -84,6 +84,22 @@ describe("apiErrorMessage", () => {
     expect(apiErrorMessage(err, "fallback")).toBe("fallback");
   });
 
+  it("passes through INVALID_PARAM server message when specific", () => {
+    const err = makeAxiosError({
+      code: "INVALID_PARAM",
+      message: "tel must be in E.164 format (start with +)",
+    });
+    expect(apiErrorMessage(err, "fallback")).toBe("tel must be in E.164 format (start with +)");
+  });
+
+  it("falls back for generic INVALID_PARAM validation envelope", () => {
+    const err = makeAxiosError({
+      code: "INVALID_PARAM",
+      message: "Request validation failed",
+    });
+    expect(apiErrorMessage(err, "fallback")).toBe("fallback");
+  });
+
   it("maps AUTH_MENU_NOT_FOUND to fixed message", () => {
     const err = makeAxiosError({
       code: "AUTH_MENU_NOT_FOUND",

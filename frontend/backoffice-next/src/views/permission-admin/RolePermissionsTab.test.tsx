@@ -1,10 +1,13 @@
+import { useState } from "react";
+
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LoadingButton } from "../../components/LoadingButton";
 import { renderWithProviders } from "../../test/renderWithProviders";
-import type { AdminMenuNode } from "../../types/permissionAdmin";
-import RolePermissionsTab from "./RolePermissionsTab";
+import type { AdminMenuNode, KnownRole } from "../../types/permissionAdmin";
+import RolePermissionsTab, { type RoleSaveActions } from "./RolePermissionsTab";
 
 const sampleMenus: AdminMenuNode[] = [
   {
@@ -33,14 +36,38 @@ const sampleMenus: AdminMenuNode[] = [
   },
 ];
 
+function RolePermissionsHarness({
+  overrides = {},
+}: {
+  overrides?: Partial<React.ComponentProps<typeof RolePermissionsTab>>;
+}) {
+  const [role, setRole] = useState<KnownRole>("platform_admin");
+  const [saveActions, setSaveActions] = useState<RoleSaveActions | null>(null);
+
+  return (
+    <>
+      <LoadingButton
+        loading={saveActions?.saving ?? false}
+        disabled={saveActions?.disabled ?? true}
+        onClick={() => saveActions?.save()}
+      >
+        Save
+      </LoadingButton>
+      <RolePermissionsTab
+        menus={sampleMenus}
+        menusLoading={false}
+        menusForbidden={false}
+        {...overrides}
+        role={role}
+        onRoleCommitted={setRole}
+        onSaveActionReady={setSaveActions}
+      />
+    </>
+  );
+}
+
 function renderRolePermissionsTab(overrides: Partial<React.ComponentProps<typeof RolePermissionsTab>> = {}) {
-  const props: React.ComponentProps<typeof RolePermissionsTab> = {
-    menus: sampleMenus,
-    menusLoading: false,
-    menusForbidden: false,
-    ...overrides,
-  };
-  renderWithProviders(<RolePermissionsTab {...props} />);
+  renderWithProviders(<RolePermissionsHarness overrides={overrides} />);
 }
 
 const listRolePermissions = vi.fn();
@@ -95,13 +122,8 @@ describe("RolePermissionsTab", () => {
     renderRolePermissionsTab();
     expect(await screen.findByText("Permissions")).toBeInTheDocument();
     expect(screen.getByText("Staff list")).toBeInTheDocument();
-    expect(screen.getByLabelText("Role")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /role:/i })).toBeInTheDocument();
     await waitFor(() => expect(listRolePermissions).toHaveBeenCalledWith({ role: "platform_admin" }));
-  });
-
-  it("shows wildcard alert preserved on save", async () => {
-    renderRolePermissionsTab();
-    expect(await screen.findByText(/profiles:\*/)).toBeInTheDocument();
   });
 
   it("shows forbidden result when menusForbidden is true", async () => {
@@ -126,6 +148,7 @@ describe("RolePermissionsTab", () => {
     const profilesCheckbox = screen.getByRole("checkbox", { name: /staff list/i });
     await user.click(profilesCheckbox);
     await user.click(screen.getByRole("button", { name: /^save$/i }));
+    await user.click(await screen.findByRole("button", { name: /^save only$/i }));
 
     await waitFor(() => expect(upsertRolePermission).toHaveBeenCalled());
     expect(upsertRolePermission).toHaveBeenCalledWith(
@@ -161,7 +184,7 @@ describe("RolePermissionsTab", () => {
     expect(screen.getByRole("checkbox", { name: /permissions/i })).toBeChecked();
   });
 
-  it("sends revoke_sessions when checkbox enabled and confirmed", async () => {
+  it("sends revoke_sessions when Save and revoke sessions is chosen", async () => {
     const user = userEvent.setup();
     upsertRolePermission.mockResolvedValue({
       ou_id: "null",
@@ -174,9 +197,8 @@ describe("RolePermissionsTab", () => {
     renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
-    await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
     await user.click(screen.getByRole("button", { name: /^save$/i }));
-    await user.click(await screen.findByRole("button", { name: /save and revoke/i }));
+    await user.click(await screen.findByRole("button", { name: /save and revoke sessions/i }));
 
     await waitFor(() => {
       expect(upsertRolePermission).toHaveBeenCalledWith("platform_admin", {
@@ -207,7 +229,7 @@ describe("RolePermissionsTab", () => {
     expect(manageCheckbox).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("resets revoke_sessions when changing role", async () => {
+  it("loads mapping for the newly selected role", async () => {
     const user = userEvent.setup();
     listRolePermissions.mockImplementation(async ({ role }: { role?: string }) => [
       {
@@ -221,18 +243,12 @@ describe("RolePermissionsTab", () => {
     renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
-    await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
-    expect(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i })).toBeChecked();
-
-    await user.click(screen.getByLabelText("Role"));
-    await user.click(screen.getByText("Branch Admin"));
+    await user.click(screen.getByRole("combobox", { name: /role:/i }));
+    await user.click(await screen.findByRole("option", { name: /^branch admin$/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }),
-      ).not.toBeChecked();
+      expect(listRolePermissions).toHaveBeenCalledWith({ role: "branch_admin" });
     });
-    expect(listRolePermissions).toHaveBeenCalledWith({ role: "branch_admin" });
   });
 
   it("does not stay loading when menu registry is empty", async () => {
@@ -260,8 +276,8 @@ describe("RolePermissionsTab", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
     await user.click(screen.getByRole("checkbox", { name: /staff list/i }));
-    await user.click(screen.getByLabelText("Role"));
-    await user.click(screen.getByText("Branch Admin"));
+    await user.click(screen.getByRole("combobox", { name: /role:/i }));
+    await user.click(await screen.findByRole("option", { name: /^branch admin$/i }));
 
     expect(await screen.findByText("Discard unsaved changes?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^discard$/i }));
@@ -278,8 +294,8 @@ describe("RolePermissionsTab", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
     await user.click(screen.getByRole("checkbox", { name: /staff list/i }));
-    await user.click(screen.getByLabelText("Role"));
-    await user.click(screen.getByText("Branch Admin"));
+    await user.click(screen.getByRole("combobox", { name: /role:/i }));
+    await user.click(await screen.findByRole("option", { name: /^branch admin$/i }));
 
     expect(await screen.findByText("Discard unsaved changes?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^cancel$/i }));
@@ -288,16 +304,14 @@ describe("RolePermissionsTab", () => {
     expect(listRolePermissions).toHaveBeenCalledWith({ role: "platform_admin" });
   });
 
-  it("does not save when revoke sessions dialog is cancelled", async () => {
+  it("does not save when save dialog is cancelled", async () => {
     const user = userEvent.setup();
 
     renderRolePermissionsTab();
     await screen.findByText("Permissions");
 
-    await user.click(screen.getByRole("checkbox", { name: /revoke active sessions for users with this role/i }));
     await user.click(screen.getByRole("button", { name: /^save$/i }));
-
-    expect(await screen.findByText("Revoke active sessions?")).toBeInTheDocument();
+    expect(await screen.findByText("Save role permissions?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^cancel$/i }));
     expect(upsertRolePermission).not.toHaveBeenCalled();
   });
@@ -332,6 +346,7 @@ describe("RolePermissionsTab", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
     await user.click(screen.getByRole("button", { name: /^save$/i }));
+    await user.click(await screen.findByRole("button", { name: /^save only$/i }));
 
     await waitFor(() => {
       expect(mockFeedback.message.success).toHaveBeenCalledWith(expect.stringContaining("refresh their session"));
@@ -360,6 +375,7 @@ describe("RolePermissionsTab", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^save$/i })).not.toBeDisabled());
 
     await user.click(screen.getByRole("button", { name: /^save$/i }));
+    await user.click(await screen.findByRole("button", { name: /^save only$/i }));
 
     await waitFor(() => {
       expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to save role permissions");

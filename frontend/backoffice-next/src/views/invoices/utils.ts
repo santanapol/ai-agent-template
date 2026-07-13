@@ -3,22 +3,87 @@ import dayjs from "dayjs";
 
 import type { badgeVariants } from "@/components/ui/badge";
 
-import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
+import type { Invoice, InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
 import { INVOICE_STATUSES } from "../../types/invoice";
+
+/**
+ * Single source of truth for an invoice's "amount due": the authoritative
+ * `invoice.amount` when present, otherwise the sum of the loaded line items.
+ * Used by the detail headline and both export builders so they never disagree.
+ */
+export function resolveInvoiceAmountDue(invoice: Invoice, transactions: InvoiceTransaction[]): number {
+  if (invoice.amount != null) return invoice.amount;
+  return transactions.reduce((sum, t) => sum + t.amount, 0);
+}
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return "-";
-  return val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(val);
+}
+
+/**
+ * Prefix amount with currency code when present (e.g. `THB 1,234.00`).
+ * Grouping/decimals use fixed `en-US` conventions regardless of the currency code —
+ * intentional so exported invoices render consistently rather than per-locale.
+ */
+export function formatMoneyWithCurrency(val: number | null | undefined, currency: string | null | undefined): string {
+  const amount = formatMoney(val);
+  if (amount === "-") return amount;
+  const code = currency?.trim();
+  if (!code) return amount;
+  return `${code.toUpperCase()} ${amount}`;
 }
 
 export function formatDate(val: string | null | undefined): string {
   if (!val) return "-";
   const date = new Date(val);
   if (Number.isNaN(date.getTime())) return "-";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** `YYYY-MM` → readable month label (e.g. `July 2026`). */
+export function formatBillingMonth(val: string | null | undefined): string {
+  if (!val) return "-";
+  const match = /^(\d{4})-(\d{2})$/.exec(val.trim());
+  if (!match) return val;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return val;
+  const date = new Date(year, month - 1, 1);
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+}
+
+const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  PENDING: "Pending",
+  VOID: "Void",
+  CAL: "Calculating",
+  MISSING_FEE: "Missing fee",
+  READY: "Ready to pay",
+  ERROR: "Error",
+  PAID: "Paid",
+};
+
+export function formatInvoiceStatusLabel(status: string): string {
+  return INVOICE_STATUS_LABELS[status as InvoiceStatus] ?? status;
+}
+
+export function isDueDateOverdue(dueDate: string | null | undefined, status: string): boolean {
+  if (!dueDate || status === "PAID" || status === "VOID") return false;
+  const due = new Date(dueDate);
+  if (Number.isNaN(due.getTime())) return false;
+  // Compare calendar days in UTC so the badge does not flip a day early in
+  // negative UTC-offset timezones (due_date is stored as a UTC-midnight instant).
+  const now = new Date();
+  const dueDay = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
+  const todayDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return dueDay < todayDay;
 }
 
 export function formatFee(fee: number | "N/A"): string {
@@ -48,14 +113,6 @@ const STATUS_VARIANTS: Record<InvoiceStatus, BadgeVariant> = {
 
 export function statusTagColor(status: string): BadgeVariant {
   return STATUS_VARIANTS[status as InvoiceStatus] ?? "secondary";
-}
-
-export function ribbonColor(status: string): string {
-  if (status === "PAID") return "green";
-  if (status === "READY") return "blue";
-  if (status === "PENDING") return "orange";
-  if (status === "ERROR") return "red";
-  return "blue";
 }
 
 export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): InvoiceTransaction[] {

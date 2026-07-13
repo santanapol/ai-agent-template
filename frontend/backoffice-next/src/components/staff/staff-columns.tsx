@@ -11,8 +11,26 @@ import type { StaffProfile } from "@/types/staff";
 export interface StaffColumnHandlers {
   onView: (record: StaffProfile) => void;
   onEdit?: (record: StaffProfile) => void;
-  onArchive: (record: StaffProfile) => void;
-  onRestore: (record: StaffProfile) => void;
+  onArchive?: (record: StaffProfile) => void;
+  onRestore?: (record: StaffProfile) => void;
+}
+
+export const STAFF_TABLE_COLUMN_IDS = ["code", "name", "username", "status", "actions"] as const;
+
+function TruncatedCell({
+  text,
+  className,
+  maxWidthClass,
+}: {
+  text: string;
+  className?: string;
+  maxWidthClass: string;
+}) {
+  return (
+    <span className={`block truncate ${maxWidthClass} ${className ?? ""}`} title={text}>
+      {text}
+    </span>
+  );
 }
 
 export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<StaffProfile>[] {
@@ -24,17 +42,17 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
       accessorKey: "code",
       header: "Code",
       enableHiding: true,
+      cell: ({ row }) => <TruncatedCell text={row.original.code} maxWidthClass="max-w-32" />,
     },
     {
       id: "name",
       header: "Name",
       enableHiding: true,
       accessorFn: (record) => `${record.firstname} ${record.lastname}`,
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.firstname} {row.original.lastname}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const fullName = `${row.original.firstname} ${row.original.lastname}`;
+        return <TruncatedCell text={fullName} className="font-medium" maxWidthClass="max-w-48" />;
+      },
     },
     {
       id: "username",
@@ -42,18 +60,6 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
       enableHiding: true,
       accessorFn: (record) => record.user?.username ?? "—",
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.user?.username ?? "—"}</span>,
-    },
-    {
-      id: "email",
-      accessorKey: "email",
-      header: "Email",
-      enableHiding: true,
-    },
-    {
-      id: "tel",
-      accessorKey: "tel",
-      header: "Tel",
-      enableHiding: true,
     },
     {
       id: "status",
@@ -69,7 +75,7 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
     },
     {
       id: "actions",
-      header: "Actions",
+      header: "Action",
       enableHiding: false,
       cell: ({ row }) => {
         const record = row.original;
@@ -97,7 +103,7 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
                 <TooltipContent>Edit profile</TooltipContent>
               </Tooltip>
             ) : null}
-            {record.status === "active" ? (
+            {record.status === "active" && onArchive ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -114,7 +120,8 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
                 />
                 <TooltipContent>Archive profile</TooltipContent>
               </Tooltip>
-            ) : (
+            ) : null}
+            {record.status !== "active" && onRestore ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -131,7 +138,7 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
                 />
                 <TooltipContent>Restore profile</TooltipContent>
               </Tooltip>
-            )}
+            ) : null}
           </div>
         );
       },

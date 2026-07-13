@@ -5,7 +5,7 @@ import { PageContentCard } from "@/components/layout";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { fieldErrorIds } from "@/lib/fieldA11y";
-import { PASSWORD_MIN_LENGTH } from "@/lib/passwordPolicy";
+import { PASSWORD_REQUIREMENTS_DESCRIPTION } from "@/lib/passwordPolicy";
 
 interface ChangePasswordCardProps {
   currentPassword: string;
@@ -71,9 +71,7 @@ export function ChangePasswordCard({
               {errors.new_password}
             </FieldDescription>
           ) : (
-            <FieldDescription id={newPasswordHintId}>
-              Minimum {PASSWORD_MIN_LENGTH} characters with mixed case, numbers, and symbols.
-            </FieldDescription>
+            <FieldDescription id={newPasswordHintId}>{PASSWORD_REQUIREMENTS_DESCRIPTION}</FieldDescription>
           )}
         </Field>
         <Field data-invalid={!!errors.confirm_new_password}>

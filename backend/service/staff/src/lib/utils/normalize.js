@@ -85,6 +85,40 @@ export function normalizeTel(tel) {
 }
 
 /**
+ * @param {unknown} email
+ * @returns {string | undefined} normalized email, or undefined to omit/unset
+ */
+export function normalizeOptionalEmail(email) {
+  if (email === null || email === undefined) {
+    return undefined;
+  }
+  if (typeof email !== "string") {
+    throw new HttpError(400, CODES.INVALID_PARAM, "email must be a string");
+  }
+  if (email.trim() === "") {
+    return undefined;
+  }
+  return normalizeEmail(email);
+}
+
+/**
+ * @param {unknown} tel
+ * @returns {string | undefined} normalized tel, or undefined to omit/unset
+ */
+export function normalizeOptionalTel(tel) {
+  if (tel === null || tel === undefined) {
+    return undefined;
+  }
+  if (typeof tel !== "string") {
+    throw new HttpError(400, CODES.INVALID_PARAM, "tel must be a string");
+  }
+  if (tel.trim() === "") {
+    return undefined;
+  }
+  return normalizeTel(tel);
+}
+
+/**
  * @param {string} username
  */
 export function normalizeUsername(username) {
@@ -95,10 +129,13 @@ export function normalizeUsername(username) {
 /**
  * Normalize merge-patch body (only fields present).
  * @param {Record<string, unknown>} body
+ * @returns {{ fields: Record<string, string>, unset: string[] }}
  */
 export function normalizePatchFields(body) {
   /** @type {Record<string, string>} */
   const fields = {};
+  /** @type {string[]} */
+  const unset = [];
 
   if (body.code !== undefined) {
     fields.code = normalizeTrimmedField(body.code, "code", { max: 32 });
@@ -114,26 +151,48 @@ export function normalizePatchFields(body) {
     });
   }
   if (body.email !== undefined) {
-    fields.email = normalizeEmail(body.email);
+    const email = normalizeOptionalEmail(body.email);
+    if (email === undefined) {
+      unset.push("email");
+    } else {
+      fields.email = email;
+    }
   }
   if (body.tel !== undefined) {
-    fields.tel = normalizeTel(body.tel);
+    const tel = normalizeOptionalTel(body.tel);
+    if (tel === undefined) {
+      unset.push("tel");
+    } else {
+      fields.tel = tel;
+    }
   }
 
-  return fields;
+  return { fields, unset };
 }
 
 /**
  * @param {object} body
+ * @returns {Record<string, string>}
  */
 export function normalizeProfileFields(body) {
-  return {
+  /** @type {Record<string, string>} */
+  const fields = {
     code: normalizeTrimmedField(body.code, "code", { max: 32 }),
     firstname: normalizeTrimmedField(body.firstname, "firstname", {
       max: 128,
     }),
     lastname: normalizeTrimmedField(body.lastname, "lastname", { max: 128 }),
-    email: normalizeEmail(body.email),
-    tel: normalizeTel(body.tel),
   };
+
+  const email = normalizeOptionalEmail(body.email);
+  if (email !== undefined) {
+    fields.email = email;
+  }
+
+  const tel = normalizeOptionalTel(body.tel);
+  if (tel !== undefined) {
+    fields.tel = tel;
+  }
+
+  return fields;
 }

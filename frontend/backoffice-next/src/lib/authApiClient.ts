@@ -53,11 +53,17 @@ export async function getMyBranch(): Promise<InvoiceAgentBranch> {
   return res.data;
 }
 
-export async function listMyBranches(options?: { q?: string; limit?: number; signal?: AbortSignal }): Promise<InvoiceAgentBranch[]> {
+export async function listMyBranches(options?: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+  signal?: AbortSignal;
+}): Promise<InvoiceAgentBranch[]> {
   const res = await authClient.get<{ branches: InvoiceAgentBranch[] }>("/auth/me/branches", {
     params: {
       q: options?.q,
       limit: options?.limit,
+      offset: options?.offset,
     },
     signal: options?.signal,
   });

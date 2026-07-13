@@ -2,21 +2,30 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import axios from "axios";
+import { FolderTree, Info } from "lucide-react";
 
-import { LoadingButton } from "@/components/LoadingButton";
+import { InlineFilterSelect } from "@/components/list-page";
 import { MenuTree } from "@/components/MenuTree";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiErrorMessage } from "@/lib/apiError";
 import * as authApi from "@/lib/authApiClient";
 import type { AdminMenuNode, KnownRole } from "@/types/permissionAdmin";
-import { KNOWN_ROLES, PROTECTED_MENU_KEY } from "@/types/permissionAdmin";
+import { PROTECTED_MENU_KEY } from "@/types/permissionAdmin";
 
 import AdminApiForbidden from "./AdminApiForbidden";
 import {
@@ -25,42 +34,52 @@ import {
   expandRoleMappingToCheckedKeys,
   filterCheckedActionKeys,
   isPlatformAdminManageCheckboxDisabled,
+  ROLE_FILTER_OPTIONS,
   splitMappingKeys,
 } from "./permissionAdminUtils";
 
 const MANAGE_LOCKOUT_TOOLTIP = "Required for platform_admin unless permissions:* wildcard is already granted.";
 
-const ROLE_LABELS: Record<KnownRole, string> = {
-  platform_admin: "Platform Admin",
-  branch_admin: "Branch Admin",
-  support_admin: "Support Admin",
-  support: "Support",
-  staff: "Staff",
-};
-
 function sortedKeySignature(keys: string[]): string {
   return [...keys].sort().join("|");
+}
+
+export interface RoleSaveActions {
+  save: () => void;
+  saving: boolean;
+  disabled: boolean;
 }
 
 interface RolePermissionsTabProps {
   menus: AdminMenuNode[];
   menusLoading: boolean;
   menusForbidden: boolean;
+  role: KnownRole;
+  onRoleCommitted: (next: KnownRole) => void;
+  onSaveActionReady?: (actions: RoleSaveActions | null) => void;
+  onGoToCatalog?: () => void;
 }
 
-const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoading, menusForbidden }) => {
+const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
+  menus,
+  menusLoading,
+  menusForbidden,
+  role,
+  onRoleCommitted,
+  onSaveActionReady,
+  onGoToCatalog,
+}) => {
   const { message } = useAppFeedback();
   const messageRef = useRef(message);
   messageRef.current = message;
   const { confirm } = useConfirmDialog();
-  const [role, setRole] = useState<KnownRole>("platform_admin");
   const [checkedExact, setCheckedExact] = useState<string[]>([]);
   const [baselineCheckedExact, setBaselineCheckedExact] = useState<string[]>([]);
   const [wildcards, setWildcards] = useState<string[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [forbidden, setForbidden] = useState(false);
-  const [revokeSessions, setRevokeSessions] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   const isDirty = useMemo(
     () => sortedKeySignature(checkedExact) !== sortedKeySignature(baselineCheckedExact),
@@ -116,27 +135,25 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
 
   const treeNodes = useMemo(() => buildMenuTree(menus), [menus]);
 
-  const applyRoleChange = (nextRole: KnownRole) => {
-    setRevokeSessions(false);
-    setRole(nextRole);
-  };
+  const handleRoleChange = useCallback(
+    (nextRole: KnownRole) => {
+      if (nextRole === role) return;
 
-  const handleRoleChange = (nextRole: KnownRole) => {
-    if (nextRole === role) return;
+      if (!isDirty) {
+        onRoleCommitted(nextRole);
+        return;
+      }
 
-    if (!isDirty) {
-      applyRoleChange(nextRole);
-      return;
-    }
-
-    void confirm({
-      title: "Discard unsaved changes?",
-      content: "Role permission changes for the current role will be lost.",
-      okText: "Discard",
-      danger: true,
-      onOk: () => applyRoleChange(nextRole),
-    });
-  };
+      void confirm({
+        title: "Discard unsaved changes?",
+        content: "Role permission changes for the current role will be lost.",
+        okText: "Discard",
+        danger: true,
+        onOk: () => onRoleCommitted(nextRole),
+      });
+    },
+    [role, isDirty, onRoleCommitted, confirm],
+  );
 
   const handleCheckedChange = (keys: string[]) => {
     let next = filterCheckedActionKeys(keys, menus);
@@ -146,94 +163,89 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
     setCheckedExact(next);
   };
 
-  const handleSave = async () => {
-    if (revokeSessions) {
-      const confirmed = await confirm({
-        title: "Revoke active sessions?",
-        content: "Users with this role will be signed out immediately. Continue?",
-        okText: "Save and revoke",
-        danger: true,
-      });
-      if (!confirmed) return;
-    }
-
-    setSaving(true);
-    try {
-      const menu_keys = buildRoleSaveMenuKeys(role, checkedExact, []);
-      const result = await authApi.upsertRolePermission(role, {
-        menu_keys,
-        revoke_sessions: revokeSessions,
-      });
-      if (result.revoked_users_count > 0) {
-        message.success(`Revoked ${result.revoked_users_count} active session(s).`);
-      } else {
-        message.success("Role permissions saved. Users must refresh their session to see permission changes.");
-      }
-      setRevokeSessions(false);
+  const persistRolePermissions = useCallback(
+    async (revokeSessions: boolean) => {
+      setSaveDialogOpen(false);
+      setSaving(true);
       try {
-        await loadRoleMapping(role, menus);
-      } catch {
-        // Save succeeded; stale checkbox state is acceptable until manual refresh.
+        const menu_keys = buildRoleSaveMenuKeys(role, checkedExact, []);
+        const result = await authApi.upsertRolePermission(role, {
+          menu_keys,
+          revoke_sessions: revokeSessions,
+        });
+        if (result.revoked_users_count > 0) {
+          message.success(`Revoked ${result.revoked_users_count} active session(s).`);
+        } else {
+          message.success("Role permissions saved. Users must refresh their session to see permission changes.");
+        }
+        try {
+          await loadRoleMapping(role, menus);
+        } catch {
+          // Save succeeded; stale checkbox state is acceptable until manual refresh.
+        }
+      } catch (err) {
+        message.error(apiErrorMessage(err, "Failed to save role permissions"));
+      } finally {
+        setSaving(false);
       }
-    } catch (err) {
-      message.error(apiErrorMessage(err, "Failed to save role permissions"));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    [role, checkedExact, message, loadRoleMapping, menus],
+  );
+
+  const handleSave = useCallback(() => {
+    setSaveDialogOpen(true);
+  }, []);
+
+  useEffect(() => {
+    onSaveActionReady?.({
+      save: handleSave,
+      saving,
+      disabled: loading || saving,
+    });
+    return () => onSaveActionReady?.(null);
+  }, [onSaveActionReady, handleSave, saving, loading]);
 
   if (menusForbidden || forbidden) {
     return <AdminApiForbidden />;
   }
 
   return (
-    <div data-testid="role-permissions-tab">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Field className="max-w-xs">
-          <FieldLabel htmlFor="role-select">Role</FieldLabel>
-          <Select value={role} onValueChange={(value) => handleRoleChange(value as KnownRole)}>
-            <SelectTrigger id="role-select" className="w-full min-w-[200px]" aria-label="Role">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {KNOWN_ROLES.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <LoadingButton loading={saving} disabled={loading} onClick={() => void handleSave()}>
-          Save
-        </LoadingButton>
-      </div>
+    <div data-testid="role-permissions-tab" className="flex flex-col gap-4 px-4">
+      <InlineFilterSelect
+        id="permission-role"
+        prefix="Role:"
+        value={role}
+        options={ROLE_FILTER_OPTIONS}
+        onChange={(value) => handleRoleChange(value as KnownRole)}
+      />
 
-      {wildcards.length > 0 ? (
-        <Alert className="mb-4">
-          <AlertTitle>Loaded mapping includes wildcards</AlertTitle>
+      {!loading && wildcards.length > 0 && (
+        <Alert>
+          <Info aria-hidden="true" />
+          <AlertTitle>Wildcard permissions in effect</AlertTitle>
           <AlertDescription>
-            {wildcards.join(", ")} — shown as checked action keys below. Uncheck and save to remove.
+            This role's saved mapping includes wildcard grants ({wildcards.join(", ")}). Checkboxes covered by a
+            wildcard may be locked and are managed outside this screen.
           </AlertDescription>
         </Alert>
-      ) : null}
-
-      <label htmlFor="revoke-sessions" className="mb-4 flex items-center gap-2 text-sm">
-        <Checkbox
-          id="revoke-sessions"
-          checked={revokeSessions}
-          onCheckedChange={(value) => setRevokeSessions(value === true)}
-        />
-        Revoke active sessions for users with this role
-      </label>
-
+      )}
       {loading && <Skeleton className="h-48 w-full" aria-busy="true" />}
       {!loading && menus.length === 0 && (
         <Empty>
           <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderTree aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>No menu nodes in registry</EmptyTitle>
             <EmptyDescription>Add menu nodes in the catalog tab first.</EmptyDescription>
           </EmptyHeader>
+          {onGoToCatalog ? (
+            <EmptyContent>
+              <Button type="button" variant="outline" onClick={onGoToCatalog}>
+                Open menu catalog
+              </Button>
+            </EmptyContent>
+          ) : null}
         </Empty>
       )}
       {!loading && menus.length > 0 && (
@@ -249,6 +261,37 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({ menus, menusLoa
           }
         />
       )}
+
+      <AlertDialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save role permissions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Optionally revoke active sessions so users with this role pick up the new permissions immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              disabled={saving}
+              onClick={(e) => {
+                e.preventDefault();
+                void persistRolePermissions(false);
+              }}
+            >
+              Save only
+            </AlertDialogAction>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={saving}
+              onClick={() => void persistRolePermissions(true)}
+            >
+              Save and revoke sessions
+            </Button>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

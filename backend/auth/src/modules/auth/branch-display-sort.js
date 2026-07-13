@@ -35,18 +35,21 @@ export function branchMatchesQuery(branch, q) {
 }
 
 /**
- * Optional typeahead filter + cap. Omitting `limit` preserves full list (backward compatible).
+ * Optional typeahead filter + page window. Omitting `limit` preserves full list (backward compatible).
  * @param {Array<{ branch_id: string, branch_code: string | null, branch_name: string | null, active: boolean }>} branches
- * @param {{ q?: string, limit?: number }} [options]
+ * @param {{ q?: string, limit?: number, offset?: number }} [options]
  */
-export function applyBranchListQuery(branches, { q, limit } = {}) {
+export function applyBranchListQuery(branches, { q, limit, offset } = {}) {
   let result = branches
   if (typeof q === 'string' && q.trim()) {
     result = result.filter((branch) => branchMatchesQuery(branch, q))
   }
+  const start = Math.max(0, Number(offset) || 0)
   if (limit !== undefined && limit !== null) {
     const cap = Math.min(Math.max(1, Number(limit)), BRANCH_LIST_LIMIT_MAX)
-    result = result.slice(0, cap)
+    result = result.slice(start, start + cap)
+  } else if (start > 0) {
+    result = result.slice(start)
   }
   return result
 }

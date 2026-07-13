@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,6 +19,8 @@ interface FilterSelectProps {
   options: FilterOption[];
   className?: string;
   width?: string;
+  /** When true (default), prepends an "All" option for clearing the filter. */
+  includeAllOption?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
   "aria-invalid"?: boolean;
@@ -34,6 +36,7 @@ export function FilterSelect({
   options,
   className,
   width = "w-[180px]",
+  includeAllOption = true,
   searchable = false,
   searchPlaceholder = "Search…",
   "aria-invalid": ariaInvalid,
@@ -42,6 +45,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputId = useId();
 
   const filteredOptions = useMemo(() => {
     if (!searchable || !searchQuery.trim()) return options;
@@ -49,7 +53,33 @@ export function FilterSelect({
     return options.filter((option) => option.label.toLowerCase().includes(query));
   }, [options, searchQuery, searchable]);
 
-  const items = useMemo(() => [ALL_OPTION, ...filteredOptions], [filteredOptions]);
+  const items = useMemo(
+    () => (includeAllOption ? [ALL_OPTION, ...filteredOptions] : filteredOptions),
+    [filteredOptions, includeAllOption],
+  );
+
+  const selectValue = includeAllOption ? (value ?? "all") : (value ?? null);
+
+  useEffect(() => {
+    if (!searchable || !open) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById(searchInputId)?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, searchable, searchInputId]);
+
+  const searchHeader = searchable ? (
+    <div className="sticky top-0 z-10 border-b bg-popover p-2" onPointerDown={(event) => event.preventDefault()}>
+      <Input
+        id={searchInputId}
+        type="search"
+        aria-label={`${placeholder} search`}
+        placeholder={searchPlaceholder}
+        value={searchQuery}
+        autoComplete="off"
+        onChange={(event) => setSearchQuery(event.target.value)}
+        onKeyDown={(event) => event.stopPropagation()}
+      />
+    </div>
+  ) : undefined;
 
   return (
     <Select
@@ -62,9 +92,15 @@ export function FilterSelect({
             }
           : undefined
       }
-      value={value ?? "all"}
+      value={selectValue}
       items={items}
-      onValueChange={(next) => onChange(next == null || next === "all" ? undefined : next)}
+      onValueChange={(next) => {
+        if (includeAllOption) {
+          onChange(next == null || next === "all" ? undefined : next);
+          return;
+        }
+        onChange(next ?? undefined);
+      }}
     >
       <SelectTrigger
         id={id}
@@ -75,24 +111,23 @@ export function FilterSelect({
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className={searchable ? "max-h-80" : undefined}>
-        {searchable ? (
-          <div className="sticky top-0 z-10 border-b bg-popover p-2" onPointerDown={(event) => event.stopPropagation()}>
-            <Input
-              aria-label={`${placeholder} search`}
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              onKeyDown={(event) => event.stopPropagation()}
-            />
-          </div>
-        ) : null}
+      <SelectContent
+        className={searchable ? "max-h-80" : undefined}
+        alignItemWithTrigger={!searchable}
+        header={searchHeader}
+      >
         <SelectGroup>
-          {items.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          {items.length > 0 ? (
+            items.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))
+          ) : (
+            <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
+              No branches found
+            </div>
+          )}
         </SelectGroup>
       </SelectContent>
     </Select>

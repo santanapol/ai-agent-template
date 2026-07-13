@@ -93,7 +93,8 @@ describe("ChannelPerformancePage", () => {
     const user = userEvent.setup();
     renderWithProviders(<ChannelPerformancePage />);
 
-    await user.click(screen.getByRole("button", { name: /^direct$/i }));
+    await user.click(screen.getByRole("combobox", { name: /channel:/i }));
+    await user.click(await screen.findByRole("option", { name: /^direct$/i }));
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
     await waitFor(() => {
@@ -107,7 +108,8 @@ describe("ChannelPerformancePage", () => {
     const user = userEvent.setup();
     renderWithProviders(<ChannelPerformancePage />);
 
-    await user.click(screen.getByRole("button", { name: /^direct$/i }));
+    await user.click(screen.getByRole("combobox", { name: /channel:/i }));
+    await user.click(await screen.findByRole("option", { name: /^direct$/i }));
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
     await waitFor(() => {

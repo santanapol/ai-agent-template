@@ -288,6 +288,13 @@ components:
             ou_name:
               type: string
               nullable: true
+            currency:
+              type: string
+              nullable: true
+              description: >
+                Resolved from the agent for this invoice's branch_id (not stored on agent_iv).
+                Uppercase ISO-style code (e.g. THB). Null when no agent row exists for the branch.
+              example: THB
             cr_by:
               type: string
             cr_prog:
@@ -675,6 +682,12 @@ paths:
           in: query
           schema:
             type: string
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: When true, include soft-deleted (inactive) agents in list results.
       responses:
         "200":
           description: Success

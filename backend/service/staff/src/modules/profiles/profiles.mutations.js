@@ -352,8 +352,8 @@ export async function patchProfile(
     );
   }
 
-  const fields = normalizePatchFields(patchBody);
-  if (Object.keys(fields).length === 0) {
+  const { fields, unset } = normalizePatchFields(patchBody);
+  if (Object.keys(fields).length === 0 && unset.length === 0) {
     throw new HttpError(
       400,
       CODES.INVALID_PARAM,
@@ -384,6 +384,7 @@ export async function patchProfile(
     userContext,
     routeTemplate,
     ifMatchDate,
+    unset,
   );
 
   if (!updated) {

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Agent } from "@/types/agents";
 
+import { formatAgentBranchTypeLabel, formatAgentCurrency } from "./utils";
+
 function normalizeRefFeeBranchId(refId: unknown): string {
   if (typeof refId === "object" && refId !== null) {
     const oid = (refId as { $oid?: string }).$oid;
@@ -20,10 +22,11 @@ function normalizeRefFeeBranchId(refId: unknown): string {
 export interface AgentColumnHandlers {
   onManageFees: (record: Agent) => void;
   onDelete: (record: Agent) => void;
+  canWrite: boolean;
 }
 
 export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Agent>[] {
-  const { onManageFees, onDelete } = handlers;
+  const { onManageFees, onDelete, canWrite } = handlers;
 
   return [
     {
@@ -40,13 +43,32 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
       enableHiding: true,
     },
     {
+      id: "currency",
+      header: "Currency",
+      enableHiding: true,
+      accessorFn: (record) => formatAgentCurrency(record.currency),
+      cell: ({ row }) => {
+        const label = formatAgentCurrency(row.original.currency);
+        if (label === "—") {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        return <Badge variant="outline">{label}</Badge>;
+      },
+    },
+    {
       id: "branch_type",
       accessorKey: "branch_type",
       header: "Type",
       enableHiding: true,
-      cell: ({ row }) => (
-        <Badge variant={row.original.branch_type === "MA" ? "default" : "secondary"}>{row.original.branch_type}</Badge>
-      ),
+      cell: ({ row }) => {
+        const code = row.original.branch_type;
+        const label = formatAgentBranchTypeLabel(code);
+        return (
+          <Badge variant={code === "MA" ? "default" : "secondary"} aria-label={`Type: ${code}`}>
+            {label}
+          </Badge>
+        );
+      },
     },
     {
       id: "ref_fee_branch_id",
@@ -64,7 +86,12 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
             {record.ref_fee_branch_name}
           </Badge>
         ) : (
-          <span className="text-muted-foreground">{normalizedRefId}</span>
+          <Tooltip>
+            <TooltipTrigger
+              render={<span className="cursor-default truncate text-muted-foreground">Unknown branch</span>}
+            />
+            <TooltipContent>{normalizedRefId}</TooltipContent>
+          </Tooltip>
         );
       },
     },
@@ -74,7 +101,7 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
       header: "Default Fee (%)",
       enableHiding: true,
       meta: { align: "right" },
-      cell: ({ row }) => <strong>{row.original.default_fee_rate ?? 0}%</strong>,
+      cell: ({ row }) => <span className="font-medium tabular-nums">{row.original.default_fee_rate ?? 0}%</span>,
     },
     {
       id: "active",
@@ -106,22 +133,24 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
               />
               <TooltipContent>Manage fees</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    className="text-destructive"
-                    aria-label={`Delete ${record.branch_name}`}
-                    onClick={() => onDelete(record)}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
-                }
-              />
-              <TooltipContent>Delete agent</TooltipContent>
-            </Tooltip>
+            {canWrite ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="text-destructive"
+                      aria-label={`Delete ${record.branch_name}`}
+                      onClick={() => onDelete(record)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Delete agent</TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
         );
       },

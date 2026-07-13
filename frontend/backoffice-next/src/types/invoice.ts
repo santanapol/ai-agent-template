@@ -14,6 +14,8 @@ export interface Invoice {
   net_win: number | null;
   bet: number | null;
   amount: number | null;
+  /** Uppercase ISO-style code from agent (detail only); null when no agent. */
+  currency?: string | null;
   status: InvoiceStatus | string;
   cr_by?: string;
   cr_prog?: string;

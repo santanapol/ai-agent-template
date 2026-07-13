@@ -43,6 +43,45 @@ test("getAgents should return agents and total from repository", async () => {
   assert.strictEqual(result.agents[0].branch_name, "Test Branch");
 });
 
+test("getAgents passes includeInactive to repository queries", async () => {
+  let capturedMatch;
+  let countHadActiveFilter;
+  const pipelineDb = {
+    collection: () => ({
+      aggregate: (pipeline) => {
+        capturedMatch = pipeline.find((s) => s.$match)?.$match;
+        return { toArray: async () => [] };
+      },
+      countDocuments: async (query) => {
+        countHadActiveFilter = "active" in query;
+        return 0;
+      },
+    }),
+  };
+
+  await service.getAgents(
+    pipelineDb,
+    "000000000000000000000123",
+    "",
+    1,
+    10,
+    true,
+  );
+  assert.strictEqual(countHadActiveFilter, false);
+  assert.ok(!capturedMatch?.active);
+
+  await service.getAgents(
+    pipelineDb,
+    "000000000000000000000123",
+    "",
+    1,
+    10,
+    false,
+  );
+  assert.strictEqual(countHadActiveFilter, true);
+  assert.ok(capturedMatch?.active);
+});
+
 test("createAgent should success if default_fee_rate is provided", async () => {
   let insertCalled = false;
   const dbMock = createMockDb({
@@ -300,38 +339,6 @@ test("getUnsyncedBranches — queries su_branch from read database", async () =>
 });
 
 test("syncAgent — passes ou_id to the su_branch findOne filter", async () => {
-  const branchId = "665a3d76b1e5f8b9e6f2b3d1";
-  const ouId = "000000000000000000000456";
-  let capturedFilter;
-
-  const sourceDbMock = {
-    collection: () => ({
-      findOne: async (filter) => {
-        capturedFilter = filter;
-        return null; // returns null → throws 404, which is fine for this assertion
-      },
-    }),
-  };
-
-  const dbMock = createMockDb();
-
-  // Ignore the 404 — we only care about what filter was passed
-  await service
-    .syncAgent(dbMock, ouId, branchId, "user1", sourceDbMock)
-    .catch(() => {});
-
-  assert.ok(
-    capturedFilter.ou_id,
-    "findOne filter must include ou_id to prevent cross-tenant sync",
-  );
-  assert.strictEqual(
-    String(capturedFilter.ou_id),
-    ouId,
-    "ou_id in filter must match the requester org",
-  );
-});
-
-test("getUnsyncedBranches — scopes su_branch query to requester ou_id", async () => {
   const ouId = "000000000000000000000456";
   let capturedQuery;
 

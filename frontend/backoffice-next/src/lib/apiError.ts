@@ -36,6 +36,12 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
       const detail = err.response?.data?.detail as string | undefined;
       return detail ?? DETAIL_CODE_FALLBACKS[code] ?? fallback;
     }
+    if (code === "INVALID_PARAM") {
+      const serverMessage = err.response?.data?.message as string | undefined;
+      if (serverMessage && serverMessage !== "Request validation failed") {
+        return serverMessage;
+      }
+    }
   }
   return fallback;
 }

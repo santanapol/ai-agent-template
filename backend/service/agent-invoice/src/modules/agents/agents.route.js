@@ -1,4 +1,3 @@
-import { isValidObjectId } from "../../lib/object-id.js";
 import { requirePermission } from "../../lib/require-permission.js";
 import {
   getAgentsSchema,

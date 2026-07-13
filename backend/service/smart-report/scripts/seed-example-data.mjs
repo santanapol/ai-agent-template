@@ -12,6 +12,7 @@
  */
 import { MongoClient } from "mongodb";
 import { REPORTS_COLLECTION } from "../src/modules/reports/reports.repository.js";
+import { compileBoosterScript } from "../src/modules/reports/script-compiler.service.js";
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -115,6 +116,20 @@ for (const report of reportsToSeed) {
     upd_prog: SEED_PROG,
   };
   if (existing?._id) doc._id = existing._id;
+
+  const compiled = compileBoosterScript(report.script);
+  if (compiled.success) {
+    doc.validationStatus = "valid";
+    doc.compiledScript = compiled.compiledScript;
+    doc.validationErrors = [];
+    doc.validatedAt = now;
+  } else {
+    doc.validationStatus = "invalid";
+    doc.compiledScript = null;
+    doc.validationErrors = compiled.errors.map((error) => error.message);
+    doc.validatedAt = null;
+    console.warn(`  ⚠ script validation failed for ${report.name}`);
+  }
 
   const result = await col.replaceOne({ name: report.name }, doc, {
     upsert: true,

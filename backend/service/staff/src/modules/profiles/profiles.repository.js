@@ -33,9 +33,7 @@ export function buildScopeFilter(scope) {
  * @param {{ username: string, role: string } | null} [userSnippet]
  */
 export function mapToApi(doc, userSnippet = null) {
-  if (!doc) {
-    return null;
-  }
+  if (!doc) return null;
 
   return {
     id: doc._id.toString(),
@@ -46,24 +44,19 @@ export function mapToApi(doc, userSnippet = null) {
     code: doc.code,
     firstname: doc.firstname,
     lastname: doc.lastname,
-    email: doc.email,
-    tel: doc.tel,
+    email: doc.email ?? null,
+    tel: doc.tel ?? null,
     user: userSnippet ?? { username: "", role: "" },
   };
 }
 
 async function findUserSnippet(userId) {
-  if (!userId) {
-    return null;
-  }
+  if (!userId) return null;
   const user = await usersCollection().findOne(
     { _id: toObjectId(userId) },
     { projection: { username: 1, role: 1 } },
   );
-  if (!user) {
-    return null;
-  }
-  return { username: user.username, role: user.role };
+  return user ? { username: user.username, role: user.role } : null;
 }
 
 /**
@@ -73,12 +66,7 @@ export async function findAuthUserById(userId) {
   return usersCollection().findOne({ _id: toObjectId(userId) });
 }
 
-/**
- * Check whether a staff profile is already linked to this auth user.
- * Intentionally cross-tenant: one auth user must have at most one staff
- * profile across the entire system — not just within a single OU/branch.
- * @param {string} userId hex24
- */
+/** Cross-tenant: one auth user → at most one staff profile. */
 export async function existsProfileByUserId(userId) {
   const doc = await profilesCollection().findOne(
     { user_id: toObjectId(userId) },
@@ -110,8 +98,8 @@ export async function existsProfileByCode(ouId, branchId, code) {
  * @param {string} fields.code
  * @param {string} fields.firstname
  * @param {string} fields.lastname
- * @param {string} fields.email
- * @param {string} fields.tel
+ * @param {string} [fields.email]
+ * @param {string} [fields.tel]
  * @param {'active'|'archived'} [fields.status]
  * @param {{ userId: string, ouId: string, branchId: string }} userContext
  * @param {string} routeTemplate
@@ -129,8 +117,8 @@ export async function insertProfile(fields, userContext, routeTemplate) {
     code: fields.code,
     firstname: fields.firstname,
     lastname: fields.lastname,
-    email: fields.email,
-    tel: fields.tel,
+    ...(fields.email !== undefined ? { email: fields.email } : {}),
+    ...(fields.tel !== undefined ? { tel: fields.tel } : {}),
     cr_by: userContext.userId,
     cr_date: now,
     cr_prog: routeTemplate,
@@ -433,7 +421,7 @@ export async function listProfiles(query, scope) {
  * @param {{ userId: string, ouId: string, branchId: string }} userContext
  * @param {string} routeTemplate
  * @param {Date} ifMatchDate
- * @returns {Promise<{ profile: object, etag: string } | { stale: true } | null>}
+ * @param {string[]} [unsetFields]
  */
 export async function updateProfile(
   profileId,
@@ -442,6 +430,7 @@ export async function updateProfile(
   userContext,
   routeTemplate,
   ifMatchDate,
+  unsetFields = [],
 ) {
   const baseFilter = {
     _id: toObjectId(profileId),
@@ -449,17 +438,21 @@ export async function updateProfile(
   };
   const versionFilter = { ...baseFilter, upd_date: ifMatchDate };
   const now = new Date();
+  const updateDoc = {
+    $set: {
+      ...fields,
+      upd_by: userContext.userId,
+      upd_date: now,
+      upd_prog: routeTemplate,
+    },
+    ...(unsetFields.length > 0
+      ? { $unset: Object.fromEntries(unsetFields.map((field) => [field, ""])) }
+      : {}),
+  };
 
   const doc = await profilesCollection().findOneAndUpdate(
     versionFilter,
-    {
-      $set: {
-        ...fields,
-        upd_by: userContext.userId,
-        upd_date: now,
-        upd_prog: routeTemplate,
-      },
-    },
+    updateDoc,
     { returnDocument: "after" },
   );
 

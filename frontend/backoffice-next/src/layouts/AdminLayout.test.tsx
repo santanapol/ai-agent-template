@@ -15,6 +15,10 @@ function navMainScope() {
   return within(content as HTMLElement);
 }
 
+function expectDashboardNavLink(scope = navMainScope()) {
+  expect(scope.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+}
+
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: vi.fn(),
 }));
@@ -77,7 +81,7 @@ describe("AdminLayout component", () => {
       expect(screen.getByText(/Some menu items are temporarily unavailable/)).toBeInTheDocument();
 
       // Fallback menu items (Dashboard) are rendered
-      expect(navMainScope().getByText("Dashboard")).toBeInTheDocument();
+      expectDashboardNavLink();
       expect(screen.queryByText("My Profile")).not.toBeInTheDocument();
       expect(screen.getByText("JD")).toBeInTheDocument();
       expect(screen.getByLabelText(/account menu for john doe/i)).toBeInTheDocument();
@@ -134,7 +138,7 @@ describe("AdminLayout component", () => {
     renderWithProviders(<AdminLayout />);
 
     await waitFor(() => {
-      expect(navMainScope().getByText("Dashboard")).toBeInTheDocument();
+      expectDashboardNavLink();
     });
     expect(screen.queryByText("My Profile")).not.toBeInTheDocument();
   });
@@ -254,7 +258,7 @@ describe("AdminLayout component", () => {
     // No crash: the orphan has no resolvable parent in itemMap, so it
     // falls back to a top-level item alongside Dashboard.
     await waitFor(() => {
-      expect(navMainScope().getByText("Dashboard")).toBeInTheDocument();
+      expectDashboardNavLink();
       expect(screen.getByText("Orphan Item")).toBeInTheDocument();
     });
   });
@@ -286,7 +290,7 @@ describe("AdminLayout component", () => {
 
     // No crash, no infinite loop — the rest of the menu still renders.
     await waitFor(() => {
-      expect(navMainScope().getByText("Dashboard")).toBeInTheDocument();
+      expectDashboardNavLink();
     });
 
     // The cyclic pair is excluded from the tree entirely (not via the

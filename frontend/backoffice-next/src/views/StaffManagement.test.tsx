@@ -3,11 +3,13 @@ import type React from "react";
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
+import { useAuth } from "../contexts/AuthContext";
 import { usePermission } from "../hooks/usePermission";
 import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
 import * as staffApi from "../lib/staffApiClient";
-import { useAuth } from "../contexts/AuthContext";
+import { testNavigation } from "../test/mockNavigation";
 import { renderWithProviders } from "../test/renderWithProviders";
+import { renderWithRouter } from "../test/renderWithRouter";
 import type { StaffProfile } from "../types/staff";
 import StaffManagement from "./StaffManagement";
 
@@ -59,6 +61,7 @@ const mockProfile: StaffProfile = {
 describe("StaffManagement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testNavigation.reset();
     vi.mocked(staffApi.listProfiles).mockResolvedValue({
       success: true,
       code: "OK",
@@ -94,6 +97,57 @@ describe("StaffManagement", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Edit profile/i })).toBeInTheDocument();
     });
+
+    expect(screen.queryByRole("columnheader", { name: /^Email$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /^Tel$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /^Action$/i })).toBeInTheDocument();
+  });
+
+  test("uses primary Create staff toolbar button when profiles exist", async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => permission === "profiles:create");
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: "OK",
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: "123",
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Create staff/i })).toBeInTheDocument();
+    });
+
+    const createButton = screen.getByRole("button", { name: /Create staff/i });
+    expect(createButton.className).toMatch(/bg-primary/);
+  });
+
+  test("hides archive and restore actions when profiles:edit is missing", async () => {
+    vi.mocked(usePermission).mockImplementation((permission) => {
+      if (permission === "profiles:edit") return false;
+      return true;
+    });
+
+    vi.mocked(staffApi.listProfiles).mockResolvedValue({
+      success: true,
+      code: "OK",
+      message: null,
+      data: [mockProfile],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      requestId: "123",
+    });
+
+    renderWithProviders(<StaffManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: /Archive profile/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restore profile/i })).not.toBeInTheDocument();
   });
 
   test("hides Create staff button when profiles:create is missing", async () => {
@@ -109,23 +163,23 @@ describe("StaffManagement", () => {
     });
   });
 
-  test("shows System Role in create drawer when roles:assign is granted", async () => {
+  test("navigates to create page when Create staff is clicked", async () => {
     vi.mocked(usePermission).mockImplementation((permission) => {
       if (permission === "profiles:create") return true;
       if (permission === "roles:assign") return true;
       return false;
     });
 
-    renderWithProviders(<StaffManagement />);
+    renderWithRouter(<StaffManagement />, { initialEntries: ["/staff"] });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Create staff/i })).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /Create staff/i }).length).toBeGreaterThan(0);
     });
 
-    screen.getByRole("button", { name: /Create staff/i }).click();
+    screen.getAllByRole("button", { name: /Create staff/i })[0].click();
 
     await waitFor(() => {
-      expect(screen.getByText("System Role")).toBeInTheDocument();
+      expect(testNavigation.push).toHaveBeenCalledWith("/staff/new", undefined);
     });
   });
 

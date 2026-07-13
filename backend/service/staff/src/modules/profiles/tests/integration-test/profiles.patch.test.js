@@ -209,6 +209,37 @@ if (!RUN) {
       assert.ok(audit);
     });
 
+    test("PATCH email null unsets email field", async () => {
+      const getRes = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: buildMeshHeaders({
+          userId: adminUserId,
+          role: "platform_admin",
+        }),
+      });
+      assert.strictEqual(getRes.statusCode, 200);
+      const etag = getRes.headers.etag;
+
+      const res = await app.inject({
+        method: "PATCH",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: {
+          ...patchHeaders({ userId: adminUserId, role: "platform_admin" }),
+          "if-match": etag,
+        },
+        payload: { email: null },
+      });
+
+      assert.strictEqual(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.strictEqual(res.json().data.email, null);
+
+      const raw = await getDatabase()
+        .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+        .findOne({ _id: toObjectId(otherProfileId) });
+      assert.strictEqual(raw.email, undefined);
+    });
+
     test("own profile PATCH with code in body returns 400 INVALID_PARAM", async () => {
       const getRes = await app.inject({
         method: "GET",

@@ -8,6 +8,10 @@ export interface PaginationMeta {
 export interface ListPageParams {
   page?: number;
   limit?: number;
+  q?: string;
+  enabled?: boolean;
+  schedule?: "manual" | "daily" | "weekly" | "monthly";
+  reportId?: string;
 }
 
 export type ReportOutputFormat = "csv" | "excel";

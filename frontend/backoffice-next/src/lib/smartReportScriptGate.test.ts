@@ -97,7 +97,7 @@ describe("smartReportScriptGate", () => {
       expect(getScriptGateStep("validated", false)).toEqual({ current: 2 });
     });
 
-    it("maps tested to save step", () => {
+    it("maps tested to all steps complete", () => {
       expect(getScriptGateStep("tested", false)).toEqual({ current: 3 });
     });
 
@@ -108,7 +108,7 @@ describe("smartReportScriptGate", () => {
       });
     });
 
-    it("shows save step when gate is not required", () => {
+    it("marks all steps complete when gate is not required", () => {
       expect(getScriptGateStep("validated", false, false)).toEqual({ current: 3 });
     });
   });

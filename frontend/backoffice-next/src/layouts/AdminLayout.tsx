@@ -15,6 +15,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
+import { AppBrand } from "@/components/layout/AppBrand";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { BranchSwitcher } from "@/components/layout/BranchSwitcher";
 import { NavMain } from "@/components/layout/NavMain";
@@ -30,6 +31,7 @@ import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useIsMobile } from "@/hooks/useMobile";
 import { apiErrorMessage } from "@/lib/apiError";
 import * as authApi from "@/lib/authApiClient";
+import { branchCatalogCacheKey, getBranchCatalog, peekBranchCatalog } from "@/lib/branchCatalogCache";
 import {
   canSwitchActiveBranch,
   findInvoiceAgentBranch,
@@ -40,11 +42,6 @@ import {
   setCachedMyBranch,
   upsertBranchInList,
 } from "@/lib/branchOptions";
-import {
-  branchCatalogCacheKey,
-  getBranchCatalog,
-  peekBranchCatalog,
-} from "@/lib/branchCatalogCache";
 import { subscribeProfileRefresh } from "@/lib/profileRefresh";
 import * as staffApi from "@/lib/staffApiClient";
 import { cn } from "@/lib/utils";
@@ -123,7 +120,8 @@ function MobileNavSheet({
           {APP_CONFIG.name} menu, branch context, and account actions.
         </SheetDescription>
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-          <div className="p-2">
+          <div className="flex flex-col gap-2 p-2">
+            <AppBrand />
             <BranchSwitcher {...branchSwitcherProps} />
           </div>
           <div className="flex-1 overflow-auto p-2">
@@ -264,12 +262,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
 
     let cancelled = false;
-    const searchParams = debouncedBranchSearch
-      ? { q: debouncedBranchSearch, limit: 20 }
-      : { limit: 20 };
-    const cacheKey = user.ou_id
-      ? `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}`
-      : null;
+    const searchParams = debouncedBranchSearch ? { q: debouncedBranchSearch } : undefined;
+    const cacheKey = user.ou_id ? `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}` : null;
 
     // FE-REV-008: paint cached switcher results immediately to avoid empty flicker.
     if (cacheKey) {
@@ -300,7 +294,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
       const sorted = mergePlatformBranches(list);
-      // Do not write limit:20 switcher results into the invoice shared cache (FE-REV-001).
+      // Keep switcher results in the auth catalog cache only — not the invoice shared cache (FE-REV-001).
       setBranches(sorted);
       setBranchesLoading(false);
     };

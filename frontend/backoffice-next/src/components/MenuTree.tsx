@@ -38,6 +38,31 @@ function collectDescendantKeys(node: MenuTreeNode): string[] {
   return keys;
 }
 
+/** Leaf keys under a node — parent check/indeterminate state is derived from these. */
+function collectLeafKeys(node: MenuTreeNode): string[] {
+  if (!node.children?.length) return [node.key];
+  return node.children.flatMap(collectLeafKeys);
+}
+
+function getNodeCheckState(
+  node: MenuTreeNode,
+  checkedKeys: string[] | undefined,
+): { checked: boolean; indeterminate: boolean } {
+  if (!node.children?.length) {
+    return { checked: checkedKeys?.includes(node.key) ?? false, indeterminate: false };
+  }
+
+  const leafKeys = collectLeafKeys(node);
+  if (leafKeys.length === 0) {
+    return { checked: false, indeterminate: false };
+  }
+
+  const checkedCount = leafKeys.filter((key) => checkedKeys?.includes(key)).length;
+  if (checkedCount === 0) return { checked: false, indeterminate: false };
+  if (checkedCount === leafKeys.length) return { checked: true, indeterminate: false };
+  return { checked: false, indeterminate: true };
+}
+
 function applyCascadeToggle(
   node: MenuTreeNode,
   checked: boolean,
@@ -91,13 +116,15 @@ function MenuTreeNodeRow({
 }: MenuTreeRowProps) {
   const hasChildren = Boolean(node.children?.length);
   const [open, setOpen] = useState(defaultExpanded ?? true);
-  const checked = checkedKeys?.includes(node.key) ?? false;
+  const { checked, indeterminate } = getNodeCheckState(node, checkedKeys);
   const disabled = isCheckboxDisabled?.(node.key) ?? false;
   const tooltip = getCheckboxTooltip?.(node.key);
 
   const toggleChecked = (next: boolean) => {
     if (!onCheckedChange || !checkedKeys) return;
-    onCheckedChange(applyCascadeToggle(node, next, checkedKeys, isCheckboxDisabled));
+    // Indeterminate → check all (standard tree UX); otherwise honor the checkbox value.
+    const shouldCheck = indeterminate ? true : next;
+    onCheckedChange(applyCascadeToggle(node, shouldCheck, checkedKeys, isCheckboxDisabled));
   };
 
   const label = (
@@ -105,6 +132,7 @@ function MenuTreeNodeRow({
       {checkable ? (
         <Checkbox
           checked={checked}
+          indeterminate={indeterminate}
           disabled={disabled}
           onCheckedChange={(value) => toggleChecked(value === true)}
           aria-label={node.label}

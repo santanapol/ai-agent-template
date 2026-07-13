@@ -251,9 +251,21 @@ export async function testRunScript({
   }
 }
 
-export async function listReports({ page = 1, limit = 20 } = {}) {
+export async function listReports({
+  page = 1,
+  limit = 20,
+  q,
+  enabled,
+  schedule,
+} = {}) {
   const db = getDatabase();
-  const { items, total } = await findReportsPage(db, { page, limit });
+  const { items, total } = await findReportsPage(db, {
+    page,
+    limit,
+    q,
+    enabled,
+    schedule,
+  });
 
   return {
     data: items.map(serializeReportListItem),
@@ -415,9 +427,14 @@ export async function runReportById(id) {
   return serializeHistory(record);
 }
 
-export async function listHistory({ page = 1, limit = 20 } = {}) {
+export async function listHistory({ page = 1, limit = 20, reportId } = {}) {
   const db = getDatabase();
-  const { items, total } = await findDownloadHistoryPage(db, { page, limit });
+  const reportObjectId = reportId ? new ObjectId(reportId) : undefined;
+  const { items, total } = await findDownloadHistoryPage(db, {
+    page,
+    limit,
+    reportId: reportObjectId,
+  });
 
   return {
     data: items.map(serializeHistory),

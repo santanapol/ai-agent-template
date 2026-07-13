@@ -94,7 +94,7 @@ export function SearchDialog({
       )}
 
       <CommandDialog open={open} onOpenChange={handleOpenChange}>
-        <CommandInput placeholder="Search pages, invoices, and more…" value={query} onValueChange={setQuery} />
+        <CommandInput placeholder="Search pages…" value={query} onValueChange={setQuery} />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           {renderGroups(items)}

@@ -91,6 +91,8 @@ describe("AdminLayout sidebar (SC-3)", () => {
     await waitFor(() => {
       expect(screen.getByText("Invoices")).toBeInTheDocument();
     });
+    expect(screen.getByRole("link", { name: "Invoices" })).toHaveAttribute("href", "/invoices");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/");
   });
 
   it("hides Invoices after role mapping no longer grants invoices:list (post-refresh menus)", async () => {

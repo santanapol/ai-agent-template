@@ -95,7 +95,8 @@ export function resolveListInvoicesRequestQuery(
   }
 
   if (rawBranchId === ALL_BRANCHES_QUERY) {
-    const { branch_id: _omit, ...rest } = rawQuery;
+    const { branch_id, ...rest } = rawQuery;
+    void branch_id;
     return rest;
   }
 

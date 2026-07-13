@@ -98,8 +98,8 @@ flowchart TB
 | `code`               |   yes    | รหัสพนักงานในสาขา — **unique ต่อ (`ou_id`, `branch_id`)** |
 | `firstname`          |   yes    | ดู [§3.4](#34-validation-mvp)                             |
 | `lastname`           |   yes    | ดู [§3.4](#34-validation-mvp)                             |
-| `email`              |   yes    | ติดต่อ — **ไม่** unique ใน MVP (อนุญาตซ้ำได้)             |
-| `tel`                |   yes    | ติดต่อ — normalize E.164 ตอน persist                      |
+| `email`              |   no     | ติดต่อ — optional; **ไม่** unique ใน MVP (อนุญาตซ้ำได้)   |
+| `tel`                |   no     | ติดต่อ — optional; normalize E.164 ตอน persist เมื่อมีค่า |
 
 **ไม่เก็บใน MVP:** `display_name`, `job_title`, `department`, `employment_status`
 
@@ -140,8 +140,8 @@ flowchart TB
 | :---------------------- | :-------------------------------------------------------------------- |
 | `code`                  | string 1–32; trim; **unique** ภายใต้ `(ou_id, branch_id)`             |
 | `firstname`, `lastname` | string 1–128; trim; อย่างน้อยหนึ่งตัวอักษรหลัง trim                   |
-| `email`                 | RFC 5322-style validation; max 254; **เก็บ lowercase** หลัง normalize |
-| `tel`                   | เก็บ **E.164** (ขึ้นต้น `+` + digits); max 16 ตัวอักษรหลัง normalize  |
+| `email`                 | optional; RFC 5322-style เมื่อมีค่า; max 254; **เก็บ lowercase** หลัง normalize |
+| `tel`                   | optional; เก็บ **E.164** เมื่อมีค่า (ขึ้นต้น `+` + digits); max 16 ตัวอักษร     |
 | `status`                | enum `active` \| `archived` เท่านั้น                                  |
 
 รายละเอียด BSON / index: [`database-erd.md`](./database-erd.md)
@@ -219,7 +219,8 @@ Prefix: **`/api/v1/staff/profiles`** — normative detail ใน **`openapi.yaml
 
 **ผู้เรียก (product):** `platform_admin`, `branch_admin` (หน้า Staff Management)
 
-**Body (required):** `code`, `firstname`, `lastname`, `email`, `tel`  
+**Body (required):** `code`, `firstname`, `lastname`  
+**Body (optional):** `email`, `tel`
 **Body (optional):** `user_id` — ถ้า **ไม่ส่ง** staff จะ provision บัญชีใหม่ที่ auth  
 **Body (required เมื่อ provision):** `username` (global unique สำหรับ login), `password` (min 8) — ส่งต่อ auth `POST /internal/users`
 
@@ -450,7 +451,7 @@ Gateway ส่ง permission keys ผ่าน header **`x-user-permissions`** (
 
 | Operation               | ฟิลด์ / ข้อกำหนด                                                                                                                     |
 | :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| **POST create**         | `code`, `firstname`, `lastname`, `email`, `tel`, **`username`** / **`password`** (required เมื่อ provision) — **`user_id` optional** |
+| **POST create**         | `code`, `firstname`, `lastname` (required); `email`, `tel` (optional); **`username`** / **`password`** (required เมื่อ provision) — **`user_id` optional** |
 | **POST .../password**   | `password` (+ optional `revoke_sessions`) — admin only                                                                       |
 | **PATCH .../role**      | `role` (valid platform role) — permission `roles:assign` — เรียก auth internal                                               |
 | **PATCH (admin)**       | `code`, `firstname`, `lastname`, `email`, `tel` + **`If-Match`** — **ไม่** รวม password                                      |

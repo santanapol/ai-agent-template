@@ -11,6 +11,7 @@
 
 - ใช้ `zustand/vanilla` + provider pattern สำหรับ state ที่ persist ข้าม navigation เช่น theme mode (`src/stores/preferences/`)
 - สร้างผ่าน factory (`createPreferencesStore`) แล้ว hydrate ค่าเริ่มต้นจาก provider — ไม่เรียก store แบบ global singleton ตรงๆ ใน Server Component
+- `ThemeContext` / `useTheme` เป็น compat layer ที่อ่านจาก preferences store (ดู 06) — ไม่เก็บ theme state ซ้ำใน Context
 
 ## 🏠 Local state
 

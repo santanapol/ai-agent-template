@@ -750,7 +750,7 @@ paths:
       summary: Switch active working branch
       description: |
         For **platform_admin**, **support_admin**, and **support** only. Validates the target branch
-        exists in the caller's OU and is **active** (inactive branches are rejected with 403),
+        exists in the caller's OU (inactive branches in the same OU are allowed),
         persists `active_branch_id` on the
         current refresh session row **without rotating** refresh, and returns a new access JWT where
         claim `branch_id` is the selected branch and `home_branch_id` remains the user's home branch.
@@ -792,7 +792,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '403':
-          description: Role cannot switch, branch outside caller OU, or branch is inactive.
+          description: Role cannot switch, or branch outside caller OU.
           content:
             application/problem+json:
               schema:

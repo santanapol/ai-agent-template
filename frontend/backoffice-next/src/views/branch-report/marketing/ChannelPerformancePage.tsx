@@ -57,16 +57,12 @@ const ChannelPerformancePage: React.FC = () => {
     setSearchParams(null);
   }, []);
 
-  const resetFormAndReport = useCallback(() => {
-    resetReportState();
-  }, [resetReportState]);
-
   const resetForBranchChange = useCallback(() => {
     reportAbortRef.current?.abort();
     inviteAbortRef.current?.abort();
-    resetFormAndReport();
+    resetReportState();
     setInviteLinks([]);
-  }, [resetFormAndReport]);
+  }, [resetReportState]);
 
   useEffect(() => {
     const prevBranchId = prevBranchIdRef.current;
@@ -181,29 +177,36 @@ const ChannelPerformancePage: React.FC = () => {
     getRowId: (row) => `${row.username}::${row.register}`,
   });
 
+  let branchAlert: React.ReactNode = null;
+  if (!hasActiveBranch) {
+    branchAlert = (
+      <Alert>
+        <AlertTitle>Branch required</AlertTitle>
+        <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
+      </Alert>
+    );
+  } else if (showBranchSwitchNotice) {
+    branchAlert = (
+      <Alert>
+        <AlertTitle>Branch changed</AlertTitle>
+        <AlertDescription>Please search again to refresh this report.</AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <ListPageCard
       title="Channel Performance"
       description="Analyze and query Royalty 21 performance marketing statistics by channels."
       toolbar={
-        hasSearched ? <DataTableToolbarActions table={table} exportFileName="royalty21-channel-performance" /> : null
+        <DataTableToolbarActions
+          table={table}
+          exportFileName="royalty21-channel-performance"
+          showColumnVisibility={false}
+          exportDisabled={!hasSearched || rows.length === 0}
+        />
       }
-      headerAddon={
-        <>
-          {!hasActiveBranch ? (
-            <Alert>
-              <AlertTitle>Branch required</AlertTitle>
-              <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
-            </Alert>
-          ) : null}
-          {showBranchSwitchNotice && hasActiveBranch ? (
-            <Alert>
-              <AlertTitle>Branch changed</AlertTitle>
-              <AlertDescription>Please search again to refresh this report.</AlertDescription>
-            </Alert>
-          ) : null}
-        </>
-      }
+      headerAddon={branchAlert}
       filterRow={
         <Royalty21SearchForm
           inviteLinkOptions={inviteLinkOptions}
@@ -211,14 +214,12 @@ const ChannelPerformancePage: React.FC = () => {
           tableLoading={tableLoading}
           disabled={!hasActiveBranch}
           onSearch={handleSearch}
-          onClear={resetFormAndReport}
+          onClear={resetReportState}
           onInviteLinksOpen={handleInviteLinksOpen}
         />
       }
     >
-      <div className="px-4">
-        <Royalty21Table table={table} loading={tableLoading} hasSearched={hasSearched} total={total} />
-      </div>
+      <Royalty21Table table={table} loading={tableLoading} hasSearched={hasSearched} total={total} />
     </ListPageCard>
   );
 };

@@ -6,13 +6,13 @@ export function validateRequired(value: string | undefined, label: string): stri
 }
 
 export function validateEmail(value: string | undefined): string | undefined {
-  if (!value?.trim()) return "Please enter a valid email";
+  if (!value?.trim()) return undefined;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "Please enter a valid email";
   return undefined;
 }
 
 export function validateTelephone(value: string | undefined): string | undefined {
-  if (!value?.trim()) return "Please enter telephone number";
+  if (!value?.trim()) return undefined;
   const clean = value.replace(/[- ]/g, "");
   if (!/^\+?\d{9,15}$/.test(clean)) {
     return "Invalid telephone format. e.g. 0812345678 or +66812345678";

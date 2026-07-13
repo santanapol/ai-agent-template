@@ -19,10 +19,7 @@ describe("branchCatalogCache", () => {
       () =>
         new Promise<{ branch_id: string; branch_code: string | null; branch_name: string | null; active: boolean }[]>(
           (resolve) => {
-            setTimeout(
-              () => resolve([{ branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true }]),
-              10,
-            );
+            setTimeout(() => resolve([{ branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true }]), 10);
           },
         ),
     );
@@ -38,13 +35,9 @@ describe("branchCatalogCache", () => {
     const key = branchCatalogCacheKey("ou1", "auth");
     expect(peekBranchCatalog(key)).toBeNull();
 
-    await getBranchCatalog(key, async () => [
-      { branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true },
-    ]);
+    await getBranchCatalog(key, async () => [{ branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true }]);
 
-    expect(peekBranchCatalog(key)).toEqual([
-      { branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true },
-    ]);
+    expect(peekBranchCatalog(key)).toEqual([{ branch_id: "b1", branch_code: "HQ", branch_name: "HQ", active: true }]);
   });
 
   it("invalidates cache on branch switch helper", async () => {
@@ -63,8 +56,12 @@ describe("branchCatalogCache", () => {
   });
 
   it("invalidates switcher typeahead keys without false-matching other OUs", async () => {
-    const fetcherOu1 = vi.fn().mockResolvedValue([{ branch_id: "b1", branch_code: "A", branch_name: "A", active: true }]);
-    const fetcherOu2 = vi.fn().mockResolvedValue([{ branch_id: "b2", branch_code: "B", branch_name: "B", active: true }]);
+    const fetcherOu1 = vi
+      .fn()
+      .mockResolvedValue([{ branch_id: "b1", branch_code: "A", branch_name: "A", active: true }]);
+    const fetcherOu2 = vi
+      .fn()
+      .mockResolvedValue([{ branch_id: "b2", branch_code: "B", branch_name: "B", active: true }]);
 
     const switcherKey = `${branchCatalogCacheKey("ou1", "auth")}:77`;
     const otherOuKey = branchCatalogCacheKey("ou177", "auth");

@@ -53,10 +53,7 @@ export function peekBranchCatalog(cacheKey: string): InvoiceAgentBranch[] | null
   return cacheByKey.get(cacheKey)?.branches ?? null;
 }
 
-export async function getBranchCatalog(
-  cacheKey: string,
-  fetcher: BranchCatalogFetcher,
-): Promise<InvoiceAgentBranch[]> {
+export async function getBranchCatalog(cacheKey: string, fetcher: BranchCatalogFetcher): Promise<InvoiceAgentBranch[]> {
   const cached = cacheByKey.get(cacheKey);
   if (cached) return cached.branches;
 

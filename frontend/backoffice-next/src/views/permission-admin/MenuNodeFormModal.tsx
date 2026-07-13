@@ -89,27 +89,16 @@ const MenuNodeFormModal: React.FC<MenuNodeFormModalProps> = ({
 
   const handleOk = () => {
     if (!validate()) return;
+    const shared = {
+      label: values.label.trim(),
+      parent_key: values.parent_key ?? null,
+      sort_order: values.sort_order,
+    };
     if (mode === "create") {
-      onSubmit(
-        {
-          key: values.key.trim(),
-          label: values.label.trim(),
-          type: values.type,
-          parent_key: values.parent_key ?? null,
-          sort_order: values.sort_order,
-        },
-        mode,
-      );
-    } else {
-      onSubmit(
-        {
-          label: values.label.trim(),
-          parent_key: values.parent_key ?? null,
-          sort_order: values.sort_order,
-        },
-        mode,
-      );
+      onSubmit({ key: values.key.trim(), type: values.type, ...shared }, mode);
+      return;
     }
+    onSubmit(shared, mode);
   };
 
   const keyA11y = errors.key ? fieldErrorIds("menu-key") : undefined;

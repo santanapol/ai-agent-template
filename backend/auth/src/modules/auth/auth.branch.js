@@ -94,7 +94,8 @@ export const authMixin = {
     branch_id_hex,
     ou_id_hex,
     q,
-    limit
+    limit,
+    offset
   }) {
     const genCheck = await this.assertAccessTokenGenMatches({
       user_id_hex,
@@ -147,7 +148,7 @@ export const authMixin = {
         return { ok: true, status: 200, body: { branches: [] } }
       }
       const branch = await this.branchAccessResolver.findBranchDisplay(branchOid, ouOid)
-      const branches = applyBranchListQuery(branch ? [branch] : [], { q, limit })
+      const branches = applyBranchListQuery(branch ? [branch] : [], { q, limit, offset })
       return {
         ok: true,
         status: 200,
@@ -159,7 +160,7 @@ export const authMixin = {
       await this.branchAccessResolver.listBranchesForOu(ouOid, {
         ensureBranchIds: branch_id_hex ? [branch_id_hex] : []
       }),
-      { q, limit }
+      { q, limit, offset }
     )
 
     return { ok: true, status: 200, body: { branches } }
@@ -252,21 +253,7 @@ export const authMixin = {
         'AUTH_BRANCH_FORBIDDEN'
       )
     }
-    if (branchAccess === 'inactive') {
-      await this.auditActiveBranchDenied({
-        request_id,
-        user_id: user._id,
-        ip,
-        reason: 'branch_inactive',
-        branch_id
-      })
-      return this.serviceProblem(
-        403,
-        this.types.branchForbidden,
-        'Branch is inactive.',
-        'AUTH_BRANCH_FORBIDDEN'
-      )
-    }
+    // inactive in the same OU is allowed for BRANCH_SWITCH_ROLES (same path as ok).
 
     const now = new Date()
     const hash = hashRefreshToken(rawRefresh)

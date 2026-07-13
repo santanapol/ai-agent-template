@@ -1,3 +1,5 @@
+import { historyQuery, listReportsQuery } from "./reports-query.schema.js";
+
 const baseTrustedHeaderProperties = {
   "x-user-ou": { type: "string" },
   "x-user-branch": { type: "string" },
@@ -127,14 +129,6 @@ const idParam = {
   },
 };
 
-const paginationQuery = {
-  type: "object",
-  properties: {
-    page: { type: "integer", minimum: 1, default: 1 },
-    limit: { type: "integer", minimum: 1, maximum: 200, default: 20 },
-  },
-};
-
 const paginationProperties = {
   page: { type: "integer" },
   limit: { type: "integer" },
@@ -146,7 +140,7 @@ export const listReportsSchema = {
   description: "List all smart report definitions",
   tags: ["smart-reports"],
   headers: trustedHeaders,
-  querystring: paginationQuery,
+  querystring: listReportsQuery,
   response: {
     200: {
       type: "object",
@@ -264,7 +258,7 @@ export const historySchema = {
   description: "List download history for all smart reports",
   tags: ["smart-reports"],
   headers: trustedHeaders,
-  querystring: paginationQuery,
+  querystring: historyQuery,
   response: {
     200: {
       type: "object",

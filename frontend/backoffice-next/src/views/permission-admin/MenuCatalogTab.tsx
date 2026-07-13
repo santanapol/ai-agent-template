@@ -100,7 +100,7 @@ const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({
   }
 
   return (
-    <div data-testid="menu-catalog-tab">
+    <div data-testid="menu-catalog-tab" className="px-4">
       {menusLoading ? (
         <Skeleton className="h-48 w-full" aria-busy="true" />
       ) : menus.length === 0 ? (

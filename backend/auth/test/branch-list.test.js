@@ -118,4 +118,11 @@ test('applyBranchListQuery preserves order, filters by q, and caps limit', () =>
   const limited = applyBranchListQuery(branches, { limit: 2 })
   assert.equal(limited.length, 2)
   assert.equal(limited[0].branch_id, ZERO_HQ_BRANCH_ID)
+
+  const page2 = applyBranchListQuery(branches, { limit: 1, offset: 1 })
+  assert.equal(page2.length, 1)
+  assert.equal(page2[0].branch_code, 'H01')
+
+  const pastEnd = applyBranchListQuery(branches, { limit: 5, offset: 10 })
+  assert.equal(pastEnd.length, 0)
 })

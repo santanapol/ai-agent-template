@@ -34,6 +34,8 @@ stateDiagram-v2
 
 Statuses (**OBSERVED** `invoice-status.js`): `PENDING`, `VOID`, `CAL`, `MISSING_FEE`, `READY`, `ERROR`, `PAID`
 
+**Detail `currency`:** GET/PUT invoice detail responses include `currency` resolved from the `agents` row for the invoice `branch_id` (uppercase). It is **not** stored on `agent_iv`. Null when no agent exists for that branch. List responses omit currency.
+
 ## 4. Fee resolution
 
 1. Lookup `agent_fees` for agent + company + category
@@ -54,6 +56,8 @@ Statuses (**OBSERVED** `invoice-status.js`): `PENDING`, `VOID`, `CAL`, `MISSING_
 |-----|------------|
 | `agents:list` | list/detail agents, master-data |
 | `agents:write` | create/update/delete/sync |
+
+**List `includeInactive`:** GET `/agents` defaults to active agents only (`active` not in `false` / `0` / `"0"`). Pass `includeInactive=true` to include soft-deleted agent rows in list pagination.
 | `agent-fees:*` | fee override CRUD |
 | `invoices:list` | list, agent picker |
 | `invoices:read` | detail, transactions |

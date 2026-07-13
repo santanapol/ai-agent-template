@@ -1,6 +1,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert";
-import { listAgents, countAgents } from "../agents.repository.js";
+import {
+  listAgents,
+  countAgents,
+  activeOnlyAgentsMatch,
+} from "../agents.repository.js";
 
 const VALID_OU_ID = "000000000000000000000001";
 
@@ -92,5 +96,59 @@ describe("listAgents — regex escaping", () => {
       "\\(a\\+\\)\\+",
       `countAgents regex should be escaped, got: ${regexVal}`,
     );
+  });
+});
+
+describe("listAgents — includeInactive", () => {
+  test("applies active-only match by default", async () => {
+    let captured;
+    const db = makeMockDb((pipeline) => {
+      captured = pipeline;
+    });
+
+    await listAgents(db, VALID_OU_ID, "", 0, 10);
+
+    const matchStage = captured.find((s) => s.$match);
+    assert.deepStrictEqual(matchStage.$match.active, { $nin: [false, 0, "0"] });
+  });
+
+  test("omits active filter when includeInactive is true", async () => {
+    let captured;
+    const db = makeMockDb((pipeline) => {
+      captured = pipeline;
+    });
+
+    await listAgents(db, VALID_OU_ID, "", 0, 10, true);
+
+    const matchStage = captured.find((s) => s.$match);
+    assert.ok(!("active" in matchStage.$match));
+  });
+
+  test("countAgents mirrors includeInactive flag", async () => {
+    let activeOnlyQuery;
+    let allQuery;
+    const db = makeMockDb(null, (query) => {
+      if (query.active) activeOnlyQuery = query;
+      else allQuery = query;
+    });
+
+    await countAgents(db, VALID_OU_ID, "");
+    await countAgents(db, VALID_OU_ID, "", true);
+
+    assert.deepStrictEqual(activeOnlyQuery.active, { $nin: [false, 0, "0"] });
+    assert.ok(allQuery);
+    assert.ok(!("active" in allQuery));
+  });
+});
+
+describe("activeOnlyAgentsMatch", () => {
+  test("returns empty object when includeInactive is true", () => {
+    assert.deepStrictEqual(activeOnlyAgentsMatch(true), {});
+  });
+
+  test("returns $nin filter when includeInactive is false", () => {
+    assert.deepStrictEqual(activeOnlyAgentsMatch(false), {
+      active: { $nin: [false, 0, "0"] },
+    });
   });
 });

@@ -6,8 +6,19 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export const listAgents = async (db, ouId, search, skip = 0, limit = 20) => {
-  const query = { ou_id: new ObjectId(ouId), active: { $ne: false } };
+const INACTIVE_ACTIVE_VALUES = [false, 0, "0"];
+
+/** @param {boolean} includeInactive */
+export function activeOnlyAgentsMatch(includeInactive = false) {
+  if (includeInactive) return {};
+  return { active: { $nin: INACTIVE_ACTIVE_VALUES } };
+}
+
+function buildAgentsListQuery(ouId, search, includeInactive = false) {
+  const query = {
+    ou_id: new ObjectId(ouId),
+    ...activeOnlyAgentsMatch(includeInactive),
+  };
 
   if (search) {
     const safe = escapeRegex(search);
@@ -16,6 +27,19 @@ export const listAgents = async (db, ouId, search, skip = 0, limit = 20) => {
       { branch_name: { $regex: safe, $options: "i" } },
     ];
   }
+
+  return query;
+}
+
+export const listAgents = async (
+  db,
+  ouId,
+  search,
+  skip = 0,
+  limit = 20,
+  includeInactive = false,
+) => {
+  const query = buildAgentsListQuery(ouId, search, includeInactive);
 
   return db
     .collection(COLLECTION_NAME)
@@ -45,17 +69,13 @@ export const listAgents = async (db, ouId, search, skip = 0, limit = 20) => {
     .toArray();
 };
 
-export const countAgents = async (db, ouId, search) => {
-  const query = { ou_id: new ObjectId(ouId), active: { $ne: false } };
-
-  if (search) {
-    const safe = escapeRegex(search);
-    query.$or = [
-      { branch_code: { $regex: safe, $options: "i" } },
-      { branch_name: { $regex: safe, $options: "i" } },
-    ];
-  }
-
+export const countAgents = async (
+  db,
+  ouId,
+  search,
+  includeInactive = false,
+) => {
+  const query = buildAgentsListQuery(ouId, search, includeInactive);
   return db.collection(COLLECTION_NAME).countDocuments(query);
 };
 

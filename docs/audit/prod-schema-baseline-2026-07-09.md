@@ -238,8 +238,6 @@ validationLevel: `moderate`
       "code",
       "firstname",
       "lastname",
-      "email",
-      "tel",
       "cr_by",
       "cr_date",
       "cr_prog",
@@ -270,11 +268,17 @@ validationLevel: `moderate`
         "maxLength": 128
       },
       "email": {
-        "bsonType": "string",
+        "bsonType": [
+          "string",
+          "null"
+        ],
         "maxLength": 254
       },
       "tel": {
-        "bsonType": "string",
+        "bsonType": [
+          "string",
+          "null"
+        ],
         "maxLength": 16
       }
     }

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Report } from "@/types/smartReport";
 
 import { mockPaginatedResponse } from "../test/mockFactories";
+import { testNavigation } from "../test/mockNavigation";
 import { renderWithRouter } from "../test/renderWithRouter";
 import SmartReport from "./SmartReport";
 
@@ -86,7 +87,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { getReport, listHistory, listReports, createReport, validateReport, testRunReport } from "../lib/smartReportApiClient";
+import { deleteReport, listHistory, listReports } from "../lib/smartReportApiClient";
 
 function renderSmartReport() {
   return renderWithRouter(<SmartReport />);
@@ -95,6 +96,7 @@ function renderSmartReport() {
 describe("SmartReport (list mode)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testNavigation.reset();
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([]));
     vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
   });
@@ -107,58 +109,52 @@ describe("SmartReport (list mode)", () => {
       expect(listHistory).toHaveBeenCalledTimes(1);
     });
     expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
-    expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+    expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
   });
 
   it("renders list view with title and create button", async () => {
     renderSmartReport();
 
-    expect(screen.getByText("Smart Report")).toBeInTheDocument();
+    expect(screen.getByText("Smart Reports")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create report/i })).toBeInTheDocument();
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
     });
   });
 
-  it("shows search unavailable hint", async () => {
+  it("renders search and filter controls", async () => {
     renderSmartReport();
 
-    expect(screen.getByText(/search will be available in a future update/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/search report name or description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/enabled:\s*all/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/schedule:\s*all/i)).toBeInTheDocument();
+
+    // Let mount fetches settle so their state updates stay inside act().
+    await waitFor(() => expect(listReports).toHaveBeenCalled());
   });
 
-  it("lazy-loads paginated history when history tab is selected", async () => {
-    const user = userEvent.setup();
-    renderSmartReport();
-
-    await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
-    });
-
-    vi.mocked(listHistory).mockClear();
-    await user.click(screen.getByRole("tab", { name: /download history/i }));
-
-    await waitFor(() => {
-      expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 20 });
-    });
-  });
-
-  it("shows empty table state", async () => {
+  it("shows empty table state with create action", async () => {
     renderSmartReport();
 
     await waitFor(() => {
-      expect(screen.getByText("No data found")).toBeInTheDocument();
+      expect(screen.getByText("No reports yet")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /^create report$/i }).length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it("shows loading skeleton while fetching", () => {
+  it("shows loading skeleton while fetching", async () => {
     vi.mocked(listReports).mockImplementation(() => new Promise(() => undefined));
 
     renderSmartReport();
     expect(document.querySelector('[aria-busy="true"], .animate-pulse')).toBeTruthy();
+
+    // Enrichment history still resolves; await it so its state update stays inside act().
+    await waitFor(() => expect(listHistory).toHaveBeenCalled());
   });
 
-  it("opens confirm dialog before delete", async () => {
+  it("opens delete dialog and deletes report", async () => {
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    vi.mocked(deleteReport).mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     renderSmartReport();
@@ -168,16 +164,26 @@ describe("SmartReport (list mode)", () => {
     });
 
     await user.click(screen.getByLabelText(/delete report/i));
-    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: "Confirm Delete Report", danger: true }));
+    expect(screen.getByText("Confirm Delete Report")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^delete report$/i }));
+
+    await waitFor(() => {
+      expect(deleteReport).toHaveBeenCalledWith(sampleReport.id, "etag");
+    });
+    expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  it("switches to edit view when row edit is clicked", async () => {
+  it("navigates to create route when Create report is clicked", async () => {
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await user.click(screen.getByRole("button", { name: /create report/i }));
+
+    expect(testNavigation.push).toHaveBeenCalledWith("/smart-reports/new", undefined);
+  });
+
+  it("navigates to edit route when row edit is clicked", async () => {
     vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
-    vi.mocked(getReport).mockResolvedValue({
-      ...sampleReport,
-      script: "return [];",
-      compiledScript: "compiled",
-    });
 
     const user = userEvent.setup();
     renderSmartReport();
@@ -188,14 +194,10 @@ describe("SmartReport (list mode)", () => {
 
     await user.click(screen.getByLabelText(/edit report/i));
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
-    });
+    expect(testNavigation.push).toHaveBeenCalledWith(`/smart-reports/${sampleReport.id}/edit`, undefined);
   });
 
-  it(
-    "refetches reports on page 2 without re-fetching enrichment history",
-    async () => {
+  it("refetches reports on page 2 without re-fetching enrichment history", async () => {
     const pageOneReports = Array.from({ length: 20 }, (_, index) => ({
       ...sampleReport,
       id: `report-${index + 1}`,
@@ -220,7 +222,7 @@ describe("SmartReport (list mode)", () => {
     renderSmartReport();
 
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
       expect(listHistory).toHaveBeenCalledWith({ page: 1, limit: 100 });
     });
 
@@ -233,12 +235,28 @@ describe("SmartReport (list mode)", () => {
     await user.click(screen.getByRole("button", { name: "2" }));
 
     await waitFor(() => {
-      expect(listReports).toHaveBeenCalledWith({ page: 2, limit: 20 });
+      expect(listReports).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }));
     });
     expect(vi.mocked(listHistory).mock.calls.length).toBe(enrichmentCalls);
-  },
-  10000,
-  );
+  }, 10000);
+
+  it("loads drawer history filtered by report id", async () => {
+    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([sampleReport]));
+    const user = userEvent.setup();
+    renderSmartReport();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/view download history/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText(/view download history/i));
+
+    await waitFor(() => {
+      expect(listHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20, reportId: sampleReport.id }),
+      );
+    });
+  });
 
   it("shows fixed toast when report run returns a failed status", async () => {
     const { runReport } = await import("../lib/smartReportApiClient");
@@ -283,75 +301,6 @@ describe("SmartReport (list mode)", () => {
 
     await waitFor(() => {
       expect(mockFeedback.message.error).toHaveBeenCalledWith("Failed to load reports");
-    });
-  });
-});
-
-describe("SmartReport (create flow)", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(listReports).mockResolvedValue(mockPaginatedResponse([]));
-    vi.mocked(listHistory).mockResolvedValue(mockPaginatedResponse([]));
-    vi.mocked(validateReport).mockResolvedValue({
-      valid: true,
-      compiledScript: "compiled-script",
-      errors: [],
-    });
-    vi.mocked(testRunReport).mockResolvedValue({
-      success: true,
-      recordCount: 1,
-      durationMs: 12,
-      sample: [{ id: "1" }],
-      testRunToken: "test-token",
-      errors: [],
-    });
-    vi.mocked(createReport).mockResolvedValue({
-      ...sampleReport,
-      id: "report-new",
-      name: "AUDIT-report-001",
-    });
-  });
-
-  it("completes validate → test-run → save for a new report", async () => {
-    const user = userEvent.setup();
-    renderSmartReport();
-
-    await user.click(screen.getByRole("button", { name: /create report/i }));
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/report name/i)).toBeInTheDocument();
-    });
-
-    await user.type(screen.getByLabelText(/report name/i), "AUDIT-report-001");
-    await user.click(screen.getByRole("button", { name: /^validate$/i }));
-
-    await waitFor(() => {
-      expect(validateReport).toHaveBeenCalled();
-      expect(mockFeedback.message.success).toHaveBeenCalledWith("Script validated successfully");
-    });
-
-    await user.click(screen.getByRole("button", { name: /test run/i }));
-
-    await waitFor(() => {
-      expect(testRunReport).toHaveBeenCalled();
-    });
-
-    const saveButton = screen.getByRole("button", { name: /save report script/i });
-    await waitFor(() => {
-      expect(saveButton).not.toBeDisabled();
-    });
-
-    await user.click(saveButton);
-
-    await waitFor(() => {
-      expect(createReport).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "AUDIT-report-001",
-          compiledScript: "compiled-script",
-          testRunToken: "test-token",
-        }),
-      );
-      expect(mockFeedback.message.success).toHaveBeenCalledWith("Report created successfully");
     });
   });
 });

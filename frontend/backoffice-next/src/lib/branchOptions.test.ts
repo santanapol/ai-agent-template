@@ -66,7 +66,7 @@ describe("branchOptions", () => {
       { branch_id: "a", branch_name: "Alpha", branch_code: "A", active: true },
     ]);
     expect(sorted[0]).toEqual(inactiveHq);
-    expect(formatBranchOptionLabel(sorted[0] as (typeof sorted)[0])).toBe("ZERO - Zero HQ (Inactive)");
+    expect(formatBranchOptionLabel(sorted[0] as (typeof sorted)[0])).toBe("ZERO - Zero HQ");
   });
 
   it("ZERO_HQ_BRANCH_ID stays in sync with auth platform-branches config", () => {
@@ -79,7 +79,7 @@ describe("branchOptions", () => {
     expect(match?.[1]).toBe(ZERO_HQ_BRANCH_ID);
   });
 
-  it("formatBranchOptionLabel includes inactive suffix", () => {
+  it("formatBranchOptionLabel omits inactive suffix", () => {
     expect(
       formatBranchOptionLabel({
         branch_id: "1",
@@ -87,7 +87,7 @@ describe("branchOptions", () => {
         branch_code: "N01",
         active: false,
       }),
-    ).toBe("N01 - North (Inactive)");
+    ).toBe("N01 - North");
   });
 
   it("findInvoiceAgentBranch returns matching branch", () => {

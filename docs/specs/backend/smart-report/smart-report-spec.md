@@ -42,9 +42,9 @@ Prefix: `/api/v1/smart-reports` (+ `/healthz`, `/readyz`)
 |--------|------|----------|
 | POST | `/validate` | AST validate script |
 | POST | `/test-run` | sandbox execute + token |
-| GET | `/history` | download history list |
+| GET | `/history` | download history list (`page`, `limit`, optional `reportId`) |
 | GET | `/download/:fileId` | file download |
-| GET | `/` | list report definitions |
+| GET | `/` | list report definitions (`page`, `limit`, optional `q`, `enabled`, `schedule`) |
 | POST | `/` | create report |
 | GET | `/:id` | get one |
 | PUT | `/:id` | update (ETag) |

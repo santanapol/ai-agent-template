@@ -1,8 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/useMobile";
 
 import { BulkInvoiceActionBar } from "./BulkInvoiceActionBar";
+
+vi.mock("@/hooks/useMobile", () => ({
+  useIsMobile: vi.fn(),
+}));
 
 const baseProps = {
   selectedCount: 2,
@@ -16,46 +23,61 @@ const baseProps = {
   onClear: vi.fn(),
 };
 
+function renderBar(ui: React.ReactElement) {
+  return render(<SidebarProvider defaultOpen>{ui}</SidebarProvider>);
+}
+
 describe("BulkInvoiceActionBar", () => {
-  it("renders nothing when no rows are selected", () => {
-    const { container } = render(<BulkInvoiceActionBar {...baseProps} selectedCount={0} />);
-    expect(container).toBeEmptyDOMElement();
+  beforeEach(() => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
   });
 
-  it("shows export buttons only when canExport is true", () => {
-    render(<BulkInvoiceActionBar {...baseProps} canExport={false} />);
+  it("renders nothing when no rows are selected", () => {
+    renderBar(<BulkInvoiceActionBar {...baseProps} selectedCount={0} />);
+    expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
+  });
 
-    expect(screen.queryByText("Export PDF")).not.toBeInTheDocument();
-    expect(screen.queryByText("Export Excel")).not.toBeInTheDocument();
+  it("hides export menu when canExport is false", () => {
+    renderBar(<BulkInvoiceActionBar {...baseProps} canExport={false} />);
+
+    expect(screen.queryByRole("button", { name: /export selected invoices/i })).not.toBeInTheDocument();
     expect(screen.getByText("Mark as PAID")).toBeInTheDocument();
   });
 
   it("shows status buttons only when canWrite is true", () => {
-    render(<BulkInvoiceActionBar {...baseProps} canWrite={false} />);
+    renderBar(<BulkInvoiceActionBar {...baseProps} canWrite={false} />);
 
     expect(screen.queryByText("Mark as PAID")).not.toBeInTheDocument();
     expect(screen.queryByText("Cancel")).not.toBeInTheDocument();
-    expect(screen.getByText("Export PDF")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /export selected invoices/i })).toBeInTheDocument();
   });
 
   it("disables actions while busy", () => {
-    render(<BulkInvoiceActionBar {...baseProps} busy />);
+    renderBar(<BulkInvoiceActionBar {...baseProps} busy />);
 
     expect(screen.getByText("Mark as PAID").closest("button")).toBeDisabled();
-    expect(screen.getByText("Export PDF").closest("button")).toBeDisabled();
+    expect(screen.getByRole("button", { name: /export selected invoices/i })).toBeDisabled();
     expect(screen.getByText("Clear").closest("button")).toBeDisabled();
   });
 
   it("calls handlers when buttons are clicked", async () => {
+    const user = userEvent.setup();
     const onMarkPaid = vi.fn();
     const onExportPdf = vi.fn();
 
-    render(<BulkInvoiceActionBar {...baseProps} onMarkPaid={onMarkPaid} onExportPdf={onExportPdf} />);
+    renderBar(<BulkInvoiceActionBar {...baseProps} onMarkPaid={onMarkPaid} onExportPdf={onExportPdf} />);
 
-    await userEvent.click(screen.getByText("Mark as PAID"));
-    await userEvent.click(screen.getByText("Export PDF"));
+    await user.click(screen.getByText("Mark as PAID"));
+    await user.click(screen.getByRole("button", { name: /export selected invoices/i }));
+    await user.click(await screen.findByText("Export PDF"));
 
     expect(onMarkPaid).toHaveBeenCalledOnce();
     expect(onExportPdf).toHaveBeenCalledOnce();
+  });
+
+  it("offsets horizontally for the expanded sidebar on desktop", () => {
+    renderBar(<BulkInvoiceActionBar {...baseProps} />);
+    const bar = screen.getByText(/selected 2/i).parentElement?.parentElement;
+    expect(bar?.className).toContain("left-[calc(50%+var(--sidebar-width)/2)]");
   });
 });

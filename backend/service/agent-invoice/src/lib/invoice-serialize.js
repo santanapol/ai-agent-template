@@ -36,8 +36,19 @@ export function mapInvoiceListItemForApi(doc, names = {}) {
 }
 
 /**
+ * Normalize agent currency for API (ERD stores lowercase; responses use uppercase).
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+export function normalizeInvoiceCurrency(value) {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim().toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+/**
  * @param {Record<string, unknown>} doc
- * @param {{ branchName?: string | null, ouName?: string | null }} [names]
+ * @param {{ branchName?: string | null, ouName?: string | null, currency?: string | null }} [names]
  */
 export function mapInvoiceForApi(doc, names = {}) {
   return {
@@ -52,6 +63,7 @@ export function mapInvoiceForApi(doc, names = {}) {
     net_win: doc.net_win ?? null,
     bet: doc.bet ?? null,
     amount: doc.amount ?? null,
+    currency: normalizeInvoiceCurrency(names.currency),
     status: doc.status,
     cr_by: doc.cr_by,
     cr_prog: doc.cr_prog,

@@ -1,10 +1,23 @@
 import { anyPermissionMatches } from "../../lib/permissionMatch";
-import type { AdminMenuNode } from "../../types/permissionAdmin";
-import { PROTECTED_MENU_KEY } from "../../types/permissionAdmin";
+import type { AdminMenuNode, KnownRole } from "../../types/permissionAdmin";
+import { KNOWN_ROLES, PROTECTED_MENU_KEY } from "../../types/permissionAdmin";
 
 export interface MenuTreeNode extends AdminMenuNode {
   children?: MenuTreeNode[];
 }
+
+export const ROLE_LABELS: Record<KnownRole, string> = {
+  platform_admin: "Platform Admin",
+  branch_admin: "Branch Admin",
+  support_admin: "Support Admin",
+  support: "Support",
+  staff: "Staff",
+};
+
+export const ROLE_FILTER_OPTIONS = KNOWN_ROLES.map((role) => ({
+  value: role,
+  label: ROLE_LABELS[role],
+}));
 
 export function buildMenuTree(flat: AdminMenuNode[]): MenuTreeNode[] {
   const byKey = new Map(flat.map((item) => [item.key, { ...item, children: [] as MenuTreeNode[] }]));

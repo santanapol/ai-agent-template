@@ -127,9 +127,10 @@ Normative detail: [openapi.yaml](../../../../backend/auth/openapi.yaml)
 
 1. Client ส่ง `branch_id` + Bearer (+ optional refresh body/cookie).
 2. `auth` ตรวจ role ใน `branch-switch-roles` และ branch access (`platform_branches` แล้ว `su_branch` ถ้ามี `MONGODB_URI_READ`).
-3. **Same branch:** ออก access JWT ใหม่โดย **ไม่** bump `token_gen`.
-4. **Different branch:** **`$inc access_token_gen`**, อัปเดต `active_branch_id` บน refresh row, **`SET`** Redis `user:{sub}:token_gen` — access/refresh เก่าใช้ไม่ได้ทันที (OBSERVED — `auth.service.js:1081-1265`).
-5. Audit: `auth.active_branch_changed` (success) หรือ `auth.active_branch_denied` (fail).
+3. **Inactive ใน OU เดียวกันอนุญาต** สำหรับ `BRANCH_SWITCH_ROLES` — ปฏิเสธเฉพาะสาขาคนละ OU / ไม่พบ / role นอกชุดสลับ.
+4. **Same branch:** ออก access JWT ใหม่โดย **ไม่** bump `token_gen`.
+5. **Different branch:** **`$inc access_token_gen`**, อัปเดต `active_branch_id` บน refresh row, **`SET`** Redis `user:{sub}:token_gen` — access/refresh เก่าใช้ไม่ได้ทันที (OBSERVED — `auth.service.js:1081-1265`).
+6. Audit: `auth.active_branch_changed` (success) หรือ `auth.active_branch_denied` (fail).
 
 ---
 

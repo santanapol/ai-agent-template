@@ -169,6 +169,67 @@ if (!RUN) {
       assert.notEqual(secondBody.data[0].id, firstBody.data[0].id);
     });
 
+    test("GET /?q filters reports by name", async () => {
+      const report = await db
+        .collection(REPORTS_COLLECTION)
+        .findOne({ _id: new ObjectId(reportId) });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/v1/smart-reports?q=${encodeURIComponent(report.name.slice(0, 8))}`,
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.some((item) => item.id === reportId));
+    });
+
+    test("GET /?enabled=false returns only disabled reports", async () => {
+      const disabled = await createGatedReport(app, buildMeshHeaders(), {
+        name: `Disabled Report ${Date.now()}`,
+        script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+        outputFormat: "csv",
+        enabled: false,
+      });
+      assert.equal(disabled.statusCode, 201);
+      const disabledId = disabled.json().data.id;
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?enabled=false",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.every((item) => item.enabled === false));
+      assert.ok(body.data.some((item) => item.id === disabledId));
+      assert.ok(!body.data.some((item) => item.id === reportId));
+    });
+
+    test("GET /?schedule=manual returns only manual reports", async () => {
+      const manual = await createGatedReport(app, buildMeshHeaders(), {
+        name: `Manual Report ${Date.now()}`,
+        script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+        outputFormat: "csv",
+        schedule: null,
+      });
+      assert.equal(manual.statusCode, 201);
+      const manualId = manual.json().data.id;
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?schedule=manual",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.every((item) => item.schedule === null));
+      assert.ok(body.data.some((item) => item.id === manualId));
+    });
+
     test("GET /?page=0 returns 400 INVALID_PARAM", async () => {
       const response = await app.inject({
         method: "GET",
@@ -405,6 +466,20 @@ if (!RUN) {
       assert.equal(body.pagination.limit, 20);
       assert.ok(body.pagination.total >= 1);
       assert.ok(body.pagination.totalPages >= 1);
+    });
+
+    test("GET /history?reportId filters history for one report", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/v1/smart-reports/history?reportId=${reportId}`,
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.length >= 1);
+      assert.ok(body.data.every((entry) => entry.reportId === reportId));
+      assert.ok(body.data.some((entry) => entry.fileName === historyFileName));
     });
 
     test("GET /download/:fileId streams the exported CSV file (200)", async () => {

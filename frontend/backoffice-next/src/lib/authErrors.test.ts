@@ -1,7 +1,13 @@
 import axios from "axios";
 import { describe, expect, it } from "vitest";
 
-import { loginErrorMessage, passwordChangeFieldErrors } from "./authErrors";
+import {
+  loginErrorMessage,
+  passwordChangeFieldErrors,
+  staffPasswordResetFieldErrors,
+  validateAdminPasswordReset,
+} from "./authErrors";
+import { PASSWORD_COMPLEXITY_MESSAGE, PASSWORD_REQUIREMENTS_DESCRIPTION } from "./passwordPolicy";
 
 function axiosError(data: Record<string, unknown>, status = 400) {
   return new axios.AxiosError("request failed", "ERR_BAD_REQUEST", undefined, undefined, {
@@ -56,11 +62,39 @@ describe("passwordChangeFieldErrors", () => {
 
   it("maps AUTH_PASSWORD_POLICY_VIOLATION to new_password", () => {
     expect(passwordChangeFieldErrors(axiosError({ code: "AUTH_PASSWORD_POLICY_VIOLATION" }))).toEqual({
-      new_password: "Password must be at least 8 characters.",
+      new_password: PASSWORD_COMPLEXITY_MESSAGE,
     });
   });
 
   it("returns null for unknown codes", () => {
     expect(passwordChangeFieldErrors(axiosError({ code: "OTHER" }))).toBeNull();
+  });
+});
+
+describe("staffPasswordResetFieldErrors", () => {
+  it("maps staff INVALID_PARAM password policy message", () => {
+    expect(
+      staffPasswordResetFieldErrors(
+        axiosError({ code: "INVALID_PARAM", message: "Password does not meet policy requirements" }),
+      ),
+    ).toEqual({ newPassword: PASSWORD_COMPLEXITY_MESSAGE });
+  });
+
+  it("maps generic staff validation failure to requirements helper", () => {
+    expect(
+      staffPasswordResetFieldErrors(axiosError({ code: "INVALID_PARAM", message: "Request validation failed" })),
+    ).toEqual({ newPassword: PASSWORD_REQUIREMENTS_DESCRIPTION });
+  });
+});
+
+describe("validateAdminPasswordReset", () => {
+  it("rejects weak passwords before submit", () => {
+    expect(validateAdminPasswordReset("password123", "password123")).toEqual({
+      newPassword: PASSWORD_COMPLEXITY_MESSAGE,
+    });
+  });
+
+  it("accepts policy-compliant passwords", () => {
+    expect(validateAdminPasswordReset("InitialSecurePass1234!", "InitialSecurePass1234!")).toEqual({});
   });
 });

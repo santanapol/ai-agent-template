@@ -1,6 +1,17 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import NextLink from "next/link";
 import {
@@ -292,19 +303,39 @@ export function useSearchParams(): [
   return [searchParams, setSearchParams];
 }
 
-export function Link({
-  to,
-  children,
-  ...props
-}: {
-  to: string;
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
-}) {
+export const Link = forwardRef<
+  HTMLAnchorElement,
+  {
+    to: string;
+    children?: ReactNode;
+    className?: string;
+    onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+    "aria-label"?: string;
+    title?: string;
+  }
+>(function Link({ to, children, onClick, ...props }, ref) {
+  const ctx = useNavContext();
+
+  if (ctx?.testMode) {
+    return (
+      <a
+        ref={ref}
+        href={to}
+        onClick={(event) => {
+          event.preventDefault();
+          onClick?.(event);
+          ctx.navigate(to);
+        }}
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <NextLink href={to} {...props}>
+    <NextLink ref={ref} href={to} onClick={onClick} {...props}>
       {children}
     </NextLink>
   );
-}
+});

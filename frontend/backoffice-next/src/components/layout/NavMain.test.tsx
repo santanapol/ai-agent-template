@@ -46,15 +46,16 @@ describe("NavMain", () => {
       withSidebar: true,
     });
 
-    await user.click(screen.getByText("Dashboard"));
+    await user.click(screen.getByRole("link", { name: "Dashboard" }));
     expect(onNavigate).toHaveBeenCalledWith("/");
   });
 
   it("marks active item based on selectedPath", () => {
     renderWithRouter(<NavMain items={flatItems} selectedPath="/" onNavigate={vi.fn()} />, { withSidebar: true });
 
-    const dashboardButton = screen.getByText("Dashboard").closest("button");
-    expect(dashboardButton).toHaveAttribute("data-active");
+    const dashboardLink = screen.getByRole("link", { name: "Dashboard" });
+    expect(dashboardLink).toHaveAttribute("href", "/");
+    expect(dashboardLink).toHaveAttribute("data-active");
   });
 
   it("expands collapsible group and navigates child", async () => {
@@ -79,7 +80,8 @@ describe("NavMain", () => {
   it("renders dashboard in a separate group above Menu label", () => {
     renderWithRouter(<NavMain items={groupedItems} selectedPath="/" onNavigate={vi.fn()} />, { withSidebar: true });
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard", { selector: "[data-sidebar=group-label]" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByText("Menu")).toBeInTheDocument();
     expect(screen.getByText("Billing")).toBeInTheDocument();
   });
@@ -88,7 +90,7 @@ describe("NavMain", () => {
     renderWithRouter(<NavMain items={[]} selectedPath="/" onNavigate={vi.fn()} />, { withSidebar: true });
 
     expect(screen.queryByText("Menu")).not.toBeInTheDocument();
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dashboard", { selector: "[data-sidebar=group-label]" })).not.toBeInTheDocument();
   });
 
   it("hides inline submenu when sidebar is collapsed on desktop", () => {

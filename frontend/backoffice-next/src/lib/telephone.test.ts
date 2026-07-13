@@ -30,10 +30,10 @@ describe("telephone utility", () => {
   });
 
   describe("telephoneRules validation", () => {
-    const validator = telephoneRules[1].validator;
+    const validator = telephoneRules[0].validator;
     if (!validator) throw new Error("Expected telephone validator");
 
-    it("allows empty value (defers to required rule)", async () => {
+    it("allows empty value for optional telephone", async () => {
       await expect(validator(null, "")).resolves.toBeUndefined();
     });
 

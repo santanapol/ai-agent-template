@@ -217,6 +217,31 @@ if (!RUN) {
       assert.deepEqual(result, [{ value: 20 }]);
     });
 
+    test("find(filter, shell projection) returns projected fields only", async () => {
+      const script = `
+        withReport(async () => {
+          const mainDB = db.getSiblingDB(${JSON.stringify(dbName)});
+          return await mainDB.${FIXTURE_COLLECTION}.find(
+            { category: "alpha" },
+            { _id: 0, value: 1 },
+          );
+        });
+      `;
+      const result = await runReportScript({ script });
+      assert.deepEqual(result, [{ value: 10 }, { value: 20 }]);
+    });
+
+    test("findOne(filter, shell projection) returns projected fields only", async () => {
+      const script = `
+        db.getSiblingDB(${JSON.stringify(dbName)}).${FIXTURE_COLLECTION}.findOne(
+          { category: "beta" },
+          { _id: 0, value: 1 },
+        );
+      `;
+      const result = await runReportScript({ script });
+      assert.deepEqual(result, { value: 30 });
+    });
+
     test("findOne via db.getSiblingDB returns a single object", async () => {
       const script = `db.getSiblingDB(${JSON.stringify(dbName)}).${FIXTURE_COLLECTION}.findOne({ category: "beta" });`;
       const result = await runReportScript({ script });

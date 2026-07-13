@@ -14,8 +14,8 @@ const AdminApiForbidden: React.FC<AdminApiForbiddenProps> = ({
 }) => (
   <Empty>
     <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <ShieldX className="size-6 text-destructive" />
+      <EmptyMedia variant="icon" className="text-destructive">
+        <ShieldX aria-hidden="true" />
       </EmptyMedia>
       <EmptyTitle>403 Forbidden</EmptyTitle>
       <EmptyDescription>{subTitle}</EmptyDescription>

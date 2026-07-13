@@ -8,7 +8,7 @@ Consolidated from package `docs/database/erd.md` — synced with prod baseline [
 
 Branch/agent profile — **unique `(ou_id, branch_id)`** per `init-db.mjs` (`agents_uniq_ou_branch`). Prod matches init-db (post-handoff 2026-07-09). Legacy `ou_id_1` / `parent_branch_id_1` indexes removed per [ADR 002](../../../adrs/002-drop-legacy-agents-indexes-on-prod.md).
 
-Fields: `branch_id`, `branch_type` (`MA`|`AG`), `default_fee_rate`, `ref_fee_branch_id`, `parent_branch_id`, `active`, audit.
+Fields: `branch_id`, `branch_type` (`MA`|`AG` — master agent vs agent branch; FE labels **Master agent** / **Agent**), `default_fee_rate`, `ref_fee_branch_id`, `parent_branch_id`, `active`, audit.
 
 ### `agent_fees`
 

@@ -6,11 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiErrorMessage } from "@/lib/apiError";
 import * as authApi from "@/lib/authApiClient";
-import {
-  authBranchesToInvoiceBranches,
-  branchCatalogCacheKey,
-  getBranchCatalog,
-} from "@/lib/branchCatalogCache";
+import { authBranchesToInvoiceBranches, branchCatalogCacheKey, getBranchCatalog } from "@/lib/branchCatalogCache";
 import { canSwitchActiveBranch } from "@/lib/branchOptions";
 import * as api from "@/lib/invoicesApiClient";
 import type {

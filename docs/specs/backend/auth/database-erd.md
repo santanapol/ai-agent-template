@@ -148,7 +148,7 @@ Platform-internal branches (e.g. Zero HQ) — **ไม่** อยู่ใน `
 | `ou_id`       | ObjectId | Yes      | tenant OU                                        |
 | `branch_code` | string   | Optional | display code                                     |
 | `branch_name` | string   | Optional | display name                                     |
-| `active`      | bool/int | Optional | inactive → branch access denied                  |
+| `active`      | bool/int | Optional | display flag; inactive still listable; BRANCH_SWITCH_ROLES may switch to inactive in same OU |
 
 **Index:** **ควร** `{ ou_id: 1 }` สำหรับ lookup ตาม tenant — สร้างผ่าน seed/migration ตาม env
 

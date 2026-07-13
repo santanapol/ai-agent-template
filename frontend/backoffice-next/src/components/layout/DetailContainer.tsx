@@ -10,9 +10,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "@/navigation/compat";
+import { Link } from "@/navigation/compat";
 
 interface BreadcrumbEntry {
   title: React.ReactNode;
@@ -29,7 +29,9 @@ interface DetailContainerProps {
   extra?: React.ReactNode;
   status?: React.ReactNode;
   children: React.ReactNode;
-  maxWidth?: number;
+  /** Omit or pass `null` for full content width (no max-width clamp). */
+  maxWidth?: number | null;
+  stickyChrome?: boolean;
   className?: string;
 }
 
@@ -43,20 +45,31 @@ export function DetailContainer({
   status,
   children,
   maxWidth = 1000,
+  stickyChrome = false,
   className,
 }: DetailContainerProps) {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else if (backUrl) {
-      navigate(backUrl);
-    }
-  };
+  let backControl: React.ReactNode = null;
+  if (backUrl) {
+    backControl = (
+      <Link to={backUrl} className={cn(buttonVariants({ variant: "link" }), "h-auto w-fit px-0")}>
+        <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+        Back
+      </Link>
+    );
+  } else if (onBack) {
+    backControl = (
+      <Button variant="link" className="h-auto w-fit px-0" onClick={onBack}>
+        <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+        Back
+      </Button>
+    );
+  }
 
   return (
-    <div className={cn("mx-auto flex w-full max-w-full flex-col gap-6", className)} style={{ maxWidth }}>
+    <div
+      className={cn("mx-auto flex w-full min-w-0 max-w-full flex-col gap-6", className)}
+      style={maxWidth == null ? undefined : { maxWidth }}
+    >
       {breadcrumbItems && breadcrumbItems.length > 0 ? (
         <Breadcrumb>
           <BreadcrumbList>
@@ -90,13 +103,14 @@ export function DetailContainer({
           </BreadcrumbList>
         </Breadcrumb>
       ) : null}
-      <div className="flex flex-col gap-2">
-        {onBack || backUrl ? (
-          <Button variant="link" className="h-auto w-fit px-0" onClick={handleBack}>
-            <ArrowLeft data-icon="inline-start" />
-            Back
-          </Button>
-        ) : null}
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          stickyChrome &&
+            "sticky top-0 z-10 -mx-1 border-border/60 border-b bg-background/95 px-1 pb-3 backdrop-blur-sm supports-backdrop-filter:bg-background/80",
+        )}
+      >
+        {backControl}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">

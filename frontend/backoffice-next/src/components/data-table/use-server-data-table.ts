@@ -51,6 +51,7 @@ export function useServerDataTable<TData>({
     data,
     columns,
     pageCount,
+    manualPagination: true,
     state: {
       pagination: { pageIndex, pageSize },
       columnVisibility,

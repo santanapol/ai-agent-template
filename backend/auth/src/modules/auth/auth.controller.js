@@ -136,7 +136,8 @@ export function createAuthController({ service, env, types }) {
         branch_id_hex: request.accessBranchId,
         ou_id_hex: request.accessOuId,
         q: typeof query.q === 'string' ? query.q : undefined,
-        limit: query.limit
+        limit: query.limit,
+        offset: query.offset
       })
 
       if (!result.ok) {

@@ -6,8 +6,8 @@
 | **UI Library** | `React 19` |
 | **Language** | `TypeScript` (Strict Mode) |
 | **Routing** | Next.js file-based App Router — route groups (e.g. `(main)`) |
-| **UI Components** | `shadcn/ui` (style `radix-nova`) + `radix-ui` + `Tailwind CSS v4` + `lucide-react` |
-| **State (UI/preferences)** | `zustand` (vanilla store + React provider) |
+| **UI Components** | `shadcn/ui` (style `radix-nova`) + `radix-ui` and/or `@base-ui/react` (per local `ui/` wrapper) + `Tailwind CSS v4` + `lucide-react` |
+| **State (UI/preferences)** | `zustand` (vanilla store + React provider) — theme via preferences + `applyThemeMode` |
 | **State (domain/session)** | React Context (`AuthContext`) |
 | **Forms** | `react-hook-form` + `zod` (via `@hookform/resolvers`) |
 | **Tables** | `@tanstack/react-table` |
@@ -18,16 +18,19 @@
 
 `vite`/`@vitejs/plugin-react` appear in `devDependencies` only to power Vitest's transform — the app itself is built and served by Next.js (`next build`/`next dev`), not Vite.
 
+Do **not** treat `next-themes` as part of the required stack — production theme is Zustand preferences.
+
 ## App paths
 
 | App | Path | Status |
 | :--- | :--- | :--- |
 | **backoffice-next** | `frontend/backoffice-next` | **Production** — Next.js, studio shell + domain views |
-| **live-demo-shadcn** (template) | `coding-standard/frontend/backoffice/live-demo-shadcn` | Reference scaffold for new shadcn pages |
+| **live-demo-shadcn** (template) | `coding-standard/frontend/backoffice/live-demo-shadcn` | Visual scaffold only — not a second production app |
 | **studio-admin** (reference) | `coding-standard/frontend/backoffice/reference/studio-admin` | Local-only, gitignored — upstream layout/design reference |
 
-Legacy `frontend/backoffice` (Vite + React Router) removed 2026-07-08 — all frontend work targets **`frontend/backoffice-next`**.
+Legacy `frontend/backoffice` (Vite + React Router) deprecated 2026-07-08 (directory still present, no new work) — all frontend work targets **`frontend/backoffice-next`**.
 
-## 📦 Package Management
+## Package Management
+
 * บังคับให้ใช้คำสั่งที่อ่านจาก Lockfile (`npm ci`) เมื่ออยู่บนระบบ CI/CD
 * อนุญาตให้อัปเดตเวอร์ชันระดับ `minor` และ `patch` ได้อิสระ แต่หากเป็น `major` ต้องมีการรีวิวผลกระทบเสมอ

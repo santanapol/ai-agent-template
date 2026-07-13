@@ -3,11 +3,18 @@ import { ObjectId } from "mongodb";
 import { getBranchDatabase } from "../../config/database-read.js";
 import * as repository from "./agents.repository.js";
 
-export const getAgents = async (db, ouId, search, page = 1, limit = 20) => {
+export const getAgents = async (
+  db,
+  ouId,
+  search,
+  page = 1,
+  limit = 20,
+  includeInactive = false,
+) => {
   const skip = (page - 1) * limit;
   const [agents, total] = await Promise.all([
-    repository.listAgents(db, ouId, search, skip, limit),
-    repository.countAgents(db, ouId, search),
+    repository.listAgents(db, ouId, search, skip, limit, includeInactive),
+    repository.countAgents(db, ouId, search, includeInactive),
   ]);
   return { agents, total };
 };

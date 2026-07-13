@@ -9,13 +9,15 @@ export function useAgentFees(agentId: string) {
   const [fees, setFees] = useState<AgentFee[]>([]);
   const [companies, setCompanies] = useState<GameCompany[]>([]);
   const [categories, setCategories] = useState<GameCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [masterDataLoading, setMasterDataLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [total, setTotal] = useState(0);
 
   const fetchFees = useCallback(
     async (params: ListFeesParams = { page: 1, limit: 100 }, signal?: AbortSignal) => {
       if (!agentId) return;
-      setLoading(true);
+      setFetching(true);
       try {
         const data = await api.listAgentFees(agentId, params, signal);
         if (signal?.aborted) return;
@@ -28,7 +30,7 @@ export function useAgentFees(agentId: string) {
             "Failed to fetch agent fees",
         );
       } finally {
-        if (!signal?.aborted) setLoading(false);
+        if (!signal?.aborted) setFetching(false);
       }
     },
     [agentId, message],
@@ -36,6 +38,7 @@ export function useAgentFees(agentId: string) {
 
   const fetchMasterData = useCallback(
     async (ou_id?: string, signal?: AbortSignal) => {
+      setMasterDataLoading(true);
       try {
         const [comps, cats] = await Promise.all([
           api.getGameCompanies(ou_id, signal, "matrix"),
@@ -50,6 +53,8 @@ export function useAgentFees(agentId: string) {
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
             "Failed to fetch master data",
         );
+      } finally {
+        if (!signal?.aborted) setMasterDataLoading(false);
       }
     },
     [message],
@@ -58,7 +63,7 @@ export function useAgentFees(agentId: string) {
   const createFee = useCallback(
     async (payload: CreateFeePayload) => {
       if (!agentId) return false;
-      setLoading(true);
+      setSaving(true);
       try {
         await api.createAgentFee(agentId, payload);
         message.success("Fee created successfully");
@@ -72,7 +77,7 @@ export function useAgentFees(agentId: string) {
         }
         return false;
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
     },
     [agentId, message],
@@ -81,7 +86,7 @@ export function useAgentFees(agentId: string) {
   const updateFee = useCallback(
     async (feeId: string, payload: Partial<AgentFee>, etag: string) => {
       if (!agentId) return false;
-      setLoading(true);
+      setSaving(true);
       try {
         await api.updateAgentFee(agentId, feeId, payload, etag);
         message.success("Fee updated successfully");
@@ -95,7 +100,7 @@ export function useAgentFees(agentId: string) {
         }
         return false;
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
     },
     [agentId, message],
@@ -104,7 +109,7 @@ export function useAgentFees(agentId: string) {
   const deleteFee = useCallback(
     async (feeId: string, etag: string) => {
       if (!agentId) return false;
-      setLoading(true);
+      setSaving(true);
       try {
         await api.deleteAgentFee(agentId, feeId, etag);
         message.success("Fee deleted successfully");
@@ -118,7 +123,7 @@ export function useAgentFees(agentId: string) {
         }
         return false;
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
     },
     [agentId, message],
@@ -131,7 +136,7 @@ export function useAgentFees(agentId: string) {
       deletes: { id: string; etag: string }[],
     ) => {
       if (!agentId) return false;
-      setLoading(true);
+      setSaving(true);
       try {
         const promises: Promise<unknown>[] = [
           ...creates.map((c) => api.createAgentFee(agentId, c)),
@@ -161,7 +166,7 @@ export function useAgentFees(agentId: string) {
         }
         return false;
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
     },
     [agentId, message],
@@ -171,7 +176,9 @@ export function useAgentFees(agentId: string) {
     fees,
     companies,
     categories,
-    loading,
+    fetching,
+    masterDataLoading,
+    saving,
     total,
     fetchFees,
     fetchMasterData,
