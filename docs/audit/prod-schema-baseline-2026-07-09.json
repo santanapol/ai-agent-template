@@ -3,7 +3,8 @@
     "dumped_at": "2026-07-09T04:23:12.230Z",
     "environment": "production",
     "prod_git_commit": "a7ba9fe361165de705934e5ba972e9efc3b4fb6a",
-    "dumped_by": "human-prod-validators-2026-07-09"
+    "dumped_by": "human-prod-validators-2026-07-09",
+    "baseline_validator_sync": "2026-07-13-ci-fix"
   },
   "databases": [
     {
@@ -347,6 +348,28 @@
                     "int",
                     "long"
                   ]
+                },
+                "cr_by": {
+                  "bsonType": "string",
+                  "minLength": 1
+                },
+                "cr_date": {
+                  "bsonType": "date"
+                },
+                "cr_prog": {
+                  "bsonType": "string",
+                  "minLength": 1
+                },
+                "upd_by": {
+                  "bsonType": "string",
+                  "minLength": 1
+                },
+                "upd_date": {
+                  "bsonType": "date"
+                },
+                "upd_prog": {
+                  "bsonType": "string",
+                  "minLength": 1
                 }
               }
             }
@@ -522,18 +545,28 @@
                   "maxLength": 128
                 },
                 "email": {
-                  "bsonType": [
-                    "string",
-                    "null"
-                  ],
-                  "maxLength": 254
+                  "anyOf": [
+                    {
+                      "bsonType": "null"
+                    },
+                    {
+                      "bsonType": "string",
+                      "minLength": 1,
+                      "maxLength": 254
+                    }
+                  ]
                 },
                 "tel": {
-                  "bsonType": [
-                    "string",
-                    "null"
-                  ],
-                  "maxLength": 16
+                  "anyOf": [
+                    {
+                      "bsonType": "null"
+                    },
+                    {
+                      "bsonType": "string",
+                      "minLength": 1,
+                      "maxLength": 16
+                    }
+                  ]
                 }
               }
             }
@@ -988,7 +1021,8 @@
               "required": [
                 "name",
                 "script",
-                "enabled"
+                "enabled",
+                "outputFormat"
               ],
               "properties": {
                 "name": {
@@ -1004,8 +1038,7 @@
                 "outputFormat": {
                   "enum": [
                     "csv",
-                    "excel",
-                    null
+                    "excel"
                   ]
                 },
                 "params": {
