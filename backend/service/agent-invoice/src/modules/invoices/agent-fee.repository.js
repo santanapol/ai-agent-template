@@ -3,7 +3,7 @@ import { Decimal128, ObjectId } from "mongodb";
 import { getInvoiceDatabase } from "../../config/database-invoice.js";
 
 import {
-  findAgentByBranchId,
+  findAgentByOuAndBranchId,
   resolveFeeBranchId,
 } from "./agents.repository.js";
 
@@ -41,15 +41,19 @@ export function agentFeeLookupKey(parts) {
 /**
  * Resolve fee via `agents` → `agent_fees` → `default_fee_rate`.
  *
- * @param {{ invoiceBranchId: string, transactions: Array<{ ou_id: import('mongodb').ObjectId | string, branch_id?: import('mongodb').ObjectId | string, company_id: import('mongodb').ObjectId | string, main_category_id: import('mongodb').ObjectId | string }> }} params
+ * @param {{ invoiceBranchId: string, ouId: string, transactions: Array<{ ou_id: import('mongodb').ObjectId | string, branch_id?: import('mongodb').ObjectId | string, company_id: import('mongodb').ObjectId | string, main_category_id: import('mongodb').ObjectId | string }> }} params
  * @returns {Promise<(txn: { ou_id: unknown, company_id: unknown, main_category_id: unknown }) => number | null>}
  */
-export async function buildRatioLookup({ invoiceBranchId, transactions }) {
+export async function buildRatioLookup({
+  invoiceBranchId,
+  ouId,
+  transactions,
+}) {
   if (transactions.length === 0) {
     return () => null;
   }
 
-  const agent = await findAgentByBranchId(invoiceBranchId);
+  const agent = await findAgentByOuAndBranchId(ouId, invoiceBranchId);
   if (!agent) {
     return () => null;
   }
@@ -60,13 +64,13 @@ export async function buildRatioLookup({ invoiceBranchId, transactions }) {
   }
 
   const defaultRate = parseFeeRate(agent.default_fee_rate);
-  const ouId = String(transactions[0].ou_id);
+  const scopedOuId = String(ouId);
   const companyIds = [
     ...new Set(transactions.map((txn) => String(txn.company_id))),
   ];
 
   const db = getInvoiceDatabase();
-  const ouObjectId = new ObjectId(ouId);
+  const ouObjectId = new ObjectId(scopedOuId);
   const feeBranchObjectId = new ObjectId(feeBranchId);
 
   const docs = await db
@@ -110,6 +114,7 @@ export async function findRatio({
 }) {
   const lookup = await buildRatioLookup({
     invoiceBranchId,
+    ouId,
     transactions: [
       {
         ou_id: ouId,

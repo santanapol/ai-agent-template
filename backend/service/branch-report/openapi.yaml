@@ -113,7 +113,12 @@ paths:
                         items:
                           $ref: "#/components/schemas/InviteLinkItem"
         "400":
-          $ref: "#/components/responses/InvalidHeader"
+          description: |
+            Invalid mesh headers or query parameters (e.g. `limit=0` returns `INVALID_PARAM`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
         "401":
           $ref: "#/components/responses/GatewaySecretRejected"
         "403":

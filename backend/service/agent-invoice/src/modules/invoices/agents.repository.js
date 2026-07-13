@@ -18,8 +18,24 @@ export function resolveFeeBranchId(agentDoc) {
 }
 
 /**
+ * Lookup scoped to OU and branch.
+ *
+ * @param {import('mongodb').ObjectId | string} ouId
+ * @param {import('mongodb').ObjectId | string} branchId
+ * @returns {Promise<import('mongodb').Document | null>}
+ */
+export async function findAgentByOuAndBranchId(ouId, branchId) {
+  const db = getInvoiceDatabase();
+  return db.collection(COLLECTION).findOne({
+    ou_id: new ObjectId(String(ouId)),
+    branch_id: new ObjectId(String(branchId)),
+  });
+}
+
+/**
  * Lookup by invoice branch only — does not filter `ou_id`.
  *
+ * @deprecated Prefer {@link findAgentByOuAndBranchId}.
  * @param {import('mongodb').ObjectId | string} branchId
  * @returns {Promise<import('mongodb').Document | null>}
  */

@@ -84,6 +84,66 @@ describe("createInviteLinksRepository", () => {
     assert.deepEqual(capturedSort, { invite_code: 1 });
   });
 
+  it("applies q regex escape, $or filter, and limit cap", async () => {
+    const ouId = new ObjectId();
+    const branchId = new ObjectId();
+    let capturedLimit;
+
+    const docs = [
+      {
+        _id: new ObjectId(),
+        invite_code: "a.b",
+        username: "match",
+        description: "x",
+      },
+      {
+        _id: new ObjectId(),
+        invite_code: "other",
+        username: "nomatch",
+        description: "y",
+      },
+    ];
+
+    const mockCollection = {
+      find(filter) {
+        return {
+          sort() {
+            return {
+              limit(n) {
+                capturedLimit = n;
+                return {
+                  async toArray() {
+                    const q = filter.$or?.[0]?.invite_code;
+                    const pattern = q?.source ?? "";
+                    const regex = new RegExp(pattern, q?.flags ?? "i");
+                    return docs
+                      .filter((doc) => regex.test(doc.invite_code))
+                      .slice(0, n);
+                  },
+                };
+              },
+            };
+          },
+        };
+      },
+    };
+
+    const repository = createInviteLinksRepository(() => ({
+      collection: () => mockCollection,
+    }));
+
+    const { filter } = await repository.findByTenant({
+      ouId: ouId.toString(),
+      branchId: branchId.toString(),
+      q: "a.b",
+      limit: 200,
+    });
+
+    assert.ok(filter.$or);
+    assert.equal(filter.$or[0].invite_code.source, "a\\.b");
+    assert.equal(capturedLimit, 100);
+  });
+
   it("rejects invalid tenant ObjectIds", async () => {
     const repository = createInviteLinksRepository(() => ({
       collection() {

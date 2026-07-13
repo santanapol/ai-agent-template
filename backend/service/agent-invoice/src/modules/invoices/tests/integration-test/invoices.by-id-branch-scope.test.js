@@ -62,6 +62,27 @@ describe("Invoice by-id endpoints — branch scope (IDOR)", () => {
     });
     homeInvoiceId = home.insertedId;
     activeInvoiceId = active.insertedId;
+
+    await db.collection("agents").updateOne(
+      {
+        ou_id: new ObjectId(ouId),
+        branch_id: new ObjectId(activeBranchId),
+      },
+      {
+        $set: {
+          ou_id: new ObjectId(ouId),
+          branch_id: new ObjectId(activeBranchId),
+          currency: "thb",
+          upd_date: now,
+        },
+        $setOnInsert: {
+          cr_by: mockUserId,
+          cr_date: now,
+          cr_prog: "test/invoices.by-id-branch-scope",
+        },
+      },
+      { upsert: true },
+    );
   });
 
   after(async () => {
@@ -145,6 +166,7 @@ describe("Invoice by-id endpoints — branch scope (IDOR)", () => {
 
       assert.strictEqual(res.statusCode, 200);
       assert.strictEqual(res.json().data.iv_no, `${ivPrefix}-ACTIVE`);
+      assert.strictEqual(res.json().data.currency, "THB");
     });
   }
 

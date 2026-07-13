@@ -56,16 +56,33 @@ test("Master Data API - Game Companies and Categories", async (t) => {
 
       if (matrixBody.data.length > 0) {
         const row = matrixBody.data[0];
+        assert.deepStrictEqual(Object.keys(row).sort(), [
+          "_id",
+          "provider_name",
+        ]);
         assert.ok(row._id);
-        assert.ok("provider_name" in row);
-        assert.ok(!("ou_id" in row));
-        assert.ok(!("name" in row));
-        assert.ok(!("active" in row));
+        assert.ok("en" in row.provider_name);
         assert.ok(
           JSON.stringify(matrixBody.data).length <
             JSON.stringify(fullBody.data).length * 0.5,
         );
       }
+    },
+  );
+
+  await t.test(
+    "GET /game-companies fields=invalid returns 400 INVALID_PARAM",
+    async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/agent-invoice/master-data/game-companies?fields=invalid",
+        headers: validHeaders,
+      });
+
+      assert.strictEqual(response.statusCode, 400);
+      const body = JSON.parse(response.payload);
+      assert.strictEqual(body.success, false);
+      assert.strictEqual(body.code, "INVALID_PARAM");
     },
   );
 

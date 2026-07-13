@@ -118,7 +118,7 @@ test("updateInvoiceStatus — transitions to VOID successfully from READY", asyn
       findBranchDisplayName: async () => "Branch A",
       findOuDisplayName: async () => "OU A",
     },
-    findAgentByBranchId: async () => ({ currency: "thb" }),
+    findAgentByOuAndBranchId: async () => ({ currency: "thb" }),
   };
 
   const result = await updateInvoiceStatus({
@@ -158,7 +158,7 @@ test("updateInvoiceStatus — currency null when no agent for branch", async () 
       findBranchDisplayName: async () => "Branch A",
       findOuDisplayName: async () => "OU A",
     },
-    findAgentByBranchId: async () => null,
+    findAgentByOuAndBranchId: async () => null,
   };
 
   const result = await updateInvoiceStatus({
