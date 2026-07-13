@@ -206,6 +206,35 @@ export async function findDetailById(ivId, ouId, branchId) {
     .findOne(filter, { projection: DETAIL_PROJECTION });
 }
 
+/**
+ * @param {string[]} ivIds
+ * @param {string} [ouId]
+ * @param {string} [branchId]
+ */
+export async function findDetailByIds(ivIds, ouId, branchId) {
+  if (!ivIds.length) return [];
+
+  const db = getInvoiceDatabase();
+
+  /** @type {import('mongodb').Filter<import('mongodb').Document>} */
+  const filter = {
+    _id: { $in: ivIds.map((id) => new ObjectId(id)) },
+  };
+
+  if (ouId) {
+    filter.ou_id = new ObjectId(ouId);
+  }
+
+  if (branchId) {
+    filter.branch_id = new ObjectId(branchId);
+  }
+
+  return db
+    .collection(COLLECTION)
+    .find(filter, { projection: DETAIL_PROJECTION })
+    .toArray();
+}
+
 export async function findLatestByBranchId(branchId) {
   const db = getInvoiceDatabase();
 

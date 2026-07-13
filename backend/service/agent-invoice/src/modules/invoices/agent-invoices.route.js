@@ -3,12 +3,14 @@ import {
   getAgentInvoiceDetail,
   getInvoiceAgents,
   getInvoiceList,
+  getInvoicesBatchHandler,
   getInvoiceTransactions,
   postCalculateFee,
   postGenerate,
   putInvoiceStatus,
 } from "./agent-invoices.controller.js";
 import {
+  batchGetQuerySchema,
   calculateFeeBodySchema,
   generateBodySchema,
   getDetailParamsSchema,
@@ -48,6 +50,15 @@ async function agentInvoiceRoutes(fastify) {
     "/api/v1/invoices/agent",
     { preHandler: requirePermission("invoices:list") },
     getInvoiceAgents,
+  );
+
+  fastify.get(
+    "/api/v1/invoices/batch",
+    {
+      schema: { querystring: batchGetQuerySchema },
+      preHandler: requirePermission("invoices:read"),
+    },
+    getInvoicesBatchHandler,
   );
 
   fastify.get(

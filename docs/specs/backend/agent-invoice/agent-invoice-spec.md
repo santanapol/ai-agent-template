@@ -71,6 +71,7 @@ Prefix via gateway: `/api/v1/agent-invoice` and `/api/v1/invoices`
 | POST | `/calculate-fee` | `invoices:write` |
 | GET | `/` | `invoices:list` |
 | GET | `/agent` | `invoices:list` |
+| GET | `/batch` | `invoices:read` — `?ids=<csv>` (max 50), optional `include=transactions`; returns `{ items, missing }` |
 | GET | `/:id` | `invoices:read` |
 | GET | `/:id/transactions` | `invoices:read` |
 | PUT | `/:id/status` | `invoices:write` |

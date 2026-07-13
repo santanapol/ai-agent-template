@@ -57,3 +57,13 @@ export const updateStatusBodySchema = {
     status: { type: "string", enum: ["PAID", "VOID"] },
   },
 };
+
+export const batchGetQuerySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["ids"],
+  properties: {
+    ids: { type: "string", minLength: 1 },
+    include: { type: "string", enum: ["transactions"] },
+  },
+};
