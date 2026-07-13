@@ -59,11 +59,25 @@ test("getAgents passes includeInactive to repository queries", async () => {
     }),
   };
 
-  await service.getAgents(pipelineDb, "000000000000000000000123", "", 1, 10, true);
+  await service.getAgents(
+    pipelineDb,
+    "000000000000000000000123",
+    "",
+    1,
+    10,
+    true,
+  );
   assert.strictEqual(countHadActiveFilter, false);
   assert.ok(!capturedMatch?.active);
 
-  await service.getAgents(pipelineDb, "000000000000000000000123", "", 1, 10, false);
+  await service.getAgents(
+    pipelineDb,
+    "000000000000000000000123",
+    "",
+    1,
+    10,
+    false,
+  );
   assert.strictEqual(countHadActiveFilter, true);
   assert.ok(capturedMatch?.active);
 });

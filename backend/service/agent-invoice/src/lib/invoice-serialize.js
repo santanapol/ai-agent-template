@@ -41,7 +41,7 @@ export function mapInvoiceListItemForApi(doc, names = {}) {
  * @returns {string | null}
  */
 export function normalizeInvoiceCurrency(value) {
-  if (value == null) return null;
+  if (value === null || value === undefined) return null;
   const normalized = String(value).trim().toUpperCase();
   return normalized.length > 0 ? normalized : null;
 }

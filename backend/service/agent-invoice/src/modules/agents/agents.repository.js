@@ -69,7 +69,12 @@ export const listAgents = async (
     .toArray();
 };
 
-export const countAgents = async (db, ouId, search, includeInactive = false) => {
+export const countAgents = async (
+  db,
+  ouId,
+  search,
+  includeInactive = false,
+) => {
   const query = buildAgentsListQuery(ouId, search, includeInactive);
   return db.collection(COLLECTION_NAME).countDocuments(query);
 };

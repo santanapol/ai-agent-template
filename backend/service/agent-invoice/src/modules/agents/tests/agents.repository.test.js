@@ -1,6 +1,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert";
-import { listAgents, countAgents, activeOnlyAgentsMatch } from "../agents.repository.js";
+import {
+  listAgents,
+  countAgents,
+  activeOnlyAgentsMatch,
+} from "../agents.repository.js";
 
 const VALID_OU_ID = "000000000000000000000001";
 

@@ -44,7 +44,10 @@ test("mapInvoiceForApi includes uppercase currency from names", () => {
 });
 
 test("mapInvoiceForApi sets currency null when agent currency missing", () => {
-  const mapped = mapInvoiceForApi(DOC, { branchName: "Branch A", ouName: "OU A" });
+  const mapped = mapInvoiceForApi(DOC, {
+    branchName: "Branch A",
+    ouName: "OU A",
+  });
   assert.strictEqual(mapped.currency, null);
 });
 

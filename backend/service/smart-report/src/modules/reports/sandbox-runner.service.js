@@ -38,7 +38,7 @@ export const FIND_DRIVER_OPTION_KEYS = new Set([
  * @returns {Record<string, unknown>}
  */
 export function normalizeFindSecondArg(secondArg) {
-  if (secondArg == null) {
+  if (secondArg === null || secondArg === undefined) {
     return {};
   }
   if (typeof secondArg !== "object" || Array.isArray(secondArg)) {
