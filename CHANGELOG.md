@@ -12,6 +12,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-13
+
+Repository snapshot: **Deferred TD closeout** — batch invoice API + FE bulk export, Smart Report drawer server pagination, schedule.frequency index (code), CI baseline validator sync, orphan fee ops runbook.
+
+Handoff: [docs/releases/2026-07-13-2-user.md](docs/releases/2026-07-13-2-user.md), [docs/releases/2026-07-13-2-deploy.md](docs/releases/2026-07-13-2-deploy.md). Git tag: `v0.7.0` (after staging smoke).
+
+### Added
+
+- **agent-invoice** — `GET /api/v1/invoices/batch?ids=&include=transactions` (max 50 IDs, tenancy scope, partial `missing[]`); OpenAPI + spec + integration tests (PR #66).
+- **backoffice-next** — `getInvoicesBatch()`; bulk export single HTTP fetch then in-memory PDF/XLSX build (PR #67).
+- **ops** — `scripts/ops/audit-orphan-agent-fees.mjs`; [agent-fees-orphan-cleanup-2026-07-13](docs/ops/agent-fees-orphan-cleanup-2026-07-13.md) (PR #64).
+- **smart-report** — `IDX_REPORTS_SCHEDULE_FREQUENCY`; ops handoff [smart-report-schedule-frequency-index-2026-07-13](docs/ops/smart-report-schedule-frequency-index-2026-07-13.md) (PR #65).
+
+### Changed
+
+- **backoffice-next** — Smart Report download history drawer uses `useServerDataTable` with page 2+ API refetch (PR #68).
+- **prod baseline** — sync `auth_users`, `staff_profiles`, `reports` validators with harness registry (PR #69).
+- **agent-invoice** service/OpenAPI version `1.1.0` → `1.2.0`.
+
+### Fixed
+
+- GHA `Harness schema verify` on `main` after audit follow-up validator drift (PR #69).
+
+### Deferred / human ops
+
+- **TD-027** — apply `createIndex` on staging/prod per ops doc.
+- **TD-018** — orphan fee delete staging → prod; close tracker after confirm.
+- **TD-035** opened — Smart Report mount `listHistory(limit=100)` enrichment → embed `lastRun` in list API.
+
 ## [0.6.0] - 2026-07-13
 
 Repository snapshot: **backoffice-next UX/shadcn DS** — Smart Report editor v2 + list server filters, staff profile pages (optional email/tel), shared list-page chrome, permission/invoice/agent polish; backend support in smart-report, staff, agent-invoice.
