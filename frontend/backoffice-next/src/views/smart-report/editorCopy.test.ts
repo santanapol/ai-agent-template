@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getEditorGateBadgeLabel,
-  getEditorPageDescription,
-  getEditorSaveLabel,
-} from "./editorCopy";
+import { getEditorGateBadgeLabel, getEditorPageDescription, getEditorSaveLabel } from "./editorCopy";
 
 describe("editorCopy", () => {
   describe("getEditorSaveLabel", () => {
@@ -41,15 +37,11 @@ describe("editorCopy", () => {
       expect(getEditorPageDescription("create", "validated", "", true)).toBe(
         "Script compiles — run a test before saving.",
       );
-      expect(getEditorPageDescription("create", "tested", "", true)).toBe(
-        "Test passed — save to create this report.",
-      );
+      expect(getEditorPageDescription("create", "tested", "", true)).toBe("Test passed — save to create this report.");
     });
 
     it("returns edit fallbacks aligned with create gate flow", () => {
-      expect(getEditorPageDescription("edit", "pending", "", false)).toBe(
-        "Script unchanged — save metadata anytime.",
-      );
+      expect(getEditorPageDescription("edit", "pending", "", false)).toBe("Script unchanged — save metadata anytime.");
       expect(getEditorPageDescription("edit", "pending", "", true)).toBe("Edit the query, then validate.");
       expect(getEditorPageDescription("edit", "validated", "", true)).toBe(
         "Script compiles — run a test before saving.",

@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 
-import { STAFF_TABLE_COLUMN_IDS, createStaffColumns } from "./staff-columns";
+import { createStaffColumns, STAFF_TABLE_COLUMN_IDS } from "./staff-columns";
 
 describe("createStaffColumns", () => {
   const handlers = {

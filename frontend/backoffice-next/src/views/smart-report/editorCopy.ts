@@ -25,20 +25,13 @@ export function getEditorPageDescription(
     case "validated":
       return "Script compiles — run a test before saving.";
     case "tested":
-      return mode === "create"
-        ? "Test passed — save to create this report."
-        : "Test passed — save changes.";
+      return mode === "create" ? "Test passed — save to create this report." : "Test passed — save changes.";
     default:
-      return mode === "create"
-        ? "Name your report, edit the query, then validate."
-        : "Edit the query, then validate.";
+      return mode === "create" ? "Name your report, edit the query, then validate." : "Edit the query, then validate.";
   }
 }
 
-export function getEditorGateBadgeLabel(
-  gateStatus: ScriptGateStatus,
-  scriptRequiresGate: boolean,
-): string {
+export function getEditorGateBadgeLabel(gateStatus: ScriptGateStatus, scriptRequiresGate: boolean): string {
   if (!scriptRequiresGate || gateStatus === "tested") {
     return "Ready to save";
   }

@@ -2,10 +2,11 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import axios from "axios";
-import { FolderTree } from "lucide-react";
+import { FolderTree, Info } from "lucide-react";
 
-import { MenuTree } from "@/components/MenuTree";
 import { InlineFilterSelect } from "@/components/list-page";
+import { MenuTree } from "@/components/MenuTree";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -225,6 +226,16 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
         onChange={(value) => handleRoleChange(value as KnownRole)}
       />
 
+      {!loading && wildcards.length > 0 && (
+        <Alert>
+          <Info aria-hidden="true" />
+          <AlertTitle>Wildcard permissions in effect</AlertTitle>
+          <AlertDescription>
+            This role's saved mapping includes wildcard grants ({wildcards.join(", ")}). Checkboxes covered by a
+            wildcard may be locked and are managed outside this screen.
+          </AlertDescription>
+        </Alert>
+      )}
       {loading && <Skeleton className="h-48 w-full" aria-busy="true" />}
       {!loading && menus.length === 0 && (
         <Empty>

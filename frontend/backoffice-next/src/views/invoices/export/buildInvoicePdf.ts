@@ -9,18 +9,14 @@ import {
   formatFee,
   formatMoney,
   formatMoneyWithCurrency,
+  resolveInvoiceAmountDue,
   sortInvoiceTransactions,
 } from "../utils";
-
-function invoiceAmountDue(invoice: Invoice, transactions: InvoiceTransaction[]): number {
-  if (invoice.amount != null) return invoice.amount;
-  return transactions.reduce((sum, t) => sum + t.amount, 0);
-}
 
 export function buildInvoicePdf(invoice: Invoice, transactions: InvoiceTransaction[]): Blob {
   const sortedTransactions = sortInvoiceTransactions(transactions);
   const doc = new jsPDF();
-  const amountDue = invoiceAmountDue(invoice, sortedTransactions);
+  const amountDue = resolveInvoiceAmountDue(invoice, sortedTransactions);
 
   doc.setFontSize(20);
   doc.text("INVOICE", 14, 22);

@@ -12,6 +12,8 @@ interface DataTableToolbarActionsProps<TData> {
   table: Table<TData>;
   exportFileName?: string;
   showColumnVisibility?: boolean;
+  /** Disable the Export button (e.g. before a search has run or when there are no rows). */
+  exportDisabled?: boolean;
   extra?: ReactNode;
 }
 
@@ -19,6 +21,7 @@ export function DataTableToolbarActions<TData>({
   table,
   exportFileName = "export",
   showColumnVisibility = true,
+  exportDisabled = false,
   extra,
 }: DataTableToolbarActionsProps<TData>) {
   return (
@@ -29,6 +32,7 @@ export function DataTableToolbarActions<TData>({
         variant="outline"
         size="sm"
         aria-label="Export visible rows"
+        disabled={exportDisabled}
         onClick={() => exportVisibleRowsToCsv(table, exportFileName)}
       >
         <Download aria-hidden="true" />

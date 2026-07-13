@@ -58,6 +58,23 @@ export function DetailContainer({
     }
   };
 
+  let backControl: React.ReactNode = null;
+  if (backUrl) {
+    backControl = (
+      <Link to={backUrl} className={cn(buttonVariants({ variant: "link" }), "h-auto w-fit px-0")}>
+        <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+        Back
+      </Link>
+    );
+  } else if (onBack) {
+    backControl = (
+      <Button variant="link" className="h-auto w-fit px-0" onClick={handleBack}>
+        <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+        Back
+      </Button>
+    );
+  }
+
   return (
     <div
       className={cn("mx-auto flex w-full min-w-0 max-w-full flex-col gap-6", className)}
@@ -103,17 +120,7 @@ export function DetailContainer({
             "sticky top-0 z-10 -mx-1 border-border/60 border-b bg-background/95 px-1 pb-3 backdrop-blur-sm supports-backdrop-filter:bg-background/80",
         )}
       >
-        {backUrl ? (
-          <Link to={backUrl} className={cn(buttonVariants({ variant: "link" }), "h-auto w-fit px-0")}>
-            <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-            Back
-          </Link>
-        ) : onBack ? (
-          <Button variant="link" className="h-auto w-fit px-0" onClick={handleBack}>
-            <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-            Back
-          </Button>
-        ) : null}
+        {backControl}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">

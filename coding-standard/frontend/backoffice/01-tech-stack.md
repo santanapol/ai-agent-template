@@ -28,7 +28,7 @@ Do **not** treat `next-themes` as part of the required stack — production them
 | **live-demo-shadcn** (template) | `coding-standard/frontend/backoffice/live-demo-shadcn` | Visual scaffold only — not a second production app |
 | **studio-admin** (reference) | `coding-standard/frontend/backoffice/reference/studio-admin` | Local-only, gitignored — upstream layout/design reference |
 
-Legacy `frontend/backoffice` (Vite + React Router) removed 2026-07-08 — all frontend work targets **`frontend/backoffice-next`**.
+Legacy `frontend/backoffice` (Vite + React Router) deprecated 2026-07-08 (directory still present, no new work) — all frontend work targets **`frontend/backoffice-next`**.
 
 ## Package Management
 

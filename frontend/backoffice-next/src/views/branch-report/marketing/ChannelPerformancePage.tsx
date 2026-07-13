@@ -181,17 +181,22 @@ const ChannelPerformancePage: React.FC = () => {
     getRowId: (row) => `${row.username}::${row.register}`,
   });
 
-  const branchAlert = !hasActiveBranch ? (
-    <Alert>
-      <AlertTitle>Branch required</AlertTitle>
-      <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
-    </Alert>
-  ) : showBranchSwitchNotice ? (
-    <Alert>
-      <AlertTitle>Branch changed</AlertTitle>
-      <AlertDescription>Please search again to refresh this report.</AlertDescription>
-    </Alert>
-  ) : null;
+  let branchAlert: React.ReactNode = null;
+  if (!hasActiveBranch) {
+    branchAlert = (
+      <Alert>
+        <AlertTitle>Branch required</AlertTitle>
+        <AlertDescription>Please select a branch from the top navigation.</AlertDescription>
+      </Alert>
+    );
+  } else if (showBranchSwitchNotice) {
+    branchAlert = (
+      <Alert>
+        <AlertTitle>Branch changed</AlertTitle>
+        <AlertDescription>Please search again to refresh this report.</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <ListPageCard
@@ -202,6 +207,7 @@ const ChannelPerformancePage: React.FC = () => {
           table={table}
           exportFileName="royalty21-channel-performance"
           showColumnVisibility={false}
+          exportDisabled={!hasSearched || rows.length === 0}
         />
       }
       headerAddon={branchAlert}

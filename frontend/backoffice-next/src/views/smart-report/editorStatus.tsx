@@ -12,7 +12,5 @@ export function EditorStatusBadges({
 }) {
   const gateLabel = getEditorGateBadgeLabel(gateStatus, scriptRequiresGate);
 
-  return (
-    <Badge variant={gateLabel === "Ready to save" ? "default" : "secondary"}>{gateLabel}</Badge>
-  );
+  return <Badge variant={gateLabel === "Ready to save" ? "default" : "secondary"}>{gateLabel}</Badge>;
 }

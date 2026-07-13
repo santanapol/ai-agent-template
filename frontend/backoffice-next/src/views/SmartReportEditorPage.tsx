@@ -40,10 +40,7 @@ const SmartReportEditorPage: React.FC<SmartReportEditorPageProps> = ({ mode }) =
       onBack={editor.handleLeave}
       stickyChrome
       status={
-        <EditorStatusBadges
-          gateStatus={editor.scriptGateStatus}
-          scriptRequiresGate={editor.scriptRequiresGate}
-        />
+        <EditorStatusBadges gateStatus={editor.scriptGateStatus} scriptRequiresGate={editor.scriptRequiresGate} />
       }
       maxWidth={null}
       className="gap-4"
@@ -67,7 +64,6 @@ const SmartReportEditorPage: React.FC<SmartReportEditorPageProps> = ({ mode }) =
       }
     >
       <SmartReportEditor
-        mode={mode}
         form={editor.form}
         formErrors={editor.formErrors}
         onFieldChange={editor.setField}

@@ -116,10 +116,7 @@ export function SmartReportList({
   );
 
   const reportColumns = useMemo(() => createReportColumns(reportColumnHandlers), [reportColumnHandlers]);
-  const drawerColumns = useMemo(
-    () => createDownloadHistoryColumns(onDownload, { variant: "drawer" }),
-    [onDownload],
-  );
+  const drawerColumns = useMemo(() => createDownloadHistoryColumns(onDownload, { variant: "drawer" }), [onDownload]);
   const reportsPageCount = Math.max(1, Math.ceil(reportsTotal / reportsPageSize));
 
   const reportsTable = useServerDataTable({

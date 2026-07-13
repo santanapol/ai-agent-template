@@ -19,7 +19,6 @@ import {
   canSaveScript as evaluateCanSaveScript,
   scriptRequiresGate as evaluateScriptRequiresGate,
   getSaveGateHint,
-  getScriptGateStep,
   getTestRunDateTagLabel,
   isEditorDirty,
   type ScriptGateStatus,
@@ -28,8 +27,8 @@ import { useNavigate, useParams } from "@/navigation/compat";
 import type { CreateReportPayload, Report, ReportPayload, ScriptValidationError } from "@/types/smartReport";
 
 import type { ReportFormValues } from "../SmartReportEditor";
-import { DEFAULT_QUERY_EXAMPLE, scheduleToUiValue } from "./formatters";
 import { getEditorPageDescription, getEditorSaveLabel, type SmartReportEditorMode } from "./editorCopy";
+import { DEFAULT_QUERY_EXAMPLE, scheduleToUiValue } from "./formatters";
 
 export type EditorTab = "script" | "compiled";
 export type { SmartReportEditorMode } from "./editorCopy";
@@ -179,7 +178,6 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
   const scriptRequiresGate = evaluateScriptRequiresGate(editingReport, baselineScript, form.query);
   const canSaveScript = evaluateCanSaveScript(scriptRequiresGate, scriptGateStatus, testRunToken, compiledScript);
   const saveGateHint = getSaveGateHint(scriptRequiresGate, scriptGateStatus);
-  const scriptGateStep = getScriptGateStep(scriptGateStatus, validationErrors.length > 0, scriptRequiresGate);
 
   const captureEditorSnapshot = useCallback((): EditorSnapshot => {
     return { formValues: form, script: form.query };
@@ -191,9 +189,7 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
   );
 
   const canSaveReport = canSaveScript && isDirty;
-  const saveButtonTooltip = !canSaveReport
-    ? (saveGateHint ?? (!isDirty ? "No changes to save" : null))
-    : undefined;
+  const saveButtonTooltip = !canSaveReport ? (saveGateHint ?? (!isDirty ? "No changes to save" : null)) : undefined;
 
   const testRunPreviewTable = useMemo(() => buildPreviewTable(testRunPreview?.sample), [testRunPreview?.sample]);
 
@@ -412,12 +408,7 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
   }, [baselineFormValues, captureEditorSnapshot, confirm, performLeave]);
 
   const pageTitle = form.name.trim() || "New report";
-  const pageDescription = getEditorPageDescription(
-    mode,
-    scriptGateStatus,
-    form.description,
-    scriptRequiresGate,
-  );
+  const pageDescription = getEditorPageDescription(mode, scriptGateStatus, form.description, scriptRequiresGate);
   const saveButtonLabel = getEditorSaveLabel(mode);
 
   return {
@@ -431,7 +422,6 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
     formErrors,
     setField,
     scriptGateStatus,
-    scriptGateStep,
     saveGateHint,
     canSaveScript,
     canSaveReport,
@@ -458,7 +448,5 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
     handleCancelTestRun,
     handleEditorTabChange,
     handleQueryScriptChange,
-    applyLoadedReport,
-    initializeCreate,
   };
 }

@@ -3,8 +3,18 @@ import dayjs from "dayjs";
 
 import type { badgeVariants } from "@/components/ui/badge";
 
-import type { InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
+import type { Invoice, InvoiceStatus, InvoiceTransaction, ListInvoicesParams } from "../../types/invoice";
 import { INVOICE_STATUSES } from "../../types/invoice";
+
+/**
+ * Single source of truth for an invoice's "amount due": the authoritative
+ * `invoice.amount` when present, otherwise the sum of the loaded line items.
+ * Used by the detail headline and both export builders so they never disagree.
+ */
+export function resolveInvoiceAmountDue(invoice: Invoice, transactions: InvoiceTransaction[]): number {
+  if (invoice.amount != null) return invoice.amount;
+  return transactions.reduce((sum, t) => sum + t.amount, 0);
+}
 
 export function formatMoney(val: number | null | undefined): string {
   if (val == null || Number.isNaN(val)) return "-";
@@ -14,11 +24,12 @@ export function formatMoney(val: number | null | undefined): string {
   }).format(val);
 }
 
-/** Prefix amount with currency code when present (e.g. `THB 1,234.00`). */
-export function formatMoneyWithCurrency(
-  val: number | null | undefined,
-  currency: string | null | undefined,
-): string {
+/**
+ * Prefix amount with currency code when present (e.g. `THB 1,234.00`).
+ * Grouping/decimals use fixed `en-US` conventions regardless of the currency code —
+ * intentional so exported invoices render consistently rather than per-locale.
+ */
+export function formatMoneyWithCurrency(val: number | null | undefined, currency: string | null | undefined): string {
   const amount = formatMoney(val);
   if (amount === "-") return amount;
   const code = currency?.trim();
@@ -67,10 +78,12 @@ export function isDueDateOverdue(dueDate: string | null | undefined, status: str
   if (!dueDate || status === "PAID" || status === "VOID") return false;
   const due = new Date(dueDate);
   if (Number.isNaN(due.getTime())) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  due.setHours(0, 0, 0, 0);
-  return due.getTime() < today.getTime();
+  // Compare calendar days in UTC so the badge does not flip a day early in
+  // negative UTC-offset timezones (due_date is stored as a UTC-midnight instant).
+  const now = new Date();
+  const dueDay = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
+  const todayDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return dueDay < todayDay;
 }
 
 export function formatFee(fee: number | "N/A"): string {

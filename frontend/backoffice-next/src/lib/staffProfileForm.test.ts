@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildProfileContactPayload,
-  emptyStaffProfileForm,
-  validateStaffProfileForm,
-} from "./staffProfileForm";
 import { PASSWORD_COMPLEXITY_MESSAGE } from "./passwordPolicy";
+import { buildProfileContactPayload, emptyStaffProfileForm, validateStaffProfileForm } from "./staffProfileForm";
 
 describe("validateStaffProfileForm", () => {
   it("allows empty email and tel on create", () => {
@@ -70,13 +66,7 @@ describe("buildProfileContactPayload", () => {
   });
 
   it("includes formatted tel on create", () => {
-    expect(
-      buildProfileContactPayload(
-        { email: "user@example.com", tel: "0812345678" },
-        {},
-        "create",
-      ),
-    ).toEqual({
+    expect(buildProfileContactPayload({ email: "user@example.com", tel: "0812345678" }, {}, "create")).toEqual({
       email: "user@example.com",
       tel: "+66812345678",
     });
@@ -84,11 +74,7 @@ describe("buildProfileContactPayload", () => {
 
   it("sends null when clearing an existing email on patch", () => {
     expect(
-      buildProfileContactPayload(
-        { email: "", tel: "" },
-        { email: "old@example.com", tel: null },
-        "patch",
-      ),
+      buildProfileContactPayload({ email: "", tel: "" }, { email: "old@example.com", tel: null }, "patch"),
     ).toEqual({ email: null });
   });
 

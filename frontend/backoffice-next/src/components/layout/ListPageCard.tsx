@@ -42,9 +42,7 @@ export function ListPageCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-4 px-0">
         {headerAddon != null ? <div className="px-4">{headerAddon}</div> : null}
-        {filterRow != null ? (
-          <div className="flex flex-wrap items-center gap-3 px-4">{filterRow}</div>
-        ) : null}
+        {filterRow != null ? <div className="flex flex-wrap items-center gap-3 px-4">{filterRow}</div> : null}
         {selectionBar}
         <div className="flex min-w-0 flex-col">
           {children}

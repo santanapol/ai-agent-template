@@ -1,10 +1,9 @@
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockAuthUser, mockInvoice } from "../../test/mockFactories";
 import { testNavigation } from "../../test/mockNavigation";
-import { renderWithRouter, type RenderWithRouterOptions } from "../../test/renderWithRouter";
+import { type RenderWithRouterOptions, renderWithRouter } from "../../test/renderWithRouter";
 import InvoiceList from "./InvoiceList";
 
 function renderInvoiceList(options: RenderWithRouterOptions = {}) {

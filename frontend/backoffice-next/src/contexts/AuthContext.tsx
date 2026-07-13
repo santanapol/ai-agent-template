@@ -7,8 +7,8 @@ import axios from "axios";
 
 import * as authApi from "../lib/authApiClient";
 import { setAccessToken, setRefreshCallback } from "../lib/baseApiClient";
-import { clearBranchCaches } from "../lib/branchOptions";
 import { invalidateBranchCatalog } from "../lib/branchCatalogCache";
+import { clearBranchCaches } from "../lib/branchOptions";
 import type { DecodedUser, MenuNode, TokenResponse } from "../types/auth";
 
 export interface AuthContextValue {

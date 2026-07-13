@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation/compat";
 import type { Invoice } from "@/types/invoice";
@@ -72,7 +73,7 @@ export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef
         <StatusBadge
           status={formatInvoiceStatusLabel(row.original.status)}
           variant={statusTagColor(row.original.status)}
-          ariaLabel={`Status: ${row.original.status}`}
+          ariaLabel={`Status: ${formatInvoiceStatusLabel(row.original.status)}`}
         />
       ),
     },
@@ -103,14 +104,20 @@ export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef
       header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
-        <Link
-          to={invoiceDetailHref(row.original._id, listSearch)}
-          aria-label={`View invoice ${row.original.iv_no}`}
-          title="View details"
-          className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }))}
-        >
-          <Eye aria-hidden="true" />
-        </Link>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Link
+                to={invoiceDetailHref(row.original._id, listSearch)}
+                aria-label={`View invoice ${row.original.iv_no}`}
+                className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }))}
+              />
+            }
+          >
+            <Eye aria-hidden="true" />
+          </TooltipTrigger>
+          <TooltipContent>View details</TooltipContent>
+        </Tooltip>
       ),
     },
   ];

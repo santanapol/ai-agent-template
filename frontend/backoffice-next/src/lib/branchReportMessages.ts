@@ -7,6 +7,9 @@ export const BRANCH_REPORT_CODE_MESSAGES: Record<string, string> = {
   INVALID_USER_CONTEXT: "Session context is invalid. Please sign in again.",
 };
 
-export function branchReportUserMessage(code: string, fallback = "Unable to complete the branch report request. Please try again."): string {
+export function branchReportUserMessage(
+  code: string,
+  fallback = "Unable to complete the branch report request. Please try again.",
+): string {
   return BRANCH_REPORT_CODE_MESSAGES[code] ?? fallback;
 }

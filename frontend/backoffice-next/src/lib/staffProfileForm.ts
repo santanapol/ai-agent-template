@@ -1,6 +1,6 @@
 import { validateEmail, validateTelephone } from "@/lib/formValidation";
-import { formatTelephoneToE164 } from "@/lib/telephone";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { formatTelephoneToE164 } from "@/lib/telephone";
 import type { CreateProfilePayload, PatchProfilePayload } from "@/types/staff";
 
 export type StaffProfilePageMode = "create" | "edit" | "view";
@@ -43,7 +43,7 @@ export const STAFF_PROFILE_PAGE_DESCRIPTIONS: Record<StaffProfilePageMode, strin
   view: "Review staff profile details in read-only mode.",
 };
 
-function normalizeContactFormValue(value: string | undefined): string {
+function normalizeContactFormValue(value: string | null | undefined): string {
   return value?.trim() ?? "";
 }
 
@@ -54,7 +54,7 @@ function normalizeContactInitialValue(value: string | null | undefined): string 
 }
 
 function normalizeContactApiValue(
-  value: string | undefined,
+  value: string | null | undefined,
   mode: "create" | "patch",
 ): string | null | undefined {
   const trimmed = normalizeContactFormValue(value);
@@ -89,10 +89,7 @@ export function buildProfileContactPayload(
   const nextTelRaw = normalizeContactApiValue(form.tel, "patch");
   if (nextTelRaw !== undefined) {
     const nextTel = nextTelRaw === null ? null : formatTelephoneToE164(nextTelRaw);
-    const currentTel =
-      initialTel === null || initialTel === ""
-        ? null
-        : formatTelephoneToE164(initialTel);
+    const currentTel = initialTel === null || initialTel === "" ? null : formatTelephoneToE164(initialTel);
     if (nextTel !== currentTel) {
       payload.tel = nextTel;
     }
@@ -106,7 +103,8 @@ export function validateStaffProfileField(
   values: StaffProfileFormValues,
   isCreate = false,
 ): string | undefined {
-  const v = values[field];
+  const raw = values[field];
+  const v = typeof raw === "string" ? raw : undefined;
   if (field === "code" && !v?.trim()) return "Please enter staff code";
   if (field === "firstname" && !v?.trim()) return "Please enter first name";
   if (field === "lastname" && !v?.trim()) return "Please enter last name";

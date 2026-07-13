@@ -128,6 +128,9 @@ describe("SmartReport (list mode)", () => {
     expect(screen.getByLabelText(/search report name or description/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/enabled:\s*all/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/schedule:\s*all/i)).toBeInTheDocument();
+
+    // Let mount fetches settle so their state updates stay inside act().
+    await waitFor(() => expect(listReports).toHaveBeenCalled());
   });
 
   it("shows empty table state with create action", async () => {
@@ -139,11 +142,14 @@ describe("SmartReport (list mode)", () => {
     });
   });
 
-  it("shows loading skeleton while fetching", () => {
+  it("shows loading skeleton while fetching", async () => {
     vi.mocked(listReports).mockImplementation(() => new Promise(() => undefined));
 
     renderSmartReport();
     expect(document.querySelector('[aria-busy="true"], .animate-pulse')).toBeTruthy();
+
+    // Enrichment history still resolves; await it so its state update stays inside act().
+    await waitFor(() => expect(listHistory).toHaveBeenCalled());
   });
 
   it("opens delete dialog and deletes report", async () => {

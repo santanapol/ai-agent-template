@@ -67,10 +67,7 @@ export function FilterSelect({
   }, [open, searchable, searchInputId]);
 
   const searchHeader = searchable ? (
-    <div
-      className="sticky top-0 z-10 border-b bg-popover p-2"
-      onPointerDown={(event) => event.preventDefault()}
-    >
+    <div className="sticky top-0 z-10 border-b bg-popover p-2" onPointerDown={(event) => event.preventDefault()}>
       <Input
         id={searchInputId}
         type="search"
@@ -102,7 +99,7 @@ export function FilterSelect({
           onChange(next == null || next === "all" ? undefined : next);
           return;
         }
-        onChange(next == null ? undefined : next);
+        onChange(next ?? undefined);
       }}
     >
       <SelectTrigger

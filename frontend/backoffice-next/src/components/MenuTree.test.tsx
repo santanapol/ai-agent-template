@@ -48,9 +48,7 @@ describe("MenuTree", () => {
   });
 
   test("parent checkbox is indeterminate when some leaf children are checked", () => {
-    render(
-      <MenuTree nodes={nodes} checkable checkedKeys={["invoices:list"]} onCheckedChange={() => undefined} />,
-    );
+    render(<MenuTree nodes={nodes} checkable checkedKeys={["invoices:list"]} onCheckedChange={() => undefined} />);
 
     const billing = screen.getByRole("checkbox", { name: "Billing" });
     expect(billing).not.toBeChecked();
@@ -90,9 +88,7 @@ describe("MenuTree", () => {
     const user = userEvent.setup();
     const onCheckedChange = vi.fn();
 
-    render(
-      <MenuTree nodes={nodes} checkable checkedKeys={["invoices:list"]} onCheckedChange={onCheckedChange} />,
-    );
+    render(<MenuTree nodes={nodes} checkable checkedKeys={["invoices:list"]} onCheckedChange={onCheckedChange} />);
 
     await user.click(screen.getByRole("checkbox", { name: "Billing" }));
 

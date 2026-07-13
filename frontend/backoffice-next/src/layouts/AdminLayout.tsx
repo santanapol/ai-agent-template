@@ -31,6 +31,7 @@ import { useAppFeedback } from "@/hooks/useAppFeedback";
 import { useIsMobile } from "@/hooks/useMobile";
 import { apiErrorMessage } from "@/lib/apiError";
 import * as authApi from "@/lib/authApiClient";
+import { branchCatalogCacheKey, getBranchCatalog, peekBranchCatalog } from "@/lib/branchCatalogCache";
 import {
   canSwitchActiveBranch,
   findInvoiceAgentBranch,
@@ -41,11 +42,6 @@ import {
   setCachedMyBranch,
   upsertBranchInList,
 } from "@/lib/branchOptions";
-import {
-  branchCatalogCacheKey,
-  getBranchCatalog,
-  peekBranchCatalog,
-} from "@/lib/branchCatalogCache";
 import { subscribeProfileRefresh } from "@/lib/profileRefresh";
 import * as staffApi from "@/lib/staffApiClient";
 import { cn } from "@/lib/utils";
@@ -267,9 +263,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
     let cancelled = false;
     const searchParams = debouncedBranchSearch ? { q: debouncedBranchSearch } : undefined;
-    const cacheKey = user.ou_id
-      ? `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}`
-      : null;
+    const cacheKey = user.ou_id ? `${branchCatalogCacheKey(user.ou_id, "auth")}:${debouncedBranchSearch}` : null;
 
     // FE-REV-008: paint cached switcher results immediately to avoid empty flicker.
     if (cacheKey) {

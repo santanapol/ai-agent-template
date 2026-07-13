@@ -92,13 +92,17 @@ const PermissionAdmin: React.FC = () => {
       filterRow={
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="menus">Menu catalog</TabsTrigger>
-            <TabsTrigger value="roles">Role permissions</TabsTrigger>
+            <TabsTrigger value="menus" id="perm-tab-menus" aria-controls="perm-panel-menus">
+              Menu catalog
+            </TabsTrigger>
+            <TabsTrigger value="roles" id="perm-tab-roles" aria-controls="perm-panel-roles">
+              Role permissions
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       }
     >
-      <div hidden={activeTab !== "menus"}>
+      <div id="perm-panel-menus" role="tabpanel" aria-labelledby="perm-tab-menus" hidden={activeTab !== "menus"}>
         <MenuCatalogTab
           menus={menus}
           menusLoading={menusLoading}
@@ -107,7 +111,7 @@ const PermissionAdmin: React.FC = () => {
           onCreateActionReady={handleMenuCreateReady}
         />
       </div>
-      <div hidden={activeTab !== "roles"}>
+      <div id="perm-panel-roles" role="tabpanel" aria-labelledby="perm-tab-roles" hidden={activeTab !== "roles"}>
         <RolePermissionsTab
           menus={menus}
           menusLoading={menusLoading}

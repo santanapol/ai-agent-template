@@ -1,6 +1,16 @@
 import type { RefObject } from "react";
 
-import { CheckCircle2, CircleAlert, ClipboardCheck, Code2, FileText, FlaskConical, Inbox, RotateCcw, Square } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleAlert,
+  ClipboardCheck,
+  Code2,
+  FileText,
+  FlaskConical,
+  Inbox,
+  RotateCcw,
+  Square,
+} from "lucide-react";
 
 import { LoadingButton } from "@/components/LoadingButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,12 +43,7 @@ import { cn } from "@/lib/utils";
 import type { ScriptValidationError } from "@/types/smartReport";
 
 import type { ScheduleOption } from "./smart-report/formatters";
-import {
-  MONTHLY_DAY_ITEMS,
-  SCHEDULE_FREQUENCY_ITEMS,
-  WEEKLY_DAY_ITEMS,
-} from "./smart-report/formatters";
-import type { SmartReportEditorMode } from "./smart-report/editorCopy";
+import { MONTHLY_DAY_ITEMS, SCHEDULE_FREQUENCY_ITEMS, WEEKLY_DAY_ITEMS } from "./smart-report/formatters";
 
 type EditorTab = "script" | "compiled";
 
@@ -70,7 +75,6 @@ export type ReportFormValues = {
 };
 
 export interface SmartReportEditorProps {
-  mode: SmartReportEditorMode;
   form: ReportFormValues;
   formErrors: Partial<Record<keyof ReportFormValues, string>>;
   onFieldChange: <K extends keyof ReportFormValues>(key: K, value: ReportFormValues[K]) => void;
@@ -103,7 +107,6 @@ export interface SmartReportEditorProps {
 }
 
 export function SmartReportEditor({
-  mode,
   form,
   formErrors,
   onFieldChange,
@@ -196,9 +199,7 @@ export function SmartReportEditor({
         </Button>
       ) : null}
       <AlertDialog>
-        <AlertDialogTrigger
-          render={<Button variant="outline" size="sm" aria-label="Reset script to example" />}
-        >
+        <AlertDialogTrigger render={<Button variant="outline" size="sm" aria-label="Reset script to example" />}>
           <RotateCcw data-icon="inline-start" />
           Reset
         </AlertDialogTrigger>
@@ -222,10 +223,8 @@ export function SmartReportEditor({
 
   return (
     <div className="flex flex-col gap-6">
-      <div
-        className={cn("grid items-stretch gap-6 lg:grid-cols-[2fr_3fr]")}
-      >
-        <Card className="flex h-full flex-col lg:order-2">
+      <div className={cn("grid items-stretch gap-6 lg:grid-cols-[2fr_3fr]")}>
+        <Card className="order-2 flex h-full flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-balance text-base">
               <Code2 data-icon="inline-start" aria-hidden="true" />
@@ -301,7 +300,7 @@ export function SmartReportEditor({
           </CardContent>
         </Card>
 
-        <Card className="flex h-full flex-col lg:order-1">
+        <Card className="order-1 flex h-full flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-balance text-base">
               <FileText data-icon="inline-start" aria-hidden="true" />
@@ -477,10 +476,7 @@ export function SmartReportEditor({
                       {testRunPreviewTable.rows.map((row, rowIndex) => (
                         <TableRow key={rowIndex}>
                           {previewColumns.map((col) => (
-                            <TableCell
-                              key={col.key}
-                              className="max-w-[160px] truncate font-mono text-xs tabular-nums"
-                            >
+                            <TableCell key={col.key} className="max-w-[160px] truncate font-mono text-xs tabular-nums">
                               {String(row[col.dataIndex as string] ?? "-")}
                             </TableCell>
                           ))}

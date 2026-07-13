@@ -1,14 +1,7 @@
 import type React from "react";
 import { useEffect, useMemo } from "react";
 
-import {
-  CheckCircle,
-  ChevronDown,
-  FileQuestion,
-  FileSpreadsheet,
-  FileText,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, ChevronDown, FileQuestion, FileSpreadsheet, FileText, XCircle } from "lucide-react";
 
 import { DataTable } from "@/components/DataTable";
 import { DescriptionList } from "@/components/DescriptionList";
@@ -37,7 +30,17 @@ import { Link, useParams, useSearchParams } from "@/navigation/compat";
 
 import { useInvoices } from "./hooks/useInvoices";
 import { invoiceTransactionColumns } from "./invoiceTransactionColumns";
-import { formatDate, formatBillingMonth, formatInvoiceStatusLabel, formatMoney, formatMoneyWithCurrency, isDueDateOverdue, sortInvoiceTransactions, statusTagColor } from "./utils";
+import {
+  formatBillingMonth,
+  formatDate,
+  formatInvoiceStatusLabel,
+  formatMoney,
+  formatMoneyWithCurrency,
+  isDueDateOverdue,
+  resolveInvoiceAmountDue,
+  sortInvoiceTransactions,
+  statusTagColor,
+} from "./utils";
 
 const TRANSACTION_PAGE_SIZE = 20;
 
@@ -199,11 +202,13 @@ const InvoiceDetail: React.FC = () => {
       <TableCell className="text-right tabular-nums">{formatMoney(totals.totalBet)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatMoney(totals.totalNetWin)}</TableCell>
       <TableCell />
-      <TableCell className="text-right tabular-nums">{formatMoneyWithCurrency(totals.totalAmount, invoice.currency)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {formatMoneyWithCurrency(totals.totalAmount, invoice.currency)}
+      </TableCell>
     </TableRow>
   );
 
-  const amountDue = invoice.amount ?? totals.totalAmount;
+  const amountDue = resolveInvoiceAmountDue(invoice, sortedTransactions);
 
   const metadataItems = [
     {
@@ -248,7 +253,7 @@ const InvoiceDetail: React.FC = () => {
         <StatusBadge
           status={formatInvoiceStatusLabel(invoice.status)}
           variant={statusTagColor(invoice.status)}
-          ariaLabel={`Status: ${invoice.status}`}
+          ariaLabel={`Status: ${formatInvoiceStatusLabel(invoice.status)}`}
         />
       }
       extra={
@@ -324,9 +329,7 @@ const InvoiceDetail: React.FC = () => {
               <p className="font-semibold text-2xl tabular-nums">
                 {formatMoneyWithCurrency(amountDue, invoice.currency)}
               </p>
-              {dueDateOverdue ? (
-                <p className="font-medium text-destructive text-sm">Overdue</p>
-              ) : null}
+              {dueDateOverdue ? <p className="font-medium text-destructive text-sm">Overdue</p> : null}
             </div>
           </div>
         </CardHeader>

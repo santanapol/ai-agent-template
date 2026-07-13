@@ -10,6 +10,13 @@ import {
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
+/** Horizontal offset that keeps the bar centered over the content pane, not the viewport. */
+function getContentOffsetClass(isMobile: boolean, sidebarState: "expanded" | "collapsed"): string {
+  if (isMobile) return "left-1/2";
+  if (sidebarState === "collapsed") return "left-[calc(50%+var(--sidebar-width-icon)/2)]";
+  return "left-[calc(50%+var(--sidebar-width)/2)]";
+}
+
 interface BulkInvoiceActionBarProps {
   selectedCount: number;
   canExport: boolean;
@@ -40,11 +47,7 @@ export function BulkInvoiceActionBar({
   }
 
   // Center within the main content pane (SidebarInset), not the full viewport.
-  const contentOffsetClass = isMobile
-    ? "left-1/2"
-    : state === "collapsed"
-      ? "left-[calc(50%+var(--sidebar-width-icon)/2)]"
-      : "left-[calc(50%+var(--sidebar-width)/2)]";
+  const contentOffsetClass = getContentOffsetClass(isMobile, state);
 
   return (
     <div

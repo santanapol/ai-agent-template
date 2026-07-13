@@ -17,7 +17,15 @@ export interface StaffColumnHandlers {
 
 export const STAFF_TABLE_COLUMN_IDS = ["code", "name", "username", "status", "actions"] as const;
 
-function TruncatedCell({ text, className, maxWidthClass }: { text: string; className?: string; maxWidthClass: string }) {
+function TruncatedCell({
+  text,
+  className,
+  maxWidthClass,
+}: {
+  text: string;
+  className?: string;
+  maxWidthClass: string;
+}) {
   return (
     <span className={`block truncate ${maxWidthClass} ${className ?? ""}`} title={text}>
       {text}
@@ -34,9 +42,7 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
       accessorKey: "code",
       header: "Code",
       enableHiding: true,
-      cell: ({ row }) => (
-        <TruncatedCell text={row.original.code} maxWidthClass="max-w-32" />
-      ),
+      cell: ({ row }) => <TruncatedCell text={row.original.code} maxWidthClass="max-w-32" />,
     },
     {
       id: "name",
@@ -53,9 +59,7 @@ export function createStaffColumns(handlers: StaffColumnHandlers): ColumnDef<Sta
       header: "Username",
       enableHiding: true,
       accessorFn: (record) => record.user?.username ?? "—",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.user?.username ?? "—"}</span>
-      ),
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.user?.username ?? "—"}</span>,
     },
     {
       id: "status",

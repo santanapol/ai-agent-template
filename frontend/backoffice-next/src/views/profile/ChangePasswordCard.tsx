@@ -71,9 +71,7 @@ export function ChangePasswordCard({
               {errors.new_password}
             </FieldDescription>
           ) : (
-            <FieldDescription id={newPasswordHintId}>
-              {PASSWORD_REQUIREMENTS_DESCRIPTION}
-            </FieldDescription>
+            <FieldDescription id={newPasswordHintId}>{PASSWORD_REQUIREMENTS_DESCRIPTION}</FieldDescription>
           )}
         </Field>
         <Field data-invalid={!!errors.confirm_new_password}>

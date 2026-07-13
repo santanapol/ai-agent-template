@@ -8,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { DownloadHistoryRecord } from "@/types/smartReport";
 
-import {
-  formatDateTime,
-  formatDateTimeCompact,
-  formatDownloadTrigger,
-  formatRecordCount,
-} from "./formatters";
+import { formatDateTime, formatDateTimeCompact, formatDownloadTrigger, formatRecordCount } from "./formatters";
 
 function downloadActionLabel(record: DownloadHistoryRecord): string {
   if (record.status === "success" && record.fileName) {
@@ -86,11 +81,7 @@ export function createDownloadHistoryColumns(
       const compact = formatDateTimeCompact(row.original.finishedAt ?? row.original.startedAt);
       return (
         <Tooltip>
-          <TooltipTrigger
-            render={
-              <span className="block max-w-[6.5rem] truncate tabular-nums">{compact}</span>
-            }
-          />
+          <TooltipTrigger render={<span className="block max-w-[6.5rem] truncate tabular-nums">{compact}</span>} />
           <TooltipContent>{full}</TooltipContent>
         </Tooltip>
       );
@@ -126,9 +117,7 @@ export function createDownloadHistoryColumns(
         header: "Rows",
         enableHiding: true,
         meta: { align: "right" },
-        cell: ({ row }) => (
-          <span className="tabular-nums">{formatRecordCount(row.original.recordCount)}</span>
-        ),
+        cell: ({ row }) => <span className="tabular-nums">{formatRecordCount(row.original.recordCount)}</span>,
       },
     );
   }

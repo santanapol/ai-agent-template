@@ -115,7 +115,7 @@ describe("smartReportApiClient", () => {
     vi.spyOn(document, "createElement").mockReturnValue(link);
     mockGet.mockResolvedValueOnce({ data: new Blob(["csv"]) });
 
-    await downloadReportFile("file-1", '../../etc/passwd<script>.csv');
+    await downloadReportFile("file-1", "../../etc/passwd<script>.csv");
 
     expect(link.download).toBe(".._.._etc_passwd_script_.csv");
     expect(click).toHaveBeenCalled();

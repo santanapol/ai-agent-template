@@ -171,9 +171,7 @@ export function deriveReportStatusFromHistory(status: DownloadHistoryStatus): Re
   return "failed";
 }
 
-export function indexLatestHistoryByReportId(
-  history: DownloadHistoryRecord[],
-): Map<string, DownloadHistoryRecord> {
+export function indexLatestHistoryByReportId(history: DownloadHistoryRecord[]): Map<string, DownloadHistoryRecord> {
   const latestByReportId = new Map<string, DownloadHistoryRecord>();
   for (const record of history) {
     const existing = latestByReportId.get(record.reportId);

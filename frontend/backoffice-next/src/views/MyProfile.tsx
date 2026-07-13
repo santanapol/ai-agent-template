@@ -124,11 +124,7 @@ const MyProfile: React.FC = () => {
     const payload: PatchProfilePayload = {
       firstname,
       lastname,
-      ...buildProfileContactPayload(
-        { email, tel },
-        { email: profile.email, tel: profile.tel },
-        "patch",
-      ),
+      ...buildProfileContactPayload({ email, tel }, { email: profile.email, tel: profile.tel }, "patch"),
     };
 
     setSaving(true);

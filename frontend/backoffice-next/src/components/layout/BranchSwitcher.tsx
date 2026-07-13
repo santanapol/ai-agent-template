@@ -1,6 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+
 import { ChevronsUpDown, Home, Store } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { formatBranchOptionLabel, isZeroHqBranchId, ZERO_HQ_BRANCH_ID } from "@/lib/branchOptions";
@@ -78,6 +79,7 @@ function HomeBranchButton({
       variant="outline"
       className="size-8 h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
       aria-label="Reset to Zero HQ"
+      // biome-ignore lint/nursery/useNullishCoalescing: boolean OR — disabled when either flag is true
       disabled={disabled || atHq}
       onClick={() => {
         if (!atHq) onBranchSwitch(ZERO_HQ_BRANCH_ID);
@@ -139,9 +141,7 @@ export function BranchSwitcher({
   const visibleBranches = useMemo(() => {
     const withoutHq = branches.filter((branch) => !isZeroHqBranchId(branch.branch_id));
     if (showInactive) return withoutHq;
-    return withoutHq.filter(
-      (branch) => branch.active !== false || branch.branch_id === activeBranchId,
-    );
+    return withoutHq.filter((branch) => branch.active !== false || branch.branch_id === activeBranchId);
   }, [branches, showInactive, activeBranchId]);
 
   useEffect(() => {
@@ -161,9 +161,7 @@ export function BranchSwitcher({
             className={cn(
               triggerClassName,
               "cursor-default",
-              activeBranchInactive
-                ? "hover:bg-muted active:bg-muted"
-                : "hover:bg-primary active:bg-primary",
+              activeBranchInactive ? "hover:bg-muted active:bg-muted" : "hover:bg-primary active:bg-primary",
             )}
             tooltip={title}
           >

@@ -58,14 +58,17 @@ function NavDropdownItem({
           <DropdownMenuGroup>
             {item.children?.map((child) =>
               child.route ? (
-                <DropdownMenuItem key={child.key} className="p-0">
-                  <Link
-                    to={child.route}
-                    onClick={() => onNavigate(child.route!)}
-                    className="flex w-full items-center px-2 py-1.5"
-                  >
-                    <span>{child.label}</span>
-                  </Link>
+                <DropdownMenuItem
+                  key={child.key}
+                  render={
+                    <Link
+                      to={child.route}
+                      onClick={() => onNavigate(child.route!)}
+                      className="flex w-full items-center"
+                    />
+                  }
+                >
+                  <span>{child.label}</span>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem key={child.key}>

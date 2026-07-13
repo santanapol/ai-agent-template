@@ -24,9 +24,7 @@ export const MatrixCell = React.memo(
       const [feeValue, setFeeValue] = useState<number | string>(defaultRate);
 
       const contextLabel =
-        providerLabel && categoryLabel
-          ? `Override fee for ${providerLabel}, ${categoryLabel}`
-          : "Override agent fee";
+        providerLabel && categoryLabel ? `Override fee for ${providerLabel}, ${categoryLabel}` : "Override agent fee";
 
       React.useEffect(() => {
         if (!enabled) {

@@ -42,9 +42,9 @@ export function useServerDataTable<TData>({
   onColumnVisibilityChange,
   rowSelection,
   onRowSelectionChange,
-    enableRowSelection,
-    getRowId,
-  }: UseServerDataTableOptions<TData>) {
+  enableRowSelection,
+  getRowId,
+}: UseServerDataTableOptions<TData>) {
   "use no memo";
 
   return useReactTable({

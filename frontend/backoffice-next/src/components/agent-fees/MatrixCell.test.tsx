@@ -1,20 +1,14 @@
+import { createRef } from "react";
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { MatrixCell, type MatrixCellRef } from "./MatrixCell";
 
 describe("MatrixCell", () => {
   it("uses provider and category in aria labels", () => {
-    render(
-      <MatrixCell
-        defaultRate={5}
-        readOnly={false}
-        providerLabel="3OAKS"
-        categoryLabel="Slot"
-      />,
-    );
+    render(<MatrixCell defaultRate={5} readOnly={false} providerLabel="3OAKS" categoryLabel="Slot" />);
 
     expect(screen.getByLabelText("Override fee for 3OAKS, Slot")).toBeInTheDocument();
     expect(screen.getByLabelText("Override fee for 3OAKS, Slot override toggle")).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { type ColumnDef, type RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -12,9 +12,7 @@ import { useServerDataTable } from "./use-server-data-table";
 
 type Row = { id: string; name: string };
 
-const columns: ColumnDef<Row>[] = [
-  { id: "name", accessorKey: "name", header: "Name" },
-];
+const columns: ColumnDef<Row>[] = [{ id: "name", accessorKey: "name", header: "Name" }];
 
 const selectableColumns: ColumnDef<Row>[] = [
   {

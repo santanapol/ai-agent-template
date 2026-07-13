@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Route, Routes } from "@/navigation/compat";
 
 import * as staffApi from "../lib/staffApiClient";
-import { renderWithRouter } from "../test/renderWithRouter";
 import { testNavigation } from "../test/mockNavigation";
+import { renderWithRouter } from "../test/renderWithRouter";
 import StaffProfilePage from "./StaffProfilePage";
 
 const mockFeedback = vi.hoisted(() => ({

@@ -20,12 +20,15 @@ import type { DownloadHistoryRecord, Report } from "@/types/smartReport";
 import { type EnabledFilter, type ScheduleFilter, SmartReportList } from "./SmartReportList";
 import {
   deriveReportStatusFromHistory,
-  formatDateTime,
+  formatLastRunDisplay,
   indexLatestHistoryByReportId,
   type ReportRow,
 } from "./smart-report/formatters";
 
 const SMART_REPORT_PAGE_SIZE = 20;
+// Latest-run enrichment only scans the most recent N history records. Reports whose
+// last run falls outside this window show "Never" until their next run — acceptable
+// for the list badge; the drawer always fetches per-report history for accuracy.
 const REPORT_HISTORY_ENRICHMENT_LIMIT = 100;
 const SMART_REPORT_DRAWER_HISTORY_LIMIT = 20;
 
@@ -53,6 +56,7 @@ const SmartReport: React.FC = () => {
   const messageRef = useRef(message);
   messageRef.current = message;
   const isInitialReportsLoadRef = useRef(true);
+  const drawerRequestReportIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,33 +130,37 @@ const SmartReport: React.FC = () => {
   const reportRows: ReportRow[] = useMemo(() => {
     return reports.map((report) => {
       const latest = latestRunByReportId.get(report.id);
-      if (!latest) {
-        return { ...report, derivedStatus: "idle", lastRun: "Never" };
-      }
       return {
         ...report,
-        derivedStatus: deriveReportStatusFromHistory(latest.status),
-        lastRun: formatDateTime(latest.finishedAt ?? latest.startedAt),
+        derivedStatus: latest ? deriveReportStatusFromHistory(latest.status) : "idle",
+        lastRun: formatLastRunDisplay(latest?.finishedAt ?? latest?.startedAt ?? null),
       };
     });
   }, [reports, latestRunByReportId]);
 
-  const loadDrawerHistory = useCallback(async (reportId: string) => {
-    setDrawerLoading(true);
-    try {
-      const response = await listHistory({
-        page: 1,
-        limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
-        reportId,
-      });
-      setDrawerDownloads(response.data);
-      setDrawerHistoryTotal(response.pagination.total);
-    } catch (err) {
-      message.error(apiErrorMessage(err, "Failed to load report history"));
-    } finally {
-      setDrawerLoading(false);
-    }
-  }, [message]);
+  const loadDrawerHistory = useCallback(
+    async (reportId: string) => {
+      drawerRequestReportIdRef.current = reportId;
+      setDrawerLoading(true);
+      try {
+        const response = await listHistory({
+          page: 1,
+          limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
+          reportId,
+        });
+        // Ignore responses for a report the user has since navigated away from.
+        if (drawerRequestReportIdRef.current !== reportId) return;
+        setDrawerDownloads(response.data);
+        setDrawerHistoryTotal(response.pagination.total);
+      } catch (err) {
+        if (drawerRequestReportIdRef.current !== reportId) return;
+        message.error(apiErrorMessage(err, "Failed to load report history"));
+      } finally {
+        if (drawerRequestReportIdRef.current === reportId) setDrawerLoading(false);
+      }
+    },
+    [message],
+  );
 
   const handleRunReport = async (report: Report) => {
     setRunningId(report.id);

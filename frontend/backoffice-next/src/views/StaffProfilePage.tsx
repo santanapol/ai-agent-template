@@ -3,10 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Pencil, Save } from "lucide-react";
 
-import StaffProfileForm from "@/components/staff/StaffProfileForm";
 import { LoadingButton } from "@/components/LoadingButton";
 import { DetailContainer } from "@/components/layout";
 import { StatusBadge } from "@/components/StatusBadge";
+import StaffProfileForm from "@/components/staff/StaffProfileForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,16 +16,16 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
 import { apiErrorMessage } from "@/lib/apiError";
 import { staffPasswordResetFieldErrors, validateAdminPasswordReset } from "@/lib/authErrors";
+import * as staffApi from "@/lib/staffApiClient";
 import {
-  STAFF_PROFILE_PAGE_DESCRIPTIONS,
-  STAFF_PROFILE_PAGE_TITLES,
   buildProfileContactPayload,
   emptyStaffProfileForm,
-  validateStaffProfileForm,
+  STAFF_PROFILE_PAGE_DESCRIPTIONS,
+  STAFF_PROFILE_PAGE_TITLES,
   type StaffProfileFormValues,
   type StaffProfilePageMode,
+  validateStaffProfileForm,
 } from "@/lib/staffProfileForm";
-import * as staffApi from "@/lib/staffApiClient";
 import { useNavigate, useParams } from "@/navigation/compat";
 import type { PatchProfilePayload, StaffProfile } from "@/types/staff";
 
@@ -51,7 +51,7 @@ const StaffProfilePage: React.FC<StaffProfilePageProps> = ({ mode }) => {
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const currentEtag = useRef<string | null>(null);
 
-  const profileId = mode === "create" ? null : id ?? null;
+  const profileId = mode === "create" ? null : (id ?? null);
 
   useEffect(() => {
     if (mode === "create") {
@@ -142,10 +142,7 @@ const StaffProfilePage: React.FC<StaffProfilePageProps> = ({ mode }) => {
 
   const handleUpdatePassword = useCallback(async () => {
     if (!profileId) return;
-    const validationErrors = validateAdminPasswordReset(
-      formValues.newPassword,
-      formValues.confirmNewPassword,
-    );
+    const validationErrors = validateAdminPasswordReset(formValues.newPassword, formValues.confirmNewPassword);
     if (Object.keys(validationErrors).length > 0) {
       setFormErrors((prev) => ({ ...prev, ...validationErrors }));
       message.warning("Please fix the highlighted fields before updating password.");
@@ -259,10 +256,7 @@ const StaffProfilePage: React.FC<StaffProfilePageProps> = ({ mode }) => {
       description={pageDescription}
       status={
         profile ? (
-          <StatusBadge
-            status={profile.status}
-            variant={profile.status === "active" ? "success" : "secondary"}
-          />
+          <StatusBadge status={profile.status} variant={profile.status === "active" ? "success" : "secondary"} />
         ) : undefined
       }
       onBack={handleBack}

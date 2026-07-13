@@ -25,7 +25,6 @@ function renderEditor(overrides: Partial<Parameters<typeof SmartReportEditor>[0]
 
   render(
     <SmartReportEditor
-      mode="edit"
       form={baseForm}
       formErrors={{}}
       onFieldChange={vi.fn()}

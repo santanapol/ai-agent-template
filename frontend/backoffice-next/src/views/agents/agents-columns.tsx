@@ -64,10 +64,7 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
         const code = row.original.branch_type;
         const label = formatAgentBranchTypeLabel(code);
         return (
-          <Badge
-            variant={code === "MA" ? "default" : "secondary"}
-            aria-label={`Type: ${code}`}
-          >
+          <Badge variant={code === "MA" ? "default" : "secondary"} aria-label={`Type: ${code}`}>
             {label}
           </Badge>
         );
@@ -91,9 +88,7 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
         ) : (
           <Tooltip>
             <TooltipTrigger
-              render={
-                <span className="cursor-default truncate text-muted-foreground">Unknown branch</span>
-              }
+              render={<span className="cursor-default truncate text-muted-foreground">Unknown branch</span>}
             />
             <TooltipContent>{normalizedRefId}</TooltipContent>
           </Tooltip>
@@ -106,9 +101,7 @@ export function createAgentsColumns(handlers: AgentColumnHandlers): ColumnDef<Ag
       header: "Default Fee (%)",
       enableHiding: true,
       meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="font-medium tabular-nums">{row.original.default_fee_rate ?? 0}%</span>
-      ),
+      cell: ({ row }) => <span className="font-medium tabular-nums">{row.original.default_fee_rate ?? 0}%</span>,
     },
     {
       id: "active",

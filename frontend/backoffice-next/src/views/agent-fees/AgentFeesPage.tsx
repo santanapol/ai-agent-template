@@ -38,10 +38,12 @@ function clampFeeRate(value: number): number {
 }
 
 function categoryLabel(cat: GameCategory): string {
+  // biome-ignore lint/nursery/useNullishCoalescing: intentionally fall through empty-string labels to the next source
   return cat.main_cate_name?.en || cat.manin_cate_name?.en || cat.name || "";
 }
 
 function companyLabel(company: GameCompany): string {
+  // biome-ignore lint/nursery/useNullishCoalescing: intentionally fall through empty-string labels to the next source
   return company.provider_name?.en || company.name || "";
 }
 
@@ -67,17 +69,8 @@ const AgentFeesPage: React.FC = () => {
   const [refFeesLoading, setRefFeesLoading] = useState(false);
   const [draftRefFeeBranchId, setDraftRefFeeBranchId] = useState<string | null>(null);
 
-  const {
-    fees,
-    companies,
-    categories,
-    fetching,
-    masterDataLoading,
-    saving,
-    fetchFees,
-    fetchMasterData,
-    bulkSave,
-  } = useAgentFees(id || "");
+  const { fees, companies, categories, fetching, masterDataLoading, saving, fetchFees, fetchMasterData, bulkSave } =
+    useAgentFees(id || "");
 
   const matrixCellRefs = useRef<Record<string, MatrixCellRef | null>>({});
   const originalFeesRef = useRef<Map<string, AgentFee>>(new Map());
@@ -319,9 +312,7 @@ const AgentFeesPage: React.FC = () => {
     }
     setValidationErrors([]);
 
-    const refAgent = draftRefFeeBranchId
-      ? allAgents.find((a) => a.branch_id === draftRefFeeBranchId)
-      : null;
+    const refAgent = draftRefFeeBranchId ? allAgents.find((a) => a.branch_id === draftRefFeeBranchId) : null;
 
     const runSave = async () => {
       setIsSavingChanges(true);
@@ -487,9 +478,7 @@ const AgentFeesPage: React.FC = () => {
       ? `${filteredCompanies.length} provider${filteredCompanies.length === 1 ? "" : "s"} × ${categories.length} categor${categories.length === 1 ? "y" : "ies"}. Check a cell to override the default fee rate.`
       : "Provider and category fee overrides. Check a cell to override the default fee rate.";
 
-  const pageTitle = agent
-    ? `${agent.branch_name} · ${agent.branch_code} · ${agent.branch_type}`
-    : "Agent fees";
+  const pageTitle = agent ? `${agent.branch_name} · ${agent.branch_code} · ${agent.branch_type}` : "Agent fees";
 
   return (
     <DetailContainer
@@ -497,12 +486,7 @@ const AgentFeesPage: React.FC = () => {
       status={<ActiveBadge active={!!agent?.active} />}
       onBack={handleBack}
       extra={
-        <LoadingButton
-          size="default"
-          loading={isSaving}
-          disabled={!dirty}
-          onClick={() => void handleSaveChanges()}
-        >
+        <LoadingButton size="default" loading={isSaving} disabled={!dirty} onClick={() => void handleSaveChanges()}>
           <Save data-icon="inline-start" />
           Save changes
         </LoadingButton>

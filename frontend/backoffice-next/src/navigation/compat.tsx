@@ -307,7 +307,7 @@ export const Link = forwardRef<
   HTMLAnchorElement,
   {
     to: string;
-    children: ReactNode;
+    children?: ReactNode;
     className?: string;
     onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
     "aria-label"?: string;

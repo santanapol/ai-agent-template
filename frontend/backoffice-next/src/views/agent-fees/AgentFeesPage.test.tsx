@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Route, Routes } from "@/navigation/compat";
 
-import { renderWithRouter } from "../../test/renderWithRouter";
 import { testNavigation } from "../../test/mockNavigation";
+import { renderWithRouter } from "../../test/renderWithRouter";
 import AgentFeesPage from "./AgentFeesPage";
 
 function renderAgentFees(initialEntry = "/agents/agent-1/fees") {
@@ -17,18 +17,20 @@ function renderAgentFees(initialEntry = "/agents/agent-1/fees") {
   );
 }
 
-const { getAgentById, fetchFees, fetchMasterData, bulkSave, updateAgent, listAgents, mockFeedback } = vi.hoisted(() => ({
-  getAgentById: vi.fn(),
-  fetchFees: vi.fn(),
-  fetchMasterData: vi.fn(),
-  bulkSave: vi.fn(),
-  updateAgent: vi.fn(),
-  listAgents: vi.fn().mockResolvedValue({ data: [] }),
-  mockFeedback: {
-    message: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
-    notification: { info: vi.fn() },
-  },
-}));
+const { getAgentById, fetchFees, fetchMasterData, bulkSave, updateAgent, listAgents, mockFeedback } = vi.hoisted(
+  () => ({
+    getAgentById: vi.fn(),
+    fetchFees: vi.fn(),
+    fetchMasterData: vi.fn(),
+    bulkSave: vi.fn(),
+    updateAgent: vi.fn(),
+    listAgents: vi.fn().mockResolvedValue({ data: [] }),
+    mockFeedback: {
+      message: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+      notification: { info: vi.fn() },
+    },
+  }),
+);
 
 vi.mock("../agents/hooks/useAgentFees", () => ({
   useAgentFees: () => ({
@@ -197,11 +199,7 @@ describe("AgentFeesPage", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(updateAgent).toHaveBeenCalledWith(
-        "agent-1",
-        { ref_fee_branch_id: "branch-2" },
-        "2026-07-01",
-      );
+      expect(updateAgent).toHaveBeenCalledWith("agent-1", { ref_fee_branch_id: "branch-2" }, "2026-07-01");
     });
     expect(bulkSave).not.toHaveBeenCalled();
   });

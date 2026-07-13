@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fieldErrorIds } from "@/lib/fieldA11y";
 import type { AdminMenuNode, CreateMenuPayload, MenuNodeType, UpdateMenuPayload } from "@/types/permissionAdmin";
 
@@ -172,10 +172,8 @@ const MenuNodeFormModal: React.FC<MenuNodeFormModalProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="menu">Menu (group)</SelectItem>
-                  <SelectItem value="action">Action</SelectItem>
-                </SelectGroup>
+                <SelectItem value="menu">Menu (group)</SelectItem>
+                <SelectItem value="action">Action</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -195,14 +193,12 @@ const MenuNodeFormModal: React.FC<MenuNodeFormModalProps> = ({
                 <SelectValue placeholder="None (top level)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="__none__">None (top level)</SelectItem>
-                  {menuParents.map((m) => (
-                    <SelectItem key={m.key} value={m.key}>
-                      {m.label} ({m.key})
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
+                <SelectItem value="__none__">None (top level)</SelectItem>
+                {menuParents.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>
+                    {m.label} ({m.key})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>

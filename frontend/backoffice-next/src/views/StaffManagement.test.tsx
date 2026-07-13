@@ -3,13 +3,13 @@ import type React from "react";
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
+import { useAuth } from "../contexts/AuthContext";
 import { usePermission } from "../hooks/usePermission";
 import { ZERO_HQ_BRANCH_ID } from "../lib/branchOptions";
 import * as staffApi from "../lib/staffApiClient";
-import { useAuth } from "../contexts/AuthContext";
+import { testNavigation } from "../test/mockNavigation";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { renderWithRouter } from "../test/renderWithRouter";
-import { testNavigation } from "../test/mockNavigation";
 import type { StaffProfile } from "../types/staff";
 import StaffManagement from "./StaffManagement";
 

@@ -35,8 +35,8 @@ vi.mock("./hooks/useAgents", () => ({
   useAgents: vi.fn(() => mockAgentsHook()),
 }));
 
-import { useAgents } from "./hooks/useAgents";
 import AgentsList from "./AgentsList";
+import { useAgents } from "./hooks/useAgents";
 
 const mockedUseAgents = vi.mocked(useAgents);
 
@@ -78,9 +78,7 @@ describe("AgentsList page", () => {
     await user.click(await screen.findByRole("option", { name: /active \+ inactive/i }));
 
     await waitFor(() => {
-      expect(fetchAgents).toHaveBeenCalledWith(
-        expect.objectContaining({ includeInactive: true }),
-      );
+      expect(fetchAgents).toHaveBeenCalledWith(expect.objectContaining({ includeInactive: true }));
     });
     expect(fetchUnsyncedBranches).not.toHaveBeenCalled();
   });

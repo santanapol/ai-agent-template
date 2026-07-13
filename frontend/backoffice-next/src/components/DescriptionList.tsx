@@ -16,13 +16,7 @@ interface DescriptionListProps {
   variant?: "tiles" | "plain";
 }
 
-export function DescriptionList({
-  title,
-  description,
-  items,
-  className,
-  variant = "tiles",
-}: DescriptionListProps) {
+export function DescriptionList({ title, description, items, className, variant = "tiles" }: DescriptionListProps) {
   const plain = variant === "plain";
   const plainCols =
     items.length <= 3
@@ -46,6 +40,7 @@ export function DescriptionList({
           plain
             ? cn("grid w-full grid-cols-1 gap-x-8 gap-y-2", plainCols)
             : "grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2",
+          // biome-ignore lint/nursery/useNullishCoalescing: treat empty-string title/description as absent
           (title || description) && "mt-4",
         )}
       >
@@ -53,16 +48,12 @@ export function DescriptionList({
           <div
             key={item.label}
             className={cn(
-              plain
-                ? "flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5"
-                : "bg-card p-4",
+              plain ? "flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5" : "bg-card p-4",
               item.span === 2 && "sm:col-span-2",
             )}
           >
             <dt className="shrink-0 text-muted-foreground text-xs">{item.label}</dt>
-            <dd className={cn("min-w-0 font-medium text-sm", plain ? "text-pretty" : "mt-1")}>
-              {item.value}
-            </dd>
+            <dd className={cn("min-w-0 font-medium text-sm", plain ? "text-pretty" : "mt-1")}>{item.value}</dd>
           </div>
         ))}
       </dl>
