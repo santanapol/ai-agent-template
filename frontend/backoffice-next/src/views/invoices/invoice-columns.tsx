@@ -69,13 +69,16 @@ export function createInvoiceColumns(handlers: InvoiceColumnHandlers): ColumnDef
       header: "Status",
       enableHiding: true,
       accessorKey: "status",
-      cell: ({ row }) => (
-        <StatusBadge
-          status={formatInvoiceStatusLabel(row.original.status)}
-          variant={statusTagColor(row.original.status)}
-          ariaLabel={`Status: ${formatInvoiceStatusLabel(row.original.status)}`}
-        />
-      ),
+      cell: ({ row }) => {
+        const statusLabel = formatInvoiceStatusLabel(row.original.status);
+        return (
+          <StatusBadge
+            status={statusLabel}
+            variant={statusTagColor(row.original.status)}
+            ariaLabel={`Status: ${statusLabel}`}
+          />
+        );
+      },
     },
     {
       id: "billing_month",

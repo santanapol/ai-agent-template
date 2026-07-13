@@ -115,14 +115,6 @@ export function statusTagColor(status: string): BadgeVariant {
   return STATUS_VARIANTS[status as InvoiceStatus] ?? "secondary";
 }
 
-export function ribbonColor(status: string): string {
-  if (status === "PAID") return "green";
-  if (status === "READY") return "blue";
-  if (status === "PENDING") return "orange";
-  if (status === "ERROR") return "red";
-  return "blue";
-}
-
 export function sortInvoiceTransactions(transactions: InvoiceTransaction[]): InvoiceTransaction[] {
   return [...transactions].sort((a, b) => (a.company_name || "").localeCompare(b.company_name || ""));
 }

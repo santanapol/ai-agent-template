@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Link, useNavigate } from "@/navigation/compat";
+import { Link } from "@/navigation/compat";
 
 interface BreadcrumbEntry {
   title: React.ReactNode;
@@ -48,16 +48,6 @@ export function DetailContainer({
   stickyChrome = false,
   className,
 }: DetailContainerProps) {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else if (backUrl) {
-      navigate(backUrl);
-    }
-  };
-
   let backControl: React.ReactNode = null;
   if (backUrl) {
     backControl = (
@@ -68,7 +58,7 @@ export function DetailContainer({
     );
   } else if (onBack) {
     backControl = (
-      <Button variant="link" className="h-auto w-fit px-0" onClick={handleBack}>
+      <Button variant="link" className="h-auto w-fit px-0" onClick={onBack}>
         <ArrowLeft data-icon="inline-start" aria-hidden="true" />
         Back
       </Button>

@@ -57,16 +57,12 @@ const ChannelPerformancePage: React.FC = () => {
     setSearchParams(null);
   }, []);
 
-  const resetFormAndReport = useCallback(() => {
-    resetReportState();
-  }, [resetReportState]);
-
   const resetForBranchChange = useCallback(() => {
     reportAbortRef.current?.abort();
     inviteAbortRef.current?.abort();
-    resetFormAndReport();
+    resetReportState();
     setInviteLinks([]);
-  }, [resetFormAndReport]);
+  }, [resetReportState]);
 
   useEffect(() => {
     const prevBranchId = prevBranchIdRef.current;
@@ -218,7 +214,7 @@ const ChannelPerformancePage: React.FC = () => {
           tableLoading={tableLoading}
           disabled={!hasActiveBranch}
           onSearch={handleSearch}
-          onClear={resetFormAndReport}
+          onClear={resetReportState}
           onInviteLinksOpen={handleInviteLinksOpen}
         />
       }

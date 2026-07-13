@@ -210,32 +210,31 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
     }
   }, [testRunPreview]);
 
-  const handleQueryScriptChange = useCallback(
-    (value: string) => {
-      setField("query", value);
-      if (baselineScript === null) return;
-      if (value !== baselineScript) {
-        setScriptGateStatus("pending");
-        setCompiledScript(null);
-        setTestRunToken(null);
-        setTestRunPreview(null);
-        setValidationErrors([]);
-        setEditorTab("script");
-      }
-    },
-    [baselineScript, setField],
-  );
-
-  const handleResetToExample = useCallback(() => {
-    setField("query", DEFAULT_QUERY_EXAMPLE);
+  const invalidateScriptGate = useCallback(() => {
     setScriptGateStatus("pending");
     setCompiledScript(null);
     setTestRunToken(null);
     setTestRunPreview(null);
     setValidationErrors([]);
     setEditorTab("script");
+  }, []);
+
+  const handleQueryScriptChange = useCallback(
+    (value: string) => {
+      setField("query", value);
+      if (baselineScript === null) return;
+      if (value !== baselineScript) {
+        invalidateScriptGate();
+      }
+    },
+    [baselineScript, invalidateScriptGate, setField],
+  );
+
+  const handleResetToExample = useCallback(() => {
+    setField("query", DEFAULT_QUERY_EXAMPLE);
+    invalidateScriptGate();
     notification.info({ message: "Template loaded" });
-  }, [notification, setField]);
+  }, [invalidateScriptGate, notification, setField]);
 
   const handleValidateScript = useCallback(async () => {
     if (!form.query.trim()) {
@@ -392,8 +391,7 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
   }, [navigate]);
 
   const handleLeave = useCallback(() => {
-    const dirty = isEditorDirty(captureEditorSnapshot(), baselineFormValues);
-    if (dirty) {
+    if (isDirty) {
       void confirm({
         title: "Discard unsaved changes?",
         content: "You have unsaved changes that will be lost if you leave the editor.",
@@ -405,7 +403,7 @@ export function useSmartReportEditor(mode: SmartReportEditorMode) {
       return;
     }
     performLeave();
-  }, [baselineFormValues, captureEditorSnapshot, confirm, performLeave]);
+  }, [confirm, isDirty, performLeave]);
 
   const pageTitle = form.name.trim() || "New report";
   const pageDescription = getEditorPageDescription(mode, scriptGateStatus, form.description, scriptRequiresGate);

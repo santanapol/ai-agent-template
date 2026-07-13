@@ -128,53 +128,28 @@ const InvoiceDetail: React.FC = () => {
     );
   }
 
-  const handleUpdateStatus = async () => {
+  const refreshAfterAction = async (action: (invoiceId: string) => Promise<boolean>) => {
     if (!id) return;
-    const success = await markAsPaid(id);
+    const success = await action(id);
     if (success) await fetchInvoiceDetail(id);
-  };
-
-  const handleCancelInvoice = async () => {
-    if (!id) return;
-    const success = await cancelInvoice(id);
-    if (success) await fetchInvoiceDetail(id);
-  };
-
-  const confirmInvoiceAction = ({
-    title,
-    content,
-    okText,
-    onOk,
-    danger,
-  }: {
-    title: string;
-    content: string;
-    okText: string;
-    onOk: () => void | Promise<void>;
-    danger?: boolean;
-  }) => {
-    if (!invoice || !id) return;
-    void confirm({ title, content, okText, onOk, danger });
   };
 
   const promptUpdateStatus = () => {
-    if (!invoice || !id) return;
-    confirmInvoiceAction({
+    void confirm({
       title: "Mark as PAID",
       content: `Mark invoice #${invoice.iv_no} as PAID?`,
       okText: "Mark as PAID",
-      onOk: handleUpdateStatus,
+      onOk: () => refreshAfterAction(markAsPaid),
     });
   };
 
   const promptCancelInvoice = () => {
-    if (!invoice || !id) return;
-    confirmInvoiceAction({
+    void confirm({
       title: "Cancel Invoice",
       content: `Cancel invoice #${invoice.iv_no}?`,
       okText: "Cancel Invoice",
       danger: true,
-      onOk: handleCancelInvoice,
+      onOk: () => refreshAfterAction(cancelInvoice),
     });
   };
 
@@ -195,6 +170,7 @@ const InvoiceDetail: React.FC = () => {
   const isReady = invoice.status === "READY";
   const canCancel = ["READY", "PENDING", "MISSING_FEE", "ERROR"].includes(invoice.status);
   const dueDateOverdue = isDueDateOverdue(invoice.due_date, invoice.status);
+  const statusLabel = formatInvoiceStatusLabel(invoice.status);
 
   const summaryFooter = (
     <TableRow className="bg-muted/50 font-semibold hover:bg-muted/50">
@@ -251,9 +227,9 @@ const InvoiceDetail: React.FC = () => {
       backUrl={invoicesBackUrl}
       status={
         <StatusBadge
-          status={formatInvoiceStatusLabel(invoice.status)}
+          status={statusLabel}
           variant={statusTagColor(invoice.status)}
-          ariaLabel={`Status: ${formatInvoiceStatusLabel(invoice.status)}`}
+          ariaLabel={`Status: ${statusLabel}`}
         />
       }
       extra={
@@ -285,22 +261,11 @@ const InvoiceDetail: React.FC = () => {
                 Mark as PAID
               </LoadingButton>
             ) : null}
-            {canWrite && canCancel && isReady ? (
+            {canWrite && canCancel ? (
               <LoadingButton
                 size="default"
-                variant="outline"
-                className="text-destructive hover:text-destructive"
-                onClick={promptCancelInvoice}
-                loading={updatingStatus}
-              >
-                <XCircle data-icon="inline-start" aria-hidden="true" />
-                Cancel Invoice
-              </LoadingButton>
-            ) : null}
-            {canWrite && canCancel && !isReady ? (
-              <LoadingButton
-                size="default"
-                variant="destructive"
+                variant={isReady ? "outline" : "destructive"}
+                className={isReady ? "text-destructive hover:text-destructive" : undefined}
                 onClick={promptCancelInvoice}
                 loading={updatingStatus}
               >

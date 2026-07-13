@@ -130,7 +130,7 @@ function NavMenuItems({
                     <SidebarMenuSubItem key={child.key}>
                       {child.route ? (
                         <SidebarMenuSubButton
-                          isActive={child.route ? isRouteActive(child.route, selectedPath) : false}
+                          isActive={isRouteActive(child.route, selectedPath)}
                           render={<Link to={child.route} onClick={() => onNavigate(child.route!)} />}
                         >
                           <span>{child.label}</span>
@@ -152,7 +152,7 @@ function NavMenuItems({
           <SidebarMenuItem key={item.key}>
             {item.route ? (
               <SidebarMenuButton
-                isActive={item.route ? isRouteActive(item.route, selectedPath) : false}
+                isActive={isRouteActive(item.route, selectedPath)}
                 tooltip={item.label}
                 render={<Link to={item.route} onClick={() => onNavigate(item.route!)} />}
               >

@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import {
   CheckCircle2,
@@ -163,22 +163,79 @@ export function SmartReportEditor({
   const validateFailed = validationErrors.length > 0;
   const previewColumns = testRunPreviewTable.columns.slice(0, TEST_PREVIEW_MAX_COLUMNS);
 
+  let validateVariant: "destructive" | "secondary" | "outline" = "outline";
+  if (validateFailed) validateVariant = "destructive";
+  else if (validatePassed) validateVariant = "secondary";
+
+  const ValidateIcon = (() => {
+    if (validatePassed) return CheckCircle2;
+    if (validateFailed) return CircleAlert;
+    return ClipboardCheck;
+  })();
+
+  let testPreviewBody: ReactNode = null;
+  if (testRunPreviewTable.rows.length > 0) {
+    testPreviewBody = (
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {previewColumns.map((col) => (
+                <TableHead key={col.key} className="max-w-[160px] truncate text-xs">
+                  {col.title}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {testRunPreviewTable.rows.map((row, rowIndex) => (
+              <TableRow key={rowIndex}>
+                {previewColumns.map((col) => (
+                  <TableCell key={col.key} className="max-w-[160px] truncate font-mono text-xs tabular-nums">
+                    {String(row[col.dataIndex as string] ?? "-")}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  } else if (testRunPreview && testRunPreview.recordCount > 0) {
+    testPreviewBody = (
+      <p className="text-muted-foreground text-pretty text-sm">
+        {testRunPreview.recordCount} record(s) returned — preview rows could not be displayed.
+      </p>
+    );
+  } else if (testRunPreview) {
+    testPreviewBody = (
+      <Empty className="border-none py-6">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Inbox aria-hidden="true" />
+          </EmptyMedia>
+          <EmptyTitle>No rows</EmptyTitle>
+          <EmptyDescription>
+            {testRunDateTagLabel ? `Query returned no rows for ${testRunDateTagLabel}` : "Query returned no rows"}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <p className="text-muted-foreground text-pretty text-sm">Adjust the query or date range and run again.</p>
+        </EmptyContent>
+      </Empty>
+    );
+  }
+
   const scriptActionButtons = (
     <>
       <LoadingButton
         size="sm"
-        variant={validateFailed ? "destructive" : validatePassed ? "secondary" : "outline"}
+        variant={validateVariant}
         loading={isValidating}
         aria-label={validatePassed ? "Validation passed" : "Validate script"}
         onClick={() => void onValidateScript()}
       >
-        {validatePassed ? (
-          <CheckCircle2 data-icon="inline-start" />
-        ) : validateFailed ? (
-          <CircleAlert data-icon="inline-start" />
-        ) : (
-          <ClipboardCheck data-icon="inline-start" />
-        )}
+        <ValidateIcon data-icon="inline-start" />
         Validate
       </LoadingButton>
       <LoadingButton
@@ -459,57 +516,7 @@ export function SmartReportEditor({
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
-              {testRunPreviewTable.rows.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {previewColumns.map((col) => (
-                          <TableHead key={col.key} className="max-w-[160px] truncate text-xs">
-                            {col.title}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {testRunPreviewTable.rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {previewColumns.map((col) => (
-                            <TableCell key={col.key} className="max-w-[160px] truncate font-mono text-xs tabular-nums">
-                              {String(row[col.dataIndex as string] ?? "-")}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : testRunPreview.recordCount > 0 ? (
-                <p className="text-muted-foreground text-pretty text-sm">
-                  {testRunPreview.recordCount} record(s) returned — preview rows could not be displayed.
-                </p>
-              ) : (
-                <Empty className="border-none py-6">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <Inbox aria-hidden="true" />
-                    </EmptyMedia>
-                    <EmptyTitle>No rows</EmptyTitle>
-                    <EmptyDescription>
-                      {testRunDateTagLabel
-                        ? `Query returned no rows for ${testRunDateTagLabel}`
-                        : "Query returned no rows"}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent>
-                    <p className="text-muted-foreground text-pretty text-sm">
-                      Adjust the query or date range and run again.
-                    </p>
-                  </EmptyContent>
-                </Empty>
-              )}
-            </CardContent>
+            <CardContent className="pt-0">{testPreviewBody}</CardContent>
           </Card>
         </div>
       ) : null}

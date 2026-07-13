@@ -138,29 +138,26 @@ const SmartReport: React.FC = () => {
     });
   }, [reports, latestRunByReportId]);
 
-  const loadDrawerHistory = useCallback(
-    async (reportId: string) => {
-      drawerRequestReportIdRef.current = reportId;
-      setDrawerLoading(true);
-      try {
-        const response = await listHistory({
-          page: 1,
-          limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
-          reportId,
-        });
-        // Ignore responses for a report the user has since navigated away from.
-        if (drawerRequestReportIdRef.current !== reportId) return;
-        setDrawerDownloads(response.data);
-        setDrawerHistoryTotal(response.pagination.total);
-      } catch (err) {
-        if (drawerRequestReportIdRef.current !== reportId) return;
-        message.error(apiErrorMessage(err, "Failed to load report history"));
-      } finally {
-        if (drawerRequestReportIdRef.current === reportId) setDrawerLoading(false);
-      }
-    },
-    [message],
-  );
+  const loadDrawerHistory = useCallback(async (reportId: string) => {
+    drawerRequestReportIdRef.current = reportId;
+    setDrawerLoading(true);
+    try {
+      const response = await listHistory({
+        page: 1,
+        limit: SMART_REPORT_DRAWER_HISTORY_LIMIT,
+        reportId,
+      });
+      // Ignore responses for a report the user has since navigated away from.
+      if (drawerRequestReportIdRef.current !== reportId) return;
+      setDrawerDownloads(response.data);
+      setDrawerHistoryTotal(response.pagination.total);
+    } catch (err) {
+      if (drawerRequestReportIdRef.current !== reportId) return;
+      messageRef.current.error(apiErrorMessage(err, "Failed to load report history"));
+    } finally {
+      if (drawerRequestReportIdRef.current === reportId) setDrawerLoading(false);
+    }
+  }, []);
 
   const handleRunReport = async (report: Report) => {
     setRunningId(report.id);

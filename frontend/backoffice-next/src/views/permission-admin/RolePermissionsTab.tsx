@@ -135,19 +135,12 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
 
   const treeNodes = useMemo(() => buildMenuTree(menus), [menus]);
 
-  const applyRoleChange = useCallback(
-    (nextRole: KnownRole) => {
-      onRoleCommitted(nextRole);
-    },
-    [onRoleCommitted],
-  );
-
   const handleRoleChange = useCallback(
     (nextRole: KnownRole) => {
       if (nextRole === role) return;
 
       if (!isDirty) {
-        applyRoleChange(nextRole);
+        onRoleCommitted(nextRole);
         return;
       }
 
@@ -156,10 +149,10 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
         content: "Role permission changes for the current role will be lost.",
         okText: "Discard",
         danger: true,
-        onOk: () => applyRoleChange(nextRole),
+        onOk: () => onRoleCommitted(nextRole),
       });
     },
-    [role, isDirty, applyRoleChange, confirm],
+    [role, isDirty, onRoleCommitted, confirm],
   );
 
   const handleCheckedChange = (keys: string[]) => {
