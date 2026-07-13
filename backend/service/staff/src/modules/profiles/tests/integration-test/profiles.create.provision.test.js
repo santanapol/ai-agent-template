@@ -147,6 +147,11 @@ if (!RUN) {
       const envelope = res.json();
       assert.strictEqual(envelope.data.email, null);
       assert.strictEqual(envelope.data.tel, null);
+      const raw = await getDatabase()
+        .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+        .findOne({ _id: toObjectId(envelope.data.id) });
+      assert.strictEqual(raw.email, undefined);
+      assert.strictEqual(raw.tel, undefined);
       createdProfileIds.push(envelope.data.id);
       createdUserIds.push(envelope.data.user_id);
     });

@@ -4,8 +4,10 @@ import { getDatabase } from "../../config/database.js";
 import { STAFF_COLLECTIONS } from "../../config/mongo-collections.js";
 import { encodeEtagFromItemDoc } from "../../lib/etag.js";
 import { toObjectId } from "../../lib/utils/mongo.js";
+import { buildScopeFilter } from "./profiles-scope.js";
 
 export { toObjectId };
+export { buildScopeFilter } from "./profiles-scope.js";
 
 function profilesCollection() {
   return getDatabase().collection(STAFF_COLLECTIONS.STAFF_PROFILES);
@@ -13,18 +15,6 @@ function profilesCollection() {
 
 function usersCollection() {
   return getDatabase().collection(STAFF_COLLECTIONS.USERS);
-}
-
-/**
- * Tenant scope for reads/writes — always includes ou_id; branch when provided.
- * @param {{ ouId: string, branchId?: string }} scope
- */
-export function buildScopeFilter(scope) {
-  const filter = { ou_id: toObjectId(scope.ouId) };
-  if (scope.branchId) {
-    filter.branch_id = toObjectId(scope.branchId);
-  }
-  return filter;
 }
 
 /**

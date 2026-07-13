@@ -61,6 +61,10 @@ if (!RUN) {
       await connectDatabase();
       app = await createApp(testEnv);
 
+      await getDatabase()
+        .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+        .deleteMany({ ou_id: toObjectId(ouId) });
+
       const profiles = [
         {
           branchId: branchA1,
@@ -155,9 +159,7 @@ if (!RUN) {
       assert.strictEqual(res.statusCode, 200);
       const body = res.json();
       assert.strictEqual(body.success, true);
-      assert.strictEqual(typeof body.data.total, "number");
-      assert.ok(body.data.total >= 1);
-      assert.ok(JSON.stringify(body).length < 100);
+      assert.strictEqual(body.data.total, 1);
     });
 
     test("platform_admin count archived in active branch", async () => {
@@ -171,7 +173,7 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 200);
-      assert.ok(res.json().data.total >= 1);
+      assert.strictEqual(res.json().data.total, 1);
     });
 
     test("platform_admin branch_id filter overrides active branch scope", async () => {
@@ -185,7 +187,35 @@ if (!RUN) {
       });
 
       assert.strictEqual(res.statusCode, 200);
-      assert.ok(res.json().data.total >= 1);
+      assert.strictEqual(res.json().data.total, 1);
+    });
+
+    test("branch_admin counts only pinned branch", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/v1/staff/profiles/count?status=active",
+        headers: buildMeshHeaders({
+          role: "branch_admin",
+          branchId: branchA1,
+        }),
+      });
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.json().data.total, 1);
+    });
+
+    test("branch_admin foreign branch_id returns 403", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles/count?status=active&branch_id=${branchA2}`,
+        headers: buildMeshHeaders({
+          role: "branch_admin",
+          branchId: branchA1,
+        }),
+      });
+
+      assert.strictEqual(res.statusCode, 403);
+      assert.strictEqual(res.json().code, CODES.INVALID_USER_CONTEXT);
     });
 
     test("staff count returns 403", async () => {

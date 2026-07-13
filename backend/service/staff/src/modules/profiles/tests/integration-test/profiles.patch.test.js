@@ -240,6 +240,69 @@ if (!RUN) {
       assert.strictEqual(raw.email, undefined);
     });
 
+    test("PATCH tel null unsets tel field", async () => {
+      const getRes = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: buildMeshHeaders({
+          userId: adminUserId,
+          role: "platform_admin",
+        }),
+      });
+      assert.strictEqual(getRes.statusCode, 200);
+      const etag = getRes.headers.etag;
+
+      const res = await app.inject({
+        method: "PATCH",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: {
+          ...patchHeaders({ userId: adminUserId, role: "platform_admin" }),
+          "if-match": etag,
+        },
+        payload: { tel: null },
+      });
+
+      assert.strictEqual(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.strictEqual(res.json().data.tel, null);
+
+      const raw = await getDatabase()
+        .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+        .findOne({ _id: toObjectId(otherProfileId) });
+      assert.strictEqual(raw.tel, undefined);
+    });
+
+    test("PATCH tel empty string unsets tel field", async () => {
+      await getDatabase()
+        .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
+        .updateOne(
+          { _id: toObjectId(otherProfileId) },
+          { $set: { tel: "+66123456789" } },
+        );
+
+      const getRes = await app.inject({
+        method: "GET",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: buildMeshHeaders({
+          userId: adminUserId,
+          role: "platform_admin",
+        }),
+      });
+      const etag = getRes.headers.etag;
+
+      const res = await app.inject({
+        method: "PATCH",
+        url: `/api/v1/staff/profiles/${otherProfileId}`,
+        headers: {
+          ...patchHeaders({ userId: adminUserId, role: "platform_admin" }),
+          "if-match": etag,
+        },
+        payload: { tel: "" },
+      });
+
+      assert.strictEqual(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.strictEqual(res.json().data.tel, null);
+    });
+
     test("own profile PATCH with code in body returns 400 INVALID_PARAM", async () => {
       const getRes = await app.inject({
         method: "GET",

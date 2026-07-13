@@ -693,6 +693,9 @@ paths:
         **OU-wide switch roles** (`platform_admin`, `support_admin`, `support`) receive
         the full OU list. Branch-pinned roles receive at most their active branch.
         Does not require the invoice agent service.
+
+        Filtering and pagination (`q`, `limit`, `offset`) run in-memory after loading
+        the OU branch list — suitable for current branch counts in production.
       operationId: listMyBranches
       security:
         - BearerAccess: []
@@ -710,6 +713,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 64
+            pattern: '.*\S.*'
         - name: limit
           in: query
           required: false
@@ -719,6 +723,16 @@ paths:
             type: integer
             minimum: 1
             maximum: 100
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Skip the first N matching branches (in-memory, after sort). Use with `limit`
+            for pagination. Omit for no skip (backward compatible).
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
       responses:
         '200':
           description: Branches available for the branch switcher.

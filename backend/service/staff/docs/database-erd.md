@@ -88,8 +88,8 @@ erDiagram
 | `code`          | string      |   yes    | 1–32 chars; **unique** with `ou_id`+`branch_id`                                            |
 | `firstname`     | string      |   yes    | 1–128                                                                                      |
 | `lastname`      | string      |   yes    | 1–128                                                                                      |
-| `email`         | string      |   yes    | max 254; lowercase; **not unique** in MVP                                                  |
-| `tel`           | string      |   yes    | E.164, max 16                                                                              |
+| `email`         | string      |    no    | max 254; lowercase; optional on create; omit or null on PATCH unsets |
+| `tel`           | string      |    no    | E.164, max 16; optional on create; omit or null/empty on PATCH unsets  |
 | `cr_*`, `upd_*` | string/date |   yes    | [`12-data-management.md`](../../../../../../coding-standard/backend/12-data-management.md) |
 
 **Out of scope:** `display_name`, `job_title`, `department`, `employment_status`
@@ -145,7 +145,7 @@ MVP แนะนำ **case-insensitive regex** บนฟิลด์ที่ม
 
 `validationLevel: "moderate"` — SoT: [`collection-validators.mjs`](../scripts/collection-validators.mjs). Applied by [`init-db.mjs`](../scripts/init-db.mjs). Normative ERD: [`docs/specs/backend/staff/database-erd.md`](../../../../docs/specs/backend/staff/database-erd.md).
 
-**Required:** `user_id`, `ou_id`, `branch_id`, `status`, `code`, `firstname`, `lastname`, `email`, `tel`, audit (`cr_*`, `upd_*`).
+**Required:** `user_id`, `ou_id`, `branch_id`, `status`, `code`, `firstname`, `lastname`, audit (`cr_*`, `upd_*`). `email` and `tel` are optional (see normative [`docs/specs/backend/staff/database-erd.md`](../../../../docs/specs/backend/staff/database-erd.md)).
 
 ## Collection: `auth_users` (auth-owned)
 

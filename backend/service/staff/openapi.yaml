@@ -927,9 +927,11 @@ components:
         email:
           type: string
           maxLength: 254
+          nullable: true
         tel:
           type: string
           maxLength: 16
+          nullable: true
 
     AdminPasswordReset:
       type: object

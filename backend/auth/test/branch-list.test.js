@@ -126,3 +126,34 @@ test('applyBranchListQuery preserves order, filters by q, and caps limit', () =>
   const pastEnd = applyBranchListQuery(branches, { limit: 5, offset: 10 })
   assert.equal(pastEnd.length, 0)
 })
+
+test('applyBranchListQuery with offset only skips leading branches', () => {
+  const branches = sortBranchDisplayList([
+    {
+      branch_id: ZERO_HQ_BRANCH_ID,
+      branch_code: 'ZERO',
+      branch_name: 'Zero HQ',
+      active: true
+    },
+    {
+      branch_id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+      branch_code: 'H01',
+      branch_name: 'Home Branch',
+      active: true
+    }
+  ])
+
+  const tail = applyBranchListQuery(branches, { offset: 1 })
+  assert.equal(tail.length, 1)
+  assert.equal(tail[0].branch_code, 'H01')
+})
+
+test('branchMatchesQuery treats whitespace-only q as match-all at filter layer', () => {
+  const branch = {
+    branch_id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    branch_code: 'H01',
+    branch_name: 'Home Branch',
+    active: true
+  }
+  assert.equal(branchMatchesQuery(branch, '   '), true)
+})
