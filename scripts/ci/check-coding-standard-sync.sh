@@ -5,7 +5,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-UPSTREAM="${1:-$(cd "$ROOT/../../.." && pwd)/coding-standard}"
+# Org upstream lives at agent-skill workspace root (sibling of code-base/), not Sandbox/.
+UPSTREAM="${1:-$(cd "$ROOT/../.." && pwd)/coding-standard}"
 
 if [[ ! -d "$UPSTREAM" ]]; then
   echo "Upstream not found: $UPSTREAM" >&2
