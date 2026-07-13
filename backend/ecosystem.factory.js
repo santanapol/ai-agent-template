@@ -21,7 +21,7 @@ const MEMORY_PROFILES = {
   small: {
     backends: {
       "zero-auth": { maxMemoryRestart: "200M", heapMb: 144 },
-      "zero-gateway": { maxMemoryRestart: "140M", heapMb: 112 },
+      "zero-gateway": { maxMemoryRestart: "160M", heapMb: 112 },
       "zero-staff": { maxMemoryRestart: "160M", heapMb: 128 },
       "zero-agent-invoice": { maxMemoryRestart: "200M", heapMb: 144 },
       "zero-smart-report": { maxMemoryRestart: "180M", heapMb: 132 },
@@ -32,11 +32,12 @@ const MEMORY_PROFILES = {
   "small-with-deps": {
     backends: {
       "zero-auth": { maxMemoryRestart: "160M", heapMb: 128 },
-      "zero-gateway": { maxMemoryRestart: "120M", heapMb: 96 },
+      // Gateway RSS ~130MB at idle on staging (Node 24 + Fastify proxy); 120M caused PM2 restart loop.
+      "zero-gateway": { maxMemoryRestart: "160M", heapMb: 112 },
       "zero-staff": { maxMemoryRestart: "140M", heapMb: 112 },
       "zero-agent-invoice": { maxMemoryRestart: "160M", heapMb: 128 },
-      "zero-smart-report": { maxMemoryRestart: "140M", heapMb: 112 },
-      "zero-branch-report": { maxMemoryRestart: "120M", heapMb: 96 },
+      "zero-smart-report": { maxMemoryRestart: "160M", heapMb: 112 },
+      "zero-branch-report": { maxMemoryRestart: "140M", heapMb: 96 },
     },
     backoffice: { maxMemoryRestart: "300M", heapMb: 256 },
   },

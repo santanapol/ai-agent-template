@@ -65,7 +65,7 @@ describe('ecosystem.factory', () => {
 
     assert.equal(auth.max_memory_restart, '200M');
     assert.match(auth.env.NODE_OPTIONS, /--max-old-space-size=144/);
-    assert.equal(gateway.max_memory_restart, '140M');
+    assert.equal(gateway.max_memory_restart, '160M');
     assert.equal(front.max_memory_restart, '380M');
     assert.match(front.env.NODE_OPTIONS, /--max-old-space-size=300/);
   });
@@ -79,8 +79,17 @@ describe('ecosystem.factory', () => {
 
     const prodAuth = prod.apps.find((a) => a.name === 'zero-auth');
     const stagingAuth = staging.apps.find((a) => a.name === 'zero-auth');
+    const prodGateway = prod.apps.find((a) => a.name === 'zero-gateway');
+    const gateway = staging.apps.find((a) => a.name === 'zero-gateway');
+    const smartReport = staging.apps.find((a) => a.name === 'zero-smart-report');
+    const branchReport = staging.apps.find((a) => a.name === 'zero-branch-report');
     assert.equal(prodAuth.max_memory_restart, '200M');
     assert.equal(stagingAuth.max_memory_restart, '160M');
+    assert.equal(prodGateway.max_memory_restart, '160M');
+    assert.equal(gateway.max_memory_restart, '160M');
+    assert.equal(smartReport.max_memory_restart, '160M');
+    assert.equal(branchReport.max_memory_restart, '140M');
+    assert.match(gateway.env.NODE_OPTIONS, /--max-old-space-size=112/);
   });
 
   it('ecosystem.config.js wires production small profile', () => {
