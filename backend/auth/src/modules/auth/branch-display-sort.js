@@ -1,4 +1,5 @@
 import { ZERO_HQ_BRANCH_ID } from '../../config/platform-branches.js'
+import { BRANCH_LIST_LIMIT_MAX } from './branch-list-limits.js'
 
 function branchLabel(branch) {
   return `${branch.branch_code ?? ''} ${branch.branch_name ?? ''}`.trim()
@@ -18,8 +19,6 @@ export function sortBranchDisplayList(branches) {
   })
   return hq ? [hq, ...rest] : rest
 }
-
-const BRANCH_LIST_LIMIT_MAX = 100
 
 /**
  * Case-insensitive match on branch_code or branch_name.

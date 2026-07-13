@@ -270,7 +270,40 @@ test('GET /auth/me/branches', { timeout: 180_000 }, async (t) => {
     assert.equal(page2.status, 200)
     const page2Body = await page2.json()
     assert.equal(page2Body.branches.length, 1)
-    assert.notEqual(page2Body.branches[0].branch_id, ZERO_HQ_ID.toHexString())
+    assert.equal(page2Body.branches[0].branch_code, 'H01')
+
+    const byName = await listBranches(base, login.access_token, 'q=Target')
+    assert.equal(byName.status, 200)
+    const byNameBody = await byName.json()
+    assert.equal(byNameBody.branches.length, 1)
+    assert.equal(byNameBody.branches[0].branch_code, 'T01')
+
+    const offsetOnly = await listBranches(base, login.access_token, 'offset=1')
+    assert.equal(offsetOnly.status, 200)
+    const offsetOnlyBody = await offsetOnly.json()
+    assert.ok(offsetOnlyBody.branches.length >= 1)
+    assert.notEqual(offsetOnlyBody.branches[0].branch_id, ZERO_HQ_ID.toHexString())
+  })
+
+  await t.test('invalid query params return 400', async () => {
+    const login = await loginNative(base, PLATFORM_USER)
+    for (const query of ['limit=0', 'limit=101', 'offset=-1', 'q=%20']) {
+      const r = await listBranches(base, login.access_token, query)
+      assert.equal(r.status, 400, `expected 400 for ${query}`)
+    }
+  })
+
+  await t.test('staff q filter applies to single home branch', async () => {
+    const login = await loginNative(base, STAFF_USER)
+    const match = await listBranches(base, login.access_token, 'q=Home')
+    assert.equal(match.status, 200)
+    const body = await match.json()
+    assert.equal(body.branches.length, 1)
+    assert.equal(body.branches[0].branch_code, 'H01')
+
+    const miss = await listBranches(base, login.access_token, 'q=T01')
+    assert.equal(miss.status, 200)
+    assert.equal((await miss.json()).branches.length, 0)
   })
 
   await t.test('returns 401 when access token_gen is stale', async () => {

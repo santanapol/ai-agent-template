@@ -1,3 +1,5 @@
+import { BRANCH_LIST_LIMIT_MAX, BRANCH_LIST_OFFSET_MAX } from './branch-list-limits.js'
+
 export const loginBodySchema = {
   type: 'object',
   properties: {
@@ -47,9 +49,14 @@ export const switchActiveBranchBodySchema = {
 export const listMyBranchesQuerySchema = {
   type: 'object',
   properties: {
-    q: { type: 'string', minLength: 1, maxLength: 64 },
-    limit: { type: 'integer', minimum: 1, maximum: 100 },
-    offset: { type: 'integer', minimum: 0, maximum: 10_000 }
+    q: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 64,
+      pattern: '.*\\S.*'
+    },
+    limit: { type: 'integer', minimum: 1, maximum: BRANCH_LIST_LIMIT_MAX },
+    offset: { type: 'integer', minimum: 0, maximum: BRANCH_LIST_OFFSET_MAX }
   },
   additionalProperties: false
 }

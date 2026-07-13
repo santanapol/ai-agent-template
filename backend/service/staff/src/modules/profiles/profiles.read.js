@@ -1,8 +1,7 @@
 import { HttpError } from "../../lib/http-error.js";
 import CODES from "../../lib/error-codes.js";
-import { getDatabase } from "../../config/database.js";
-import { STAFF_COLLECTIONS } from "../../config/mongo-collections.js";
 import * as repository from "./profiles.repository.js";
+import { countProfiles as countProfilesInDb } from "./profiles-count.repository.js";
 import {
   resolveListScope,
   resolveLookupScope,
@@ -107,12 +106,6 @@ export async function countProfiles(query, userContext, { log } = {}) {
     { log },
   );
 
-  const match = {
-    ...repository.buildScopeFilter(scope),
-    status: query.status,
-  };
-  const total = await getDatabase()
-    .collection(STAFF_COLLECTIONS.STAFF_PROFILES)
-    .countDocuments(match);
+  const total = await countProfilesInDb({ status: query.status }, scope);
   return { total };
 }
