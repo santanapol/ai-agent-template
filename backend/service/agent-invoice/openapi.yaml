@@ -1301,18 +1301,32 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        _id:
-                          type: string
-                        ou_id:
-                          type: string
-                        name:
-                          type: string
-                        provider_name:
-                          type: string
-                        active:
-                          type: string
+                      oneOf:
+                        - title: GameCompanyFull
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                            ou_id:
+                              type: string
+                            name:
+                              type: string
+                            provider_name:
+                              type: string
+                            active:
+                              type: string
+                        - title: GameCompanyMatrix
+                          type: object
+                          required: [_id, provider_name]
+                          properties:
+                            _id:
+                              type: string
+                            provider_name:
+                              type: object
+                              properties:
+                                en:
+                                  type: string
+                                  nullable: true
         "400":
           description: Validation error (invalid ou_id format)
           content:
@@ -1654,7 +1668,9 @@ paths:
       summary: Get invoice detail
       description: |
         Returns a single agent_invoice document by MongoDB _id scoped to `ou_id` matching `x-user-ou`.
-        ou_name is resolved from the record ou_id. Response includes ETag for subsequent updates.
+        `ou_name` and `branch_name` are resolved from master data; `currency` is resolved from the
+        OU-scoped agent row for the invoice `branch_id` (uppercase, null when no agent exists).
+        Response includes ETag for subsequent updates.
       parameters:
         - $ref: "#/components/parameters/xUserOu"
         - $ref: "#/components/parameters/xUserBranch"

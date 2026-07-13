@@ -110,6 +110,7 @@ export async function calculateFee({
 
     const resolveRatio = await agentFeeRepo.buildRatioLookup({
       invoiceBranchId: String(invoice.branch_id),
+      ouId: String(invoice.ou_id),
       transactions,
     });
 

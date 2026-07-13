@@ -1,12 +1,12 @@
 import { isValidObjectId } from "../../lib/object-id.js";
 
-import { mapInvoiceForApi } from "../../lib/invoice-serialize.js";
+import { mapEnrichedInvoiceForApi } from "./invoice-enrich.js";
 
 import { ROUTE_PROG } from "../../lib/route-prog.js";
 
 import { decodeEtag } from "../../lib/etag.js";
 
-import { findAgentByBranchId } from "./agents.repository.js";
+import { findAgentByOuAndBranchId } from "./agents.repository.js";
 
 import * as invoiceRepo from "./invoice.repository.js";
 
@@ -32,7 +32,8 @@ export async function updateInvoiceStatus({
 
   const repoMasterData = _repos?.masterData ?? masterDataRepo;
 
-  const repoFindAgent = _repos?.findAgentByBranchId ?? findAgentByBranchId;
+  const repoFindAgent =
+    _repos?.findAgentByOuAndBranchId ?? findAgentByOuAndBranchId;
 
   if (!isValidObjectId(id)) {
     return { success: false, code: "INVALID_PARAM" };
@@ -102,26 +103,14 @@ export async function updateInvoiceStatus({
 
   const updated = await repoInvoice.findDetailById(id, ouId, scopeBranchId);
 
-  const recordOuId = String(updated.ou_id);
-  const branchId = String(updated.branch_id);
-
-  const [branchName, ouName, agent] = await Promise.all([
-    repoMasterData.findBranchDisplayName(branchId),
-
-    repoMasterData.findOuDisplayName(recordOuId),
-
-    repoFindAgent(branchId),
-  ]);
-
   return {
     success: true,
 
     code: "SUCCESS",
 
-    data: mapInvoiceForApi(updated, {
-      branchName,
-      ouName,
-      currency: agent?.currency ?? null,
+    data: await mapEnrichedInvoiceForApi(updated, {
+      masterData: repoMasterData,
+      findAgentByOuAndBranchId: repoFindAgent,
     }),
   };
 }

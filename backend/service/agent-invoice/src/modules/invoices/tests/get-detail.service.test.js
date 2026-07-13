@@ -20,7 +20,7 @@ test("getInvoiceDetail — returns RESOURCE_NOT_FOUND when missing", async () =>
     _repos: {
       invoice: { findDetailById: async () => null },
       masterData: {},
-      findAgentByBranchId: async () => null,
+      findAgentByOuAndBranchId: async () => null,
     },
   });
   assert.strictEqual(result.success, false);
@@ -47,7 +47,7 @@ test("getInvoiceDetail — includes uppercase currency from agent", async () => 
         findBranchDisplayName: async () => "Branch A",
         findOuDisplayName: async () => "OU A",
       },
-      findAgentByBranchId: async () => ({ currency: "thb" }),
+      findAgentByOuAndBranchId: async () => ({ currency: "thb" }),
     },
   });
 
@@ -76,7 +76,7 @@ test("getInvoiceDetail — currency null when no agent", async () => {
         findBranchDisplayName: async () => "Branch A",
         findOuDisplayName: async () => "OU A",
       },
-      findAgentByBranchId: async () => null,
+      findAgentByOuAndBranchId: async () => null,
     },
   });
 
