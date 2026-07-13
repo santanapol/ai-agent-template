@@ -22,8 +22,9 @@
 | TD-018 | Data | P3 | Orphan `agent_fees` row without `agents` parent — read-only audit + cleanup ticket | open |
 | TD-019 | Spec | P3 | `spec:consistency` validator checks for staff / agent-invoice / smart-report (auth done) | closed (2026-07-09; validator↔ERD gates in all 4 services) |
 | TD-020 | Frontend | P3 | NET-006 Option A — remove `AdminLayout` `key={branch_id}` remount; use `branchId` context instead | open — defer [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) Phase 2 |
-| TD-021 | API | P3 | Batch `GET /invoices?ids=` for bulk export (ลด N× detail fetch) | open — [`api-network-audit-backend`](../exec-plans/completed/api-network-audit-backend-2026-07-09.md) future |
-| TD-022 | Frontend | P3 | Smart Report drawer `listHistory(limit=100)` → paginated `limit=20` | open — [`api-network-audit-frontend`](../exec-plans/completed/api-network-audit-frontend-2026-07-09.md) FE-4.1 |
+| TD-021 | API | P3 | Batch `GET /invoices/batch?ids=` for bulk export (ลด N× detail fetch) | closed (2026-07-13; `GET /api/v1/invoices/batch` + FE bulk export single-fetch) |
+| TD-022 | Frontend | P3 | Smart Report drawer `listHistory(limit=100)` → paginated `limit=20` | closed (2026-07-13; drawer server-paginated page 2+; enrichment defer TD-035) |
+| TD-035 | Frontend | P3 | Smart Report mount enrichment `listHistory(limit=100)` → embed `lastRun` without full history scan | open — deferred from TD-022 closeout |
 | TD-023 | Frontend | P1 | Branch switcher `limit:20` writes into shared invoice agent cache — incomplete filter for orgs with >20 branches (FE-REV-001/004) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-024 | Frontend | P1 | `InvoiceList` `invoiceAgentsRequestedRef` blocks refetch when `ou_id`/`role` changes while mounted (FE-REV-002) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |
 | TD-025 | Frontend | P2 | `StaffManagement` same-key fetch guard can drop reload after cancelled in-flight request (FE-REV-003) | closed (2026-07-10; PR #57) — [`fe-network-audit-review-followups`](./completed/fe-network-audit-review-followups-2026-07-10.md) |

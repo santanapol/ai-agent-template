@@ -117,7 +117,7 @@ Loaded once per session after login (client-side). **Full page reload** adds `PO
 | 4 | `/smart-reports` | `SmartReport.tsx` | mount | GET `/api/v1/smart-reports/history` | L149 | `limit=100` | none | **×2 dev, ×2 prod** |
 | | | | mount | GET `/api/v1/smart-reports` | L159 | `page`, `limit=20` | none | **×2 dev, ×2 prod** |
 | | | | tab History | GET `.../history` | L172 | `limit=20` | — | 1× per switch |
-| | | | drawer | GET `.../history` | L523 | `limit=100` | — | on demand |
+| | | | drawer | GET `.../history` | `loadDrawerHistory` | `page`, `limit=20`, `reportId` | server pagination (page 2+) | on demand + page change |
 | 5 | `/staff` | `StaffManagement.tsx` | mount/filter | GET `/api/v1/staff/profiles` | L123 | `page`, `limit`, `q`, `status` | `cancelled` | 1× (+ dup dev) |
 | 6 | `/agents` | `AgentsList` + `useAgents` | mount | GET `/api/v1/agent-invoice/agents` | `useAgents` L20 | `page`, `limit` | — | 1× |
 | 7 | `/agents/:id/fees` | `AgentFeesPage.tsx` | mount waterfall | GET `.../agents/:id` | L68 | — | AbortController | 1× |
