@@ -48,18 +48,18 @@ if (!RUN) {
       await ensureReportIndexes(db);
       await db.collection(REPORTS_COLLECTION).deleteMany({});
       await db.collection(DOWNLOAD_HISTORY_COLLECTION).deleteMany({});
-      app = await buildApp();
+      app = await buildApp({ logger: false });
     });
 
     after(async () => {
-      await db.collection(REPORTS_COLLECTION).deleteMany({});
-      await db.collection(DOWNLOAD_HISTORY_COLLECTION).deleteMany({});
       if (historyFileName) {
         await rm(path.join(getStorageDir(), historyFileName), {
           force: true,
         });
       }
-      await app.close();
+      if (app) {
+        await app.close();
+      }
       await closeReadDatabase();
       await closeDatabase();
     });
@@ -228,6 +228,58 @@ if (!RUN) {
       const body = response.json();
       assert.ok(body.data.every((item) => item.schedule === null));
       assert.ok(body.data.some((item) => item.id === manualId));
+    });
+
+    test("GET /?schedule=daily returns only daily scheduled reports", async () => {
+      const frequencies = ["daily", "weekly", "monthly"];
+      const seededIds = [];
+      for (const frequency of frequencies) {
+        const created = await createGatedReport(app, buildMeshHeaders(), {
+          name: `${frequency} Report ${Date.now()}`,
+          script: `db.getSiblingDB(${JSON.stringify(dbName)}).${REPORTS_COLLECTION}.find({});`,
+          outputFormat: "csv",
+          schedule: { frequency, hour: 8, minute: 0, timezone: "UTC" },
+        });
+        assert.equal(created.statusCode, 201);
+        seededIds.push(created.json().data.id);
+      }
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?schedule=daily",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.some((item) => item.id === seededIds[0]));
+      assert.ok(
+        body.data.every((item) => item.schedule?.frequency === "daily"),
+      );
+    });
+
+    test("GET /?enabled=true returns only enabled reports", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports?enabled=true",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.ok(body.data.length > 0);
+      assert.ok(body.data.every((item) => item.enabled === true));
+    });
+
+    test("GET /history?reportId=notanobjectid returns 400 INVALID_PARAM", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/smart-reports/history?reportId=notanobjectid",
+        headers: buildMeshHeaders(),
+      });
+
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().code, "INVALID_PARAM");
     });
 
     test("GET /?page=0 returns 400 INVALID_PARAM", async () => {

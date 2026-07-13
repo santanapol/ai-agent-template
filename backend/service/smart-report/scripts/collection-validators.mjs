@@ -4,12 +4,12 @@ export const COLLECTION_VALIDATORS = [
     collection: "reports",
     schema: {
       bsonType: "object",
-      required: ["name", "script", "enabled"],
+      required: ["name", "script", "enabled", "outputFormat"],
       properties: {
         name: { bsonType: "string", minLength: 1 },
         script: { bsonType: "string" },
         enabled: { bsonType: "bool" },
-        outputFormat: { enum: ["csv", "excel", null] },
+        outputFormat: { enum: ["csv", "excel"] },
         params: { bsonType: ["object", "null"] },
       },
     },

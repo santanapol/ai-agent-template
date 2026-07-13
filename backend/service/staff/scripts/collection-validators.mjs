@@ -20,8 +20,18 @@ export const STAFF_PROFILES_JSON_SCHEMA = {
     code: { bsonType: "string", minLength: 1, maxLength: 32 },
     firstname: { bsonType: "string", minLength: 1, maxLength: 128 },
     lastname: { bsonType: "string", minLength: 1, maxLength: 128 },
-    email: { bsonType: ["string", "null"], maxLength: 254 },
-    tel: { bsonType: ["string", "null"], maxLength: 16 },
+    email: {
+      anyOf: [
+        { bsonType: "null" },
+        { bsonType: "string", minLength: 1, maxLength: 254 },
+      ],
+    },
+    tel: {
+      anyOf: [
+        { bsonType: "null" },
+        { bsonType: "string", minLength: 1, maxLength: 16 },
+      ],
+    },
   },
 };
 

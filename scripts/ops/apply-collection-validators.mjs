@@ -17,6 +17,7 @@ import { applyCollectionValidators } from "./apply-collection-validator-lib.mjs"
 import {
   PROD_APPLY_TARGETS,
   STAGING_APPLY_TARGETS,
+  parseEnvFile,
 } from "./schema-verify-targets.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,16 +28,8 @@ const { MongoClient } = require("mongodb");
 const PROD_TARGETS = PROD_APPLY_TARGETS;
 const STAGING_TARGETS = STAGING_APPLY_TARGETS;
 
-function parseEnvFile(path) {
-  const env = {};
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i === -1) continue;
-    env[t.slice(0, i).trim()] = t.slice(i + 1).trim();
-  }
-  return env;
+function loadEnvFile(path) {
+  return parseEnvFile(readFileSync(path, "utf8"));
 }
 
 function mongoUriFromEnv(env) {
@@ -63,7 +56,7 @@ async function runTargets(targets, label) {
   console.log(`=== apply-collection-validators (${label}) ===`);
   for (const { env, db } of targets) {
     const envPath = resolve(ROOT, env);
-    const parsed = parseEnvFile(envPath);
+    const parsed = loadEnvFile(envPath);
     const uri = mongoUriFromEnv(parsed);
     if (!uri) {
       console.error(`No DATABASE_URI/MONGODB_URI in ${env}`);
@@ -110,7 +103,7 @@ if (!envFile || !dbNameArg) {
 }
 
 const envPath = resolve(ROOT, envFile);
-const parsed = parseEnvFile(envPath);
+const parsed = loadEnvFile(envPath);
 const uri = mongoUriFromEnv(parsed);
 if (!uri) {
   console.error("DATABASE_URI or MONGODB_URI required in env file");
