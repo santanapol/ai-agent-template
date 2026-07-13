@@ -1,11 +1,13 @@
 ---
-status: active
+status: completed
 created: 2026-07-10
 updated: 2026-07-10
+completed: 2026-07-10
 services: [backoffice-next]
 source-review: /review five-axis on PR #54 (api-network-audit-fixes)
 parent-audit: frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md
 parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
+merge: PR #57 → 8567658
 ---
 
 # Plan: FE network-audit review follow-ups (backoffice-next)
@@ -13,13 +15,14 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 ## Objective
 
 บันทึกผลการรีวิวห้าแกน (`/review`) หลัง merge PR #54 — งาน NET/PAY ผ่าน verify แล้ว แต่มี correctness/architecture ที่ต้องแก้ก่อนถือว่าปิดสนิท  
-**ยังไม่ลงมือแก้ในรอบนี้** — รวมแก้ทีเดียวตาม tasks ด้านล่าง
+แก้ครบ FE-REV-001…009 แล้วใน PR #57 (`8567658`).
 
 ## Progress log
 
 - 2026-07-10: บันทึก findings จาก five-axis review ของ `frontend/backoffice-next` (scope PR #54 / merge `5123b2e`); verdict = **Request changes**; รอ batch fix
 - 2026-07-10: branch `fix/fe-network-audit-review-followups-2026-07-10` — แก้ FE-REV-001…007 + เทส; รอ CI / PR
 - 2026-07-10: แก้ FE-REV-008 (peek cache ก่อน loading) + FE-REV-009 (branch search a11y) + เทส
+- 2026-07-10: merge PR #57 → `8567658`; ปิด TD-023…025; ย้ายแผนนี้ไป `completed/`
 
 ## Decision log
 
@@ -31,9 +34,10 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 | Item | Value |
 |------|-------|
 | Scope | `frontend/backoffice-next` — API Network Audit fixes |
-| Merge | PR #54 → `5123b2e` |
-| Verify | [`NETWORK-VERIFY-CHECKLIST.md`](../../../frontend/backoffice-next/docs/NETWORK-VERIFY-CHECKLIST.md) PASS on `:3006` (2026-07-09) |
-| Verdict | **Request changes** — NET/PAY goals OK; แก้ Critical/Important ก่อน Approve |
+| Parent merge | PR #54 → `5123b2e` |
+| Follow-up merge | PR #57 → `8567658` |
+| Verify | [`NETWORK-VERIFY-CHECKLIST.md`](../../../frontend/backoffice-next/docs/NETWORK-VERIFY-CHECKLIST.md) PASS on `:3006` (2026-07-09); network shape unchanged by follow-ups |
+| Verdict | **Request changes** → fixed in PR #57 |
 
 ## Findings (ordered by severity)
 
@@ -118,8 +122,8 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 - [x] (Optional) FE-REV-005, FE-REV-006, FE-REV-007
 - [x] (Consider/Optional) FE-REV-008: paint switcher จาก `peekBranchCatalog` ก่อน fetch; loading เฉพาะเมื่อไม่มี cache
 - [x] (Optional) FE-REV-009: focus search on open, `<search>`, empty/loading status, keyboard stopPropagation
-- [ ] อัปเดต `NETWORK-VERIFY-CHECKLIST.md` ถ้าพฤติกรรม network เปลี่ยน — ไม่เปลี่ยน network shape; skip
-- [ ] ปิด TD-023/024/025 + ย้ายแผนนี้ไป `completed/` — หลัง merge
+- [x] อัปเดต `NETWORK-VERIFY-CHECKLIST.md` ถ้าพฤติกรรม network เปลี่ยน — ไม่เปลี่ยน network shape; skip
+- [x] ปิด TD-023/024/025 + ย้ายแผนนี้ไป `completed/` — หลัง merge PR #57
 
 ## Risks
 
@@ -130,5 +134,5 @@ parent-plan: docs/exec-plans/completed/api-network-audit-frontend-2026-07-09.md
 
 - Audit report: [`frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md`](../../../frontend/backoffice-next/docs/API-NETWORK-AUDIT-2026-07-09.md)
 - Verify checklist: [`frontend/backoffice-next/docs/NETWORK-VERIFY-CHECKLIST.md`](../../../frontend/backoffice-next/docs/NETWORK-VERIFY-CHECKLIST.md)
-- Completed FE plan: [`../completed/api-network-audit-frontend-2026-07-09.md`](../completed/api-network-audit-frontend-2026-07-09.md)
-- Tech debt: [`../tech-debt-tracker.md`](../tech-debt-tracker.md) (TD-023 … TD-025)
+- Completed FE plan: [`api-network-audit-frontend-2026-07-09.md`](./api-network-audit-frontend-2026-07-09.md)
+- Tech debt: [`../tech-debt-tracker.md`](../tech-debt-tracker.md) (TD-023 … TD-025 closed)
