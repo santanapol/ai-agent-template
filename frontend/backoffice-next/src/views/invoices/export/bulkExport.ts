@@ -36,7 +36,24 @@ export async function runBulkExport(options: BulkExportOptions): Promise<Blob | 
     return null;
   }
 
+  if (signal?.aborted) {
+    return null;
+  }
+
   const successfulFiles: Array<{ filename: string; blob: Blob }> = [];
+
+  let batchRes: Awaited<ReturnType<typeof api.getInvoicesBatch>>;
+  try {
+    batchRes = await api.getInvoicesBatch(invoiceIds, { includeTransactions: true }, signal);
+  } catch (err) {
+    if (signal?.aborted) {
+      return null;
+    }
+    throw err;
+  }
+
+  const itemsById = new Map((batchRes.data?.items ?? []).map((item) => [item._id, item]));
+  const missing = new Set(batchRes.data?.missing ?? []);
 
   await runWithConcurrency({
     invoiceIds,
@@ -47,21 +64,24 @@ export async function runBulkExport(options: BulkExportOptions): Promise<Blob | 
       let ivNo = id;
 
       try {
-        if (processSignal?.aborted) {
+        if (processSignal?.aborted || signal?.aborted) {
           return { id, ivNo, status: "cancelled" };
         }
 
-        const detailRes = await api.getInvoiceById(id, processSignal);
-        if (!detailRes.data) {
+        if (missing.has(id)) {
           throw new Error("Invoice not found");
         }
-        ivNo = detailRes.data.iv_no;
 
-        const txnRes = await api.listInvoiceTransactions(id, processSignal);
-        const transactions = Array.isArray(txnRes.data) ? txnRes.data : [];
-        const blob = buildFileForFormat(format, detailRes.data, transactions);
+        const detail = itemsById.get(id);
+        if (!detail) {
+          throw new Error("Invoice not found");
+        }
 
-        if (processSignal?.aborted) {
+        ivNo = detail.iv_no;
+        const transactions = Array.isArray(detail.transactions) ? detail.transactions : [];
+        const blob = buildFileForFormat(format, detail, transactions);
+
+        if (processSignal?.aborted || signal?.aborted) {
           return { id, ivNo, status: "cancelled" };
         }
 
@@ -70,7 +90,7 @@ export async function runBulkExport(options: BulkExportOptions): Promise<Blob | 
         successfulFiles.push({ filename: `invoice_${safeIvNo}.${ext}`, blob });
         return { id, ivNo, status: "success" };
       } catch (err) {
-        if (processSignal?.aborted) {
+        if (processSignal?.aborted || signal?.aborted) {
           return { id, ivNo, status: "cancelled" };
         }
         return {

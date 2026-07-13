@@ -7,28 +7,27 @@ import type { BulkExportProgress } from "./types";
 
 vi.mock("../../../lib/invoicesApiClient");
 
-function mockInvoiceSuccess(id: string, ivNo: string) {
-  vi.mocked(api.getInvoiceById).mockImplementation(async (invoiceId) => {
-    if (invoiceId !== id) {
-      throw new Error("not found");
-    }
-    return {
-      success: true,
-      code: "SUCCESS",
-      message: "ok",
-      data: makeTestInvoice({ _id: id, iv_no: ivNo }),
-    };
-  });
+function mockBatchSuccess(
+  entries: Array<{ id: string; ivNo: string; includeTransactions?: boolean }>,
+) {
+  vi.mocked(api.getInvoicesBatch).mockImplementation(async (ids) => {
+    const items = entries
+      .filter((entry) => ids.includes(entry.id))
+      .map((entry) => ({
+        ...makeTestInvoice({ _id: entry.id, iv_no: entry.ivNo }),
+        transactions: entry.includeTransactions === false
+          ? undefined
+          : [makeTestTransaction({ ref_iv_id: entry.id })],
+      }));
 
-  vi.mocked(api.listInvoiceTransactions).mockImplementation(async (invoiceId) => {
-    if (invoiceId !== id) {
-      throw new Error("not found");
-    }
+    const found = new Set(items.map((item) => item._id));
+    const missing = ids.filter((id) => !found.has(id));
+
     return {
       success: true,
       code: "SUCCESS",
       message: "ok",
-      data: [makeTestTransaction({ ref_iv_id: id })],
+      data: { items, missing },
     };
   });
 }
@@ -47,42 +46,27 @@ describe("runBulkExport", () => {
   it("returns null for empty invoiceIds", async () => {
     const result = await runBulkExport({ invoiceIds: [], format: "pdf" });
     expect(result).toBeNull();
+    expect(api.getInvoicesBatch).not.toHaveBeenCalled();
   });
 
-  it("creates a ZIP blob when all invoices succeed", async () => {
-    mockInvoiceSuccess("inv1", "IV-001");
+  it("creates a ZIP blob when all invoices succeed via single batch call", async () => {
+    mockBatchSuccess([{ id: "inv1", ivNo: "IV-001" }]);
 
     const result = await runBulkExport({ invoiceIds: ["inv1"], format: "pdf" });
 
+    expect(api.getInvoicesBatch).toHaveBeenCalledTimes(1);
+    expect(api.getInvoicesBatch).toHaveBeenCalledWith(
+      ["inv1"],
+      { includeTransactions: true },
+      undefined,
+    );
     expect(result).not.toBeNull();
     expect(result?.type).toBe("application/zip");
     expect(result?.size).toBeGreaterThan(0);
   });
 
   it("continues on partial failure and still returns ZIP", async () => {
-    vi.mocked(api.getInvoiceById).mockImplementation(async (id) => {
-      if (id === "inv-ok") {
-        return {
-          success: true,
-          code: "SUCCESS",
-          message: "ok",
-          data: makeTestInvoice({ _id: "inv-ok", iv_no: "IV-OK" }),
-        };
-      }
-      throw new Error("not found");
-    });
-
-    vi.mocked(api.listInvoiceTransactions).mockImplementation(async (id) => {
-      if (id === "inv-ok") {
-        return {
-          success: true,
-          code: "SUCCESS",
-          message: "ok",
-          data: [makeTestTransaction({ ref_iv_id: "inv-ok" })],
-        };
-      }
-      throw new Error("not found");
-    });
+    mockBatchSuccess([{ id: "inv-ok", ivNo: "IV-OK" }]);
 
     const progressState: { value: BulkExportProgress | null } = { value: null };
     const result = await runBulkExport({
@@ -93,6 +77,7 @@ describe("runBulkExport", () => {
       },
     });
 
+    expect(api.getInvoicesBatch).toHaveBeenCalledTimes(1);
     expect(result).not.toBeNull();
     expect(progressState.value?.done).toBe(2);
     expect(progressState.value?.results).toHaveLength(2);
@@ -100,14 +85,8 @@ describe("runBulkExport", () => {
     expect(progressState.value?.results.find((r) => r.id === "inv-fail")?.status).toBe("failed");
   });
 
-  it("uses iv_no when detail succeeds but transactions fail", async () => {
-    vi.mocked(api.getInvoiceById).mockResolvedValue({
-      success: true,
-      code: "SUCCESS",
-      message: "ok",
-      data: makeTestInvoice({ _id: "inv1", iv_no: "IV-TXN-FAIL" }),
-    });
-    vi.mocked(api.listInvoiceTransactions).mockRejectedValue(new Error("txn failed"));
+  it("uses iv_no when detail exists but transactions are missing", async () => {
+    mockBatchSuccess([{ id: "inv1", ivNo: "IV-TXN-FAIL", includeTransactions: false }]);
 
     const progressState: { value: BulkExportProgress | null } = { value: null };
     const result = await runBulkExport({
@@ -118,71 +97,50 @@ describe("runBulkExport", () => {
       },
     });
 
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
     expect(progressState.value?.results[0]?.ivNo).toBe("IV-TXN-FAIL");
-    expect(progressState.value?.results[0]?.status).toBe("failed");
+    expect(progressState.value?.results[0]?.status).toBe("success");
   });
 
   it("returns null when every invoice fails", async () => {
-    vi.mocked(api.getInvoiceById).mockRejectedValue(new Error("boom"));
-    vi.mocked(api.listInvoiceTransactions).mockRejectedValue(new Error("boom"));
+    vi.mocked(api.getInvoicesBatch).mockResolvedValue({
+      success: true,
+      code: "SUCCESS",
+      message: "ok",
+      data: { items: [], missing: ["a", "b"] },
+    });
 
     const result = await runBulkExport({ invoiceIds: ["a", "b"], format: "pdf" });
     expect(result).toBeNull();
   });
 
-  it("returns partial ZIP and marks unprocessed items cancelled when aborted", async () => {
+  it("returns null when aborted before batch fetch completes", async () => {
     const controller = new AbortController();
-    let callCount = 0;
 
-    vi.mocked(api.getInvoiceById).mockImplementation(async (id, signal) => {
-      callCount += 1;
-      if (id !== "1") {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      if (signal?.aborted) {
-        throw new Error("aborted");
-      }
-      return {
-        success: true,
-        code: "SUCCESS",
-        message: "ok",
-        data: makeTestInvoice({ _id: id, iv_no: `IV-${id}` }),
-      };
-    });
-
-    vi.mocked(api.listInvoiceTransactions).mockResolvedValue({
-      success: true,
-      code: "SUCCESS",
-      message: "ok",
-      data: [],
-    });
-
-    const progressState: { value: BulkExportProgress | null } = { value: null };
+    vi.mocked(api.getInvoicesBatch).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                success: true,
+                code: "SUCCESS",
+                message: "ok",
+                data: { items: [], missing: [] },
+              }),
+            100,
+          );
+        }),
+    );
 
     const promise = runBulkExport({
-      invoiceIds: ["1", "2", "3", "4"],
+      invoiceIds: ["1", "2"],
       format: "pdf",
-      concurrency: 1,
       signal: controller.signal,
-      onProgress: (p) => {
-        progressState.value = p;
-      },
     });
 
-    setTimeout(() => controller.abort(), 20);
-    const result = await promise;
-
-    expect(result).not.toBeNull();
-    expect(result?.type).toBe("application/zip");
-    expect(progressState.value?.done).toBe(4);
-    expect(progressState.value?.total).toBe(4);
-    expect(progressState.value?.results).toHaveLength(4);
-
-    const statuses = progressState.value?.results.map((r) => r.status) ?? [];
-    expect(statuses.filter((s) => s === "success")).toHaveLength(1);
-    expect(statuses.filter((s) => s === "cancelled").length).toBeGreaterThanOrEqual(2);
-    expect(new Set(progressState.value?.results.map((r) => r.id)).size).toBe(4);
-    expect(callCount).toBeLessThan(4);
+    controller.abort();
+    await expect(promise).resolves.toBeNull();
+    expect(api.getInvoicesBatch).toHaveBeenCalledTimes(1);
   });
 });
