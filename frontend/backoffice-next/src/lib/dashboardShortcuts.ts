@@ -12,7 +12,7 @@ const ROUTE_SHORTCUTS = [
   {
     permission: "branch-report:marketing:channel-performance:read",
     label: "Channel Performance",
-    href: "/branch-report/marketing/channel-performance",
+    href: "/branch-report/channel-performance",
   },
   { permission: "reports:smart", label: "Smart Reports", href: "/smart-reports" },
   { permission: "permissions:manage", label: "Permissions", href: "/permissions" },

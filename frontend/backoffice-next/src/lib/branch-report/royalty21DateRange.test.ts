@@ -51,17 +51,20 @@ describe("royalty21DateRange", () => {
     expect(isRegDateRangeWithinMaxDays(from, to.add(1, "day"))).toBe(false);
   });
 
-  it("toRoyalty21QueryParams omits inviteLinkId for non-affiliate channels", () => {
+  it("toRoyalty21QueryParams maps referralUsername for member_referral and omits inviteLinkId", () => {
     expect(
       toRoyalty21QueryParams({
         channelType: "member_referral",
         inviteLinkId: "ignored",
+        referralUsername: "REFERRER01",
         regDateRange: [dayjs("2024-06-01"), dayjs("2024-06-30")],
         page: 1,
         pageSize: 50,
       }),
     ).toEqual({
       channelType: "member_referral",
+      inviteLinkId: undefined,
+      referralUsername: "REFERRER01",
       regDateFrom: "2024-06-01",
       regDateTo: "2024-06-30",
       page: 1,

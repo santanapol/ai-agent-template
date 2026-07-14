@@ -22,7 +22,7 @@ const branchReportMenuTree = [
       {
         key: 'channel-performance',
         label: 'Channel Performance',
-        route: '/branch-report/marketing/channel-performance',
+        route: '/branch-report/channel-performance',
         sort_order: 1,
       },
     ],
@@ -48,7 +48,7 @@ describe('resolveSidebarBreadcrumb', () => {
   });
 
   it('resolves two-level menu trail for branch report routes', () => {
-    expect(resolveSidebarBreadcrumb(branchReportMenuTree, '/branch-report/marketing/channel-performance')).toEqual({
+    expect(resolveSidebarBreadcrumb(branchReportMenuTree, '/branch-report/channel-performance')).toEqual({
       parent: 'Branch Report',
       page: 'Channel Performance',
       items: [{ label: 'Branch Report' }, { label: 'Channel Performance' }],

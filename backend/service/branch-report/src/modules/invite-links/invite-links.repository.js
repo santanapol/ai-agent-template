@@ -44,9 +44,9 @@ export function createInviteLinksRepository(getDb) {
       let cursor = getDb()
         .collection(COLLECTION)
         .find(filter)
-        .sort({ invite_code: 1 });
+        .sort({ _id: -1 });
       if (tenant.limit !== undefined && tenant.limit !== null) {
-        cursor = cursor.limit(Math.min(Math.max(1, Number(tenant.limit)), 100));
+        cursor = cursor.limit(Math.min(Math.max(1, Number(tenant.limit)), 250));
       }
 
       const docs = await cursor.toArray();

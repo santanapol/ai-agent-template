@@ -52,6 +52,7 @@ import {
   setCachedInvoiceAgentBranches,
 } from "@/lib/branchOptions";
 import { resolveBranchScopedEmptyState } from "@/lib/branchScopedEmptyState";
+import { shouldApplyInvoiceBranchSwitchFilter } from "@/lib/branchSwitchSession";
 import { formatDisplayMonth } from "@/lib/dateUtils";
 import { fieldErrorIds } from "@/lib/fieldA11y";
 import { INVOICE_STATUSES, type InvoiceStatus } from "@/types/invoice";
@@ -105,7 +106,7 @@ function buildBillingMonthOptions(currentValue: string): InlineFilterOption[] {
 const InvoiceList: React.FC = () => {
   const { message } = useAppFeedback();
   const { confirm } = useConfirmDialog();
-  const { user } = useAuth();
+  const { user, lastBranchSwitchAt } = useAuth();
   const canExport = usePermission("invoices:read");
   const canWrite = usePermission("invoices:write");
   const canFilterBranch = canSwitchActiveBranch(user?.role);
@@ -171,6 +172,14 @@ const InvoiceList: React.FC = () => {
     void fetchInvoices(invoiceListQuery, controller.signal);
     return () => controller.abort();
   }, [fetchInvoices, invoiceListQuery]);
+
+  useEffect(() => {
+    if (!canFilterBranch || !user?.branch_id) return;
+    if (!shouldApplyInvoiceBranchSwitchFilter(lastBranchSwitchAt)) return;
+    setSelectedBranchId(user.branch_id);
+    setPage(1);
+    setRowSelection({});
+  }, [canFilterBranch, user?.branch_id, lastBranchSwitchAt, setSelectedBranchId, setPage]);
 
   useEffect(() => {
     const authKey = `${user?.ou_id ?? ""}:${user?.role ?? ""}`;

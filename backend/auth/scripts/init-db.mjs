@@ -10,7 +10,8 @@
  *   ADMIN_PASSWORD     default: 1234  (ห้ามใช้ใน production!)
  *   ADMIN_ROLE         default: platform_admin
  *   SEED_OU_ID         default: สร้าง ObjectId ใหม่
- *   SEED_BRANCH_ID     default: Zero HQ สำหรับ OU-wide roles, ObjectId ใหม่สำหรับ role อื่น
+ *   SEED_BRANCH_ID     optional override สำหรับ non–OU-wide roles (customer branch);
+ *                      OU-wide admin (platform_admin / support*) ใช้ Zero HQ เสมอ
  */
 import { MongoClient, ObjectId } from 'mongodb'
 import argon2 from 'argon2'
@@ -48,10 +49,10 @@ const ouId = process.env.SEED_OU_ID
   ? new ObjectId(process.env.SEED_OU_ID)
   : new ObjectId(DEV_SEED_OU_ID)
 let branchId
-if (process.env.SEED_BRANCH_ID) {
-  branchId = new ObjectId(process.env.SEED_BRANCH_ID)
-} else if (isOuWideHomeBranchRole(adminRole)) {
+if (isOuWideHomeBranchRole(adminRole)) {
   branchId = new ObjectId(process.env.ZERO_HQ_BRANCH_ID ?? ZERO_HQ_BRANCH_ID)
+} else if (process.env.SEED_BRANCH_ID) {
+  branchId = new ObjectId(process.env.SEED_BRANCH_ID)
 } else {
   branchId = new ObjectId(DEV_SEED_CUSTOMER_BRANCH_ID)
 }
@@ -90,7 +91,7 @@ console.log('▶ collection validators (moderate)...')
 await applyCollectionValidators(db, COLLECTION_VALIDATORS)
 console.log('')
 
-if (isOuWideHomeBranchRole(adminRole) && !process.env.SEED_BRANCH_ID) {
+if (isOuWideHomeBranchRole(adminRole)) {
   console.log('▶ Zero HQ (platform_branches)...')
   await ensureZeroHqBranch(db, { ouId, branchId })
   console.log(`  ✔ Zero HQ branch_id: ${branchId.toHexString()}`)
@@ -123,13 +124,15 @@ const existing = await db.collection(AUTH_COLLECTIONS.USERS).findOne({ username:
 
 let userId
 if (existing) {
-  // อัปเดต — เฉพาะ mutable fields + audit refresh
+  // อัปเดต — รวม home branch ให้ตรง role (OU-wide → Zero HQ)
   await db.collection(AUTH_COLLECTIONS.USERS).updateOne(
     { _id: existing._id },
     {
       $set: {
         password_hash,
         role: adminRole,
+        ou_id: ouId,
+        branch_id: branchId,
         access_token_gen: existing.access_token_gen ?? 0,
         upd_by: 'init_db',
         upd_date: now,
@@ -170,6 +173,8 @@ if (userId) {
       { _id: existingProfile._id },
       {
         $set: {
+          ou_id: ouId,
+          branch_id: branchId,
           upd_by: 'init_db',
           upd_date: now,
           upd_prog: INIT_PROG

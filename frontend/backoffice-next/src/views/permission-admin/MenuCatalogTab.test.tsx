@@ -92,7 +92,7 @@ vi.mock("../../hooks/useAppFeedback", () => ({
   useAppFeedback: () => mockFeedback,
 }));
 
-function axios403() {
+function _axios403() {
   const err = new Error("Forbidden") as import("axios").AxiosError;
   err.isAxiosError = true;
   err.response = {

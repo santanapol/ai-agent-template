@@ -4,11 +4,12 @@ import { defineConfig } from "vitest/config";
 import path from "node:path";
 
 const lowResource = process.env.CI_LOW_RESOURCE === "1";
-const maxWorkers = process.env.VITEST_MAX_WORKERS
-  ? Number.parseInt(process.env.VITEST_MAX_WORKERS, 10)
-  : lowResource
-    ? 1
-    : undefined;
+let maxWorkers: number | undefined;
+if (process.env.VITEST_MAX_WORKERS) {
+  maxWorkers = Number.parseInt(process.env.VITEST_MAX_WORKERS, 10);
+} else if (lowResource) {
+  maxWorkers = 1;
+}
 
 export default defineConfig({
   plugins: [react()],

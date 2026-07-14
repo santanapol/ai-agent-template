@@ -6,20 +6,22 @@
 
 ## Success status filters (Branch Report)
 
-| Collection         | Field       | สำเร็จ                                                 | MongoDB filter                                                           |
-| ------------------ | ----------- | ------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `dm_dm_tn_deposit` | `status`    | `001`, `002`, `004`, `006`, `007`, `008`, `009`, `010` | `{ status: { $in: ["001","002","004","006","007","008","009","010"] } }` |
-| `wallet_withdraw`  | `wd_status` | `200`                                                  | `{ wd_status: "200" }`                                                   |
+| Collection          | Field               | สำเร็จ                                                 | MongoDB filter                                                           |
+| ------------------- | ------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `dm_dm_tn_deposit`  | `status`            | `001`, `002`, `004`, `006`, `007`, `008`, `009`, `010` | `{ status: { $in: ["001","002","004","006","007","008","009","010"] } }` |
+| `wallet_withdraw`   | `wd_status`         | `200`                                                  | `{ wd_status: "200" }`                                                   |
+| `promotion_receive` | `status` + `module` | `status = "200"` และ `module ∈ ["promotion","point"]`  | `{ status: "200", module: { $in: ["promotion", "point"] } }`             |
 
 ## Date & Timezone rules
 
 > **date ทั้งหมดเป็น UTC ยกเว้น `bill_date` ที่ใน DB เป็น +7 อยู่แล้ว** — ห้าม `$dateAdd +7` ซ้ำ
 
-| Collection         | Field          | Storage         | ใช้สำหรับ                               |
-| ------------------ | -------------- | --------------- | --------------------------------------- |
-| `dm_dm_tn_deposit` | `bill_date`    | **+7 (stored)** | Bill In, Member Bill In, sort คอล. 1–21 |
-| `member`           | `reg_date`     | **UTC**         | Register Count                          |
-| `wallet_withdraw`  | `approve_date` | **UTC**         | Withdraw, Revenue (ฝั่งถอน)             |
+| Collection          | Field          | Storage         | ใช้สำหรับ                                                    |
+| ------------------- | -------------- | --------------- | ------------------------------------------------------------ |
+| `dm_dm_tn_deposit`  | `bill_date`    | **+7 (stored)** | Bill In, Member Bill In, sort คอล. 1–21                      |
+| `member`            | `reg_date`     | **UTC**         | Register Count                                               |
+| `wallet_withdraw`   | `approve_date` | **UTC**         | Withdraw, Revenue (ฝั่งถอน)                                  |
+| `promotion_receive` | `recv_date`    | **UTC**         | Promotion รายเดือน (Royalty 21 = lifetime ไม่ filter วันที่) |
 
 > Deposit: ไม่ใช้ `approve_date` เป็นวันที่ report — ใช้ `bill_date` เท่านั้น
 
@@ -561,3 +563,42 @@
 | --------------------------------- | ------------------------------------------------------------ | :---------: | -------------------------------------------- |
 | `su_staff_invite_link` → `member` | `su_staff_invite_link._id` = `member.referral_staff_link_id` |     1:N     | สมาชิกที่สมัครผ่านลิงก์นี้                   |
 | `su_staff_invite_link` → staff    | `su_staff_invite_link.staff_id`                              |     N:1     | staff เจ้าของลิงก์ (collection ภายนอก scope) |
+
+---
+
+## promotion_receive
+
+**Collection:** `gpp_777ww.promotion_receive`  
+**Primary key:** `_id`  
+**Member lookup:** `uid` → `member._id`
+
+รายการรับโปรโมชัน / point — ใช้คำนวณคอลัมน์ **Promotion** ใน Royalty 21
+
+**สูตร:** `round(sum(bonus_amt) - sum(accrued_expense))`  
+**Filter สำเร็จ:** `status = "200"` และ `module ∈ ["promotion", "point"]`  
+**วันที่:** `recv_date` เป็น **UTC** (filter รายเดือน); Royalty 21 ใช้ lifetime — ไม่ filter `recv_date`
+
+### Identity & organization
+
+| Field       | Type     | Nullable | Description                                           |
+| ----------- | -------- | :------: | ----------------------------------------------------- |
+| `_id`       | ObjectId |    N     | Primary key                                           |
+| `ou_id`     | ObjectId |    N     | Organization unit (tenant) — **confirmed on live DB** |
+| `branch_id` | ObjectId |    N     | Branch — **confirmed on live DB**                     |
+| `uid`       | ObjectId |    N     | FK → `member._id`                                     |
+
+### Amounts & classification
+
+| Field             | Type   | Nullable | Description                                    |
+| ----------------- | ------ | :------: | ---------------------------------------------- |
+| `bonus_amt`       | Number |    N     | ยอดโบนัส                                       |
+| `accrued_expense` | Number |    N     | ค่าใช้จ่ายค้าง — หักจาก `bonus_amt` ก่อน round |
+| `recv_date`       | Date   |    N     | วันรับโปร (**UTC**)                            |
+| `status`          | String |    N     | สำเร็จเมื่อ `"200"`                            |
+| `module`          | String |    N     | นับในรายงานเฉพาะ `"promotion"` \| `"point"`    |
+
+### Relationships
+
+| Direction                      | Join                                   | Cardinality | Notes        |
+| ------------------------------ | -------------------------------------- | :---------: | ------------ |
+| `promotion_receive` → `member` | `promotion_receive.uid` = `member._id` |     N:1     | โปรของสมาชิก |

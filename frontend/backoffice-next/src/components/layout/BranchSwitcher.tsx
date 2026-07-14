@@ -97,6 +97,7 @@ export function BranchSwitcher({
   activeBranchId,
   activeBranchSelectLabel,
   branches,
+  branchCatalogHasMultiple = false,
   branchSelectLoading,
   branchSearchQuery = "",
   branchSearchLoading = false,
@@ -112,6 +113,7 @@ export function BranchSwitcher({
   activeBranchId: string | undefined;
   activeBranchSelectLabel: string;
   branches: InvoiceAgentBranch[];
+  branchCatalogHasMultiple?: boolean;
   branchSelectLoading: boolean;
   branchSearchQuery?: string;
   branchSearchLoading?: boolean;
@@ -128,8 +130,8 @@ export function BranchSwitcher({
   const showInactiveId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
-  const hasMultipleBranches = branches.length > 1;
-  const showDropdown = showBranchSwitcher && (hasMultipleBranches || viewingOtherBranch);
+  // biome-ignore lint/nursery/useNullishCoalescing: both are real booleans (not nullable) - false must fall through to the next check, which ?? would not do.
+  const showDropdown = showBranchSwitcher && (branchCatalogHasMultiple || viewingOtherBranch);
 
   const activeBranchInactive = useMemo(() => {
     const active = branches.find((branch) => branch.branch_id === activeBranchId);

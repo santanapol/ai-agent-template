@@ -10,7 +10,8 @@ export interface InlineFilterOption {
 
 interface InlineFilterSelectProps {
   id: string;
-  prefix: string;
+  /** Inline prefix shown before the value (e.g. "Status:"). Omit when an external <FieldLabel htmlFor> already labels this field. */
+  prefix?: string;
   value: string;
   options: InlineFilterOption[];
   onChange: (value: string) => void;
@@ -28,11 +29,17 @@ export function InlineFilterSelect({
   disabled = false,
 }: InlineFilterSelectProps) {
   const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
+  const displayValue = prefix ? `${prefix} ${selectedLabel}` : selectedLabel;
 
   return (
     <Select value={value} onValueChange={(next) => next && onChange(next)} disabled={disabled}>
-      <SelectTrigger id={id} size="sm" aria-label={`${prefix} ${selectedLabel}`} className={cn("w-fit", className)}>
-        <SelectValue>{`${prefix} ${selectedLabel}`}</SelectValue>
+      <SelectTrigger
+        id={id}
+        size="sm"
+        aria-label={prefix ? displayValue : undefined}
+        className={cn("w-fit", className)}
+      >
+        <SelectValue>{displayValue}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>

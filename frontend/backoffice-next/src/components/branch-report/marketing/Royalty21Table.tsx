@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import type { Table } from "@tanstack/react-table";
 
 import { DataTablePagination, DataTableView } from "@/components/data-table";
@@ -18,11 +20,11 @@ const Royalty21Table: React.FC<Royalty21TableProps> = ({ table, loading, hasSear
       <DataTableView
         table={table}
         loading={loading}
-        emptyTitle={hasSearched ? "No members found for selected channel" : "Select channel and click Search"}
+        emptyTitle={hasSearched ? "No members match these filters" : "Run Search to load report"}
         emptyDescription={
           hasSearched
-            ? "Try adjusting your filters."
-            : "Choose a channel type and date range, then run Search to load members."
+            ? "Check the username, channel, or register dates, then search again."
+            : "Choose a channel type and register date range, then run Search to load members."
         }
       />
       <DataTablePagination table={table} total={total} pageSizeOptions={[20, 50, 100]} />

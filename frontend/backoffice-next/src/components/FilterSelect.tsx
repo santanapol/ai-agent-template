@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +24,12 @@ interface FilterSelectProps {
   includeAllOption?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  emptyMessage?: string;
+  loading?: boolean;
+  onOpen?: () => void;
+  /** When true with `searchable`, options are not filtered client-side; use `onSearchQueryChange`. */
+  serverSearch?: boolean;
+  onSearchQueryChange?: (query: string) => void;
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
   disabled?: boolean;
@@ -39,6 +46,11 @@ export function FilterSelect({
   includeAllOption = true,
   searchable = false,
   searchPlaceholder = "Search…",
+  emptyMessage = "No options found",
+  loading = false,
+  onOpen,
+  serverSearch = false,
+  onSearchQueryChange,
   "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedBy,
   disabled = false,
@@ -46,16 +58,31 @@ export function FilterSelect({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputId = useId();
+  const selectedLabelByValueRef = useRef(new Map<string, string>());
 
   const filteredOptions = useMemo(() => {
-    if (!searchable || !searchQuery.trim()) return options;
+    if (!searchable || serverSearch || !searchQuery.trim()) return options;
     const query = searchQuery.trim().toLowerCase();
     return options.filter((option) => option.label.toLowerCase().includes(query));
-  }, [options, searchQuery, searchable]);
+  }, [options, searchQuery, searchable, serverSearch]);
+
+  useEffect(() => {
+    for (const option of options) {
+      selectedLabelByValueRef.current.set(option.value, option.label);
+    }
+  }, [options]);
+
+  const listOptions = useMemo(() => {
+    if (!value || includeAllOption || value === "all") return filteredOptions;
+    if (filteredOptions.some((option) => option.value === value)) return filteredOptions;
+    const cachedLabel = selectedLabelByValueRef.current.get(value);
+    if (cachedLabel) return [...filteredOptions, { value, label: cachedLabel }];
+    return filteredOptions;
+  }, [filteredOptions, includeAllOption, value]);
 
   const items = useMemo(
-    () => (includeAllOption ? [ALL_OPTION, ...filteredOptions] : filteredOptions),
-    [filteredOptions, includeAllOption],
+    () => (includeAllOption ? [ALL_OPTION, ...listOptions] : listOptions),
+    [listOptions, includeAllOption],
   );
 
   const selectValue = includeAllOption ? (value ?? "all") : (value ?? null);
@@ -75,32 +102,79 @@ export function FilterSelect({
         placeholder={searchPlaceholder}
         value={searchQuery}
         autoComplete="off"
-        onChange={(event) => setSearchQuery(event.target.value)}
+        onChange={(event) => {
+          const next = event.target.value;
+          setSearchQuery(next);
+          if (serverSearch) onSearchQueryChange?.(next);
+        }}
         onKeyDown={(event) => event.stopPropagation()}
       />
     </div>
   ) : undefined;
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (searchable) {
+      setOpen(nextOpen);
+      if (!nextOpen) {
+        const hadSearch = searchQuery.trim().length > 0;
+        setSearchQuery("");
+        if (serverSearch && hadSearch) onSearchQueryChange?.("");
+      }
+    }
+    if (nextOpen) onOpen?.();
+  };
+
+  const handleValueChange = (next: string | null) => {
+    let nextValue: string | undefined;
+    if (includeAllOption) {
+      nextValue = next == null || next === "all" ? undefined : next;
+    } else {
+      nextValue = next ?? undefined;
+    }
+    if (nextValue) {
+      const label = options.find((option) => option.value === nextValue)?.label;
+      if (label) selectedLabelByValueRef.current.set(nextValue, label);
+    }
+    onChange(nextValue);
+  };
+
+  let optionsContent: React.ReactNode;
+  if (loading && listOptions.length === 0) {
+    optionsContent = (
+      <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
+        Loading…
+      </div>
+    );
+  } else if (listOptions.length > 0) {
+    optionsContent = (
+      <>
+        {loading ? (
+          <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
+            Loading…
+          </div>
+        ) : null}
+        {listOptions.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </>
+    );
+  } else {
+    optionsContent = (
+      <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
+        {emptyMessage}
+      </div>
+    );
+  }
+
   return (
     <Select
       open={searchable ? open : undefined}
-      onOpenChange={
-        searchable
-          ? (nextOpen) => {
-              setOpen(nextOpen);
-              if (!nextOpen) setSearchQuery("");
-            }
-          : undefined
-      }
+      onOpenChange={onOpen || searchable ? handleOpenChange : undefined}
       value={selectValue}
       items={items}
-      onValueChange={(next) => {
-        if (includeAllOption) {
-          onChange(next == null || next === "all" ? undefined : next);
-          return;
-        }
-        onChange(next ?? undefined);
-      }}
+      onValueChange={handleValueChange}
     >
       <SelectTrigger
         id={id}
@@ -116,19 +190,7 @@ export function FilterSelect({
         alignItemWithTrigger={!searchable}
         header={searchHeader}
       >
-        <SelectGroup>
-          {items.length > 0 ? (
-            items.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))
-          ) : (
-            <div className="px-2 py-1.5 text-muted-foreground text-sm" role="status">
-              No branches found
-            </div>
-          )}
-        </SelectGroup>
+        <SelectGroup>{optionsContent}</SelectGroup>
       </SelectContent>
     </Select>
   );

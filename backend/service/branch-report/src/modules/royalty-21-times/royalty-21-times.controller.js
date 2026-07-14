@@ -17,5 +17,17 @@ export function createRoyalty21TimesController(service) {
         requestId: request.requestId,
       });
     },
+
+    async depositMatrix(request, reply) {
+      const data = await service.getDepositMatrix({
+        userContext: request.userContext,
+        query: request.query,
+      });
+
+      return sendSuccess(reply, {
+        data,
+        requestId: request.requestId,
+      });
+    },
   };
 }

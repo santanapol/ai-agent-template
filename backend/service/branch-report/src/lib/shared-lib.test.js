@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 
 import {
   DEPOSIT_SUCCESS_STATUS,
+  PROMOTION_MODULES,
+  PROMOTION_SUCCESS_STATUS,
   WITHDRAW_SUCCESS_STATUS,
 } from "./constants.js";
 import { formatRegisterDate } from "./format-register.js";
@@ -39,6 +41,11 @@ describe("constants", () => {
 
   it("exports withdraw success status", () => {
     assert.equal(WITHDRAW_SUCCESS_STATUS, "200");
+  });
+
+  it("exports promotion success filters", () => {
+    assert.equal(PROMOTION_SUCCESS_STATUS, "200");
+    assert.deepEqual(PROMOTION_MODULES, ["promotion", "point"]);
   });
 });
 

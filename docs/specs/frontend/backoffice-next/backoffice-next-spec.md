@@ -19,7 +19,7 @@ Back-office admin UI for zero-platform — login, staff/permission management, a
 | `/permissions` | |
 | `/agents`, `/agents/:id/fees` | |
 | `/smart-reports` | |
-| `/branch-report/marketing/channel-performance` | |
+| `/branch-report/channel-performance` | |
 | `/invoices`, `/invoices/:id` | |
 | `/403`, `/404`, `/500` | Error routes — see `coding-standard/frontend/backoffice/08-error-handling.md` |
 

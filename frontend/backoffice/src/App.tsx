@@ -113,7 +113,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'branch-report/marketing/channel-performance',
+        path: 'branch-report/channel-performance',
         element: (
           <PermissionGuard required="branch-report:marketing:channel-performance:read">
             <ChannelPerformancePage />

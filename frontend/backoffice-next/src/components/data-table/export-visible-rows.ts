@@ -10,14 +10,21 @@ function cellToExportValue(value: unknown): string {
   return "";
 }
 
+// Cells starting with these characters are auto-executed as formulas by
+// Excel/Sheets when the CSV is opened ("CSV injection") - guard with a
+// leading apostrophe so they're read back as literal text.
+const FORMULA_INJECTION_PREFIX_RE = /^[=+\-@\t\r]/;
+
 function escapeCsvCell(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  const guarded = FORMULA_INJECTION_PREFIX_RE.test(value) ? `'${value}` : value;
+  if (/[",\n\r]/.test(guarded)) {
+    return `"${guarded.replace(/"/g, '""')}"`;
   }
-  return value;
+  return guarded;
 }
 
-export function exportVisibleRowsToCsv<TData>(table: Table<TData>, fileName: string) {
+/** Extracts visible-column headers and row values from a table, as export-ready strings. */
+export function getTableExportData<TData>(table: Table<TData>): { headers: string[]; rows: string[][] } {
   const visibleColumns = table.getVisibleLeafColumns().filter((column) => column.id !== "select");
   const headers = visibleColumns.map((column) => {
     const header = column.columnDef.header;
@@ -32,7 +39,19 @@ export function exportVisibleRowsToCsv<TData>(table: Table<TData>, fileName: str
     }),
   );
 
-  const csv = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  return { headers, rows };
+}
+
+export function toCsvString(headers: string[], rows: string[][]): string {
+  return [headers, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+}
+
+export function downloadCsv(headers: string[], rows: string[][], fileName: string) {
+  const blob = new Blob([toCsvString(headers, rows)], { type: "text/csv;charset=utf-8" });
   triggerBlobDownload(blob, `${fileName}.csv`);
+}
+
+export function exportVisibleRowsToCsv<TData>(table: Table<TData>, fileName: string) {
+  const { headers, rows } = getTableExportData(table);
+  downloadCsv(headers, rows, fileName);
 }

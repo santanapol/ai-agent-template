@@ -57,7 +57,10 @@ export function DataTableView<TData>({
               {headerGroup.headers.map((header) => {
                 const align = (header.column.columnDef.meta as { align?: "left" | "right" } | undefined)?.align;
                 return (
-                  <TableHead key={header.id} className={cn("py-3 font-normal", align === "right" && "text-right")}>
+                  <TableHead
+                    key={header.id}
+                    className={cn("py-3 font-normal", align === "right" && "text-right tabular-nums")}
+                  >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 );
@@ -72,7 +75,10 @@ export function DataTableView<TData>({
                 {row.getVisibleCells().map((cell) => {
                   const align = (cell.column.columnDef.meta as { align?: "left" | "right" } | undefined)?.align;
                   return (
-                    <TableCell key={cell.id} className={cn("py-3 align-middle", align === "right" && "text-right")}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn("py-3 align-middle", align === "right" && "text-right tabular-nums")}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   );

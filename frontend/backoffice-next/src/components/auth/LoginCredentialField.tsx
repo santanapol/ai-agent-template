@@ -40,7 +40,10 @@ export function LoginCredentialField({
   onClearError,
 }: LoginCredentialFieldProps) {
   const a11y = error ? fieldErrorIds(id) : undefined;
-  const inputType = showPasswordToggle ? (showPassword ? "text" : "password") : type;
+  let inputType = type;
+  if (showPasswordToggle) {
+    inputType = showPassword ? "text" : "password";
+  }
 
   return (
     <Field data-invalid={!!error}>

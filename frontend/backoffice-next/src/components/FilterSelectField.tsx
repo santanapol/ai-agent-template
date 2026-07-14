@@ -9,8 +9,14 @@ interface FilterSelectFieldProps {
   value?: string;
   onChange: (value: string | undefined) => void;
   options: FilterOption[];
+  includeAllOption?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  emptyMessage?: string;
+  loading?: boolean;
+  onOpen?: () => void;
+  serverSearch?: boolean;
+  onSearchQueryChange?: (query: string) => void;
   className?: string;
   width?: string;
   "aria-invalid"?: boolean;
@@ -24,8 +30,14 @@ export function FilterSelectField({
   value,
   onChange,
   options,
+  includeAllOption,
   searchable,
   searchPlaceholder,
+  emptyMessage,
+  loading,
+  onOpen,
+  serverSearch,
+  onSearchQueryChange,
   className,
   width,
   "aria-invalid": ariaInvalid,
@@ -40,9 +52,15 @@ export function FilterSelectField({
         value={value}
         onChange={onChange}
         options={options}
+        includeAllOption={includeAllOption}
         width="w-full"
         searchable={searchable}
         searchPlaceholder={searchPlaceholder}
+        emptyMessage={emptyMessage}
+        loading={loading}
+        onOpen={onOpen}
+        serverSearch={serverSearch}
+        onSearchQueryChange={onSearchQueryChange}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
       />

@@ -2,7 +2,7 @@
 
 > Database: **gpp_777ww** (MongoDB) — **DB เดียว** สำหรับทุก branch ใน cluster  
 > Tenant scope: filter **`ou_id` + `branch_id`** จาก active branch (JWT/gateway) ทุก query  
-> Scope: `member`, `su_staff_invite_link`, `dm_dm_tn_deposit`, `wallet_withdraw`  
+> Scope: `member`, `su_staff_invite_link`, `dm_dm_tn_deposit`, `wallet_withdraw`, `promotion_receive`  
 > Generated: 2026-06-29 from live schema sampling (n=100 per collection)
 
 ## Database connection (branch-report service)
@@ -29,6 +29,7 @@
 | `su_staff_invite_link` |      2,982 | Affiliate invite link ของ staff (BO)                |
 | `dm_dm_tn_deposit`     | 18,765,956 | รายการฝากเงิน (Bill In)                             |
 | `wallet_withdraw`      |  3,296,570 | รายการถอนเงิน (Withdraw)                            |
+| `promotion_receive`    |          — | รายการรับโปรโมชัน / point (Promotion)               |
 
 ## Recommended indexes (Royalty 21 Times)
 
@@ -44,11 +45,12 @@
 { ou_id: 1, branch_id: 1, referral_staff_link_id: 1, reg_date: 1, username: 1 }
 ```
 
-**`dm_dm_tn_deposit`** / **`wallet_withdraw`** — bulk metrics ต่อหน้า:
+**`dm_dm_tn_deposit`** / **`wallet_withdraw`** / **`promotion_receive`** — bulk metrics ต่อหน้า:
 
 ```javascript
 { ou_id: 1, branch_id: 1, mem_id: 1, status: 1 }       // deposits
 { ou_id: 1, branch_id: 1, uid: 1, wd_status: 1 }       // withdraws
+{ ou_id: 1, branch_id: 1, uid: 1, status: 1, module: 1 } // promotions
 ```
 
 **`su_staff_invite_link`** — dropdown:
@@ -112,9 +114,22 @@ erDiagram
         ObjectId branch_id FK
     }
 
+    PROMOTION_RECEIVE {
+        ObjectId _id PK "promotion receive id"
+        ObjectId uid FK "member ref (= member._id)"
+        number bonus_amt "bonus amount"
+        number accrued_expense "accrued expense to subtract"
+        date recv_date "receive datetime UTC"
+        string status "success when 200"
+        string module "promotion or point"
+        ObjectId ou_id FK
+        ObjectId branch_id FK
+    }
+
     SU_STAFF_INVITE_LINK ||--o{ MEMBER : "referral_staff_link_id"
     MEMBER ||--o{ DM_DM_TN_DEPOSIT : "mem_id"
     MEMBER ||--o{ WALLET_WITHDRAW : "uid"
+    MEMBER ||--o{ PROMOTION_RECEIVE : "uid"
     MEMBER ||--o| MEMBER : "referral_uid"
 ```
 
@@ -124,12 +139,14 @@ erDiagram
 | ---------------------- | ------------------------ | ---------------------- | -------------------- | :---------: | ---------------------------------------------------------------- |
 | `dm_dm_tn_deposit`     | `mem_id`                 | `member`               | `_id`                |     N:1     | ฝากของสมาชิก; `mem_id` อาจเป็น `null` กรณียัง match สมาชิกไม่ได้ |
 | `wallet_withdraw`      | `uid`                    | `member`               | `_id`                |     N:1     | ถอนของสมาชิก                                                     |
+| `promotion_receive`    | `uid`                    | `member`               | `_id`                |     N:1     | โปรโมชันของสมาชิก                                                |
 | `member`               | `referral_uid`           | `member`               | `_id`                |     N:1     | Member referral (สมาชิกแนะนำสมาชิก)                              |
 | `member`               | `referral_staff_link_id` | `su_staff_invite_link` | `_id`                |     N:1     | Affiliate invite link ที่สมาชิกสมัครผ่าน                         |
 | `member`               | `referral_staff_id`      | `su_staff_invite_link` | `staff_id`           |     N:1     | Staff เจ้าของ link (denormalized บน member)                      |
 | `su_staff_invite_link` | `staff_id`               | _(external)_           | —                    |     N:1     | BO staff user                                                    |
 | `dm_dm_tn_deposit`     | `ou_id`, `branch_id`     | `member`               | `ou_id`, `branch_id` |      —      | Org scope ร่วมกัน                                                |
 | `wallet_withdraw`      | `ou_id`, `branch_id`     | `member`               | `ou_id`, `branch_id` |      —      | Org scope ร่วมกัน                                                |
+| `promotion_receive`    | `ou_id`, `branch_id`     | `member`               | `ou_id`, `branch_id` |      —      | Org scope ร่วมกัน                                                |
 
 ## Branch Report mapping (Marketing Channel Performance)
 
@@ -208,6 +225,23 @@ const WITHDRAW_SUCCESS_STATUS = "200";
 | Code  | ใช้ใน report            |
 | ----- | ----------------------- |
 | `200` | นับเป็น withdraw สำเร็จ |
+
+### Promotion — `promotion_receive` = สำเร็จ
+
+```javascript
+const PROMOTION_SUCCESS_STATUS = "200";
+const PROMOTION_MODULES = ["promotion", "point"];
+// { status: PROMOTION_SUCCESS_STATUS, module: { $in: PROMOTION_MODULES } }
+// promotion = round(sum(bonus_amt) - sum(accrued_expense))
+// recv_date = UTC (monthly); Royalty 21 = lifetime (no recv_date filter)
+```
+
+| Field / rule                    | ใช้ใน report                               |
+| ------------------------------- | ------------------------------------------ |
+| `uid`                           | = `member._id`                             |
+| `status = "200"`                | สำเร็จ                                     |
+| `module`                        | นับเฉพาะ `"promotion"` \| `"point"`        |
+| `bonus_amt` − `accrued_expense` | ยอด promotion หลังหัก accrued (แล้ว round) |
 
 ## Search Criteria
 

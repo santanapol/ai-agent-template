@@ -19,8 +19,8 @@ const validUserHeaders = {
 let app;
 
 before(async () => {
-  const linkId1 = new ObjectId();
-  const linkId2 = new ObjectId();
+  const linkId1 = new ObjectId("507f1f77bcf86cd799439011");
+  const linkId2 = new ObjectId("507f1f77bcf86cd799439099");
 
   const mockDocs = [
     {
@@ -55,9 +55,10 @@ before(async () => {
         }),
       );
     }
-    rows.sort((a, b) =>
-      String(a.invite_code).localeCompare(String(b.invite_code)),
-    );
+    rows.sort((a, b) => {
+      if (a._id.equals(b._id)) return 0;
+      return a._id < b._id ? 1 : -1;
+    });
     if (capturedLimit !== undefined) {
       rows = rows.slice(0, capturedLimit);
     }
@@ -120,8 +121,8 @@ describe("GET /api/v1/branch-report/invite-links (T4)", () => {
     assert.equal(body.message, null);
     assert.ok(Array.isArray(body.data));
     assert.equal(body.data.length, 2);
-    assert.equal(body.data[0].inviteCode, "3000001");
-    assert.equal(body.data[1].inviteCode, "3000002");
+    assert.equal(body.data[0].inviteCode, "3000002");
+    assert.equal(body.data[1].inviteCode, "3000001");
     assert.equal(body.pagination, undefined);
     assert.ok(body.requestId);
   });

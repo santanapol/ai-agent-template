@@ -12,7 +12,7 @@ export function formatDeposit(value: number): string {
   return formatSummary(value);
 }
 
-/** Promotion phase 1: always dash (API value ignored). */
-export function formatPromotion(): string {
-  return "-";
+/** Promotion amount from API (round(bonus − accrued)). */
+export function formatPromotion(value: number): string {
+  return formatSummary(value);
 }

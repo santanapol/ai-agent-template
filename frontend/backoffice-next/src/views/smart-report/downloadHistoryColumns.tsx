@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import type { ColumnDef } from "@tanstack/react-table";
 import { Download, FileText } from "lucide-react";
 
@@ -9,6 +11,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { DownloadHistoryRecord } from "@/types/smartReport";
 
 import { formatDateTime, formatDateTimeCompact, formatDownloadTrigger, formatRecordCount } from "./formatters";
+
+function startedAtHeader(includeReportName: boolean | undefined, isDrawer: boolean): string {
+  if (includeReportName) return "Generated At";
+  return isDrawer ? "Run" : "Run Date";
+}
 
 function downloadActionLabel(record: DownloadHistoryRecord): string {
   if (record.status === "success" && record.fileName) {
@@ -25,14 +32,14 @@ function downloadActionLabel(record: DownloadHistoryRecord): string {
 
 function StatusCell({ record }: { record: DownloadHistoryRecord }) {
   const { status, error } = record;
-  const badge =
-    status === "success" ? (
-      <Badge variant="secondary">Success</Badge>
-    ) : status === "failed" ? (
-      <Badge variant="destructive">Failed</Badge>
-    ) : (
-      <Badge variant="outline">Running</Badge>
-    );
+  let badge: React.ReactNode;
+  if (status === "success") {
+    badge = <Badge variant="secondary">Success</Badge>;
+  } else if (status === "failed") {
+    badge = <Badge variant="destructive">Failed</Badge>;
+  } else {
+    badge = <Badge variant="outline">Running</Badge>;
+  }
 
   if (status === "failed" && error) {
     return (
@@ -70,7 +77,7 @@ export function createDownloadHistoryColumns(
 
   columns.push({
     id: "startedAt",
-    header: options?.includeReportName ? "Generated At" : isDrawer ? "Run" : "Run Date",
+    header: startedAtHeader(options?.includeReportName, isDrawer),
     enableHiding: true,
     accessorFn: (record) => formatDateTime(record.finishedAt ?? record.startedAt),
     cell: ({ row }) => {

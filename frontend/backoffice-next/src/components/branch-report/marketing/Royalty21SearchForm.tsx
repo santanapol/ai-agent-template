@@ -9,7 +9,8 @@ import { DateFilterField } from "@/components/DateFilterField";
 import { FilterSelectField } from "@/components/FilterSelectField";
 import { type InlineFilterOption, InlineFilterSelect } from "@/components/list-page";
 import { Button } from "@/components/ui/button";
-import { FieldDescription } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   getRoyalty21DefaultSearchValues,
   isRegDateRangeValid,
@@ -22,6 +23,7 @@ import type { ChannelType } from "@/types/branchReport";
 export interface Royalty21SearchValues {
   channelType: ChannelType;
   inviteLinkId?: string;
+  referralUsername?: string;
   regDateRange: [Dayjs, Dayjs];
 }
 
@@ -39,6 +41,7 @@ interface Royalty21SearchFormProps {
   onSearch: (values: Royalty21SearchValues) => void;
   onClear: () => void;
   onInviteLinksOpen?: () => void;
+  onInviteLinkSearchQueryChange?: (query: string) => void;
 }
 
 const CHANNEL_TYPE_OPTIONS: InlineFilterOption[] = [
@@ -46,6 +49,15 @@ const CHANNEL_TYPE_OPTIONS: InlineFilterOption[] = [
   { value: "member_referral", label: "Member Referral" },
   { value: "direct", label: "Direct" },
 ];
+
+const REFERRAL_REQUIRED_ERROR = "Enter the referring member’s exact username";
+const AFFILIATE_REQUIRED_ERROR = "Please select affiliate link";
+
+function focusField(id: string) {
+  queueMicrotask(() => {
+    document.getElementById(id)?.focus();
+  });
+}
 
 const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
   inviteLinkOptions,
@@ -56,10 +68,12 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
   onSearch,
   onClear,
   onInviteLinksOpen,
+  onInviteLinkSearchQueryChange,
 }) => {
   const defaults = getRoyalty21DefaultSearchValues();
   const [channelType, setChannelType] = useState<ChannelType>(initialValues?.channelType ?? defaults.channelType);
   const [inviteLinkId, setInviteLinkId] = useState<string | undefined>(initialValues?.inviteLinkId);
+  const [referralUsername, setReferralUsername] = useState(initialValues?.referralUsername ?? "");
   const [regFrom, setRegFrom] = useState(
     initialValues?.regDateRange?.[0]?.format("YYYY-MM-DD") ?? defaults.regDateRange[0].format("YYYY-MM-DD"),
   );
@@ -73,25 +87,40 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
     const from = dayjs(regFrom);
     const to = dayjs(regTo);
     if (!isRegDateRangeValid(from, to)) {
-      setError("Register To must be on or after Register From");
+      setError("Register to must be on or after Register from");
+      focusField("royalty21-reg-to");
       return;
     }
     if (!isRegDateRangeWithinMaxDays(from, to)) {
       setError(`Register date range must not exceed ${MAX_REG_DATE_RANGE_DAYS} days`);
+      focusField("royalty21-reg-from");
       return;
     }
     if (channelType === "affiliate_link" && !inviteLinkId) {
-      setError("Please select affiliate link");
+      setError(AFFILIATE_REQUIRED_ERROR);
+      focusField("royalty21-invite-link");
+      return;
+    }
+    const trimmedUsername = referralUsername.trim();
+    if (channelType === "member_referral" && !trimmedUsername) {
+      setError(REFERRAL_REQUIRED_ERROR);
+      focusField("royalty21-referring-member");
       return;
     }
     setError(null);
-    onSearch({ channelType, inviteLinkId, regDateRange: [from, to] });
+    onSearch({
+      channelType,
+      inviteLinkId,
+      referralUsername: channelType === "member_referral" ? trimmedUsername : undefined,
+      regDateRange: [from, to],
+    });
   };
 
   const handleClear = () => {
     const next = getRoyalty21DefaultSearchValues();
     setChannelType(next.channelType);
     setInviteLinkId(undefined);
+    setReferralUsername("");
     setRegFrom(next.regDateRange[0].format("YYYY-MM-DD"));
     setRegTo(next.regDateRange[1].format("YYYY-MM-DD"));
     setError(null);
@@ -100,24 +129,28 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
 
   const searchErrorA11y = error ? fieldErrorIds("royalty21-search") : undefined;
   const isDateError = error != null && (error.includes("Register") || error.includes("date range"));
-  const isAffiliateError = error === "Please select affiliate link";
+  const isAffiliateError = error === AFFILIATE_REQUIRED_ERROR;
+  const isReferralError = error === REFERRAL_REQUIRED_ERROR;
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
       <div className="flex flex-wrap items-end gap-2">
-        <InlineFilterSelect
-          id="royalty21-channel-type"
-          prefix="Channel:"
-          value={channelType}
-          options={CHANNEL_TYPE_OPTIONS}
-          disabled={disabled}
-          onChange={(value) => {
-            const next = value as ChannelType;
-            setChannelType(next);
-            if (next !== "affiliate_link") setInviteLinkId(undefined);
-            if (next === "affiliate_link") onInviteLinksOpen?.();
-          }}
-        />
+        <Field className="w-fit">
+          <FieldLabel htmlFor="royalty21-channel-type">Channel</FieldLabel>
+          <InlineFilterSelect
+            id="royalty21-channel-type"
+            value={channelType}
+            options={CHANNEL_TYPE_OPTIONS}
+            disabled={disabled}
+            onChange={(value) => {
+              const next = value as ChannelType;
+              setChannelType(next);
+              if (next !== "affiliate_link") setInviteLinkId(undefined);
+              if (next !== "member_referral") setReferralUsername("");
+              if (next === "affiliate_link") onInviteLinksOpen?.();
+            }}
+          />
+        </Field>
 
         {channelType === "affiliate_link" ? (
           <FilterSelectField
@@ -125,35 +158,75 @@ const Royalty21SearchForm: React.FC<Royalty21SearchFormProps> = ({
             label="Affiliate Link"
             placeholder="Select affiliate link"
             value={inviteLinkId}
-            onChange={setInviteLinkId}
+            onChange={(next) => {
+              setInviteLinkId(next);
+              if (next && error === AFFILIATE_REQUIRED_ERROR) setError(null);
+            }}
             options={inviteLinkOptions}
+            includeAllOption={false}
+            searchable
+            serverSearch
+            searchPlaceholder="Search affiliate links…"
+            emptyMessage="No affiliate links found"
+            loading={inviteLinksLoading}
+            onOpen={onInviteLinksOpen}
+            onSearchQueryChange={onInviteLinkSearchQueryChange}
             width="w-full min-w-[12rem] sm:w-56"
-            className="[&_[data-slot=field-label]]:sr-only"
             aria-invalid={isAffiliateError}
             aria-describedby={isAffiliateError ? searchErrorA11y?.describedBy : undefined}
           />
         ) : null}
 
+        {channelType === "member_referral" ? (
+          <Field className="w-full min-w-[12rem] sm:w-56">
+            <FieldLabel htmlFor="royalty21-referring-member">Referring member</FieldLabel>
+            <Input
+              id="royalty21-referring-member"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Exact username"
+              value={referralUsername}
+              disabled={disabled}
+              aria-invalid={isReferralError}
+              aria-describedby={
+                [isReferralError ? searchErrorA11y?.describedBy : null, "royalty21-referring-member-hint"]
+                  .filter(Boolean)
+                  .join(" ") || undefined
+              }
+              onChange={(e) => {
+                setReferralUsername(e.target.value);
+                if (e.target.value.trim() && error === REFERRAL_REQUIRED_ERROR) {
+                  setError(null);
+                }
+              }}
+            />
+            <span id="royalty21-referring-member-hint" className="sr-only">
+              Exact match only
+            </span>
+          </Field>
+        ) : null}
+
         <DateFilterField
           id="royalty21-reg-from"
-          label="From"
+          label="Register from"
           value={regFrom}
           onChange={setRegFrom}
-          className="w-[9.5rem]"
+          className="w-[10.5rem]"
           aria-invalid={isDateError}
           aria-describedby={isDateError ? searchErrorA11y?.describedBy : undefined}
         />
         <DateFilterField
           id="royalty21-reg-to"
-          label="To"
+          label="Register to"
           value={regTo}
           onChange={setRegTo}
-          className="w-[9.5rem]"
+          className="w-[10.5rem]"
           aria-invalid={isDateError}
           aria-describedby={isDateError ? searchErrorA11y?.describedBy : undefined}
         />
 
-        <Button type="submit" size="sm" disabled={disabled || tableLoading || inviteLinksLoading}>
+        <Button type="submit" size="sm" disabled={disabled || tableLoading}>
           Search
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={handleClear} disabled={tableLoading}>

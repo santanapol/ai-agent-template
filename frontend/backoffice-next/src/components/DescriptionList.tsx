@@ -16,16 +16,16 @@ interface DescriptionListProps {
   variant?: "tiles" | "plain";
 }
 
+function plainColsClass(itemCount: number): string {
+  if (itemCount <= 3) return "sm:grid-cols-3";
+  if (itemCount === 4) return "sm:grid-cols-2 lg:grid-cols-4";
+  if (itemCount === 5) return "sm:grid-cols-2 lg:grid-cols-5";
+  return "sm:grid-cols-2 lg:grid-cols-3";
+}
+
 export function DescriptionList({ title, description, items, className, variant = "tiles" }: DescriptionListProps) {
   const plain = variant === "plain";
-  const plainCols =
-    items.length <= 3
-      ? "sm:grid-cols-3"
-      : items.length === 4
-        ? "sm:grid-cols-2 lg:grid-cols-4"
-        : items.length === 5
-          ? "sm:grid-cols-2 lg:grid-cols-5"
-          : "sm:grid-cols-2 lg:grid-cols-3";
+  const plainCols = plainColsClass(items.length);
 
   return (
     <div className={className}>

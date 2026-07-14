@@ -83,7 +83,7 @@ const MENU_ENTRIES: Record<string, { icon: React.ReactNode; route?: string }> = 
   "branch-report": { icon: <LineChart /> },
   "branch-report:marketing:channel-performance:read": {
     icon: <LineChart />,
-    route: "/branch-report/marketing/channel-performance",
+    route: "/branch-report/channel-performance",
   },
   my_profile: { icon: <User />, route: "/profile" },
   settings: { icon: <Settings /> },
@@ -159,6 +159,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeBranch, setActiveBranch] = useState<InvoiceAgentBranch | null>(() => getCachedMyBranch(user?.branch_id));
   const [activeBranchLoading, setActiveBranchLoading] = useState(false);
   const [optimisticBranchId, setOptimisticBranchId] = useState<string | null>(null);
+  const [branchCatalogHasMultiple, setBranchCatalogHasMultiple] = useState(false);
   const [_profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const showBranchSwitcher = canSwitchActiveBranch(user?.role);
@@ -258,6 +259,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!user?.sub || !showBranchSwitcher) {
       setBranches([]);
       setBranchesLoading(false);
+      setBranchCatalogHasMultiple(false);
       return;
     }
 
@@ -294,6 +296,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       if (activeBranch) list = upsertBranchInList(list, activeBranch);
       if (cancelled) return;
       const sorted = mergePlatformBranches(list);
+      if (!debouncedBranchSearch && sorted.length > 1) {
+        setBranchCatalogHasMultiple(true);
+      }
       // Keep switcher results in the auth catalog cache only — not the invoice shared cache (FE-REV-001).
       setBranches(sorted);
       setBranchesLoading(false);
@@ -370,6 +375,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     activeBranchId,
     activeBranchSelectLabel,
     branches,
+    branchCatalogHasMultiple,
     branchSelectLoading,
     branchSearchQuery,
     branchSearchLoading: branchesLoading,

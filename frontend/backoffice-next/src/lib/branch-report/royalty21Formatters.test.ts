@@ -13,7 +13,8 @@ describe("royalty21Formatters", () => {
     expect(formatDeposit(10)).toBe("10.00");
   });
 
-  it("formatPromotion always returns dash", () => {
-    expect(formatPromotion()).toBe("-");
+  it("formatPromotion formats summary amounts", () => {
+    expect(formatPromotion(0)).toBe("0.00");
+    expect(formatPromotion(1200)).toBe("1,200.00");
   });
 });

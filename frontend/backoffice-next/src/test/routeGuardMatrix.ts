@@ -89,8 +89,8 @@ export const ROUTE_GUARD_MATRIX: RouteGuardEntry[] = [
     stubTestId: "smart-reports-edit-page",
   },
   {
-    routePath: "branch-report/marketing/channel-performance",
-    navigateTo: "/branch-report/marketing/channel-performance",
+    routePath: "branch-report/channel-performance",
+    navigateTo: "/branch-report/channel-performance",
     permission: "branch-report:marketing:channel-performance:read",
     stubTestId: "channel-performance-page",
   },

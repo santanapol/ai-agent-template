@@ -57,6 +57,7 @@ export const regDateRangePresets = () => [
 export function toRoyalty21QueryParams(input: {
   channelType: "affiliate_link" | "member_referral" | "direct";
   inviteLinkId?: string;
+  referralUsername?: string;
   regDateRange: [Dayjs, Dayjs];
   page: number;
   pageSize: number;
@@ -65,6 +66,7 @@ export function toRoyalty21QueryParams(input: {
   return {
     channelType: input.channelType,
     inviteLinkId: input.channelType === "affiliate_link" ? input.inviteLinkId : undefined,
+    referralUsername: input.channelType === "member_referral" ? input.referralUsername : undefined,
     regDateFrom: formatRegDateParam(regDateFrom),
     regDateTo: formatRegDateParam(regDateTo),
     page: input.page,

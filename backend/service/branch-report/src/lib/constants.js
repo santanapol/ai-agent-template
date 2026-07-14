@@ -10,3 +10,7 @@ export const DEPOSIT_SUCCESS_STATUS = [
 ];
 
 export const WITHDRAW_SUCCESS_STATUS = "200";
+
+export const PROMOTION_SUCCESS_STATUS = "200";
+
+export const PROMOTION_MODULES = ["promotion", "point"];

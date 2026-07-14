@@ -1,5 +1,6 @@
 export const DEPOSIT_COLLECTION = "dm_dm_tn_deposit";
 export const WITHDRAW_COLLECTION = "wallet_withdraw";
+export const PROMOTION_COLLECTION = "promotion_receive";
 export const DEPOSIT_SLOT_COUNT = 21;
 
 /**
@@ -46,8 +47,8 @@ export function padDepositsTo21(amounts) {
  * }} metrics
  */
 export function finalizeMemberMetrics(metrics) {
-  metrics.promotion = 0;
-  metrics.revenue = metrics.billin - metrics.withdraw - metrics.promotion;
+  metrics.promotion = Number(metrics.promotion ?? 0);
+  metrics.revenue = metrics.billin - metrics.withdraw;
   return metrics;
 }
 

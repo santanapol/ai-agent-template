@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BranchReportApiError, getInviteLinks, getRoyalty21Times } from "./branchReportApiClient";
+import {
+  BranchReportApiError,
+  getDepositMatrix,
+  getInviteLinks,
+  getRoyalty21Times,
+} from "./branchReportApiClient";
 
 const { mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
@@ -100,5 +105,63 @@ describe("branchReportApiClient", () => {
         regDateTo: "2024-06-30",
       }),
     ).rejects.toBeInstanceOf(BranchReportApiError);
+  });
+
+  it("getDepositMatrix calls GET deposit-matrix and unwraps data without pagination", async () => {
+    const matrix = {
+      buckets: [{ key: "0-99", label: "0 - 99", min: 0, max: 99 }],
+      rounds: 21 as const,
+      counts: [Array(21).fill(0)],
+      rowSums: [0],
+      percents: [Array(21).fill(0)],
+      percentRowSums: [0],
+    };
+    const signal = new AbortController().signal;
+    mockGet.mockResolvedValueOnce({
+      data: { success: true, code: "SUCCESS", message: null, data: matrix },
+    });
+
+    const result = await getDepositMatrix(
+      {
+        channelType: "member_referral",
+        referralUsername: "REFERRER01",
+        regDateFrom: "2024-06-01",
+        regDateTo: "2024-06-30",
+      },
+      signal,
+    );
+
+    expect(mockGet).toHaveBeenCalledWith("/api/v1/branch-report/royalty-21-times/deposit-matrix", {
+      params: {
+        channelType: "member_referral",
+        referralUsername: "REFERRER01",
+        regDateFrom: "2024-06-01",
+        regDateTo: "2024-06-30",
+      },
+      signal,
+    });
+    expect(result).toEqual(matrix);
+  });
+
+  it("getDepositMatrix throws BranchReportApiError when success is false", async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        success: false,
+        code: "INVALID_PARAM",
+        message: "bad",
+        data: null,
+      },
+    });
+
+    await expect(
+      getDepositMatrix({
+        channelType: "direct",
+        regDateFrom: "2024-06-01",
+        regDateTo: "2024-06-30",
+      }),
+    ).rejects.toMatchObject({
+      name: "BranchReportApiError",
+      code: "INVALID_PARAM",
+    });
   });
 });

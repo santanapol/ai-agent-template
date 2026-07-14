@@ -13,6 +13,8 @@ tags:
     description: Liveness and readiness probes
   - name: invite-links
     description: Affiliate invite link dropdown
+  - name: referring-members
+    description: Referring member dropdown for Member Referral channel
   - name: royalty-21-times
     description: Royalty 21 Times per-member report
 
@@ -54,7 +56,7 @@ paths:
       summary: List affiliate invite links for active branch
       description: |
         Returns invite links scoped to `x-user-ou` and `x-user-branch`.
-        Sorted by `invite_code` ASC. Optional `q` (typeahead) and `limit` (max 100) cap results;
+        Sorted by `_id` DESC (newest first). Optional `q` (typeahead) and `limit` (max 250) cap results;
         omit both for the full branch list (backward compatible). No page-based pagination.
 
         **Example 200 response:**
@@ -93,14 +95,14 @@ paths:
           in: query
           required: false
           description: |
-            Cap result count (max 100). Omit to return all matching invite links.
+            Cap result count (max 250). Omit to return all matching invite links.
           schema:
             type: integer
             minimum: 1
-            maximum: 100
+            maximum: 250
       responses:
         "200":
-          description: Invite links sorted by inviteCode ASC
+          description: Invite links sorted by _id DESC (newest first)
           content:
             application/json:
               schema:
@@ -124,6 +126,51 @@ paths:
         "403":
           $ref: "#/components/responses/MissingUserContext"
 
+  /api/v1/branch-report/referring-members:
+    get:
+      tags: [referring-members]
+      summary: Resolve referring member by exact username
+      description: |
+        Exact username lookup for a member who has referred at least one Member Referral
+        signup in the active branch. Returns 0–1 items.
+      operationId: listReferringMembers
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: username
+          in: query
+          required: true
+          description: Exact member username
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "200":
+          description: Zero or one referring member
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ReferringMemberItem"
+        "400":
+          description: Invalid mesh headers or query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/GatewaySecretRejected"
+        "403":
+          $ref: "#/components/responses/MissingUserContext"
+
   /api/v1/branch-report/royalty-21-times:
     get:
       tags: [royalty-21-times]
@@ -131,6 +178,7 @@ paths:
       description: |
         Per-member lifetime marketing report for the active branch.
         Default sort is `username` ASC. `inviteLinkId` is required when `channelType` is `affiliate_link`.
+        `referralUid` or `referralUsername` (exact match) is required when `channelType` is `member_referral`.
         `regDateFrom` and `regDateTo` (YYYY-MM-DD, UTC inclusive) are required and filter members by `reg_date`.
 
         **Example 200 response:**
@@ -184,6 +232,21 @@ paths:
           schema:
             type: string
             pattern: "^[0-9a-fA-F]{24}$"
+        - name: referralUid
+          in: query
+          required: false
+          description: Referring member ObjectId (optional if referralUsername is provided)
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: referralUsername
+          in: query
+          required: false
+          description: Exact referring-member username (preferred for Member Referral UI)
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
         - name: regDateFrom
           in: query
           required: true
@@ -327,6 +390,15 @@ components:
         username:
           type: string
         description:
+          type: string
+
+    ReferringMemberItem:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: string
+        username:
           type: string
 
     Royalty21Row:

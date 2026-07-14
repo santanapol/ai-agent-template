@@ -28,12 +28,12 @@ describe("Royalty21Table", () => {
   it("shows pre-search empty state before first search", () => {
     render(<Royalty21TableHarness hasSearched={false} />);
 
-    expect(screen.getByText("Select channel and click Search")).toBeInTheDocument();
+    expect(screen.getByText("Run Search to load report")).toBeInTheDocument();
   });
 
   it("shows no-results empty state after search returns empty", () => {
     render(<Royalty21TableHarness hasSearched={true} />);
 
-    expect(screen.getByText("No members found for selected channel")).toBeInTheDocument();
+    expect(screen.getByText("No members match these filters")).toBeInTheDocument();
   });
 });

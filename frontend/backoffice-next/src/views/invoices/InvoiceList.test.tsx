@@ -1,6 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { clearInvoiceBranchSwitchFilterState } from "../../lib/branchSwitchSession";
 import { mockAuthUser, mockInvoice } from "../../test/mockFactories";
 import { testNavigation } from "../../test/mockNavigation";
 import { type RenderWithRouterOptions, renderWithRouter } from "../../test/renderWithRouter";
@@ -47,6 +48,7 @@ describe("InvoiceList page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     testNavigation.reset();
+    clearInvoiceBranchSwitchFilterState();
     mockUsePermission.mockReturnValue(true);
     mockUseInvoices.mockReturnValue({
       invoices: [mockInvoice()],
@@ -215,5 +217,41 @@ describe("InvoiceList page", () => {
       },
       { timeout: 500 },
     );
+  });
+
+  it("syncs branch filter to active branch on sidebar branch switch", async () => {
+    const { useAuth } = await import("../../contexts/AuthContext");
+    const useAuthMock = vi.mocked(useAuth);
+    const switchAt = 1_700_000_000_000;
+    useAuthMock.mockReturnValue({
+      user: mockAuthUser("platform_admin", [], { branch_id: "branch-2" }),
+      lastBranchSwitchAt: switchAt,
+    } as ReturnType<typeof useAuth>);
+
+    mockUseInvoices.mockReturnValue({
+      invoices: [mockInvoice()],
+      total: 1,
+      loading: false,
+      generating: false,
+      branches: [
+        { branch_id: "branch-1", branch_code: "B1", branch_name: "Branch One" },
+        { branch_id: "branch-2", branch_code: "B2", branch_name: "Branch Two" },
+      ],
+      loadingBranches: false,
+      fetchInvoices,
+      fetchInvoiceAgents,
+      generateInvoices,
+    });
+
+    renderInvoiceList({
+      initialEntries: ["/invoices?branch_id=branch-1"],
+    });
+
+    await waitFor(() => {
+      expect(fetchInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ branch_id: "branch-2" }),
+        expect.any(AbortSignal),
+      );
+    });
   });
 });

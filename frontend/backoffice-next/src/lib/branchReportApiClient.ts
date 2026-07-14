@@ -1,6 +1,8 @@
 import type {
   BranchReportEnvelope,
   BranchReportPagination,
+  DepositMatrixData,
+  DepositMatrixQueryParams,
   InviteLinkItem,
   Royalty21QueryParams,
   Royalty21Row,
@@ -57,4 +59,15 @@ export async function getRoyalty21Times(
   }
 
   return { data: res.data.data, pagination: res.data.pagination };
+}
+
+export async function getDepositMatrix(
+  params: DepositMatrixQueryParams,
+  signal?: AbortSignal,
+): Promise<DepositMatrixData> {
+  const res = await client.get<BranchReportEnvelope<DepositMatrixData>>(
+    `${BASE_PATH}/royalty-21-times/deposit-matrix`,
+    { params, signal },
+  );
+  return unwrapEnvelope(res.data);
 }

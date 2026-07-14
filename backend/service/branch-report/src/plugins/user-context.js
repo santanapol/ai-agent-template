@@ -20,6 +20,9 @@ function userContextPlugin(fastify, options) {
     const userId = headerValue(request.headers["x-user-id"]);
     const role = headerValue(request.headers["x-user-role"]);
     const homeBranchId = headerValue(request.headers["x-user-home-branch"]);
+    const permissionsHeader = headerValue(
+      request.headers["x-user-permissions"],
+    );
 
     if (!ouId || (requireBranch && !branchId)) {
       return sendError(reply, {
@@ -36,6 +39,7 @@ function userContextPlugin(fastify, options) {
       userId: userId ?? null,
       role: role ?? null,
       homeBranchId: homeBranchId ?? null,
+      permissions: permissionsHeader ? permissionsHeader.split(",") : [],
     };
   });
 }

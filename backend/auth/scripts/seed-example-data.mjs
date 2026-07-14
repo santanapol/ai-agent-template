@@ -59,7 +59,7 @@ const SEED_HQ_BRANCH_ID = process.env.ZERO_HQ_BRANCH_ID
   : new ObjectId(ZERO_HQ_BRANCH_ID)
 
 function homeBranchIdForRole(role) {
-  if (process.env.SEED_BRANCH_ID) return SEED_CUSTOMER_BRANCH_ID
+  // SEED_BRANCH_ID overrides customer home only — OU-wide roles stay on Zero HQ.
   const hex = homeBranchIdHexForRole(role)
   return hex === ZERO_HQ_BRANCH_ID ? SEED_HQ_BRANCH_ID : SEED_CUSTOMER_BRANCH_ID
 }

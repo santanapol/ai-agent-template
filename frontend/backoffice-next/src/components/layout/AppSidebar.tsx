@@ -28,6 +28,7 @@ export interface AppSidebarProps {
   activeBranchId: string | undefined;
   activeBranchSelectLabel: string;
   branches: InvoiceAgentBranch[];
+  branchCatalogHasMultiple?: boolean;
   branchSelectLoading: boolean;
   branchSearchQuery?: string;
   branchSearchLoading?: boolean;
@@ -55,6 +56,7 @@ export function AppSidebar({
   activeBranchId,
   activeBranchSelectLabel,
   branches,
+  branchCatalogHasMultiple,
   branchSelectLoading,
   branchSearchQuery,
   branchSearchLoading,
@@ -97,6 +99,7 @@ export function AppSidebar({
               activeBranchId={activeBranchId}
               activeBranchSelectLabel={activeBranchSelectLabel}
               branches={branches}
+              branchCatalogHasMultiple={branchCatalogHasMultiple}
               branchSelectLoading={branchSelectLoading}
               branchSearchQuery={branchSearchQuery}
               branchSearchLoading={branchSearchLoading}

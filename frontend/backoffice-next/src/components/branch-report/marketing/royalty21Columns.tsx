@@ -49,8 +49,8 @@ export function createRoyalty21Columns(): ColumnDef<Royalty21Row>[] {
       id: "promotion",
       header: "Promotion",
       enableHiding: true,
-      accessorFn: () => formatPromotion(),
-      cell: () => formatPromotion(),
+      accessorFn: (row) => formatPromotion(row.promotion),
+      cell: ({ row }) => formatPromotion(row.original.promotion),
       meta: { align: "right" as const },
     },
     {

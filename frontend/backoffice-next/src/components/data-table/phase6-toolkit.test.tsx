@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DataTableColumnVisibility } from "@/components/data-table/data-table-column-visibility";
 import { exportVisibleRowsToCsv } from "@/components/data-table/export-visible-rows";
+import { exportVisibleRowsToXlsx } from "@/components/data-table/export-visible-rows-xlsx";
 import { ListPageCard } from "@/components/layout/ListPageCard";
 import { InlineFilterSelect } from "@/components/list-page/InlineFilterSelect";
 import { ListPageSearch } from "@/components/list-page/ListPageSearch";
@@ -114,6 +115,44 @@ describe("Phase 6A toolkit", () => {
     expect(text).toContain('"line1\nline2"');
   });
 
+  it("exportVisibleRowsToCsv guards cells that would be read as formulas by Excel/Sheets", async () => {
+    const { triggerBlobDownload } = await import("@/lib/downloadBlob");
+
+    function ExportHarness({ name }: { name: string }) {
+      const table = useReactTable({
+        data: [{ id: "1", name }],
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+      });
+      exportVisibleRowsToCsv(table, "staff");
+      return null;
+    }
+
+    for (const dangerous of ["=SUM(A1:A9)", "+1", "-1", "@SUM(A1)"]) {
+      vi.mocked(triggerBlobDownload).mockClear();
+      render(<ExportHarness name={dangerous} />);
+      const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+      const text = await blob.text();
+      expect(text).toBe(`Name\n'${dangerous}`);
+    }
+
+    // Guarding composes with quoting: a formula-looking value that also
+    // contains a comma still gets the leading apostrophe, inside the quotes.
+    vi.mocked(triggerBlobDownload).mockClear();
+    render(<ExportHarness name='=HYPERLINK("https://evil.example","x")' />);
+    const quotedBlob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+    expect(await quotedBlob.text()).toBe(
+      'Name\n"\'=HYPERLINK(""https://evil.example"",""x"")"',
+    );
+
+    // A plain value that merely contains one of the guarded characters
+    // (not as its first character) must be left untouched.
+    vi.mocked(triggerBlobDownload).mockClear();
+    render(<ExportHarness name="A=B" />);
+    const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+    expect(await blob.text()).toBe("Name\nA=B");
+  });
+
   it("exportVisibleRowsToCsv skips select column and hidden columns", async () => {
     const { triggerBlobDownload } = await import("@/lib/downloadBlob");
 
@@ -138,5 +177,36 @@ describe("Phase 6A toolkit", () => {
     const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
     const text = await blob.text();
     expect(text).toBe("Name\nAlice");
+  });
+
+  it("exportVisibleRowsToXlsx downloads an XLSX blob", async () => {
+    const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    const { triggerBlobDownload } = await import("@/lib/downloadBlob");
+
+    function ExportHarness() {
+      const table = useReactTable({
+        data: [{ id: "1", name: "Alice" }],
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+      });
+      exportVisibleRowsToXlsx(table, "staff");
+      return null;
+    }
+
+    render(<ExportHarness />);
+    expect(triggerBlobDownload).toHaveBeenCalledWith(expect.any(Blob), "staff.xlsx");
+    const blob = vi.mocked(triggerBlobDownload).mock.calls.at(-1)?.[0] as Blob;
+    expect(blob.type).toBe(XLSX_MIME);
+    expect(blob.size).toBeGreaterThan(0);
+
+    // Parse the actual workbook back out - a blob of the right type/size
+    // could still silently contain the wrong headers/rows (e.g. a column
+    // mapping bug), which type/size alone would never catch.
+    const XLSX = await import("xlsx");
+    const buffer = await blob.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
+    expect(rows).toEqual([["Name"], ["Alice"]]);
   });
 });

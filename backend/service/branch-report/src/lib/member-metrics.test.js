@@ -24,16 +24,16 @@ describe("member-metrics helpers", () => {
     assert.equal(metrics.deposits.length, 21);
   });
 
-  it("calculates revenue as billin - withdraw - promotion", () => {
+  it("calculates revenue as billin - withdraw (promotion excluded)", () => {
     const metrics = finalizeMemberMetrics({
       billin: 15000,
       withdraw: 5000,
-      promotion: 0,
+      promotion: 1200,
       revenue: 0,
       deposits: padDepositsTo21([100, 200, 500]),
     });
 
-    assert.equal(metrics.promotion, 0);
+    assert.equal(metrics.promotion, 1200);
     assert.equal(metrics.revenue, 10000);
   });
 });

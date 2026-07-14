@@ -1,69 +1,72 @@
 # Royalty 21 Times — Frontend UI Design
 
 > Spec backend: [../royalty-21-times.md](../royalty-21-times.md)  
-> Ant Design components validated via antd MCP (Table, Form, Select, Radio, Card, Flex)
+> Matrix tabs: [../../_mission-control/SPEC-deposit-matrix-tabs.md](../../_mission-control/SPEC-deposit-matrix-tabs.md)  
+> **Runtime FE:** `frontend/backoffice-next` — **shadcn/ui** (`Tabs`, form filters, data-table). Historical antd snippets below are legacy reference only — do not introduce Ant Design Tabs on this page.
 
 ## 1. Page identity
 
-| Item          | Value                                               |
-| ------------- | --------------------------------------------------- |
-| Report name   | Royalty 21 Times                                    |
-| Menu path     | **Branch Report → Marketing → Channel Performance** |
-| Breadcrumb    | Branch Report / Marketing / Channel Performance     |
-| Route (draft) | `/branch-report/marketing/channel-performance`      |
-| Permission    | `branch-report:marketing:channel-performance:read`  |
-| UI language   | English                                             |
-| Table theme   | antd default (ไม่ clone Excel header สีส้ม)         |
+| Item        | Value                                               |
+| ----------- | --------------------------------------------------- |
+| Report name | Royalty 21 Times                                    |
+| Menu path   | **Branch Report → Marketing → Channel Performance** |
+| Breadcrumb  | Branch Report / Marketing / Channel Performance     |
+| Route       | `/branch-report/channel-performance`                |
+| Permission  | `branch-report:marketing:channel-performance:read`  |
+| UI language | English                                             |
+| UI kit      | shadcn/ui (no Excel orange/pink header clone)       |
 
 รายงาน **แยกหน้า** — ไม่รวมกับ Channel Summary / Trend 3 Months
 
-## 2. Wireframe
+## 2. Wireframe (with Deposit Matrix Tabs)
 
 ```
-┌─ AdminLayout (navbar: branch combobox อยู่ด้านบน) ─────────────────────────┐
-│ Breadcrumb: Branch Report / Marketing / Channel Performance                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Card title: Royalty 21 Times                                                │
-│ ┌─ Search (Form layout=inline หรือ horizontal) ───────────────────────────┐ │
-│ │ Channel Type *   (● Affiliate Link  ○ Member Referral  ○ Direct)       │ │
-│ │ Affiliate Link * [ Select — search enabled ▼ ]   (แสดงเมื่อ Affiliate) │ │
-│ │                              [ Search ]  [ Clear ]                      │ │
-│ └─────────────────────────────────────────────────────────────────────────┘ │
-│ ┌─ Result Table (scroll x + sticky header) ──────────────────────────────┐ │
-│ │ Username │ Register │ Billin │ Withdraw │ Promo │ Revenue │ 1..21    │ │
-│ │ (fixed)  │          │        │          │       │         │ (scroll) │ │
-│ │ ...      │          │        │          │       │         │          │ │
-│ └─────────────────────────────────────────────────────────────────────────┘ │
-│ Pagination: « 1 2 3 … »    Page size: 50 ▼    Total: 1,234 members         │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─ ListPageCard: Royalty 21 Times ───────────────────────────────────────────┐
+│ Search form (shared) … [ Search ] [ Clear ]                                │
+│ ┌ Tabs (shadcn) ─────────────────────────────────────────────────────────┐ │
+│ │ [ Member detail ] [ Deposit count ] [ Deposit % ]                      │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Tab 1: member table + pagination                                       │ │
+│ │ Tab 2: Rank × 1..21 × SUM (counts)                                     │ │
+│ │ Tab 3: Rank × 1..21 × SUM (percents xx.xx%)                            │ │
+│ └────────────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Mermaid — user flow
+### Mermaid — user flow (amended)
 
 ```mermaid
 flowchart TD
-  A[เปิดหน้า Royalty 21 Times] --> B{มี active branch ใน JWT?}
+  A[เปิดหน้า Channel Performance] --> B{มี active branch?}
   B -->|ไม่| C[Alert: เลือก branch จาก navbar]
-  B -->|ใช่| D[แสดง form — ยังไม่โหลด table]
-  D --> E[User เลือก Channel Type]
-  E --> F{Affiliate Link?}
-  F -->|ใช่| G[โหลด invite links dropdown]
-  F -->|ไม่| H[ซ่อน Affiliate Link field]
-  G --> I[กด Search]
-  H --> I
+  B -->|ใช่| D[แสดง form — ยังไม่โหลด]
+  D --> I[กด Search]
   I --> J{Form valid?}
-  J -->|ไม่| K[แสดง validation]
-  J -->|ใช่| L[GET /royalty-21-times]
-  L --> M{success?}
-  M -->|ใช่| N[แสดง Table + pagination]
-  M -->|ไม่| O[Alert / message.error]
-  N --> P[เปลี่ยน page / pageSize]
-  P --> L
+  J -->|ไม่| K[แสดง validation + focus field]
+  J -->|ใช่| L[Parallel: GET royalty-21-times + GET deposit-matrix]
+  L --> N[Tab 1 / 2 / 3 จากผลที่สำเร็จ]
+  L -->|list fail| O1[toast list error]
+  L -->|matrix fail| O2[toast matrix error — Tab 1 ยังใช้ได้ถ้า list สำเร็จ]
 ```
 
-## 3. Ant Design component map
+## 2b. Tabs behavior
 
-### 3.1 Page container
+| Rule                  | Detail                                                           |
+| --------------------- | ---------------------------------------------------------------- |
+| Labels                | `Member detail` · `Deposit count` · `Deposit %`                  |
+| Search                | Above tabs; one criteria set for all tabs                        |
+| Fetch                 | Eager parallel on Search; loading until **both** settle          |
+| Clear / branch switch | Reset member table **and** matrix state                          |
+| Permission            | Same `…channel-performance:read` — no new key                    |
+| Component             | `DepositMatrixTable` under `components/branch-report/marketing/` |
+
+---
+
+## 3. Legacy Ant Design component map (reference only)
+
+> Prefer `backoffice-next` patterns (`Royalty21SearchForm`, `Royalty21Table`, `@/components/ui/tabs`).
+
+### 3.1 Page container (legacy antd sketch)
 
 ```tsx
 <Card
@@ -74,12 +77,11 @@ flowchart TD
   }
   bordered={false}
 >
-  {/* SearchForm + ResultTable */}
+  {/* SearchForm + Tabs: Member detail | Deposit count | Deposit % */}
 </Card>
 ```
 
-- `Card` — กล่องหลักของหน้ารายงาน (`bordered={false}` ให้เข้ากับ backoffice ส่วนใหญ่)
-- ไม่ใช้ `Card.tabList` — ไม่มี tab ในหน้านี้
+- Search อยู่เหนือ tabs; ใช้ shadcn `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`
 
 ### 3.2 Search form
 
@@ -316,16 +318,16 @@ const { data, isLoading, error, refetch } = useQuery({
 
 ## 5. UI states
 
-| State            | แสดงผล                                                                    |
-| ---------------- | ------------------------------------------------------------------------- |
-| Initial          | Form ว่าง, Table ว่าง, Empty text "Select channel and click Search"       |
-| Validation error | `Form` inline errors ใต้ field                                            |
-| Loading (search) | `Table.loading={true}`                                                    |
-| Success + data   | Table + pagination                                                        |
-| Success + empty  | `Empty` "No members found…"                                               |
-| API error        | `App.useApp().message.error()` + optional `Alert type="error"`            |
-| No active branch | `Alert type="warning"` — "Please select a branch from the top navigation" |
-| Branch switched  | Clear results, แสดง message info "Branch changed — please search again"   |
+| State            | แสดงผล                                                              |
+| ---------------- | ------------------------------------------------------------------- |
+| Initial          | Form พร้อม, Tabs ว่าง, empty “Run Search to load report”            |
+| Validation error | inline / toast + focus invalid field                                |
+| Loading (search) | Search disabled/loading จนกว่า list **และ** matrix settle           |
+| Success + data   | Tab 1 table + pagination; Tabs 2–3 matrix                           |
+| Success + empty  | Empty “No members…” / zero matrix                                   |
+| API error        | toast แยก list vs matrix (partial failure OK)                       |
+| No active branch | warning Alert — select branch from navbar                           |
+| Branch switched  | Clear results + matrix, info “Branch changed — please search again” |
 
 ## 6. Formatting & locale
 
@@ -363,18 +365,19 @@ function formatPromotion(): string {
 - ไม่ auto-search on mount — ลด load MongoDB โดยไม่จำเป็น
 - `scrollToFirstRowOnChange` (Table prop) — optional เมื่อ paginate
 
-## 8. File structure (frontend — draft)
+## 8. File structure (frontend)
 
 ```
-frontend/backoffice/src/
-  pages/reports/marketing/
-    Royalty21TimesPage.tsx       # page container
-    components/
-      Royalty21SearchForm.tsx
-      Royalty21Table.tsx
-      columns.tsx                # column defs + formatAmount
-  services/api/
-    branchReportApi.ts           # getRoyalty21Times, getInviteLinks
+frontend/backoffice-next/src/
+  views/branch-report/marketing/
+    ChannelPerformancePage.tsx
+  components/branch-report/marketing/
+    Royalty21SearchForm.tsx
+    Royalty21Table.tsx
+    DepositMatrixTable.tsx       # count | percent modes
+    royalty21Columns.tsx
+  lib/
+    branchReportApiClient.ts     # getRoyalty21Times, getDepositMatrix, getInviteLinks
   types/
     branchReport.ts
 ```

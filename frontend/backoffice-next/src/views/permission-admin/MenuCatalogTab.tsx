@@ -99,76 +99,79 @@ const MenuCatalogTab: React.FC<MenuCatalogTabProps> = ({
     return <AdminApiForbidden />;
   }
 
+  let catalogContent: React.ReactNode;
+  if (menusLoading) {
+    catalogContent = <Skeleton className="h-48 w-full" aria-busy="true" />;
+  } else if (menus.length === 0) {
+    catalogContent = (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>No menu nodes in registry</EmptyTitle>
+          <EmptyDescription>Add a node to build the menu catalog.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button onClick={openCreate}>
+            <Plus data-icon="inline-start" />
+            Add menu node
+          </Button>
+        </EmptyContent>
+      </Empty>
+    );
+  } else {
+    catalogContent = (
+      <MenuTree
+        nodes={treeNodes}
+        defaultExpanded
+        renderActions={(node) => {
+          const protectedNode = isProtectedMenuKey(node.key);
+          return (
+            <div className="flex shrink-0 items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label={`Edit ${node.label}`}
+                      disabled={protectedNode}
+                      onClick={() => {
+                        setModalMode("edit");
+                        setEditingNode(node);
+                        setModalOpen(true);
+                      }}
+                    />
+                  }
+                >
+                  <Pencil data-icon="inline-start" aria-hidden="true" />
+                </TooltipTrigger>
+                {protectedNode ? <TooltipContent>This node is protected and cannot be modified.</TooltipContent> : null}
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label={`Delete ${node.label}`}
+                      disabled={protectedNode}
+                      onClick={() => handleDelete(node)}
+                    />
+                  }
+                >
+                  <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
+                </TooltipTrigger>
+                {protectedNode ? <TooltipContent>This node is protected and cannot be deleted.</TooltipContent> : null}
+              </Tooltip>
+            </div>
+          );
+        }}
+      />
+    );
+  }
+
   return (
     <div data-testid="menu-catalog-tab" className="px-4">
-      {menusLoading ? (
-        <Skeleton className="h-48 w-full" aria-busy="true" />
-      ) : menus.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>No menu nodes in registry</EmptyTitle>
-            <EmptyDescription>Add a node to build the menu catalog.</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={openCreate}>
-              <Plus data-icon="inline-start" />
-              Add menu node
-            </Button>
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <MenuTree
-          nodes={treeNodes}
-          defaultExpanded
-          renderActions={(node) => {
-            const protectedNode = isProtectedMenuKey(node.key);
-            return (
-              <div className="flex shrink-0 items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label={`Edit ${node.label}`}
-                        disabled={protectedNode}
-                        onClick={() => {
-                          setModalMode("edit");
-                          setEditingNode(node);
-                          setModalOpen(true);
-                        }}
-                      />
-                    }
-                  >
-                    <Pencil data-icon="inline-start" aria-hidden="true" />
-                  </TooltipTrigger>
-                  {protectedNode ? (
-                    <TooltipContent>This node is protected and cannot be modified.</TooltipContent>
-                  ) : null}
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label={`Delete ${node.label}`}
-                        disabled={protectedNode}
-                        onClick={() => handleDelete(node)}
-                      />
-                    }
-                  >
-                    <Trash2 data-icon="inline-start" className="text-destructive" aria-hidden="true" />
-                  </TooltipTrigger>
-                  {protectedNode ? (
-                    <TooltipContent>This node is protected and cannot be deleted.</TooltipContent>
-                  ) : null}
-                </Tooltip>
-              </div>
-            );
-          }}
-        />
-      )}
+      {catalogContent}
 
       <MenuNodeFormModal
         open={modalOpen}

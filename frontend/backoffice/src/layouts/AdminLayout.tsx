@@ -83,7 +83,7 @@ const MENU_ENTRIES: Record<string, { icon: React.ReactNode; route?: string }> = 
   'branch-report': { icon: <LineChart /> },
   'branch-report:marketing:channel-performance:read': {
     icon: <LineChart />,
-    route: '/branch-report/marketing/channel-performance',
+    route: '/branch-report/channel-performance',
   },
   my_profile: { icon: <User />, route: '/profile' },
   settings: { icon: <Settings /> },

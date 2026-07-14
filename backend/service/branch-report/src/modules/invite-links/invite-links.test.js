@@ -28,7 +28,7 @@ describe("mapInviteLinkDoc", () => {
 });
 
 describe("createInviteLinksRepository", () => {
-  it("queries su_staff_invite_link scoped by ou_id and branch_id sorted by invite_code", async () => {
+  it("queries su_staff_invite_link scoped by ou_id and branch_id sorted by _id DESC", async () => {
     const ouId = new ObjectId();
     const branchId = new ObjectId();
     let capturedFilter;
@@ -81,7 +81,7 @@ describe("createInviteLinksRepository", () => {
       branch_id: branchId,
     });
     assert.deepEqual(capturedFilter, filter);
-    assert.deepEqual(capturedSort, { invite_code: 1 });
+    assert.deepEqual(capturedSort, { _id: -1 });
   });
 
   it("applies q regex escape, $or filter, and limit cap", async () => {
@@ -141,7 +141,7 @@ describe("createInviteLinksRepository", () => {
 
     assert.ok(filter.$or);
     assert.equal(filter.$or[0].invite_code.source, "a\\.b");
-    assert.equal(capturedLimit, 100);
+    assert.equal(capturedLimit, 200);
   });
 
   it("rejects invalid tenant ObjectIds", async () => {

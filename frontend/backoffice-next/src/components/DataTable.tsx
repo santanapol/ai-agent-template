@@ -77,6 +77,18 @@ function getRowIdValue<T>(row: T, rowKey: keyof T | ((row: T) => string | number
   return value != null ? String(value) : String(index);
 }
 
+function skeletonHeaderWidthClass(index: number, total: number): string {
+  if (index === 0) return "max-w-24";
+  if (index === total - 1) return "max-w-20";
+  return "w-full";
+}
+
+function skeletonCellWidthClass(cellIndex: number, hasRowSelection: boolean): string {
+  if (hasRowSelection && cellIndex === 0) return "size-4 rounded-full";
+  if (cellIndex === 0) return "max-w-28";
+  return "w-full";
+}
+
 export function DataTable<T>({
   columns,
   data,
@@ -100,6 +112,7 @@ export function DataTable<T>({
     getCoreRowModel: getCoreRowModel(),
     ...(isServerPagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
     initialState: {
+      // biome-ignore lint/suspicious/noUnnecessaryConditions: pagination is an optional prop - the fallback runs whenever server pagination isn't configured.
       pagination: { pageSize: pagination?.pageSize ?? pageSize },
     },
     getRowId: (row, index) => getRowIdValue(row, rowKey, index),
@@ -159,26 +172,23 @@ export function DataTable<T>({
             style={{ gridTemplateColumns: `repeat(${skeletonColumns}, minmax(0, 1fr))` }}
           >
             {Array.from({ length: skeletonColumns }).map((_, index) => (
-              <Skeleton
-                key={index}
-                className={cn("h-4", index === 0 ? "max-w-24" : index === skeletonColumns - 1 ? "max-w-20" : "w-full")}
-              />
+              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder count, never reorders or filters.
+              <Skeleton key={index} className={cn("h-4", skeletonHeaderWidthClass(index, skeletonColumns))} />
             ))}
           </div>
           <div className="flex flex-col">
             {Array.from({ length: 4 }).map((_, rowIndex) => (
               <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder count, never reorders or filters.
                 key={rowIndex}
                 className="grid gap-3 border-b px-4 py-3 last:border-0"
                 style={{ gridTemplateColumns: `repeat(${skeletonColumns}, minmax(0, 1fr))` }}
               >
                 {Array.from({ length: skeletonColumns }).map((__, cellIndex) => (
                   <Skeleton
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder count, never reorders or filters.
                     key={cellIndex}
-                    className={cn(
-                      "h-4",
-                      rowSelection && cellIndex === 0 ? "size-4 rounded-full" : cellIndex === 0 ? "max-w-28" : "w-full",
-                    )}
+                    className={cn("h-4", skeletonCellWidthClass(cellIndex, Boolean(rowSelection)))}
                   />
                 ))}
               </div>
@@ -249,6 +259,7 @@ export function DataTable<T>({
             {rows.map((row) => {
               const rowId = row.id;
               const disabled = rowSelection?.getRowDisabled?.(row.original) ?? false;
+              // biome-ignore lint/suspicious/noUnnecessaryConditions: rowSelection is an optional prop.
               const selected = rowSelection?.selectedKeys.includes(rowId) ?? false;
               return (
                 <TableRow key={row.id} data-state={selected ? "selected" : undefined}>
@@ -278,7 +289,7 @@ export function DataTable<T>({
         </Table>
       </div>
 
-      {isServerPagination && pagination ? (
+      {isServerPagination && pagination && (
         <div className="flex flex-wrap items-center justify-between gap-4">
           {pagination.showTotal ? (
             <span className="text-muted-foreground text-sm">{pagination.showTotal(pagination.total)}</span>
@@ -330,7 +341,8 @@ export function DataTable<T>({
             </Button>
           </div>
         </div>
-      ) : clientTotalPages > 1 ? (
+      )}
+      {!isServerPagination && clientTotalPages > 1 && (
         <div className="flex items-center justify-end gap-2">
           <Button
             variant="outline"
@@ -347,7 +359,7 @@ export function DataTable<T>({
             Next
           </Button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

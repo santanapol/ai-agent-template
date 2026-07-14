@@ -1,12 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { PermissionGuard } from "@/components/PermissionGuard";
-import ChannelPerformancePage from "@/views/branch-report/marketing/ChannelPerformancePage";
-
-export default function ChannelPerformanceRoutePage() {
-  return (
-    <PermissionGuard required="branch-report:marketing:channel-performance:read">
-      <ChannelPerformancePage />
-    </PermissionGuard>
-  );
+/** Legacy route — bookmarks / sidebar cache from before marketing segment was dropped. */
+export default function ChannelPerformanceLegacyRedirect() {
+  redirect("/branch-report/channel-performance");
 }

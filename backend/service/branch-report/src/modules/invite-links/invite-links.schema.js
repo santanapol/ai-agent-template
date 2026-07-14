@@ -3,7 +3,7 @@ export const inviteLinksListQuerySchema = {
   additionalProperties: false,
   properties: {
     q: { type: "string", minLength: 1, maxLength: 64 },
-    limit: { type: "integer", minimum: 1, maximum: 100 },
+    limit: { type: "integer", minimum: 1, maximum: 250 },
   },
 };
 

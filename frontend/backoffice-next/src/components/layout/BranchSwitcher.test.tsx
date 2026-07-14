@@ -16,6 +16,7 @@ const branches: InvoiceAgentBranch[] = [
 ];
 
 function renderSwitcher(overrides: Partial<ComponentProps<typeof BranchSwitcher>> = {}) {
+  const resolvedBranches = overrides.branches ?? branches;
   return render(
     <SidebarProvider>
       <BranchSwitcher
@@ -23,7 +24,10 @@ function renderSwitcher(overrides: Partial<ComponentProps<typeof BranchSwitcher>
         branchDisplayLabel="H01 - Home"
         activeBranchId="b-home"
         activeBranchSelectLabel="H01 - Home"
-        branches={branches}
+        branches={resolvedBranches}
+        branchCatalogHasMultiple={
+          overrides.branchCatalogHasMultiple ?? resolvedBranches.length > 1
+        }
         branchSelectLoading={false}
         viewingOtherBranch={false}
         homeBranchId="b-home"
@@ -62,6 +66,16 @@ describe("BranchSwitcher search a11y (FE-REV-009)", () => {
 
     expect(onSearch).toHaveBeenCalled();
     expect(onSearch.mock.calls.some((call) => String(call[0]).includes("7"))).toBe(true);
+  });
+
+  it("keeps the branch dropdown trigger when search results are empty", () => {
+    renderSwitcher({
+      branchCatalogHasMultiple: true,
+      branches: [],
+      viewingOtherBranch: false,
+    });
+
+    expect(screen.getByRole("button", { name: "Select active branch" })).toBeInTheDocument();
   });
 
   it("announces empty search results", async () => {

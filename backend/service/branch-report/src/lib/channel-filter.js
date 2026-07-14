@@ -13,6 +13,7 @@ export { CHANNEL_TYPES, createParamError };
  *   branchId: string;
  *   channelType: string;
  *   inviteLinkId?: string;
+ *   referralUid?: string;
  *   regDateFrom: string;
  *   regDateTo: string;
  * }} input
@@ -34,11 +35,12 @@ export function buildMemberReportFilter(input) {
  *   branchId: string;
  *   channelType: string;
  *   inviteLinkId?: string;
+ *   referralUid?: string;
  * }} input
  * @returns {import('mongodb').Filter<import('mongodb').Document>}
  */
 export function buildMemberChannelFilter(input) {
-  const { ouId, branchId, channelType, inviteLinkId } = input;
+  const { ouId, branchId, channelType, inviteLinkId, referralUid } = input;
 
   const base = {
     ou_id: parseObjectId(ouId, "ou_id"),
@@ -65,9 +67,18 @@ export function buildMemberChannelFilter(input) {
   }
 
   if (channelType === "member_referral") {
+    if (!referralUid) {
+      throw createParamError(
+        400,
+        "INVALID_PARAM",
+        "referralUid is required for member_referral",
+      );
+    }
+
     return {
       ...base,
       referral: "Member",
+      referral_uid: parseObjectId(referralUid, "referralUid"),
     };
   }
 

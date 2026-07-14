@@ -11,6 +11,7 @@ import {
 const OU_ID = "507f1f77bcf86cd799439011";
 const BRANCH_ID = "507f1f77bcf86cd799439012";
 const INVITE_LINK_ID = "507f1f77bcf86cd799439013";
+const REFERRAL_UID = "507f1f77bcf86cd799439014";
 
 const REG_FROM = "2024-06-01";
 const REG_TO = "2024-06-30";
@@ -32,16 +33,18 @@ describe("buildMemberChannelFilter", () => {
     });
   });
 
-  it("builds member_referral filter", () => {
+  it("builds member_referral filter with referral_uid", () => {
     const filter = buildMemberChannelFilter({
       ...tenant,
       channelType: "member_referral",
+      referralUid: REFERRAL_UID,
     });
 
     assert.deepEqual(filter, {
       ou_id: new ObjectId(OU_ID),
       branch_id: new ObjectId(BRANCH_ID),
       referral: "Member",
+      referral_uid: new ObjectId(REFERRAL_UID),
     });
   });
 
@@ -68,6 +71,22 @@ describe("buildMemberChannelFilter", () => {
       (error) => {
         assert.equal(error.statusCode, 400);
         assert.equal(error.code, "INVALID_PARAM");
+        return true;
+      },
+    );
+  });
+
+  it("requires referralUid for member_referral", () => {
+    assert.throws(
+      () =>
+        buildMemberChannelFilter({
+          ...tenant,
+          channelType: "member_referral",
+        }),
+      (error) => {
+        assert.equal(error.statusCode, 400);
+        assert.equal(error.code, "INVALID_PARAM");
+        assert.match(error.message, /referralUid/i);
         return true;
       },
     );
@@ -120,6 +139,7 @@ describe("buildMemberReportFilter", () => {
     const filter = buildMemberReportFilter({
       ...tenant,
       channelType: "member_referral",
+      referralUid: REFERRAL_UID,
       regDateFrom: REG_FROM,
       regDateTo: REG_TO,
     });
@@ -128,6 +148,7 @@ describe("buildMemberReportFilter", () => {
       ou_id: new ObjectId(OU_ID),
       branch_id: new ObjectId(BRANCH_ID),
       referral: "Member",
+      referral_uid: new ObjectId(REFERRAL_UID),
       reg_date: {
         $gte: new Date(`${REG_FROM}T00:00:00.000Z`),
         $lte: new Date(`${REG_TO}T23:59:59.999Z`),

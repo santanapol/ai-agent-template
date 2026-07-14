@@ -25,7 +25,7 @@ describe("getDashboardShortcuts", () => {
     ]);
     expect(shortcuts).toContainEqual({
       label: "Channel Performance",
-      href: "/branch-report/marketing/channel-performance",
+      href: "/branch-report/channel-performance",
     });
   });
 });

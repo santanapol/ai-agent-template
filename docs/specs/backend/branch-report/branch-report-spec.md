@@ -45,8 +45,9 @@ Prefix via gateway: `/api/v1/branch-report`
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/invite-links` | Affiliate links for `x-user-ou` + `x-user-branch`; optional `q` (typeahead) + `limit` (max 100) |
-| GET | `/royalty-21-times` | Paginated member metrics; query `channelType`, `regDateFrom`, `regDateTo`, optional `inviteLinkId` |
+| GET | `/invite-links` | Affiliate links for `x-user-ou` + `x-user-branch`; optional `q` (typeahead) + `limit` (max 250) |
+| GET | `/referring-members` | Exact username resolve for Member Referral (`username` required); returns 0–1 items |
+| GET | `/royalty-21-times` | Paginated member metrics; query `channelType`, `regDateFrom`, `regDateTo`, optional `inviteLinkId` / `referralUid` / `referralUsername` |
 | GET | `/healthz`, `/readyz` | Probes (no mesh auth) |
 
 ## Trust & scope (**OBSERVED**)

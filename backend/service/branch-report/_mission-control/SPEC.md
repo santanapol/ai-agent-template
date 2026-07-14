@@ -292,7 +292,7 @@ Browser calls **gateway only** — never branch-report directly.
   billin: number;
   withdraw: number;
   promotion: number;      // 0 in phase 1
-  revenue: number;        // billin - withdraw - promotion
+  revenue: number;        // billin - withdraw (promotion excluded)
   deposits: number[];     // length 21; 0 = no Nth deposit
 }
 ```

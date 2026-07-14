@@ -10,6 +10,7 @@ import gatewayAuth from "./plugins/gateway-auth.js";
 import requestId from "./plugins/request-id.js";
 import userContext from "./plugins/user-context.js";
 import { registerInviteLinksRoutes } from "./modules/invite-links/invite-links.route.js";
+import { registerReferringMembersRoutes } from "./modules/referring-members/referring-members.route.js";
 import { registerRoyalty21TimesRoutes } from "./modules/royalty-21-times/royalty-21-times.route.js";
 import { registerHealthRoutes } from "./routes/health.route.js";
 import { registerBasicMetrics } from "../../../shared/fastify-metrics/basic-metrics.js";
@@ -45,6 +46,7 @@ export async function buildApp(options = {}) {
   await registerHealthRoutes(app);
   registerBasicMetrics(app, { startedAtMs, serviceName: "branch-report" });
   await registerInviteLinksRoutes(app, { getDb: options.getDb });
+  await registerReferringMembersRoutes(app, { getDb: options.getDb });
   await registerRoyalty21TimesRoutes(app, { getDb: options.getDb });
 
   if (options.registerProbeRoute) {
