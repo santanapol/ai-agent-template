@@ -218,7 +218,7 @@ npm run ci    # ในservice ที่เกี่ยวข้อง
 | `fixing-accessibility` | a11y audit/fix เฉพาะทาง | frontend checklist ชี้ไปใช้ตรงนี้เมื่อเจอ a11y gap |
 | `debugging-and-error-recovery` | root cause หลังรู้ bug | หลัง finding ยืนยันแล้ว |
 | `code-review-and-quality` | PR review หลายแกน | คู่มือนี้เน้น behavior vs spec + adversarial |
-| `coding-standard/software-testing/` | ทฤษฎี testing 00–12 | คู่มือนี้เป็น workflow ปฏิบัติสำหรับ zero-platform |
+| `knowledge/software-testing/` | ทฤษฎี testing 00–12 | คู่มือนี้เป็น workflow ปฏิบัติสำหรับ zero-platform |
 
 ### ต้นแบบ audit ใน repo
 

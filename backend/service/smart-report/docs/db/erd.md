@@ -282,7 +282,7 @@ db.download_history.createIndex(
 
 ### No tenant isolation (accepted risk)
 
-`reports` และ `download_history` **ไม่มี** `ou_id`/`branch_id` — รายชื่อรายงาน, ประวัติการรัน และไฟล์ export มองเห็น/ดาวน์โหลดได้โดยทุก branch/org ที่ผ่าน gateway โดยเจตนา เพื่อ replicate workflow เดิมที่ staff ใช้ MongoDB client (Mongobooster) รัน query เองอยู่แล้ว ([`docs/raw-requirment.md`](../raw-requirment.md)) — ยอมรับความเสี่ยงนี้ไว้ ณ ตอนนี้ ให้ทบทวนใหม่หาก threat model หรือกลุ่มผู้ใช้เปลี่ยนไป (เช่น เปิดให้ branch staff ทั่วไปใช้งานในวงกว้างขึ้น) — รายละเอียดเต็มใน [`_mission-control/SPEC.md`](../../_mission-control/SPEC.md) (Known Limitations / Accepted Risks)
+`reports` และ `download_history` **ไม่มี** `ou_id`/`branch_id` — รายชื่อรายงาน, ประวัติการรัน และไฟล์ export มองเห็น/ดาวน์โหลดได้โดยทุก branch/org ที่ผ่าน gateway โดยเจตนา เพื่อ replicate workflow เดิมที่ staff ใช้ MongoDB client (Mongobooster) รัน query เองอยู่แล้ว ([`docs/raw-requirment.md`](../raw-requirment.md)) — ยอมรับความเสี่ยงนี้ไว้ ณ ตอนนี้ ให้ทบทวนใหม่หาก threat model หรือกลุ่มผู้ใช้เปลี่ยนไป (เช่น เปิดให้ branch staff ทั่วไปใช้งานในวงกว้างขึ้น) — รายละเอียดเต็มใน [`SPEC-mission.md`](../SPEC-mission.md) (Known Limitations / Accepted Risks)
 
 ### Pagination
 

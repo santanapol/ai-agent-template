@@ -7,7 +7,7 @@
 
 **เครื่องมือ:** Vitest + RTL, Playwright, DevTools MCP / browser audit
 
-อ่านเพิ่ม: `coding-standard/software-testing/01-unit-testing/`, `08-e2e-testing/`
+อ่านเพิ่ม: `knowledge/software-testing/01-unit-testing/`, `08-e2e-testing/`
 
 ---
 
@@ -74,7 +74,7 @@ UI ถูกแต่ DB ผิด = defect ร้ายแรง
 ## 7. Design alignment (backoffice-next)
 
 - Pattern จาก `coding-standard/frontend/backoffice/reference/studio-admin`
-- ไม่ copy `frontend/backoffice` (archive) โดยไม่ตั้งใจ
+- ไม่ copy legacy Vite backoffice (removed; use `backoffice-next` only) โดยไม่ตั้งใจ
 
 ---
 

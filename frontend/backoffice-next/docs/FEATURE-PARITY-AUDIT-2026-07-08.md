@@ -1,7 +1,7 @@
 # Feature Parity Audit — backoffice vs backoffice-next
 
 **Date:** 2026-07-08
-**Scope:** All menus, page-level features, and backend API usage in [`frontend/backoffice`](../../backoffice) (legacy, frozen reference archive) vs [`frontend/backoffice-next`](../) (current, shipped to staging as v0.5.0)
+**Scope:** All menus, page-level features, and backend API usage in the legacy Vite backoffice (removed from repo; see git history) vs [`frontend/backoffice-next`](../) (current, shipped to staging as v0.5.0)
 **Design baseline:** [`studio-admin`](../../../coding-standard/frontend/backoffice/reference/studio-admin) — installed (`npm install`) as part of this audit so it's usable as a live reference for any future fix
 **Method:** Two independent static-code inventories (one per app), cross-referenced, then 3 candidate discrepancies verified directly against source before being accepted or rejected
 **Out of scope:** Visual/accessibility drift against the studio-admin design system — already covered by [`UI-UX-REVIEW-2026-07-07.md`](./UI-UX-REVIEW-2026-07-07.md) (57 findings, closed)

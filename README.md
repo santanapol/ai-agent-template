@@ -7,14 +7,15 @@ Reference implementation ของ **zero-platform**: API backend (auth + gatewa
 
 ## Repository zones
 
-Five top-level areas — same depth, different jobs:
+Six top-level areas — same depth, different jobs:
 
 | Zone | Paths | Purpose |
 |------|-------|---------|
 | **Code** | `backend/`, `frontend/` | Runnable applications |
 | **Product docs** | `docs/specs/` | What to build (per-service specs) |
 | **Domain standards** | `coding-standard/` | How to build (org rules, vendored) |
-| **Harness** | `harness-engineering/` | Working philosophy — beliefs, skills ↔ harness |
+| **Knowledge** | `knowledge/` | Harness (`knowledge/harness/`) + testing standards (`knowledge/software-testing/`) |
+| **Dev ops** | `dev-ops/` | Staging/production server ops (`dev-ops/staging/`) |
 | **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Cursor + Claude Code agent-skills, command standards |
 
 ```bash
@@ -46,8 +47,10 @@ zero-platform/
 │   └── backoffice-next/          # Next.js admin UI
 ├── docs/
 │   └── specs/                    # Service specs — [docs/README.md](./docs/README.md)
-├── harness-engineering/          # How we work — [harness-engineering/README.md](./harness-engineering/README.md)
-├── coding-standard/              # Vendored org standards (auth, gateway, backend, frontend, testing)
+├── knowledge/                    # Harness + testing knowledge base
+│   ├── harness/                  # How we work — [knowledge/harness/README.md](./knowledge/harness/README.md)
+│   └── software-testing/         # Testing standards (00–12)
+├── coding-standard/              # Vendored org standards (auth, gateway, backend, frontend)
 ├── scripts/
 │   ├── sync-agent-skills.sh      # Sync agent-skills → .cursor + .claude + references
 │   └── agent-skills-standards/   # Related Coding Standards per /command
@@ -104,9 +107,10 @@ flowchart LR
 | **Quality score** | [docs/QUALITY_SCORE.md](./docs/QUALITY_SCORE.md) | Domain grades and gaps |
 | **Exec plans** | [docs/exec-plans/](./docs/exec-plans/) | Active/completed work, tech debt |
 | **Observability** | [docs/observability.md](./docs/observability.md) | Logs/metrics query for agents |
-| **Harness (how we work)** | [harness-engineering/README.md](./harness-engineering/README.md) | แนวคิดการทำงาน + agent-skills integration |
+| **Harness (how we work)** | [knowledge/harness/README.md](./knowledge/harness/README.md) | แนวคิดการทำงาน + agent-skills integration |
+| **Testing standards** | [knowledge/software-testing/](./knowledge/software-testing/) | Testing levels 00–12 |
 | **Product specs** | [docs/README.md](./docs/README.md) | Spec index; files under `docs/specs/` |
-| **Domain standards** | [coding-standard/](./coding-standard/) | Vendored org rules (auth, gateway, backend, frontend, testing) |
+| **Domain standards** | [coding-standard/](./coding-standard/) | Vendored org rules (auth, gateway, backend, frontend) |
 | **Agent skills** | [scripts/README.md](./scripts/README.md) | `sync-agent-skills.sh`, command standards |
 | **Cursor SDLC** | [.cursor/USAGE.md](./.cursor/USAGE.md) | `/spec` … `/ship`, subagents |
 | **Claude Code SDLC** | [.claude/USAGE.md](./.claude/USAGE.md) | Same skills/commands, native Claude Code format |

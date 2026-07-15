@@ -12,7 +12,7 @@ Internal **Fastify 5** API for back-office staff profiles (`staff_profiles`). Ru
 | [`RUNBOOK.md`](./RUNBOOK.md)                                         | Env, DB init, gateway curls, manual E2E |
 | [`openapi.yaml`](./openapi.yaml)                                     | Internal mesh contract                  |
 | [`openapi-via-gateway.yaml`](./openapi-via-gateway.yaml)             | Client import (Bearer via gateway)      |
-| [`_mission-control/SPEC.md`](./_mission-control/SPEC.md)             | Build spec & acceptance criteria        |
+| [Central spec](../../../../docs/specs/backend/staff/staff-spec.md)     | Product spec & acceptance criteria      |
 
 ## Requirements
 

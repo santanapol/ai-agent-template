@@ -57,7 +57,7 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`dev/smoke.sh`](./dev/smoke.sh) | Healthz + metrics + login/gateway smoke (+ frontend when booted) |
 | [`dev/dev-obs-up.sh`](./dev/dev-obs-up.sh) / [`dev/dev-obs-down.sh`](./dev/dev-obs-down.sh) | VictoriaLogs/Metrics + Vector |
 | [`dev/dev-generate-env.mjs`](./dev/dev-generate-env.mjs) | Generate per-offset harness env files |
-| [`staging/setup-staging.sh`](./staging/setup-staging.sh) | **Staging first-time setup** — Docker, seed, build, PM2 ([RUNBOOK](../server-environment/staging/RUNBOOK.md)) |
+| [`staging/setup-staging.sh`](./staging/setup-staging.sh) | **Staging first-time setup** — Docker, seed, build, PM2 ([RUNBOOK](../dev-ops/staging/RUNBOOK.md)) |
 | [`staging/deploy-staging.sh`](./staging/deploy-staging.sh) | Staging re-deploy after `git pull` |
 | [`staging/smoke-staging.sh`](./staging/smoke-staging.sh) | **จาก local** — smoke HTTPS หลัง deploy (`SMOKE_PASSWORD` required) |
 | [`staging/staging-init-env.sh`](./staging/staging-init-env.sh) | Copy `.env.example` → `.env.staging` (skip existing) |
@@ -80,7 +80,7 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`staging/verify-staging-schema.sh`](./staging/verify-staging-schema.sh) | Staging validator gate after seed |
 | [`release/release-tag.sh`](./release/release-tag.sh) | Tag a release after staging smoke passes |
 
-See [AGENTS.md](../AGENTS.md), [harness-engineering/README.md](../harness-engineering/README.md), and [docs/golden-principles.md](../docs/golden-principles.md).
+See [AGENTS.md](../AGENTS.md), [knowledge/harness/README.md](../knowledge/harness/README.md), and [docs/golden-principles.md](../docs/golden-principles.md).
 
 ## Domain coding standards (org)
 

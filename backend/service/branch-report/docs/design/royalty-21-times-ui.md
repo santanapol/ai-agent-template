@@ -1,7 +1,7 @@
 # Royalty 21 Times — Frontend UI Design
 
 > Spec backend: [../royalty-21-times.md](../royalty-21-times.md)  
-> Matrix tabs: [../../_mission-control/SPEC-deposit-matrix-tabs.md](../../_mission-control/SPEC-deposit-matrix-tabs.md)  
+> Matrix tabs: [../SPEC-deposit-matrix-tabs.md](../SPEC-deposit-matrix-tabs.md)  
 > **Runtime FE:** `frontend/backoffice-next` — **shadcn/ui** (`Tabs`, form filters, data-table). Historical antd snippets below are legacy reference only — do not introduce Ant Design Tabs on this page.
 
 ## 1. Page identity

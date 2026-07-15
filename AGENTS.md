@@ -9,9 +9,10 @@
 | **Code** | `backend/`, `frontend/backoffice-next/` | Runnable applications |
 | **Product docs** | `docs/specs/` | What to build (per-service specs) |
 | **Execution plans** | `docs/exec-plans/` | Active/completed work, tech debt |
-| **Domain standards** | `coding-standard/` | How to build (org rules) |
-| **Harness** | `harness-engineering/` | Working philosophy — beliefs, skills integration, tooling |
+| **Domain standards** | `coding-standard/` | How to build (org rules, vendored) |
+| **Knowledge** | `knowledge/` | Harness philosophy (`knowledge/harness/`) + testing standards (`knowledge/software-testing/`) |
 | **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Skills, commands, checklists (Cursor + Claude Code) |
+| **Dev ops** | `dev-ops/` | Staging/production server runbooks and credentials (gitignored) |
 
 ## Document map
 
@@ -21,15 +22,17 @@
 | **Environment files** | [backend/ENV.md](backend/ENV.md) | `.env.harness` (dev-up) · `.env` (manual) · `.env.prod` (PM2 prod) · `.env.staging` (PM2 staging) |
 | **System architecture** | [backend/ARCHITECTURE.md](backend/ARCHITECTURE.md) | Trust boundary, gateway mesh |
 | **Backend ops (deep)** | [backend/RUNBOOK.md](backend/RUNBOOK.md) | Docker, seed, deploy checklist |
+| **Staging server** | [dev-ops/staging/RUNBOOK.md](dev-ops/staging/RUNBOOK.md) | nginx, PM2, deploy on staging host |
 | **Product specs** | [docs/README.md](docs/README.md) | Spec index under `docs/specs/` |
 | **Golden principles** | [docs/golden-principles.md](docs/golden-principles.md) | Mechanical invariants agents must keep |
 | **Quality score** | [docs/QUALITY_SCORE.md](docs/QUALITY_SCORE.md) | Domain grades and gaps |
 | **Observability** | [docs/observability.md](docs/observability.md) | Logs/metrics query for agents |
-| **Harness (how we work)** | [harness-engineering/README.md](harness-engineering/README.md) | Beliefs, agent-skills ↔ harness, boot/smoke |
+| **Knowledge** | [knowledge/README.md](knowledge/README.md) | Harness + testing standards index |
 | **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | `/spec` … `/ship`, subagents |
 | **Claude Code SDLC** | [.claude/USAGE.md](.claude/USAGE.md) | Same skills/commands, native Claude Code format |
 | **Claude Code orchestration** | [CLAUDE.md](CLAUDE.md) | Auto-loaded every session — skill/command routing (generated) |
-| **Coding standards** | [coding-standard/](coding-standard/) | Auth, gateway, backend, frontend, testing |
+| **Coding standards** | [coding-standard/](coding-standard/) | Auth, gateway, backend, frontend |
+| **Template conventions** | [docs/TEMPLATE.md](docs/TEMPLATE.md) | Repo skeleton, forbidden paths, service bootstrap |
 
 ## Agent workflow (SDLC)
 
@@ -69,7 +72,7 @@ Manual fallback: [RUNBOOK.md](RUNBOOK.md).
 ## Progressive disclosure
 
 1. Start here (`AGENTS.md`) for orientation.
-2. Read [harness-engineering/README.md](harness-engineering/README.md) for how skills and harness work together.
+2. Read [knowledge/harness/README.md](knowledge/harness/README.md) for how skills and harness work together.
 3. Read the service spec in `docs/specs/backend/<service>/` before changing that service.
 4. Read `docs/golden-principles.md` before proposing architecture changes.
 5. Check `docs/exec-plans/active/` for in-flight work — avoid duplicating effort.

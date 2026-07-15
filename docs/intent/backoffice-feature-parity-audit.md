@@ -4,8 +4,7 @@
 
 ## Outcome
 
-A fresh, independent audit report comparing `frontend/backoffice` (old, frozen
-reference archive) against `frontend/backoffice-next` (new, shipped to staging
+A fresh, independent audit report comparing the legacy Vite backoffice (removed from repo 2026-07-08; recover from git history if needed) against `frontend/backoffice-next` (new, shipped to staging
 as v0.5.0) across six axes:
 
 1. **Menu / route parity** — does every menu item in the old system exist in

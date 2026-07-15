@@ -41,7 +41,7 @@ curl -sf http://127.0.0.1:3005/ | head -c 200
 - [x] HTTPS `:443` (Let's Encrypt) restored after proxy rewrite
 - [x] `sudo nginx -t && sudo systemctl reload nginx`
 
-See [server-environment/staging/RUNBOOK.md](../../../server-environment/staging/RUNBOOK.md) §6.
+See [dev-ops/staging/RUNBOOK.md](../../../dev-ops/staging/RUNBOOK.md) §6.
 
 ## Automated smoke (local → HTTPS)
 
@@ -51,7 +51,7 @@ SMOKE_PASSWORD='…' bash scripts/smoke-staging.sh
 
 - [x] **2026-07-08** — `scripts/smoke-staging.sh` passed against `https://zero-staging.168bits.com`
 
-Credentials: `server-environment/staging/credential.md` (not committed).
+Credentials: `dev-ops/staging/credential.md` (not committed).
 
 ## Manual route matrix
 

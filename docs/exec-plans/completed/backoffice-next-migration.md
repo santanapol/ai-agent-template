@@ -41,7 +41,7 @@ Post-release follow-up (ops, not blocking tag):
 - [x] PM2 `zero-backoffice` in `ecosystem.factory.js`
 - [x] `deploy-staging.sh` builds Next app
 - [x] CI job `frontend-next-checks`
-- [x] Staging nginx config documented (`server-environment/staging/RUNBOOK.md` §6 → `:3005`)
+- [x] Staging nginx config documented (`dev-ops/staging/RUNBOOK.md` §6 → `:3005`)
 - [ ] Staging nginx applied on server (verify after deploy)
 - [ ] Manual UAT — [`STAGING-UAT-2026-07-08.md`](../../../frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md)
 

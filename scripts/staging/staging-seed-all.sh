@@ -5,7 +5,7 @@
 # Prereqs:
 #   bash scripts/staging-init-env.sh   # creates .env.staging from .env.example
 #   edit .env.staging (DATABASE_URI, secrets, ADMIN_PASSWORD, …)
-#   docker compose up (see server-environment/staging/RUNBOOK.md)
+#   docker compose up (see dev-ops/staging/RUNBOOK.md)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

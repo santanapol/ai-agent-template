@@ -5,6 +5,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -188,15 +189,58 @@ function checkExecPlans() {
 }
 
 function checkRequiredRootDocs() {
-  for (const f of ['AGENTS.md', 'docs/golden-principles.md', 'docs/exec-plans/README.md']) {
+  for (const f of [
+    'AGENTS.md',
+    'docs/golden-principles.md',
+    'docs/exec-plans/README.md',
+    'docs/TEMPLATE.md',
+  ]) {
     if (!exists(f)) {
       fail(`Missing required doc: ${f}`, `Create ${f}`);
     }
   }
 }
 
+function findMissionControlDirs(dir = '.', out = []) {
+  const full = path.join(ROOT, dir);
+  if (!fs.existsSync(full)) return out;
+  for (const ent of fs.readdirSync(full, { withFileTypes: true })) {
+    if (ent.name === 'node_modules' || ent.name === '.git' || ent.name === '.dev-run') continue;
+    const rel = dir === '.' ? ent.name : path.join(dir, ent.name);
+    if (ent.isDirectory()) {
+      if (ent.name === '_mission-control') {
+        out.push(rel.replace(/\\/g, '/'));
+      } else {
+        findMissionControlDirs(rel, out);
+      }
+    }
+  }
+  return out;
+}
+
+function checkForbiddenPaths() {
+  const missionControl = findMissionControlDirs();
+  for (const rel of missionControl) {
+    fail(`Forbidden _mission-control directory: ${rel}/`, 'Move specs to docs/specs/ or service docs/ and delete _mission-control/');
+  }
+
+  let trackedTasks = '';
+  try {
+    trackedTasks = execSync('git ls-files tasks', { cwd: ROOT, encoding: 'utf8' }).trim();
+  } catch {
+    trackedTasks = '';
+  }
+  if (trackedTasks) {
+    fail(
+      'Tracked files under tasks/ (ephemeral plans must not be committed)',
+      'git rm --cached tasks/*; durable plans belong in docs/exec-plans/',
+    );
+  }
+}
+
 // --- main ---
 checkRequiredRootDocs();
+checkForbiddenPaths();
 checkSpecCoverage();
 checkQualityScore();
 checkExecPlans();

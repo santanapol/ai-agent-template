@@ -277,7 +277,7 @@ Navbar Select → POST /auth/me/active-branch
              → branch-report userContext plugin
 ```
 
-Reference: `frontend/backoffice/src/contexts/AuthContext.tsx` · `backend/gateway/src/plugins/inject-context.js` · `backend/service/smart-report/src/plugins/user-context.js`
+Reference: `frontend/backoffice-next/src/contexts/AuthContext.tsx` · `backend/gateway/src/plugins/inject-context.js` · `backend/service/smart-report/src/plugins/user-context.js`
 
 ### Channel Summary
 

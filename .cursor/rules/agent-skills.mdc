@@ -12,7 +12,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Phase | Command | Underlying skill(s) |
 |-------|---------|---------------------|
 | Define | `/spec` | spec-driven-development |
-| Plan | `/plan` | planning-and-task-breakdown |
+| Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown (local — exec-plans/active/) |
 | Build | `/build` or `/code-build` | incremental-implementation + test-driven-development |
 | Verify | `/test` | test-driven-development |
 | Review | `/review` | code-review-and-quality |
@@ -24,7 +24,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 
 ## Agent map
 
-Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [harness-engineering/README.md](../../harness-engineering/README.md).
+Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [knowledge/harness/README.md](../../knowledge/harness/README.md).
 
 ## Intent → skill (auto)
 

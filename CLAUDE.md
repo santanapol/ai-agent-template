@@ -12,7 +12,7 @@ improvise workflows** when a matching skill exists — read the skill's `SKILL.m
 | Phase | Command | Underlying skill(s) |
 |-------|---------|---------------------|
 | Define | `/spec` | spec-driven-development |
-| Plan | `/plan` | planning-and-task-breakdown |
+| Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown (local — exec-plans/active/) |
 | Build | `/build` or `/code-build` | incremental-implementation + test-driven-development |
 | Verify | `/test` | test-driven-development |
 | Review | `/review` | code-review-and-quality |
@@ -47,6 +47,6 @@ improvise workflows** when a matching skill exists — read the skill's `SKILL.m
 - Command standards: `scripts/agent/agent-skills-standards/`
 - Team guide: `.claude/USAGE.md`
 - Vendor pin: `.claude/VENDOR.md`
-- How we work: [harness-engineering/README.md](harness-engineering/README.md)
+- How we work: [knowledge/harness/README.md](knowledge/harness/README.md)
 
 Cursor gets the same orchestration via [`.cursor/rules/agent-skills.mdc`](.cursor/rules/agent-skills.mdc).

@@ -13,7 +13,7 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 | smart-report | A- | yes | yes | yes | Full OpenAPI CRUD + via-gateway; sandbox adversarial integration tests |
 | branch-report | A- | yes | yes | yes | Local `gpp_777ww` seed path + `verify-branch-report-seed.sh`; Deposit Matrix feature (v0.8.0) + `openapi.yaml` fully synced (TD-037) |
 | demo-service | B | yes | yes | partial | Central spec index; scraped in observability; sample service only |
-| backoffice-next | A- | yes | yes | no | Legacy `frontend/backoffice` (Vite) removed 2026-07-08; Biome lint 0 errors; Deposit Matrix tabs + heat map (v0.8.0–v0.8.4); shared `DataTablePagination` React Compiler caller-caching bug fixed (v0.8.3) |
+| **backoffice-next** | A- | yes | yes | no | Legacy Vite `frontend/backoffice` removed (2026-07-08, re-confirmed 2026-07-15); Biome lint 0 errors; Deposit Matrix tabs + heat map (v0.8.0–v0.8.4); shared `DataTablePagination` React Compiler caller-caching bug fixed (v0.8.3) |
 
 ## Gaps to close (priority)
 
@@ -25,4 +25,4 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 
 ## Last updated
 
-2026-07-15 — `/gc`: closed branch-report `openapi.yaml` drift (TD-037 — `deposit-matrix` path, `PermissionDenied`/`InvalidHeader` responses), `deploy-staging.sh` health-check false-negative (TD-038); logged auto-deploy secret issue (TD-039) and flaky `BranchSwitcher.test.tsx` (TD-040) as open. Prior: v0.7.0 deploy + tag (`db71e0d`, 2026-07-13).
+2026-07-15 — Repo template cleanup: removed legacy Vite archive + tracked `tasks/`; relocated `_mission-control` specs to service `docs/`; added `docs/TEMPLATE.md` + docs-lint gates. Prior: `/gc` closed branch-report openapi drift (TD-037), deploy-staging health-check (TD-038).

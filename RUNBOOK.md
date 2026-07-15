@@ -9,9 +9,10 @@
 | [**backend/ENV.md**](./backend/ENV.md) | **ไฟล์ env** — `.env.harness` / `.env` / `.env.prod` |
 | [backend/RUNBOOK.md](./backend/RUNBOOK.md) | Manual backend, deploy checklist |
 | [frontend/backoffice-next/README.md](./frontend/backoffice-next/README.md) | Next.js rewrites, `.env.local`, UI conventions |
-| [harness-engineering/workflows.md](./harness-engineering/workflows.md) | SDLC, `PORT_OFFSET`, observability, browser testing |
+| [knowledge/harness/workflows.md](./knowledge/harness/workflows.md) | SDLC, `PORT_OFFSET`, observability, browser testing |
 | [scripts/README.md](./scripts/README.md) | สคริปต์ harness ทั้งหมด |
 | [docs/deploy/digitalocean.md](./docs/deploy/digitalocean.md) | Production CI/CD |
+| [dev-ops/staging/RUNBOOK.md](./dev-ops/staging/RUNBOOK.md) | Staging server (nginx, PM2) |
 | [docs/observability.md](./docs/observability.md) | Query logs/metrics |
 
 ---
@@ -244,7 +245,7 @@ Per-package: `npm run ci` ใน directory ของ service นั้น
 
 ```bash
 ./scripts/dev/dev-up.sh
-# รัน ZAP baseline ต่อ http://127.0.0.1:3000 (หลังมี session/token ตาม coding-standard software-testing)
+# รัน ZAP baseline ต่อ http://127.0.0.1:3000 (หลังมี session/token ตาม knowledge/software-testing)
 # เก็บรายงานเป็น artifact ใน docs/ หรือ CI workflow_dispatch — อย่าใส่ ZAP เป็น required gate จนกว่า noise จะควบคุมได้
 ```
 

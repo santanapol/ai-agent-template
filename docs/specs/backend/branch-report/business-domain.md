@@ -34,4 +34,4 @@ Mandatory `x-user-ou` + `x-user-branch` on business routes (`user-context` plugi
 
 ## 5. Legacy docs
 
-Package `docs/` และ `_mission-control/SPEC.md` — superseded by central spec folder; อ้างอิง code เป็นหลัก
+Package `docs/` และ shipped mission specs under `docs/SPEC-*.md` — superseded by central spec folder; อ้างอิง code เป็นหลัก

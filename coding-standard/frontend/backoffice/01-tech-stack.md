@@ -15,7 +15,7 @@
 
 | App | Path | UI stack |
 | :--- | :--- | :--- |
-| **backoffice** | `code-base/zero-platform/frontend/backoffice` | shadcn/ui + CSS variables in `index.css` |
+| **backoffice-next** | `frontend/backoffice-next` | Next.js 16 + shadcn/ui + CSS variables |
 | **live-demo-shadcn** (template) | `coding-standard/frontend/backoffice/live-demo-shadcn` | Reference scaffold for new shadcn pages |
 
 ## 📦 Package Management

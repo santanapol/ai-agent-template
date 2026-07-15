@@ -45,11 +45,11 @@ See [AGENTS.md](../../AGENTS.md) and [docs/observability.md](../../docs/observab
 When executing this command, follow the domain standards that apply to the work:
 
 **Software testing:**
-- `coding-standard/software-testing/00-software_testing_overview/README.md`
-- `coding-standard/software-testing/01-unit-testing/README.md`
-- `coding-standard/software-testing/02-integration-testing/README.md`
-- `coding-standard/software-testing/07-regression-testing/README.md`
-- `coding-standard/software-testing/08-e2e-testing/README.md`
+- `knowledge/software-testing/00-software_testing_overview/README.md`
+- `knowledge/software-testing/01-unit-testing/README.md`
+- `knowledge/software-testing/02-integration-testing/README.md`
+- `knowledge/software-testing/07-regression-testing/README.md`
+- `knowledge/software-testing/08-e2e-testing/README.md`
 
 **Backend:**
 - `coding-standard/backend/03-api-routing.md`

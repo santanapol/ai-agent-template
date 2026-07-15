@@ -11,9 +11,11 @@ Product and engineering docs live in different places — by design.
 | **ADRs (platform)** | [`adrs/`](./adrs/) | Cross-cutting architecture decisions (schema, validators) |
 | **Quality score** | [`QUALITY_SCORE.md`](./QUALITY_SCORE.md) | After audits or `/gc` |
 | **Observability** | [`observability.md`](./observability.md) | Changing logs/metrics stack |
-| **Harness (how we work)** | [`../harness-engineering/README.md`](../harness-engineering/README.md) | Beliefs, skills ↔ harness |
-| **Core beliefs** | [`../harness-engineering/core-beliefs.md`](../harness-engineering/core-beliefs.md) | หลักการที่ไม่ควรฝ่าฝืน |
-| **How to build** (domain rules) | [`../coding-standard/`](../coding-standard/) | Changing org-wide backend/auth/gateway/frontend/testing standards |
+| **Harness (how we work)** | [`../knowledge/harness/README.md`](../knowledge/harness/README.md) | Beliefs, skills ↔ harness |
+| **Template conventions** | [`TEMPLATE.md`](./TEMPLATE.md) | Repo skeleton, zones, forbidden paths, service bootstrap |
+| **Core beliefs** | [`../knowledge/harness/core-beliefs.md`](../knowledge/harness/core-beliefs.md) | หลักการที่ไม่ควรฝ่าฝืน |
+| **How to build** (domain rules) | [`../coding-standard/`](../coding-standard/) | Backend/auth/gateway/frontend standards |
+| **Testing standards** | [`../knowledge/software-testing/`](../knowledge/software-testing/) | Testing levels 00–12 |
 | **How agents verify** (checklists) | [`../references/`](../references/) | Synced from [agent-skills](https://github.com/addyosmani/agent-skills) — do not edit by hand |
 | **QA code audit** (draft manual) | [`qa/qa-code-audit-common.md`](./qa/qa-code-audit-common.md) + [backend](./qa/qa-code-audit-backend.md) + [frontend](./qa/qa-code-audit-frontend.md) | Bug-hunt workflow — spec as SoT, not code; split BE/FE for separate skills; intent in [`intent/qa-code-audit-skill.md`](./intent/qa-code-audit-skill.md) |
 | **Slash-command standards map** | [`../scripts/agent/agent-skills-standards/`](../scripts/agent/agent-skills-standards/) | Telling `/plan`, `/build`, etc. which `coding-standard/` files apply |
@@ -46,7 +48,7 @@ Three RUNBOOKs, three scopes — read top-down, deeper only if the layer above d
 |-------|------|-------|
 | 1. Local dev (start here) | [`../RUNBOOK.md`](../RUNBOOK.md) | Boot the whole stack via harness, seed, smoke, CI, day-to-day troubleshooting |
 | 2. Backend manual + deploy | [`../backend/RUNBOOK.md`](../backend/RUNBOOK.md) | Per-service manual setup without the harness, JWT/roles deploy checklist — assumes layer 1 doesn't cover your case |
-| 3. Staging server | [`../server-environment/staging/RUNBOOK.md`](../server-environment/staging/RUNBOOK.md) | Operating the actual staging host (nginx, PM2, deploy keys) — not relevant to local dev at all |
+| 3. Staging server | [`../dev-ops/staging/RUNBOOK.md`](../dev-ops/staging/RUNBOOK.md) | Operating the actual staging host (nginx, PM2, deploy keys) — not relevant to local dev at all |
 
 Don't duplicate content across layers — link to the layer that owns it instead.
 

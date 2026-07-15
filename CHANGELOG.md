@@ -186,7 +186,7 @@ Handoff: [docs/releases/2026-07-07-user.md](docs/releases/2026-07-07-user.md), [
 
 - **`GET /auth/me/branches`** — OU-scoped branch list for switch-capable roles; backoffice switcher uses auth instead of agent-invoice.
 - **Harness env:** `backend/<service>/.env.harness` (replaces `0/env/*`); [backend/ENV.md](backend/ENV.md), `scripts/env-status.mjs`.
-- **Staging ops:** `deploy-staging.sh`, `setup-staging.sh`, `staging-init-env.sh`, `staging-seed-all.sh`, `staging-verify-env.sh`, `smoke-staging.sh`, `release-tag.sh`; [server-environment/staging/RUNBOOK.md](server-environment/staging/RUNBOOK.md).
+- **Staging ops:** `deploy-staging.sh`, `setup-staging.sh`, `staging-init-env.sh`, `staging-seed-all.sh`, `staging-verify-env.sh`, `smoke-staging.sh`, `release-tag.sh`; [dev-ops/staging/RUNBOOK.md](dev-ops/staging/RUNBOOK.md).
 - **`/release` skill** — platform semver, CHANGELOG, handoff notes, post-deploy git tag.
 - **Auth:** `branches-list.integration.test.js`; platform-branches config extraction.
 

@@ -6,7 +6,7 @@
 #   SMOKE_PASSWORD='...' bash scripts/smoke-staging.sh
 #   SMOKE_PASSWORD='...' STAGING_URL=https://zero-staging.168bits.com bash scripts/smoke-staging.sh
 #
-# Credentials: server-environment/staging/credential.md (do not commit passwords)
+# Credentials: dev-ops/staging/credential.md (do not commit passwords)
 set -euo pipefail
 
 STAGING_URL="${STAGING_URL:-https://zero-staging.168bits.com}"
@@ -15,7 +15,7 @@ SMOKE_USERNAME="${SMOKE_USERNAME:-platform_admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 
 if [[ -z "$SMOKE_PASSWORD" ]]; then
-  echo "Set SMOKE_PASSWORD (see server-environment/staging/credential.md)" >&2
+  echo "Set SMOKE_PASSWORD (see dev-ops/staging/credential.md)" >&2
   exit 1
 fi
 

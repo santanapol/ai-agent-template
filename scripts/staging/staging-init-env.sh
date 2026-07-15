@@ -49,4 +49,4 @@ if [[ -f "$fe_src" && ! -f "$fe_dest" ]]; then
 fi
 
 echo ""
-echo "Next: edit backend/*/.env.staging — see server-environment/staging/RUNBOOK.md"
+echo "Next: edit backend/*/.env.staging — see dev-ops/staging/RUNBOOK.md"

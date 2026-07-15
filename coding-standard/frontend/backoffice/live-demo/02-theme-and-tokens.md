@@ -5,7 +5,7 @@ This document establishes the official styling tokens, colors, spacings, and the
 ---
 
 ## 1. Seed Design Tokens (Branding)
-All branding tokens are centralized in [`index.css`](../../../../code-base/zero-platform/frontend/backoffice/src/index.css) (`:root` / `.dark` CSS variables):
+All branding tokens are centralized in [`globals.css`](../../../../frontend/backoffice-next/src/app/globals.css) (`:root` / `.dark` CSS variables):
 
 *   **Primary Color**: `#2563EB` (Zero Blue)
 *   **Success Color**: `#10B981` (Emerald Green)

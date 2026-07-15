@@ -7,7 +7,7 @@
 
 **เครื่องมือ:** `node --test`, `fastify.inject()`, Bruno (`backend/_bruno`), `smoke.sh`
 
-อ่านเพิ่ม: `coding-standard/software-testing/01-unit-testing/`, `02-integration-testing/`, `04-sit-testing/`, `09-security-testing/`
+อ่านเพิ่ม: `knowledge/software-testing/01-unit-testing/`, `02-integration-testing/`, `04-sit-testing/`, `09-security-testing/`
 
 ---
 
@@ -74,7 +74,7 @@ npm test
 - Replay / expired token
 - Partial failure ข้าม service (mesh call สำเร็จครึ่งเดียว) — ต้องไม่ปล่อย orphaned state
 
-Security เชิงลึก → `coding-standard/software-testing/09-security-testing/`
+Security เชิงลึก → `knowledge/software-testing/09-security-testing/`
 
 ## 5. Regression
 

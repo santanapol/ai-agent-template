@@ -25,7 +25,7 @@ Canonical platform role names for auth, gateway mesh headers, and downstream ser
 From monorepo root:
 
 ```bash
-cd code-base/zero-platform && npm install
+cd /path/to/zero-platform && npm install
 ```
 
 Per-service deploy (PM2) still requires `npm install` in each service directory after `git pull` so `file:` / workspace links resolve.

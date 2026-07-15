@@ -67,7 +67,7 @@ pm2 start backend/ecosystem.config.js
 pm2 start backend/ecosystem.staging.config.js
 ```
 
-Staging bootstrap: [server-environment/staging/RUNBOOK.md](../server-environment/staging/RUNBOOK.md)
+Staging bootstrap: [dev-ops/staging/RUNBOOK.md](../dev-ops/staging/RUNBOOK.md)
 
 ---
 

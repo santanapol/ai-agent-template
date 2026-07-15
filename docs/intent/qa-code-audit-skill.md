@@ -92,7 +92,7 @@ workflow 7 ขั้น, bug-hunt playbook, report template) เพื่อไ�
 
 ## ความสัมพันธ์กับของที่มีอยู่
 
-- **ทฤษฎี testing:** `coding-standard/software-testing/` (00–12)
+- **ทฤษฎี testing:** `knowledge/software-testing/` (00–12)
 - **ต้นแบบ adversarial:** `backend/service/smart-report/.../reports.sandbox-adversarial.integration.test.js`
 - **ต้นแบบ mesh guard:** `backend/service/staff/src/tests/integration-test/mesh.guard.test.js`
 - **ต้นแบบ parity audit:** `docs/intent/backoffice-feature-parity-audit.md`

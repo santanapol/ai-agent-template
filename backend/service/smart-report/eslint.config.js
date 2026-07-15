@@ -12,7 +12,6 @@ export default [
     ignores: [
       "node_modules/**",
       "coverage/**",
-      "_mission-control/**",
       "docs/**",
       "**/tests/**/fixtures/**",
     ],

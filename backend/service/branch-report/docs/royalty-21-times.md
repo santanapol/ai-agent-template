@@ -4,8 +4,8 @@
 > สถานะ: **shipped** · **Deposit Matrix Tabs** — spec approved, implementing  
 > ERD: [erd/README.md](../erd/README.md)  
 > Frontend design: [design/royalty-21-times-ui.md](./design/royalty-21-times-ui.md)  
-> Implementation spec: [_mission-control/SPEC.md](../_mission-control/SPEC.md)  
-> Matrix tabs spec: [_mission-control/SPEC-deposit-matrix-tabs.md](../_mission-control/SPEC-deposit-matrix-tabs.md)
+> Implementation spec: [SPEC-royalty-21-times-mission.md](./SPEC-royalty-21-times-mission.md)  
+> Matrix tabs spec: [SPEC-deposit-matrix-tabs.md](./SPEC-deposit-matrix-tabs.md)
 
 ## Overview
 
@@ -72,7 +72,7 @@
 
 ## Deposit Matrix (Tabs 2–3)
 
-> Full spec: [SPEC-deposit-matrix-tabs.md](../_mission-control/SPEC-deposit-matrix-tabs.md)
+> Full spec: [SPEC-deposit-matrix-tabs.md](./SPEC-deposit-matrix-tabs.md)
 
 สรุปจาก **cohort สมาชิกเดียวกันกับ Tab 1 หลัง Search** (ไม่จำกัด pagination ของ Tab 1)
 
@@ -111,7 +111,7 @@ Navbar → POST /auth/me/active-branch
       → request.userContext.ouId / branchId
 ```
 
-Reference: `frontend/backoffice/src/contexts/AuthContext.tsx` · `backend/gateway/src/plugins/inject-context.js`
+Reference: `frontend/backoffice-next/src/contexts/AuthContext.tsx` · `backend/gateway/src/plugins/inject-context.js`
 
 ### MongoDB
 
@@ -350,4 +350,4 @@ GET /api/v1/branch-report/royalty-21-times/deposit-matrix
 ### Frontend
 
 - UI design: [design/royalty-21-times-ui.md](./design/royalty-21-times-ui.md)
-- Matrix tabs: [_mission-control/SPEC-deposit-matrix-tabs.md](../_mission-control/SPEC-deposit-matrix-tabs.md)
+- Matrix tabs: [SPEC-deposit-matrix-tabs.md](./SPEC-deposit-matrix-tabs.md)

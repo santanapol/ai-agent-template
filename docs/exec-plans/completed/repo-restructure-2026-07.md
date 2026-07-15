@@ -21,9 +21,9 @@ services: []
 5. root มี `DEPLOY_DIGITALOCEAN.md` ปน; RUNBOOK มี 4 ชั้นทับซ้อนบางส่วน
 6. "plans" กระจาย 3 ที่: `docs/exec-plans/` (ดี, docs-lint บังคับ) · `docs/specs/backend/<service>/plans/` (ข้างในเป็น `confidence-map.md` = audit artifact ไม่ใช่ plan) · `docs/specs/backend/plans/` (ว่าง, ผิดชั้น)
 7. legacy `frontend/backoffice` deprecated แล้วแต่ยังกิน 643MB บนดิสก์ (node_modules)
-8. `harness-engineering/openai-com-index-harness-engineering.md` เป็น scraped reference ไม่ใช่ philosophy doc
+8. `knowledge/harness/openai-com-index-harness-engineering.md` เป็น scraped reference ไม่ใช่ philosophy doc
 
-หมายเหตุ: `server-environment/**/credential.md` ถูก gitignore แล้ว ✓
+หมายเหตุ: `dev-ops/**/credential.md` ถูก gitignore แล้ว ✓
 
 **อัปเดต 2026-07-08 (หลังบันทึกแผนนี้):** เพิ่ม Claude Code support เข้า `sync-agent-skills.sh` — ตอนนี้ script สร้าง `.claude/` (skills/agents/commands, คู่ขนานกับ `.cursor/`) และ root `CLAUDE.md` (generated, auto-load ทุก session — เทียบเท่า `.cursor/rules/agent-skills.mdc`) ผลกระทบต่อแผนนี้:
 - Phase 2 (จัด `scripts/`) ต้องระวังเพิ่ม — ดู sub-note ใน Phase 2
@@ -73,13 +73,13 @@ scripts/
 
 ## Phase 3 — จัดชั้นเอกสาร + ยุบ plans เหลือที่เดียว — ✅ เสร็จสมบูรณ์
 
-- [x] ย้าย `DEPLOY_DIGITALOCEAN.md` → `docs/deploy/digitalocean.md` แล้ว — แก้ทุกลิงก์ (README, RUNBOOK, server-environment/staging/RUNBOOK, harness-engineering/workflows.md ×2, coding-standard operations doc) เหลือ CHANGELOG.md ตั้งใจไม่แก้ (historical) — root ตอนนี้เหลือ `README`, `AGENTS.md`, `CLAUDE.md` (generated), `CHANGELOG`, `RUNBOOK`
-- [x] นิยามลำดับชั้น RUNBOOK ใน `docs/README.md` แล้ว (root = local dev start here / `backend/` = manual + deploy checklist / `server-environment/staging/` = server จริง) — ตัด Troubleshooting ที่ซ้ำใน `backend/RUNBOOK.md` §5 ออก เหลือ pointer ไป root (เช็คแล้ว: ส่วนอื่นของ 3 ไฟล์ RUNBOOK ไม่ทับซ้อนจริง — คนละ scope กัน); เจอ + แก้ stale `5175`/Vite ที่หลงเหลือใน `RUNBOOK.md` และ `harness-engineering/workflows.md` ไปด้วยระหว่างตรวจ
+- [x] ย้าย `DEPLOY_DIGITALOCEAN.md` → `docs/deploy/digitalocean.md` แล้ว — แก้ทุกลิงก์ (README, RUNBOOK, dev-ops/staging/RUNBOOK, knowledge/harness/workflows.md ×2, coding-standard operations doc) เหลือ CHANGELOG.md ตั้งใจไม่แก้ (historical) — root ตอนนี้เหลือ `README`, `AGENTS.md`, `CLAUDE.md` (generated), `CHANGELOG`, `RUNBOOK`
+- [x] นิยามลำดับชั้น RUNBOOK ใน `docs/README.md` แล้ว (root = local dev start here / `backend/` = manual + deploy checklist / `dev-ops/staging/` = server จริง) — ตัด Troubleshooting ที่ซ้ำใน `backend/RUNBOOK.md` §5 ออก เหลือ pointer ไป root (เช็คแล้ว: ส่วนอื่นของ 3 ไฟล์ RUNBOOK ไม่ทับซ้อนจริง — คนละ scope กัน); เจอ + แก้ stale `5175`/Vite ที่หลงเหลือใน `RUNBOOK.md` และ `knowledge/harness/workflows.md` ไปด้วยระหว่างตรวจ
 - [x] **Plans อยู่ใน `docs/` ต่อ (ตัดสินใจแล้ว — ไม่แยกเป็น top-level):** `docs/exec-plans/README.md` แก้แล้ว — plan ทุกระดับ (รวม service-scoped) อยู่ที่นี่ ใช้ `services: [...]` front-matter แยก scope แทนโฟลเดอร์ต่อ service
 - [x] ย้าย `confidence-map.md` จาก `docs/specs/backend/<service>/plans/` → `docs/specs/backend/<service>/confidence-map.md` แล้วทั้ง 6 service (agent-invoice, staff, auth, gateway, branch-report, smart-report) — ลบโฟลเดอร์ `plans/` ทิ้งหมด, แก้ `WORKFLOW.md` ทั้ง 5 ไฟล์ที่อ้างถึง (smart-report ไม่มีการอ้างอิงเดิม) ให้ชี้ไป `docs/exec-plans/active/` แทน
 - [x] ลบ `docs/specs/backend/plans/` (ว่างเปล่า) แล้ว
 - [x] เปิด `docs/specs/frontend/` สำหรับ backoffice-next — `docs/specs/frontend/backoffice-next/backoffice-next-spec.md`
-- [x] ย้าย `harness-engineering/openai-com-index-harness-engineering.md` → `harness-engineering/sources/openai-com-index-harness-engineering.md` แล้ว — แก้ลิงก์ใน `core-beliefs.md` + `README.md` (×3 จุด รวม repo-structure tree) ครบ
+- [x] ย้าย `knowledge/harness/openai-com-index-harness-engineering.md` → `knowledge/harness/sources/openai-com-index-harness-engineering.md` แล้ว — แก้ลิงก์ใน `core-beliefs.md` + `README.md` (×3 จุด รวม repo-structure tree) ครบ
 - [x] อัปเดต README/AGENTS.md ที่ยังพูดถึง `frontend/backoffice` (Vite) เป็นแอปหลัก — รวมถึง RUNBOOK.md, backend/README.md, backend/ENV.md, `.github/workflows/ci-check.yml` (ลบ job `frontend-checks` legacy), `docs/QUALITY_SCORE.md`, `docs/exec-plans/tech-debt-tracker.md` (TD-002 closed)
 
 ## Phase 4 — cutover — ✅ เสร็จสมบูรณ์ (ยืนยันจาก git log 2026-07-08 เย็น)
@@ -93,4 +93,4 @@ scripts/
 - **ไม่รวม `backend/` + `frontend/` เข้าโฟลเดอร์ `code-base/`** — blast radius ใหญ่สุด (scripts, CI, PM2, เอกสารทุกชั้น), zone table ใน README/AGENTS.md จัดกลุ่มเชิง logic ให้อยู่แล้ว, path ยาวขึ้นถาวร ถ้าอยากจัดกลุ่มจริง ๆ ให้ทำหลัง Phase 4 ด้วย convention `apps/` (turborepo/nx) ไม่ใช่ชื่อ custom
 - **ไม่ทำ npm workspaces ที่ backend root** — โครง per-package standalone ตั้งใจไว้ สอดคล้อง coding-standard และ CI ต่อ package
 - **ไม่แตะโครง `backend/`** — สะอาดดีอยู่แล้ว
-- ถ้า root ยังรู้สึกรก ให้ลดฝั่ง meta ไม่ใช่ฝั่ง code — candidate คือ `harness-engineering/` → ใต้ `docs/`; ส่วน `references/` เป็น sync target ของ agent-skills ถ้าจะย้ายต้องแก้ `REFS` ใน `sync-agent-skills.sh` ด้วย (ทำได้แต่ไม่จำเป็น)
+- ถ้า root ยังรู้สึกรก ให้ลดฝั่ง meta ไม่ใช่ฝั่ง code — candidate คือ `knowledge/harness/` → ใต้ `docs/`; ส่วน `references/` เป็น sync target ของ agent-skills ถ้าจะย้ายต้องแก้ `REFS` ใน `sync-agent-skills.sh` ด้วย (ทำได้แต่ไม่จำเป็น)

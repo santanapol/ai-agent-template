@@ -231,7 +231,7 @@ Principles:
 | Dependencies | `npm audit` in ci | — |
 | AuthZ | partial integration tests | IDOR on every `:id` route |
 | Trust boundary | mesh.guard tests | Direct upstream calls |
-| DAST | Not in CI | OWASP ZAP against gateway `:3000` (see `coding-standard/software-testing/09-security-testing/`) |
+| DAST | Not in CI | OWASP ZAP against gateway `:3000` (see `knowledge/software-testing/09-security-testing/`) |
 
 ### Phase 6 — Closeout
 
@@ -667,7 +667,7 @@ curl -X POST http://127.0.0.1:3000/auth/login \
 | [RUNBOOK.md](../../../RUNBOOK.md) | Harness hub |
 | [docs/golden-principles.md](../../golden-principles.md) | Mechanical invariants |
 | [coding-standard/README.md](../../../coding-standard/README.md) | Org standards vendored copy |
-| [coding-standard/software-testing/00-software_testing_overview/README.md](../../../coding-standard/software-testing/00-software_testing_overview/README.md) | Testing levels index |
+| [knowledge/software-testing/00-software_testing_overview/README.md](../../../knowledge/software-testing/00-software_testing_overview/README.md) | Testing levels index |
 | [completed/SPEC-CODE-AUDIT-2026-07-03.md](../completed/SPEC-CODE-AUDIT-2026-07-03.md) | Prior spec vs code audit |
 | [completed/frontend-ui-audit-2026-07.md](../completed/frontend-ui-audit-2026-07.md) | Related frontend audit (archived 2026-07-09) |
 | [frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md](../../../frontend/backoffice-next/docs/COMPREHENSIVE-AUDIT-2026-07-08.md) | Cross-ref staff/branch findings |

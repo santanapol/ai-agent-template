@@ -45,8 +45,11 @@ dist-ssr/
 # Harness dev runtime (logs, pids only; offset≠0 also has harness/)
 .dev-run/
 
+# Ephemeral agent planning scratch (durable plans live in docs/exec-plans/)
+tasks/
+
 # Server credentials (SSH passwords, staging logins — never commit)
-server-environment/**/credential.md
+dev-ops/**/credential.md
 
 # Local studio-admin design reference (full upstream clone — not committed)
 coding-standard/frontend/backoffice/reference/studio-admin/

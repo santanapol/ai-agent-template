@@ -26,5 +26,5 @@ Edit these files only — `.cursor/commands/` is regenerated each sync.
 ## Path conventions
 
 - Domain standards: `coding-standard/<domain>/...`
-- Testing standards: `coding-standard/software-testing/<topic>/README.md`
+- Testing standards: `knowledge/software-testing/<topic>/README.md`
 - Files prefixed with `_` are includes only — not appended directly

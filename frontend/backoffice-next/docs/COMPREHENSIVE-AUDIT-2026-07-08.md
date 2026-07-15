@@ -3,7 +3,7 @@
 **Date:** 2026-07-08  
 **Auditor:** Agent (round 2, fresh audit)  
 **Environment:** Local harness (`./scripts/dev/dev-up.sh --with-frontend`), `platform_admin` / `1234`  
-**Legacy reference:** `frontend/backoffice` (static only)  
+**Legacy reference:** Vite backoffice removed from repo (2026-07-08); use git history for comparison if needed.  
 **Runtime UAT:** `frontend/backoffice-next` at `http://localhost:3005`  
 **Design baseline:** studio-admin at `http://localhost:3010`  
 **Prior audit excluded:** `FEATURE-PARITY-AUDIT-2026-07-08.md` (not used as input)

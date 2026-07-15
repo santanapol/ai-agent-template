@@ -8,7 +8,7 @@
 #   bash scripts/setup-staging.sh --nginx      # also install nginx site config
 #
 # Prereqs (without --host): Node >=24, Docker, docker compose, pm2, git
-# Guide: server-environment/staging/RUNBOOK.md
+# Guide: dev-ops/staging/RUNBOOK.md
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -188,5 +188,5 @@ echo "  pm2 status"
 pm2 status --no-color | head -20
 echo ""
 echo "  URL: https://${STAGING_DOMAIN}"
-echo "  login: see server-environment/staging/credential.md"
+echo "  login: see dev-ops/staging/credential.md"
 echo "  re-deploy: bash scripts/deploy-staging.sh"
