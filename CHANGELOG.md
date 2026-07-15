@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-15
+
+Repository snapshot: **Pagination bar stale-render fix** — bugfix only, no API/schema change.
+
+Handoff: [docs/releases/2026-07-15-2-user.md](docs/releases/2026-07-15-2-user.md), [docs/releases/2026-07-15-2-deploy.md](docs/releases/2026-07-15-2-deploy.md). Git tag: `v0.8.2` (after staging smoke).
+
+### Fixed
+
+- **backoffice-next** — `DataTablePagination` was missing the `"use no memo"` directive its sibling table components already carry; React Compiler (`reactCompiler: true`) memoized it against the TanStack Table `table` object's stable reference, so the Rows-per-page dropdown and page count didn't re-render until an unrelated remount (e.g. switching tabs). Fixes every table sharing this component: Channel Performance, Agents, Staff, Invoices, Smart Reports.
+
 ## [0.8.1] - 2026-07-15
 
 Repository snapshot: **Channel Performance — Deposit Matrix heat map** — UI-only coloring on the Deposit count / Deposit % tabs, no API/schema change.
