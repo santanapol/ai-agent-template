@@ -7,16 +7,17 @@ Reference implementation ของ **zero-platform**: API backend (auth + gatewa
 
 ## Repository zones
 
-Six top-level areas — same depth, different jobs:
+Seven top-level areas — same depth, different jobs (aligned with [AGENTS.md](./AGENTS.md)):
 
 | Zone | Paths | Purpose |
 |------|-------|---------|
-| **Code** | `backend/`, `frontend/` | Runnable applications |
+| **Code** | `backend/`, `frontend/backoffice-next/` | Runnable applications |
 | **Product docs** | `docs/specs/` | What to build (per-service specs) |
+| **Execution plans** | `docs/exec-plans/` | Active/completed work, tech debt |
 | **Domain standards** | `coding-standard/` | How to build (org rules, vendored) |
-| **Knowledge** | `knowledge/` | Harness (`knowledge/harness/`) + testing standards (`knowledge/software-testing/`) |
-| **Dev ops** | `dev-ops/` | Staging/production server ops (`dev-ops/staging/`) |
-| **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Cursor + Claude Code agent-skills, command standards |
+| **Knowledge** | `knowledge/` | Harness philosophy (`knowledge/harness/`) + testing standards (`knowledge/software-testing/`) |
+| **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Skills, commands, checklists (Cursor + Claude Code) |
+| **Dev ops** | `dev-ops/` | Staging/production server runbooks and credentials (gitignored) |
 
 ```bash
 # After clone (or when agent-skills upstream updates):
@@ -46,7 +47,10 @@ zero-platform/
 ├── frontend/
 │   └── backoffice-next/          # Next.js admin UI
 ├── docs/
-│   └── specs/                    # Service specs — [docs/README.md](./docs/README.md)
+│   ├── specs/                    # Service specs — [docs/README.md](./docs/README.md)
+│   └── exec-plans/               # Active/completed work — [docs/exec-plans/](./docs/exec-plans/)
+├── dev-ops/
+│   └── staging/                  # Server runbooks — [dev-ops/staging/RUNBOOK.md](./dev-ops/staging/RUNBOOK.md)
 ├── knowledge/                    # Harness + testing knowledge base
 │   ├── harness/                  # How we work — [knowledge/harness/README.md](./knowledge/harness/README.md)
 │   └── software-testing/         # Testing standards (00–12)
