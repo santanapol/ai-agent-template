@@ -363,6 +363,7 @@ const ChannelPerformancePage: React.FC = () => {
     <ListPageCard
       title="Channel Performance"
       description="Analyze and query Royalty 21 performance marketing statistics by channels."
+      descriptionClassName="max-w-2xl"
       toolbar={
         <DataTableToolbarActions
           table={table}

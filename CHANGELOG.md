@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-07-15
+
+Repository snapshot: **Channel Performance description wrap fix** — UI-only, no API/schema change.
+
+Handoff: [docs/releases/2026-07-15-4-user.md](docs/releases/2026-07-15-4-user.md), [docs/releases/2026-07-15-4-deploy.md](docs/releases/2026-07-15-4-deploy.md). Git tag: `v0.8.4` (after staging smoke).
+
+### Fixed
+
+- **backoffice-next** — Channel Performance's page description wrapped to multiple lines because `ListPageCard`'s default `descriptionClassName` (`max-w-sm`) was too narrow; added `descriptionClassName="max-w-2xl"`, matching the override already used by `SmartReportList.tsx`.
+
 ## [0.8.3] - 2026-07-15
 
 Repository snapshot: **Pagination bar stale-render fix, take two** — v0.8.2 fixed the wrong layer; this is the actual root-cause fix. Bugfix only, no API/schema change.
