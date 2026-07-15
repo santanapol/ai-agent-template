@@ -1,6 +1,6 @@
 # Collection validators handoff — 2026-07-09
 
-> **Status: complete** — prod `collMod` done 2026-07-09; `verify-validators` passed (11 collections, 3 DBs).  
+> **Status: complete** — prod `collMod` done 2026-07-09; re-applied **2026-07-15** (4 collections drift: `auth_users`, `staff_profiles`, `agent_fees`, `reports`); baseline [`prod-schema-baseline-2026-07-15`](../audit/prod-schema-baseline-2026-07-15.json).  
 > Policy: [ADR 005](../adrs/005-mongodb-collection-validators-policy.md) · SoT: `backend/*/scripts/collection-validators.mjs`  
 > **BE review packet:** [`be-review-erd-validators-2026-07-09.md`](../exec-plans/completed/be-review-erd-validators-2026-07-09.md)
 

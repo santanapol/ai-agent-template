@@ -298,21 +298,22 @@ cd backend/auth && npm test
 
 ## 8. การ deploy
 
-Deploy อัตโนมัติผ่าน GitHub Actions → DigitalOcean เมื่อ push `main`:
+Deploy ด้วย **SSH จากเครื่อง dev** (ไม่มี auto-deploy จาก GitHub Actions):
 
 ```
 merge PR → main
   → .github/workflows/ci-check.yml   (backend matrix + frontend + docs-checks)
-  → .github/workflows/deploy.yml     (SSH → git pull → pm2 restart)
+  → SSH: git pull + deploy script บน staging / prod
 ```
 
 ขั้นตอนฝั่งคน:
 
 1. ก่อน merge: `/ship` ต้อง GO → `/release` (notes + CI + PR) หรือ PR พอสำหรับงานเล็ก
-2. Merge PR เข้า `main` — deploy รันเอง
-3. ตรวจหลัง deploy: ดู Actions log + smoke test production ตาม [backend/RUNBOOK.md](../backend/RUNBOOK.md)
+2. Merge PR เข้า `main`
+3. Deploy ด้วย SSH: staging → [dev-ops/staging/RUNBOOK.md](../../dev-ops/staging/RUNBOOK.md) · prod → [dev-ops/prod/RUNBOOK.md](../../dev-ops/prod/RUNBOOK.md)
+4. ตรวจหลัง deploy: smoke + browser ตาม [backend/RUNBOOK.md](../../backend/RUNBOOK.md)
 
-Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.env.prod`, deploy keys): [docs/deploy/digitalocean.md](../docs/deploy/digitalocean.md)
+Setup เซิร์ฟเวอร์ครั้งแรก (Nginx, PM2, `.env.prod`, deploy keys): [dev-ops/prod/RUNBOOK.md](../../dev-ops/prod/RUNBOOK.md)
 
 > `.env.prod` ไม่อยู่ใน Git — สร้างบนเซิร์ฟเวอร์จาก `.env.example` แล้วใส่ secret จริง
 
@@ -415,7 +416,7 @@ Coding standard ของ frontend (stack, folder structure, state, auth, stylin
 | หลักการ | [core-beliefs.md](./core-beliefs.md) |
 | กฎเชิงกลไก | [golden-principles.md](../docs/golden-principles.md) |
 | Slash commands ทั้งหมด | [.claude/USAGE.md](../.claude/USAGE.md) (Cursor: [.cursor/USAGE.md](../.cursor/USAGE.md)) |
-| Deploy ละเอียด | [docs/deploy/digitalocean.md](../docs/deploy/digitalocean.md) |
+| Deploy ละเอียด | [dev-ops/prod/RUNBOOK.md](../../dev-ops/prod/RUNBOOK.md) · [dev-ops/staging/RUNBOOK.md](../../dev-ops/staging/RUNBOOK.md) |
 
 ---
 

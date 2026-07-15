@@ -2,8 +2,8 @@
 /**
  * Read-only: compare MongoDB indexes to prod baseline JSON or ensure-* manifest.
  *
- *   node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-09.json --harness
- *   node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-09.json --env-file=backend/auth/.env.prod
+ *   node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-15.json --harness
+ *   node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-15.json --env-file=backend/auth/.env.prod
  */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

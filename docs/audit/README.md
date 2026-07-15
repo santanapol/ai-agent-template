@@ -2,7 +2,7 @@
 
 Read-only snapshots from production write MongoDB. **SoT for db-schema sync** — see [completed exec plan](../exec-plans/completed/db-schema-sync-2026-07-09.md).
 
-Current baseline `prod-schema-baseline-2026-07-09` reflects prod **after** validator rollout (2026-07-09): indexes synced, `$jsonSchema` on 11 collections.
+Current baseline **`prod-schema-baseline-2026-07-15`** — post P1 collMod (4 collections: `auth_users`, `staff_profiles`, `agent_fees`, `reports`). Previous snapshot: `prod-schema-baseline-2026-07-09` (validator rollout 2026-07-09).
 
 ## Files
 
@@ -39,8 +39,8 @@ node scripts/ops/dump-db-schema.mjs --env-file=backend/auth/.env.prod --out docs
 
 # Or individually
 node scripts/ops/verify-validators.mjs --harness
-node scripts/ops/verify-validators.mjs --baseline=docs/audit/prod-schema-baseline-2026-07-09.json --harness
-node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-09.json --harness
+node scripts/ops/verify-validators.mjs --baseline=docs/audit/prod-schema-baseline-2026-07-15.json --harness
+node scripts/ops/verify-indexes.mjs --baseline docs/audit/prod-schema-baseline-2026-07-15.json --harness
 ```
 
 ## Redaction

@@ -40,12 +40,10 @@ sudo ufw enable
 
 Private repo — server ต้องมี **Deploy key** (read-only) บน GitHub ก่อน `git clone` / `git pull`
 
-> **อย่าสลับกับ GitHub Actions secret `DO_SSH_KEY`** — คนละกุญแจ (ดู [docs/deploy/digitalocean.md](../../docs/deploy/digitalocean.md) §2)
-
 | ทิศทาง | Private key | Public key | ใช้ทำอะไร |
 |--------|-------------|------------|-----------|
 | Staging → GitHub | บน server `~/.ssh/zero-staging-deploy` | GitHub **Deploy keys** | `git pull` บน staging |
-| Dev/CI → Staging | เครื่อง dev / GitHub Secret | `~/.ssh/authorized_keys` บน server | SSH เข้า server |
+| Dev → Staging | เครื่อง dev (SSH key หรือ password) | `~/.ssh/authorized_keys` บน server | SSH เข้า server |
 
 **1. สร้างกุญแจบน staging server** (รันบน `143.198.213.26`):
 

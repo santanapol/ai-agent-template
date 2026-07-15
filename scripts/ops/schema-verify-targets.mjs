@@ -60,7 +60,7 @@ export const STAGING_APPLY_TARGETS = STAGING_TARGETS.map((t) => ({
 }));
 
 export const DEFAULT_PROD_BASELINE =
-  "docs/audit/prod-schema-baseline-2026-07-09.json";
+  "docs/audit/prod-schema-baseline-2026-07-15.json";
 
 export function resolveDbName(env, uriKey, dbKey) {
   if (dbKey && env[dbKey]) return env[dbKey];

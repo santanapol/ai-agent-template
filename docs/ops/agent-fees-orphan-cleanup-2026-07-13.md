@@ -1,11 +1,12 @@
 # agent_fees — orphan fee cleanup (TD-018)
 
-> **Status:** pending human delete on prod  
+> **Status:** closed — accepted legacy (2026-07-15)  
+> **Decision:** retain prod orphan `agent_fees` (~1,887 rows, 30 branches); no bulk delete. Audit script kept for monitoring.
 > **Related:** [agent-fees-cr-by-backfill-prod-2026-07-09.md](./agent-fees-cr-by-backfill-prod-2026-07-09.md)
 
 ## Context
 
-Prod read-only audit (2026-07-09) found one `agent_fees` row with **no matching `agents` parent** (`ou_id` + `branch_id`):
+Prod read-only audit found `agent_fees` rows with **no matching `agents` parent** (`ou_id` + `branch_id`). Re-audit 2026-07-15: **~1,887 rows** across **30 branches** (78% of `agent_fees`); prod `agents` has 15 branches; all orphan rows have `related_txns=0`. Original TD-018 target row (`6909bb9b…`) no longer present.
 
 | `_id` | Branch | Notes |
 |-------|--------|-------|
@@ -13,7 +14,13 @@ Prod read-only audit (2026-07-09) found one `agent_fees` row with **no matching 
 
 `agent_fees` has no FK to `agents._id`. Parent = `agents` row with same `ou_id` + `branch_id`.
 
-**Decision (2026-07-13):** delete orphan fee row after staging dry-run.
+## Accepted legacy (2026-07-15)
+
+- **No delete** on prod or staging for bulk orphan cleanup.
+- Orphan fees are unreachable via current app flow when no `agents` row exists for that branch; prod orphan rows have zero `agent_iv_transaction` refs.
+- **Monitor only:** `node scripts/ops/audit-orphan-agent-fees.mjs --env-file=backend/service/agent-invoice/.env.prod` (exit 1 expected while legacy retained).
+
+Sections 2–4 below are **historical** runbook for single-row cleanup — do not execute bulk delete without a new ops ticket.
 
 ## Env guard
 
@@ -106,8 +113,9 @@ db.agent_fees.insertOne({ /* archived fee doc */ })
 
 ## Checklist
 
-- [ ] Staging pre-check passed
-- [ ] Staging delete + audit script exit 0
-- [ ] Ops sign-off
-- [ ] Prod delete + audit script exit 0
-- [ ] TD-018 closed in tech-debt tracker
+- [x] Ops decision: retain legacy orphan fees (2026-07-15)
+- [ ] ~~Staging pre-check passed~~ — N/A (no delete)
+- [ ] ~~Staging delete + audit script exit 0~~ — N/A
+- [ ] ~~Ops sign-off~~ — N/A
+- [ ] ~~Prod delete + audit script exit 0~~ — N/A
+- [x] TD-018 closed in tech-debt tracker (accepted legacy)

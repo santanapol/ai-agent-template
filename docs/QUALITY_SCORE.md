@@ -6,7 +6,7 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 
 | Domain | Grade | CI | Spec | Observability | Notes |
 |--------|:-----:|:--:|:----:|:-------------:|-------|
-| auth | A- | yes | yes | yes | Collection validators + `verify-harness-schema` gate; `spec:consistency` checks validators |
+| auth | A- | yes | yes | yes | Prod validators synced 2026-07-15 (collMod + baseline `2026-07-15`); `seed-permissions --prune` on prod after menu flatten |
 | gateway | A- | yes | yes | yes | ESLint harness `error`; metrics wired; PM2 memory caps tuned for 2GB staging (`db71e0d`) |
 | staff | A | yes | yes | yes | Reference service; profiles split; prom default metrics |
 | agent-invoice | B+ | yes | yes | yes | Booted in dev-up; `/metrics` wired; `config/logger.js` aligned (CS-10) |
@@ -17,12 +17,10 @@ Domain health grades for harness engineering. Updated by `/gc` and after major c
 
 ## Gaps to close (priority)
 
-1. **P2** — Human ops: TD-018 orphan fee cleanup ([ops docs](ops/))
-2. **P2** — Staging UAT sign-off for backoffice-next cutover (`frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md`)
-3. **P3** — SmartReport server-side search when API supports `search` param (client search disabled)
-4. **P3** — TD-039: auto-deploy GHA secret misconfiguration (blocks push-to-deploy automation, manual SSH deploy unaffected)
-5. **P3** — TD-040: `BranchSwitcher.test.tsx` flaky in CI, needs root-cause
+1. **P2** — Staging UAT sign-off for backoffice-next cutover (`frontend/backoffice-next/docs/STAGING-UAT-2026-07-08.md`)
+2. **P3** — SmartReport server-side search when API supports `search` param (client search disabled)
+3. **P3** — Rename permission key `branch-report:marketing:channel-performance:read` → drop `marketing` segment (code-wide; menu already flat)
 
 ## Last updated
 
-2026-07-15 — Repo template cleanup: removed legacy Vite archive + tracked `tasks/`; relocated `_mission-control` specs to service `docs/`; added `docs/TEMPLATE.md` + docs-lint gates. Prior: `/gc` closed branch-report openapi drift (TD-037), deploy-staging health-check (TD-038).
+2026-07-15 — `/gc`: prod DB sync (P1 collMod, P2 baseline `prod-schema-baseline-2026-07-15`, `seed-permissions --prune` removed stale `branch-report:marketing` menu); TD-018 accepted legacy; closed TD-041. Prior: template cleanup, TD-037/038/040.

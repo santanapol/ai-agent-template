@@ -1,6 +1,6 @@
 # smart-report — Database ERD
 
-Synced with prod baseline [`docs/audit/prod-schema-baseline-2026-07-09.json`](../../../audit/prod-schema-baseline-2026-07-09.json) and `init-db.mjs` / app bootstrap.
+Synced with prod baseline [`docs/audit/prod-schema-baseline-2026-07-15.json`](../../../audit/prod-schema-baseline-2026-07-15.json) and `init-db.mjs` / app bootstrap.
 
 ## `reports`
 

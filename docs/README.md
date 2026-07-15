@@ -48,7 +48,8 @@ Three RUNBOOKs, three scopes — read top-down, deeper only if the layer above d
 |-------|------|-------|
 | 1. Local dev (start here) | [`../RUNBOOK.md`](../RUNBOOK.md) | Boot the whole stack via harness, seed, smoke, CI, day-to-day troubleshooting |
 | 2. Backend manual + deploy | [`../backend/RUNBOOK.md`](../backend/RUNBOOK.md) | Per-service manual setup without the harness, JWT/roles deploy checklist — assumes layer 1 doesn't cover your case |
-| 3. Staging server | [`../dev-ops/staging/RUNBOOK.md`](../dev-ops/staging/RUNBOOK.md) | Operating the actual staging host (nginx, PM2, deploy keys) — not relevant to local dev at all |
+| 3. Staging server | [`../dev-ops/staging/RUNBOOK.md`](../dev-ops/staging/RUNBOOK.md) | SSH deploy on staging host (nginx, PM2) |
+| 4. Production server | [`../dev-ops/prod/RUNBOOK.md`](../dev-ops/prod/RUNBOOK.md) | SSH deploy on prod host — `scripts/prod/deploy-prod.sh` |
 
 Don't duplicate content across layers — link to the layer that owns it instead.
 

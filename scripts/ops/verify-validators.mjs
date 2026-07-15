@@ -4,7 +4,7 @@
  *
  *   node scripts/ops/verify-validators.mjs --harness
  *   node scripts/ops/verify-validators.mjs --staging
- *   node scripts/ops/verify-validators.mjs --baseline=docs/audit/prod-schema-baseline-2026-07-09.json --harness
+ *   node scripts/ops/verify-validators.mjs --baseline=docs/audit/prod-schema-baseline-2026-07-15.json --harness
  *   node scripts/ops/verify-validators.mjs --env-file=backend/auth/.env.prod --db=zero-platform
  */
 import { readFileSync } from "node:fs";

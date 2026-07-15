@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BASELINE="$ROOT/docs/audit/prod-schema-baseline-2026-07-09.json"
+BASELINE="$ROOT/docs/audit/prod-schema-baseline-2026-07-15.json"
 
 echo "==> verify-validators (registry)"
 node "$ROOT/scripts/ops/verify-validators.mjs" --staging

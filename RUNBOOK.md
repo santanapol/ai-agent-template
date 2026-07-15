@@ -11,7 +11,7 @@
 | [frontend/backoffice-next/README.md](./frontend/backoffice-next/README.md) | Next.js rewrites, `.env.local`, UI conventions |
 | [knowledge/harness/workflows.md](./knowledge/harness/workflows.md) | SDLC, `PORT_OFFSET`, observability, browser testing |
 | [scripts/README.md](./scripts/README.md) | สคริปต์ harness ทั้งหมด |
-| [docs/deploy/digitalocean.md](./docs/deploy/digitalocean.md) | Production CI/CD |
+| [dev-ops/prod/RUNBOOK.md](./dev-ops/prod/RUNBOOK.md) | Production deploy (SSH) |
 | [dev-ops/staging/RUNBOOK.md](./dev-ops/staging/RUNBOOK.md) | Staging server (nginx, PM2) |
 | [docs/observability.md](./docs/observability.md) | Query logs/metrics |
 

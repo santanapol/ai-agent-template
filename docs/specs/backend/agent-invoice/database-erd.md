@@ -1,6 +1,6 @@
 # agent-invoice — Database ERD
 
-Consolidated from package `docs/database/erd.md` — synced with prod baseline [`docs/audit/prod-schema-baseline-2026-07-09.json`](../../../audit/prod-schema-baseline-2026-07-09.json) and `scripts/init-db.mjs`.
+Consolidated from package `docs/database/erd.md` — synced with prod baseline [`docs/audit/prod-schema-baseline-2026-07-15.json`](../../../audit/prod-schema-baseline-2026-07-15.json) and `scripts/init-db.mjs`.
 
 ## Collections
 

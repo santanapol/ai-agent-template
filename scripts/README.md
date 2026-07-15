@@ -5,6 +5,7 @@ Categorized by job:
 ```
 scripts/
 ├── dev/        local harness — boot, seed, smoke, observability
+├── prod/       production server re-deploy
 ├── staging/    staging server ops — deploy, setup, seed, verify
 ├── ci/         quality gates — package CI runner, docs-lint, env-status, db schema dump
 ├── release/    release tagging
@@ -57,6 +58,7 @@ Local-only skills (`release-notes-and-handoff`) live in `scripts/agent/local-ski
 | [`dev/smoke.sh`](./dev/smoke.sh) | Healthz + metrics + login/gateway smoke (+ frontend when booted) |
 | [`dev/dev-obs-up.sh`](./dev/dev-obs-up.sh) / [`dev/dev-obs-down.sh`](./dev/dev-obs-down.sh) | VictoriaLogs/Metrics + Vector |
 | [`dev/dev-generate-env.mjs`](./dev/dev-generate-env.mjs) | Generate per-offset harness env files |
+| [`prod/deploy-prod.sh`](./prod/deploy-prod.sh) | **Production re-deploy** after `git pull` — swap, build, `pm2 reload ecosystem.config.js` |
 | [`staging/setup-staging.sh`](./staging/setup-staging.sh) | **Staging first-time setup** — Docker, seed, build, PM2 ([RUNBOOK](../dev-ops/staging/RUNBOOK.md)) |
 | [`staging/deploy-staging.sh`](./staging/deploy-staging.sh) | Staging re-deploy after `git pull` |
 | [`staging/smoke-staging.sh`](./staging/smoke-staging.sh) | **จาก local** — smoke HTTPS หลัง deploy (`SMOKE_PASSWORD` required) |

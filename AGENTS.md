@@ -23,6 +23,7 @@
 | **System architecture** | [backend/ARCHITECTURE.md](backend/ARCHITECTURE.md) | Trust boundary, gateway mesh |
 | **Backend ops (deep)** | [backend/RUNBOOK.md](backend/RUNBOOK.md) | Docker, seed, deploy checklist |
 | **Staging server** | [dev-ops/staging/RUNBOOK.md](dev-ops/staging/RUNBOOK.md) | nginx, PM2, deploy on staging host |
+| **Production server** | [dev-ops/prod/RUNBOOK.md](dev-ops/prod/RUNBOOK.md) | SSH deploy on prod host |
 | **Product specs** | [docs/README.md](docs/README.md) | Spec index under `docs/specs/` |
 | **Golden principles** | [docs/golden-principles.md](docs/golden-principles.md) | Mechanical invariants agents must keep |
 | **Quality score** | [docs/QUALITY_SCORE.md](docs/QUALITY_SCORE.md) | Domain grades and gaps |
