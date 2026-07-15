@@ -102,7 +102,9 @@ describe("BranchSwitcher search a11y (FE-REV-009)", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Select active branch" }));
-    expect(screen.getByRole("menuitem", { name: "H01 - Home" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("menuitem", { name: "H01 - Home" })).toBeInTheDocument();
+    });
     expect(screen.queryByRole("menuitem", { name: "X01 - Closed (inactive)" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("checkbox", { name: /show all branches/i }));
@@ -124,9 +126,11 @@ describe("BranchSwitcher search a11y (FE-REV-009)", () => {
     expect(screen.getByRole("button", { name: "Reset to Zero HQ" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Select active branch" }));
+    await waitFor(() => {
+      expect(screen.getByText("Branches")).toBeInTheDocument();
+    });
     expect(screen.queryByText("Platform")).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "ZERO - Zero HQ" })).not.toBeInTheDocument();
-    expect(screen.getByText("Branches")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Reset to Zero HQ" }));
     expect(onBranchSwitch).toHaveBeenCalledWith(ZERO_HQ_BRANCH.branch_id);
