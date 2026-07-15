@@ -115,12 +115,7 @@ paths:
                         items:
                           $ref: "#/components/schemas/InviteLinkItem"
         "400":
-          description: |
-            Invalid mesh headers or query parameters (e.g. `limit=0` returns `INVALID_PARAM`).
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
+          $ref: "#/components/responses/InvalidParam"
         "401":
           $ref: "#/components/responses/GatewaySecretRejected"
         "403":
@@ -161,11 +156,7 @@ paths:
                         items:
                           $ref: "#/components/schemas/ReferringMemberItem"
         "400":
-          description: Invalid mesh headers or query parameters
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
+          $ref: "#/components/responses/InvalidParam"
         "401":
           $ref: "#/components/responses/GatewaySecretRejected"
         "403":
@@ -299,7 +290,103 @@ paths:
         "401":
           $ref: "#/components/responses/GatewaySecretRejected"
         "403":
-          $ref: "#/components/responses/MissingUserContext"
+          $ref: "#/components/responses/ChannelPerformanceForbidden"
+
+  /api/v1/branch-report/royalty-21-times/deposit-matrix:
+    get:
+      tags: [royalty-21-times]
+      summary: Deposit count/percent matrix for the active cohort
+      description: |
+        Deposit count and percent matrix (9 amount buckets × deposit rounds 1–21) for the same
+        cohort filter as `GET /royalty-21-times`, minus pagination — there is no per-member row
+        data here, only the aggregated matrix. Computed as a single MongoDB aggregation pipeline
+        (no member-count cap). `regDateFrom`/`regDateTo` range must not exceed 366 inclusive days.
+
+        **Example 200 response (abridged):**
+        ```json
+        {
+          "success": true,
+          "code": "SUCCESS",
+          "message": null,
+          "data": {
+            "buckets": [{ "key": "0-99", "label": "0 - 99", "min": 0, "max": 99 }],
+            "rounds": 21,
+            "counts": [[4, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+            "rowSums": [9],
+            "percents": [[100, 66.67, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+            "percentRowSums": [90]
+          },
+          "requestId": "6ba7b813-9dad-11d1-80b4-00c04fd430c8"
+        }
+        ```
+      operationId: getRoyalty21DepositMatrix
+      parameters:
+        - $ref: "#/components/parameters/XUserOu"
+        - $ref: "#/components/parameters/XUserBranch"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: channelType
+          in: query
+          required: true
+          description: Marketing channel filter
+          schema:
+            type: string
+            enum: [affiliate_link, member_referral, direct]
+        - name: inviteLinkId
+          in: query
+          required: false
+          description: Required when channelType is affiliate_link (24-char hex ObjectId)
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: referralUid
+          in: query
+          required: false
+          description: Referring member ObjectId (optional if referralUsername is provided)
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{24}$"
+        - name: referralUsername
+          in: query
+          required: false
+          description: Exact referring-member username (preferred for Member Referral UI)
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: regDateFrom
+          in: query
+          required: true
+          description: Inclusive registration date start (UTC calendar date, YYYY-MM-DD). Range with regDateTo must not exceed 366 inclusive days.
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+            example: "2024-06-01"
+        - name: regDateTo
+          in: query
+          required: true
+          description: Inclusive registration date end (UTC calendar date, YYYY-MM-DD). Range with regDateFrom must not exceed 366 inclusive days.
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+            example: "2024-06-30"
+      responses:
+        "200":
+          description: Deposit count/percent matrix
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/DepositMatrixData"
+        "400":
+          $ref: "#/components/responses/InvalidParam"
+        "401":
+          $ref: "#/components/responses/GatewaySecretRejected"
+        "403":
+          $ref: "#/components/responses/ChannelPerformanceForbidden"
 
 components:
   securitySchemes:
@@ -433,6 +520,66 @@ components:
           items:
             type: number
 
+    DepositMatrixBucket:
+      type: object
+      required: [key, label, min, max]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        min:
+          type: number
+        max:
+          type: ["number", "null"]
+          description: null = no upper bound (the "10,000+" bucket)
+
+    DepositMatrixData:
+      type: object
+      required: [buckets, rounds, counts, rowSums, percents, percentRowSums]
+      properties:
+        buckets:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items:
+            $ref: "#/components/schemas/DepositMatrixBucket"
+        rounds:
+          type: integer
+          const: 21
+        counts:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items:
+            type: array
+            minItems: 21
+            maxItems: 21
+            items:
+              type: number
+        rowSums:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items:
+            type: number
+        percents:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items:
+            type: array
+            minItems: 21
+            maxItems: 21
+            items:
+              type: number
+        percentRowSums:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items:
+            type: number
+
   responses:
     GatewaySecretRejected:
       description: Missing or invalid x-gateway-secret
@@ -448,15 +595,19 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
 
-    InvalidParam:
-      description: Request validation failed (JSON Schema or channel filter)
+    ChannelPerformanceForbidden:
+      description: |
+        Forbidden — either `x-user-ou`/`x-user-branch` headers missing (`code: MISSING_USER_CONTEXT`)
+        or caller lacks `branch-report:marketing:channel-performance:read` (`code: PERMISSION_DENIED`).
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
 
-    InvalidHeader:
-      description: Duplicate critical gateway mesh header
+    InvalidParam:
+      description: |
+        Request validation failed (JSON Schema, channel filter, or a duplicate critical
+        gateway mesh header — `code: INVALID_PARAM` or `code: INVALID_HEADER`).
       content:
         application/json:
           schema:

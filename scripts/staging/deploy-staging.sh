@@ -53,7 +53,7 @@ curl -sf "http://127.0.0.1:3000/healthz" >/dev/null
 echo "  ✓ gateway /healthz"
 curl -sf "http://127.0.0.1:3001/healthz" >/dev/null
 echo "  ✓ auth /healthz"
-curl -sf "http://127.0.0.1:3005/" | head -c 200 >/dev/null
+curl -sf -o /dev/null "http://127.0.0.1:3005/"
 echo "  ✓ backoffice / :3005"
 pm2 jlist | node -e "
   const apps = JSON.parse(require('fs').readFileSync(0,'utf8'));
