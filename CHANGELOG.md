@@ -12,6 +12,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-14
+
+Repository snapshot: **Channel Performance — Deposit Matrix tabs** — deposit count/percent matrix by amount bucket × deposit round, CSV/Excel export, referring-member dropdown; plus `/ship` findings fix-up (percent-rounding bug, unbounded-cohort aggregation rewrite, server-side permission enforcement, schema hardening, test-coverage gaps).
+
+Handoff: [docs/releases/2026-07-14-user.md](docs/releases/2026-07-14-user.md), [docs/releases/2026-07-14-deploy.md](docs/releases/2026-07-14-deploy.md). Git tag: `v0.8.0` (after staging smoke).
+
+### Added
+
+- **branch-report** — `GET /royalty-21-times/deposit-matrix`: deposit count/percent matrix (9 amount buckets × rounds 1–21) as a single MongoDB aggregation pipeline, no per-request batch loop (PR #71).
+- **branch-report** — `referring-members` module: dropdown lookup for Member Referral channel type (PR #71).
+- **backoffice-next** — Channel Performance "Deposit count" / "Deposit %" tabs (`DepositMatrixTable`); CSV/Excel export dropdown for both the deposit matrix and the shared data-table toolbar (PR #71).
+- **branch-report** service/OpenAPI version `0.1.0` → `0.2.0`.
+
+### Changed
+
+- **branch-report** — `invite-links` sorted by `_id` DESC (was `invite_code` ASC), limit max raised 100 → 250 (PR #71).
+- **backoffice-next** — Channel field gets an explicit label; Channel Performance tab spacing/styling cleanup (PR #71).
+- **repo** — CI coding-standard sync-check points at `agent-skill` upstream (was a path that doesn't exist on local dev machines); vendored coding-standard docs re-synced from upstream.
+
+### Fixed
+
+- **branch-report** — percent-rounding double-scaling bug in `computePercentMatrix` (e.g. 23/160 now rounds to `14.38`, not `14.37`).
+- **branch-report** — unbounded-cohort DoS risk in `findDepositMatrix` removed by the aggregation-pipeline rewrite; missing server-side enforcement of `branch-report:marketing:channel-performance:read` added.
+- **backoffice-next** — rows-per-page selection no longer reverts to a stale value after a branch switch (session-persist now runs on every table-page/size change, not only on Search).
+- **backoffice-next** — CSV export guards cells starting with `=`/`+`/`-`/`@` against formula injection when opened in Excel.
+
+### Deferred / human ops
+
+- None blocking this release.
+
 ## [0.7.0] - 2026-07-13
 
 Repository snapshot: **Deferred TD closeout** — batch invoice API + FE bulk export, Smart Report drawer server pagination, schedule.frequency index (code), CI baseline validator sync, orphan fee ops runbook.

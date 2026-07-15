@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: branch-report
-  version: 0.1.0
+  version: 0.2.0
   description: Branch Report service — marketing channel performance reports
 
 servers:
