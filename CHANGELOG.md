@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-07-15
+
+Repository snapshot: **Pagination bar stale-render fix, take two** — v0.8.2 fixed the wrong layer; this is the actual root-cause fix. Bugfix only, no API/schema change.
+
+Handoff: [docs/releases/2026-07-15-3-user.md](docs/releases/2026-07-15-3-user.md), [docs/releases/2026-07-15-3-deploy.md](docs/releases/2026-07-15-3-deploy.md). Git tag: `v0.8.3` (after staging smoke).
+
+### Fixed
+
+- **backoffice-next** — React Compiler was caching the `<DataTablePagination table={table} .../>` JSX element at each *call site* (not the component itself), because TanStack Table's `table` object keeps a stable reference across renders while the sibling props also don't change on a page-size interaction — so the compiler reused the stale element and `DataTablePagination` never re-ran with the new value. v0.8.2's fix (a directive inside `DataTablePagination.tsx`) targeted the wrong layer. Fixed by adding `"use no memo"` to the four caller components that render it: `Royalty21Table.tsx` (Channel Performance), `AgentsList.tsx`, `StaffTable.tsx`, `SmartReportList.tsx`. `InvoiceList.tsx` already had it, which is why Invoices was never affected.
+
 ## [0.8.2] - 2026-07-15
 
 Repository snapshot: **Pagination bar stale-render fix** — bugfix only, no API/schema change.

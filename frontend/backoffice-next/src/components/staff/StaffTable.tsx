@@ -1,4 +1,8 @@
+// React Compiler caches the <DataTablePagination table={table} .../> element by prop identity;
+// `table` never changes reference (TanStack mutates it in place), so a real pageSize change can
+// get silently skipped here. Opt this file out of compiler memoization.
 "use client";
+"use no memo";
 
 import type { Table } from "@tanstack/react-table";
 import type { LucideIcon } from "lucide-react";
