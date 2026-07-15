@@ -17,6 +17,29 @@ interface DepositMatrixTableProps {
   loading?: boolean;
 }
 
+// Ordered low → high; index doubles as the opacity step (0, 10, 20, ... 90).
+const HEATMAP_BG_STEPS = [
+  "",
+  "bg-primary/10",
+  "bg-primary/20",
+  "bg-primary/30",
+  "bg-primary/40",
+  "bg-primary/50",
+  "bg-primary/60",
+  "bg-primary/70",
+  "bg-primary/80",
+  "bg-primary/90",
+] as const;
+
+function heatmapClassName(value: number, max: number): string {
+  if (value <= 0 || max <= 0) return "";
+  const step = Math.min(
+    HEATMAP_BG_STEPS.length - 1,
+    Math.max(1, Math.round((value / max) * (HEATMAP_BG_STEPS.length - 1))),
+  );
+  return cn(HEATMAP_BG_STEPS[step], step >= 6 && "text-primary-foreground");
+}
+
 const DepositMatrixTable: React.FC<DepositMatrixTableProps> = ({
   mode,
   data,
@@ -44,6 +67,7 @@ const DepositMatrixTable: React.FC<DepositMatrixTableProps> = ({
   const formatCell = mode === "count" ? formatMatrixCount : formatMatrixPercent;
   const values = mode === "count" ? data.counts : data.percents;
   const rowTotals = mode === "count" ? data.rowSums : data.percentRowSums;
+  const cellMax = mode === "percent" ? 100 : Math.max(0, ...values.flat());
 
   return (
     <div className={cn("relative", loading && "opacity-60")} aria-busy={loading || undefined}>
@@ -65,11 +89,17 @@ const DepositMatrixTable: React.FC<DepositMatrixTableProps> = ({
               <TableCell className="sticky left-0 z-10 bg-background font-medium whitespace-nowrap">
                 {bucket.label}
               </TableCell>
-              {rounds.map((round) => (
-                <TableCell key={round} className="text-right tabular-nums">
-                  {formatCell(values[rowIndex]?.[round - 1] ?? 0)}
-                </TableCell>
-              ))}
+              {rounds.map((round) => {
+                const value = values[rowIndex]?.[round - 1] ?? 0;
+                return (
+                  <TableCell
+                    key={round}
+                    className={cn("text-right tabular-nums", heatmapClassName(value, cellMax))}
+                  >
+                    {formatCell(value)}
+                  </TableCell>
+                );
+              })}
               <TableCell className="text-right font-medium tabular-nums">
                 {formatCell(rowTotals[rowIndex] ?? 0)}
               </TableCell>

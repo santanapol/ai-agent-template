@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-15
+
+Repository snapshot: **Channel Performance — Deposit Matrix heat map** — UI-only coloring on the Deposit count / Deposit % tabs, no API/schema change.
+
+Handoff: [docs/releases/2026-07-15-user.md](docs/releases/2026-07-15-user.md), [docs/releases/2026-07-15-deploy.md](docs/releases/2026-07-15-deploy.md). Git tag: `v0.8.1` (after staging smoke).
+
+### Added
+
+- **backoffice-next** — heat map coloring (`bg-primary` opacity scale) on `DepositMatrixTable` for both Deposit count and Deposit % tabs; zero-value cells and the SUM column stay uncolored.
+
 ## [0.8.0] - 2026-07-14
 
 Repository snapshot: **Channel Performance — Deposit Matrix tabs** — deposit count/percent matrix by amount bucket × deposit round, CSV/Excel export, referring-member dropdown; plus `/ship` findings fix-up (percent-rounding bug, unbounded-cohort aggregation rewrite, server-side permission enforcement, schema hardening, test-coverage gaps).
