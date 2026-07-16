@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Copy zero-platform local skills into .cursor/skills/ and .claude/skills/ (survives upstream sync --delete).
+# Copy local skills into .cursor/skills/ (survives upstream sync --delete).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SRC="$SCRIPT_DIR/local-skills"
-DESTS=("$ROOT/.cursor/skills" "$ROOT/.claude/skills")
+DEST="$ROOT/.cursor/skills"
 
 usage() {
   cat <<'EOF'
 Usage: ./scripts/agent/sync-local-agent-skills.sh
 
-Copies scripts/agent/local-skills/<name>/ → .cursor/skills/<name>/ and .claude/skills/<name>/
+Copies scripts/agent/local-skills/<name>/ → .cursor/skills/<name>/
 
 Run after editing local skills, or automatically at the end of sync-agent-skills.sh.
 EOF
@@ -37,11 +37,9 @@ for skill_dir in "$SRC"/*/; do
     echo "skip $name (no SKILL.md)" >&2
     continue
   fi
-  for dest in "${DESTS[@]}"; do
-    mkdir -p "$dest"
-    rsync -a "$skill_dir" "$dest/$name/"
-  done
-  echo "  $name → .cursor/skills/$name/, .claude/skills/$name/"
+  mkdir -p "$DEST"
+  rsync -a "$skill_dir" "$DEST/$name/"
+  echo "  $name → .cursor/skills/$name/"
   found=1
 done
 

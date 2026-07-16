@@ -1,33 +1,13 @@
-## Harness verification (zero-platform)
+## Harness verification (ai-agent-template)
 
-Before GO decision on backend/full-stack changes:
+Before GO decision:
 
-1. `./scripts/dev/dev-up.sh && ./scripts/dev/smoke.sh` — stack must pass smoke
-2. `node scripts/ci/docs-lint.mjs` — knowledge base valid
-3. `npm run ci` in all touched packages
-4. `./scripts/dev/dev-down.sh` after verification
+1. `node scripts/ci/docs-lint.mjs` — skeleton and links valid
+2. `npm run ci` in all touched packages under `code-base/` (when application code exists)
+3. Run project-specific smoke/integration tests if the repo defines them
 
 See [AGENTS.md](../../AGENTS.md).
 
 ## Related Coding Standards
 
-When executing this command, follow the domain standards that apply to the work:
-
-**Backend:**
-- `coding-standard/backend/09-operations-and-deployment.md`
-- `coding-standard/backend/10-observability-and-logging.md`
-- `coding-standard/backend/13-code-quality.md`
-
-**Auth:**
-- `coding-standard/auth/09-operations-and-deployment.md`
-- `coding-standard/auth/10-observability-and-logging.md`
-- `coding-standard/auth/13-code-quality.md`
-
-**Frontend (Backoffice):**
-- `coding-standard/frontend/backoffice/09-operations-and-deployment.md`
-- `coding-standard/frontend/backoffice/10-code-quality.md`
-
-**Gateway:**
-- `coding-standard/gateway/09-operations-and-deployment.md`
-- `coding-standard/gateway/10-observability-and-logging.md`
-- `coding-standard/gateway/11-code-quality.md`
+`coding-standard/` is empty in this template — vendor org deployment/observability standards after fork when shipping application code.

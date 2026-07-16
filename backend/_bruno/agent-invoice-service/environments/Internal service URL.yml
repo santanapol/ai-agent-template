@@ -1,4 +1,0 @@
-name: Internal service URL
-variables:
-  - name: baseUrl
-    value: http://agent-invoice-service:3000

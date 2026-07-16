@@ -9,7 +9,7 @@ Read and follow **code-simplification** (`.cursor/skills/code-simplification/SKI
 
 Simplify recently changed code (or the specified scope) while preserving exact behavior:
 
-1. Read CLAUDE.md and study project conventions
+1. Read [agent-skills.mdc](../rules/agent-skills.mdc) and [AGENTS.md](../../AGENTS.md) for project conventions
 2. Identify the target code — recent changes unless a broader scope is specified
 3. Understand the code's purpose, callers, edge cases, and test coverage before touching it
 4. Scan for simplification opportunities:
@@ -26,20 +26,6 @@ If tests fail after a simplification, revert that change and reconsider. Use `co
 
 ## Related Coding Standards
 
-When executing this command, follow the domain standards that apply to the work:
+`coding-standard/` is empty in this template — vendor org standards after fork; match `coding-standard/<domain>/` conventions when simplifying.
 
-**Backend:**
-- `coding-standard/backend/02-folder-structure.md`
-- `coding-standard/backend/13-code-quality.md`
-
-**Auth:**
-- `coding-standard/auth/02-folder-structure.md`
-- `coding-standard/auth/13-code-quality.md`
-
-**Frontend (Backoffice):**
-- `coding-standard/frontend/backoffice/02-folder-structure.md`
-- `coding-standard/frontend/backoffice/10-code-quality.md`
-
-**Gateway:**
-- `coding-standard/gateway/02-folder-structure.md`
-- `coding-standard/gateway/11-code-quality.md`
+**Software testing** (included): `knowledge/software-testing/<topic>/README.md`

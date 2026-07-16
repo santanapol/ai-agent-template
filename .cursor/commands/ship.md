@@ -26,7 +26,7 @@ Constraints (from Claude Code's subagent model):
 - Each subagent gets its own context window and returns only its report to this main session.
 - If you need teammates that talk to each other instead of just reporting back, use Claude Code Agent Teams and reference these personas as teammate types (see `references/orchestration-patterns.md`).
 
-**Persona resolution.** If you've defined your own `code-reviewer`, `security-auditor`, or `test-engineer` in `.claude/agents/` or `~/.claude/agents/`, those take precedence over this plugin's versions — `/ship` picks up your customizations automatically. This is intentional: plugin subagents sit at the bottom of Claude Code's scope priority table, so user-level definitions win by design.
+**Persona resolution.** If you've defined your own `code-reviewer`, `security-auditor`, or `test-engineer` in `.cursor/agents/`, those take precedence over the vendored subagents in this repo.
 
 ## Phase B — Merge in main context
 
@@ -74,36 +74,16 @@ Produce a single output:
 4. If any persona returns a Critical finding, the default verdict is NO-GO unless the user explicitly accepts the risk.
 5. **Skip the fan-out only if all of the following are true:** the change touches 2 files or fewer, the diff is under 50 lines, and it does not touch auth, payments, data access, or config/env. Otherwise, default to fan-out. `/ship` is designed for production-bound changes — when the blast radius is non-trivial, run the parallel review even if the diff looks small.
 
-## Harness verification (zero-platform)
+## Harness verification (ai-agent-template)
 
-Before GO decision on backend/full-stack changes:
+Before GO decision:
 
-1. `./scripts/dev/dev-up.sh && ./scripts/dev/smoke.sh` — stack must pass smoke
-2. `node scripts/ci/docs-lint.mjs` — knowledge base valid
-3. `npm run ci` in all touched packages
-4. `./scripts/dev/dev-down.sh` after verification
+1. `node scripts/ci/docs-lint.mjs` — skeleton and links valid
+2. `npm run ci` in all touched packages under `code-base/` (when application code exists)
+3. Run project-specific smoke/integration tests if the repo defines them
 
 See [AGENTS.md](../../AGENTS.md).
 
 ## Related Coding Standards
 
-When executing this command, follow the domain standards that apply to the work:
-
-**Backend:**
-- `coding-standard/backend/09-operations-and-deployment.md`
-- `coding-standard/backend/10-observability-and-logging.md`
-- `coding-standard/backend/13-code-quality.md`
-
-**Auth:**
-- `coding-standard/auth/09-operations-and-deployment.md`
-- `coding-standard/auth/10-observability-and-logging.md`
-- `coding-standard/auth/13-code-quality.md`
-
-**Frontend (Backoffice):**
-- `coding-standard/frontend/backoffice/09-operations-and-deployment.md`
-- `coding-standard/frontend/backoffice/10-code-quality.md`
-
-**Gateway:**
-- `coding-standard/gateway/09-operations-and-deployment.md`
-- `coding-standard/gateway/10-observability-and-logging.md`
-- `coding-standard/gateway/11-code-quality.md`
+`coding-standard/` is empty in this template — vendor org deployment/observability standards after fork when shipping application code.

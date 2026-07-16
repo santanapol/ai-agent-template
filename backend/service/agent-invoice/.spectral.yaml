@@ -1,5 +1,0 @@
-extends:
-  - ../../../coding-standard/backend/spectral/org-api.yaml
-
-rules:
-  operation-operationId: warn

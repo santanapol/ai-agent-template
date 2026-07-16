@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 Security QA / Security Engineer / DevSecOps
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **Dynamic Analysis (DAST):** `OWASP ZAP` (ฟรีและทรงพลัง เอาไว้สแกน API ที่กำลังรันอยู่)
 - **Static Analysis (SAST):** `SonarQube` (เชื่อมเข้ากับ CI/CD เพื่อสแกน Source Code อัตโนมัติทุกครั้งก่อน Merge)
 

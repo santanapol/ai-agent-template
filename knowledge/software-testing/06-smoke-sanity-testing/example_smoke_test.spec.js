@@ -9,7 +9,7 @@ test.describe('Smoke / Sanity Test Suite - Post Deployment', () => {
     expect(response?.status()).toBe(200);
     
     // ตรวจสอบว่าหน้าเว็บเรนเดอร์สำเร็จ (หา title เจอ)
-    await expect(page).toHaveTitle(/Zero Platform/i);
+    await expect(page).toHaveTitle(/Platform Template/i);
   });
 
   test('2. Backend Health Check API should return OK', async ({ request }) => {

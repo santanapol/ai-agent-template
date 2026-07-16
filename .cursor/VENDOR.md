@@ -3,8 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Upstream | https://github.com/addyosmani/agent-skills |
-| Commit | `70b7506ce90e200cb47645ddb3f6b8e84fecc047` |
-| Synced | 2026-07-08 |
+| Commit | (run sync to refresh) |
 | Skills | 24 (23 lifecycle + using-agent-skills) |
 | Commands | 8 + code-build alias |
 | Agents | 4 |
@@ -14,13 +13,11 @@
 | Path | Role |
 |------|------|
 | `scripts/agent/agent-skills-standards/` | Related Coding Standards per command |
-| `scripts/agent/local-skills/` | zero-platform skills (restored after upstream sync, into .cursor/ and .claude/) |
-| `scripts/agent/local-commands/` | Local slash commands (`/gc`, `/release`) |
-| `scripts/agent/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` and `.claude/skills/` |
+| `scripts/agent/local-skills/` | ai-agent-template skills (restored after upstream sync) |
+| `scripts/agent/local-commands/` | Local slash commands (`/gc`, `/release`, `/plan`, `/build`) |
+| `scripts/agent/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` |
 | `.cursor/commands/` | Generated — upstream + standards + local |
 | `.cursor/rules/agent-skills.mdc` | Orchestration (regenerated each sync) |
-
-See also `.claude/VENDOR.md` for the Claude Code counterpart.
 
 ## Sync
 

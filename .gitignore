@@ -50,6 +50,3 @@ tasks/
 
 # Server credentials (SSH passwords, staging logins — never commit)
 dev-ops/**/credential.md
-
-# Local studio-admin design reference (full upstream clone — not committed)
-coding-standard/frontend/backoffice/reference/studio-admin/

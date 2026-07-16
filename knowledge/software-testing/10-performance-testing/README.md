@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 Performance QA / DevOps / Developer
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **`k6` (by Grafana)** 
 - **เหตุผล:** ทีมพัฒนาคุ้นเคยกับ JavaScript/TypeScript การเขียนสคริปต์โหลดด้วย k6 จะทำให้อ่านง่ายกว่า JMeter และยังเบากินเครื่องน้อยกว่ามาก
 

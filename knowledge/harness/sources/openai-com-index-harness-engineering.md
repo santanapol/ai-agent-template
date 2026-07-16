@@ -5,7 +5,7 @@
 > **Published:** February 11, 2026  
 > **Category:** Engineering
 
-เอกสารอ้างอิงใน repo นี้ — เก็บเนื้อหาหลักของบทความ OpenAI สำหรับ progressive disclosure (ดู [core-beliefs.md](./core-beliefs.md), [workflows.md](./workflows.md))
+เอกสารอ้างอิงใน repo นี้ — เก็บเนื้อหาหลักของบทความ OpenAI สำหรับ progressive disclosure (ดู [core-beliefs.md](../core-beliefs.md), [workflows.md](../workflows.md))
 
 ---
 

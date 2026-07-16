@@ -18,7 +18,7 @@ Read the existing spec (`docs/specs/…`, service `SPEC.md`, or equivalent) and 
 6. Add checkpoints between phases.
 7. Present the plan for human review.
 
-## Output (zero-platform — do not use `tasks/`)
+## Output (ai-agent-template — do not use `tasks/`)
 
 Save **one durable file**:
 
@@ -43,31 +43,6 @@ After human approval, `/build` reads the active exec plan from `docs/exec-plans/
 
 ## Related Coding Standards
 
-When executing this command, follow the domain standards that apply to the work:
+`coding-standard/` is empty in this template — vendor your org standards after fork, then follow `coding-standard/<domain>/...` for the services in scope.
 
-**Backend:**
-- `coding-standard/backend/01-tech-stack.md`
-- `coding-standard/backend/02-folder-structure.md`
-- `coding-standard/backend/03-api-routing.md`
-- `coding-standard/backend/06-api-response-codes.md`
-- `coding-standard/backend/12-data-management.md`
-
-**Auth:**
-- `coding-standard/auth/01-tech-stack.md`
-- `coding-standard/auth/02-folder-structure.md`
-- `coding-standard/auth/03-api-routing.md`
-- `coding-standard/auth/06-api-response-codes.md`
-- `coding-standard/auth/12-data-management.md`
-
-**Frontend (Backoffice):**
-- `coding-standard/frontend/backoffice/01-tech-stack.md`
-- `coding-standard/frontend/backoffice/02-folder-structure.md`
-- `coding-standard/frontend/backoffice/03-routing-and-pages.md`
-- `coding-standard/frontend/backoffice/04-state-management.md`
-- `coding-standard/frontend/backoffice/05-api-integration.md`
-
-**Gateway:**
-- `coding-standard/gateway/01-tech-stack.md`
-- `coding-standard/gateway/02-folder-structure.md`
-- `coding-standard/gateway/03-api-routing.md`
-- `coding-standard/gateway/06-api-response-codes.md`
+**Software testing** (included): `knowledge/software-testing/<topic>/README.md`

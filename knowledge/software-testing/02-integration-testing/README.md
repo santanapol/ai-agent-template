@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 Developer
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **Frontend:** `Vitest`
 - **Backend:** `Node.js Native Test Runner` (`node --test`) คู่กับ `fastify.inject()` สำหรับยิง Request ภายในโดยไม่ต้องสตาร์ท Port จริง
 

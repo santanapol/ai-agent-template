@@ -1,9 +1,0 @@
-# Staging: MongoDB + Redis on localhost only.
-# Usage (from backend/): docker compose -f docker-compose.staging.yml up -d
-#
-# Same services as local — see docker-compose.deps.yml
-
-name: zero-platform
-
-include:
-  - path: docker-compose.deps.yml

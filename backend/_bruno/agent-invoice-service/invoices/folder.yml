@@ -1,7 +1,0 @@
-info:
-  name: invoices
-  type: folder
-  seq: 1
-
-request:
-  auth: inherit

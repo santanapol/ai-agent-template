@@ -6,8 +6,8 @@
 ## 👥 ใครทำ
 QA + Developer
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
-- **API Testing:** ใช้ **`Bruno`** (`.bru`) เซฟลงในโฟลเดอร์ `backend/_bruno` เท่านั้น (Docs as Code ช่วยให้คนอื่นในทีมเอาไปรันต่อได้เลย ไม่ต้องใช้ Postman)
+## 🛠️ เครื่องมือที่แนะนำ (ai-agent-template)
+- **API Testing:** ใช้ **`Bruno`** (`.bru`) เซฟลงใน `code-base/backend/_bruno` (Docs as Code — ทีมรันต่อได้โดยไม่ต้องใช้ Postman)
 - **Database Checking:** ใช้เครื่องมือเช่น DBeaver / MongoDB Compass
 
 ## 🔥 ความจำเป็น

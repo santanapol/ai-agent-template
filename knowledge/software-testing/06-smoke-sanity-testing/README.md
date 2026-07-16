@@ -6,7 +6,7 @@ Quick-check ทำทันทีหลัง Deploy เพื่อยืนย
 ## 👥 ใครทำ
 QA (Automated)
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **Frontend / UI:** `Playwright` (รันสคริปต์เข้าหน้าเว็บเช็คด่วน 1-2 นาที)
 - **Backend / API:** `Bruno` (สร้าง Collection โฟลเดอร์ `smoke-tests` เอาไว้ยิงเช็ค Endpoint สำคัญรัวๆ)
 

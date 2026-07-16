@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 QA (Automated / Manual)
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **Automated:** `Playwright` — สามารถรัน Test ชุดเดียวซ้ำๆ บน Chromium, WebKit (Safari), และ Firefox รวมถึงจำลอง Mobile Viewport ได้ในตัว
 - **Manual (ถ้าจำเป็น):** `BrowserStack` หรือเครื่องจริง
 

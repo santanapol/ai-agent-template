@@ -1,4 +1,0 @@
-name: Production public origin (placeholder)
-variables:
-  - name: baseUrl
-    value: https://gateway.example.invalid

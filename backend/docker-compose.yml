@@ -1,9 +1,0 @@
-# Local dev dependencies for zero-platform.
-# Usage (from backend/): docker compose up -d
-#
-# Same MongoDB + Redis stack as staging — see docker-compose.deps.yml
-
-name: zero-platform
-
-include:
-  - path: docker-compose.deps.yml

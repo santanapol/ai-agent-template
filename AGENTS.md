@@ -2,82 +2,68 @@
 
 > **Humans steer. Agents execute.** This file is the table of contents — not the encyclopedia. Follow links for depth.
 
+**ai-agent-template** — skeleton repo for Cursor agent workflows. No runnable application stack is shipped; add code under `code-base/` and docs under `docs/` after fork.
+
+Human overview: [README.md](README.md) · Ops: [RUNBOOK.md](RUNBOOK.md)
+
 ## Repository zones
 
 | Zone | Paths | Purpose |
 |------|-------|---------|
-| **Code** | `backend/`, `frontend/backoffice-next/` | Runnable applications |
-| **Product docs** | `docs/specs/` | What to build (per-service specs) |
-| **Execution plans** | `docs/exec-plans/` | Active/completed work, tech debt |
-| **Domain standards** | `coding-standard/` | How to build (org rules, vendored) |
-| **Knowledge** | `knowledge/` | Harness philosophy (`knowledge/harness/`) + testing standards (`knowledge/software-testing/`) |
-| **Agent tooling** | `scripts/`, `.cursor/`, `.claude/`, `references/` | Skills, commands, checklists (Cursor + Claude Code) |
-| **Dev ops** | `dev-ops/` | Staging/production server runbooks and credentials (gitignored) |
+| **Code** | [`code-base/`](code-base/README.md) | Runnable applications (empty until you add them) |
+| **Product docs** | `docs/` | Specs, exec-plans, releases (empty until you add them) |
+| **Domain standards** | `coding-standard/` | Org coding rules (empty — vendor after fork) |
+| **Knowledge** | [`knowledge/`](knowledge/README.md) | Harness philosophy + testing standards |
+| **Agent tooling** | `scripts/agent/`, `.cursor/`, `references/` | Skills, commands, checklists (Cursor) |
 
 ## Document map
 
 | Area | Entry | Content |
 |------|-------|---------|
-| **Local ops (start here)** | [RUNBOOK.md](RUNBOOK.md) | Boot harness, manual, seed, smoke, CI |
-| **Environment files** | [backend/ENV.md](backend/ENV.md) | `.env.harness` (dev-up) · `.env` (manual) · `.env.prod` (PM2 prod) · `.env.staging` (PM2 staging) |
-| **System architecture** | [backend/ARCHITECTURE.md](backend/ARCHITECTURE.md) | Trust boundary, gateway mesh |
-| **Backend ops (deep)** | [backend/RUNBOOK.md](backend/RUNBOOK.md) | Docker, seed, deploy checklist |
-| **Staging server** | [dev-ops/staging/RUNBOOK.md](dev-ops/staging/RUNBOOK.md) | nginx, PM2, deploy on staging host |
-| **Production server** | [dev-ops/prod/RUNBOOK.md](dev-ops/prod/RUNBOOK.md) | SSH deploy on prod host |
-| **Product specs** | [docs/README.md](docs/README.md) | Spec index under `docs/specs/` |
-| **Golden principles** | [docs/golden-principles.md](docs/golden-principles.md) | Mechanical invariants agents must keep |
-| **Quality score** | [docs/QUALITY_SCORE.md](docs/QUALITY_SCORE.md) | Domain grades and gaps |
-| **Observability** | [docs/observability.md](docs/observability.md) | Logs/metrics query for agents |
-| **Knowledge** | [knowledge/README.md](knowledge/README.md) | Harness + testing standards index |
-| **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | `/spec` … `/ship`, subagents |
-| **Claude Code SDLC** | [.claude/USAGE.md](.claude/USAGE.md) | Same skills/commands, native Claude Code format |
-| **Claude Code orchestration** | [CLAUDE.md](CLAUDE.md) | Auto-loaded every session — skill/command routing (generated) |
-| **Coding standards** | [coding-standard/](coding-standard/) | Auth, gateway, backend, frontend |
-| **Template conventions** | [docs/TEMPLATE.md](docs/TEMPLATE.md) | Repo skeleton, forbidden paths, service bootstrap |
+| **First boot** | [RUNBOOK.md](RUNBOOK.md) | Sync skills, verify skeleton, where to put code/docs |
+| **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | Slash commands, layout |
+| **Orchestration** | [.cursor/rules/agent-skills.mdc](.cursor/rules/agent-skills.mdc) | Intent → skill, command routing |
+| **Subagents** | `.cursor/agents/` | `code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor` |
+| **Workflows (deep)** | [knowledge/harness/workflows.md](knowledge/harness/workflows.md) | Step-by-step SDLC examples |
+| **Harness concepts** | [knowledge/harness/README.md](knowledge/harness/README.md) | Beliefs, skills ↔ harness |
+| **Scripts** | [scripts/README.md](scripts/README.md) | Sync, local skills/commands, CI |
+| **Local planning skill** | [harness-planning-conventions](scripts/agent/local-skills/harness-planning-conventions/SKILL.md) | Plans → `docs/exec-plans/active/` |
+| **Local release skill** | [release-notes-and-handoff](scripts/agent/local-skills/release-notes-and-handoff/SKILL.md) | `/release` handoff after `/ship` GO |
 
 ## Agent workflow (SDLC)
 
 ```
 /spec → /plan → /build → /test → /review → /code-simplify → /ship → /release
+                                                          ↘ /gc
 ```
 
-`/release` — after ship GO: user + deploy notes in `docs/releases/`, confirm, docs-lint, PR ([local skill](scripts/agent/local-skills/release-notes-and-handoff/SKILL.md)). Does not re-run `ci-all` (`/ship` already did).
+| Situation | Start with |
+|-----------|------------|
+| Vague ask | `interview-me` or `idea-refine` |
+| New feature | `/spec` → `/plan` → `/build` |
+| Bug / unexpected behavior | `debugging-and-error-recovery` |
+| Before merge | `/ship` |
+| After ship GO | `/release` → `docs/releases/` |
+| Drift / cleanup | `/gc` |
 
-Garbage collection: `/gc` — scan drift, update quality score, open small fixes.
+Full intent routing: [.cursor/rules/agent-skills.mdc](.cursor/rules/agent-skills.mdc)
 
-Do **not** improvise workflows when a matching skill exists — read `.claude/skills/<name>/SKILL.md` (or `.cursor/skills/<name>/SKILL.md` in Cursor) completely.
-
-## Boot and verify (local)
-
-```bash
-# One-command stack — boot + seed all services + smoke
-./scripts/dev/dev-up.sh
-./scripts/dev/smoke.sh
-./scripts/dev/dev-down.sh
-
-# Re-seed without restarting services
-./scripts/dev/seed-all.sh
-```
-
-Manual fallback: [RUNBOOK.md](RUNBOOK.md).
+Do **not** improvise workflows when a matching skill exists — read `.cursor/skills/<name>/SKILL.md` completely.
 
 ## Quality gates
 
 | Gate | Command |
 |------|---------|
-| All services (local) | `./scripts/ci/ci-all.sh` |
 | Docs structure | `node scripts/ci/docs-lint.mjs` |
-| Per-service CI | `npm run ci` in each package directory |
 | GitHub Actions | `.github/workflows/ci-check.yml` |
 
 ## Progressive disclosure
 
 1. Start here (`AGENTS.md`) for orientation.
-2. Read [knowledge/harness/README.md](knowledge/harness/README.md) for how skills and harness work together.
-3. Read the service spec in `docs/specs/backend/<service>/` before changing that service.
-4. Read `docs/golden-principles.md` before proposing architecture changes.
-5. Check `docs/exec-plans/active/` for in-flight work — avoid duplicating effort.
-6. Use `coding-standard/` for domain rules; use `references/` for agent checklists.
+2. [RUNBOOK.md](RUNBOOK.md) — first-time sync + bootstrap `code-base/` and `docs/`.
+3. [knowledge/harness/README.md](knowledge/harness/README.md) — how skills and harness work together.
+4. Before changing a service: `docs/specs/` + vendored `coding-standard/` (when added) + active plan in `docs/exec-plans/active/`.
+5. Checklists: `references/` · command standards: `scripts/agent/agent-skills-standards/`.
 
 ## What agents cannot see
 

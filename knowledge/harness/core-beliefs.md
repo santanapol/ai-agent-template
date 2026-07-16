@@ -1,4 +1,4 @@
-# Core beliefs — zero-platform harness
+# Core beliefs — ai-agent-template harness
 
 หลักการที่กำหนด **วิธีทำงาน** ของ repo นี้ — อ่านก่อน implement หรือออกแบบ workflow ใหม่
 
@@ -20,16 +20,16 @@
 
 ## 3. Progressive disclosure — แผนที่ ไม่ใช่สารานุกรม
 
-- [AGENTS.md](../AGENTS.md) = สารบัญ (~100 บรรทัด)
-- ลึกตามงาน: spec → coding-standard → skill → runbook
+- [AGENTS.md](../../AGENTS.md) = สารบัญ
+- ลึกตามงาน: spec → coding-standard (เมื่อ vendor) → skill → runbook
 - ห้ามยัด rule ทั้ง repo ลง prompt เดียว
 
 ## 4. Harness + Agent Skills = สองชั้นที่ต้องใช้คู่กัน
 
 | ชั้น | คืออะไร | อยู่ที่ไหน |
 |------|---------|-----------|
-| **Harness** | สภาพแวดล้อม, feedback loop, guardrails, tooling | `scripts/`, `docs/golden-principles.md`, CI, observability |
-| **Agent Skills** | กระบวนการ SDLC, วิธีคิดต่อ phase | `.claude/skills/` (Cursor: `.cursor/skills/`), slash commands, subagents |
+| **Harness** | สภาพแวดล้อม, feedback loop, guardrails, tooling | `code-base/`, `docs/`, `scripts/`, CI |
+| **Agent Skills** | กระบวนการ SDLC, วิธีคิดต่อ phase | `.cursor/skills/`, slash commands, subagents |
 
 - Skill บอก **ทำอย่างไร** — harness ทำให้ **ทำได้จริงและตรวจได้**
 - ไม่มี skill ที่ตรง → อย่า improvise workflow ยาว ๆ — ใช้ `interview-me` / `idea-refine` หรือถามมนุษย์
@@ -37,17 +37,16 @@
 ## 5. Enforce invariants, not implementations
 
 - บังคับ boundary, trust model, response envelope, logging — ไม่บังคับ style ละเอียด
-- กฎเชิงกลไก: [docs/golden-principles.md](../docs/golden-principles.md)
+- กฎเชิงกลไก: `docs/golden-principles.md` (สร้างเมื่อเริ่มโปรเจกต์)
 - เมื่อ doc ไม่พอ → promote เป็น lint / CI (error message มี remediation ให้ agent)
 
 ## 6. Feedback loop ต้องปิดวงจร
 
 Agent ต้อง **เห็นผล** ของงานตัวเองโดยไม่พึ่ง copy-paste จากมนุษย์:
 
-- Boot stack: `./scripts/dev/dev-up.sh`
-- Smoke: `./scripts/dev/smoke.sh`
-- CI: `npm run ci`
-- Observability: query logs/metrics (ดู [docs/observability.md](../docs/observability.md))
+- Package CI: `npm run ci` ใน `code-base/`
+- Docs gate: `node scripts/ci/docs-lint.mjs`
+- เพิ่ม dev/smoke scripts ตามโปรเจกต์เมื่อมีแอปจริง
 
 ## 7. Throughput เปลี่ยนปรัชญา merge
 
@@ -57,13 +56,13 @@ Agent ต้อง **เห็นผล** ของงานตัวเอง�
 ## 8. Garbage collection ต่อเนื่อง
 
 - Agent replicate pattern ใน repo — รวม pattern ที่ไม่ดี → drift
-- `/gc` เป็นรอบ: scan drift, อัปเดต [QUALITY_SCORE.md](../docs/QUALITY_SCORE.md), แก้เล็ก ๆ
-- Tech debt บันทึกใน [tech-debt-tracker.md](../docs/exec-plans/tech-debt-tracker.md)
+- `/gc` เป็นรอบ: scan drift, อัปเดต `docs/QUALITY_SCORE.md`, แก้เล็ก ๆ
+- Tech debt บันทึกใน `docs/exec-plans/tech-debt-tracker.md`
 
 ## 9. Agent legibility เป็นเป้าหมายออกแบบ
 
 - โครงสร้าง repo, ชื่อไฟล์, layer architecture — ออกแบบให้ agent อ่านแล้ว reason ได้
-- Service อ้างอิง: `staff` เป็น golden reference สำหรับ backend internal API
+- Vendor `coding-standard/` หลัง fork เป็น reference สำหรับ layout และ patterns
 
 ---
 

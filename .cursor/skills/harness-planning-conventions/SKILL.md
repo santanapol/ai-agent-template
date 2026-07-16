@@ -1,9 +1,9 @@
 ---
 name: harness-planning-conventions
-description: zero-platform override for planning output paths. Read before /plan, /build, planning-and-task-breakdown, or spec-driven-development when saving a plan — durable SoT is docs/exec-plans/active/, never tasks/.
+description: ai-agent-template override for planning output paths. Read before /plan, /build, planning-and-task-breakdown, or spec-driven-development when saving a plan — durable SoT is docs/exec-plans/active/, never tasks/.
 ---
 
-# Harness planning conventions (zero-platform)
+# Harness planning conventions (ai-agent-template)
 
 Overrides upstream agent-skills output paths for **this repository only**.
 
@@ -15,6 +15,8 @@ Overrides upstream agent-skills output paths for **this repository only**.
 | Completed plan | `docs/exec-plans/completed/<slug>.md` | Yes |
 | Tech debt | `docs/exec-plans/tech-debt-tracker.md` | Yes |
 | `tasks/plan.md`, `tasks/todo.md` | **Do not create** | N/A (gitignored safety net only) |
+
+Create `docs/exec-plans/` structure when you start planning — `docs/` is empty in the template skeleton.
 
 ## When `/plan` or planning-and-task-breakdown runs
 
@@ -33,10 +35,9 @@ Overrides upstream agent-skills output paths for **this repository only**.
 ## Forbidden
 
 - Do not write or commit `tasks/plan.md` or `tasks/todo.md`.
-- Do not create `_mission-control/` for specs — use `docs/specs/` or `service/.../docs/`.
+- Do not create `_mission-control/` for specs — use `docs/specs/` or service docs under `code-base/`.
 
 ## References
 
-- [docs/exec-plans/README.md](../../../../docs/exec-plans/README.md)
-- [docs/TEMPLATE.md](../../../../docs/TEMPLATE.md)
 - Local slash commands: `scripts/agent/local-commands/plan.md`, `build.md`
+- Code zone: `code-base/backend/`, `code-base/frontend/`

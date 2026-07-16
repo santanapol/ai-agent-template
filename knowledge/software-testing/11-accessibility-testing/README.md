@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 QA / Frontend Developer
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **`@axe-core/playwright`** — สามารถจับคู่ axe-core เข้ากับ Playwright ที่เราใช้รัน E2E อยู่แล้วได้เลย ทำให้สแกนหาข้อบกพร่องเรื่องสีหรือ Label ขาดหายได้อัตโนมัติ
 
 ## 🔥 ความจำเป็น

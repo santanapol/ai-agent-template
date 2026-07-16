@@ -6,7 +6,7 @@
 ## 👥 ใครทำ
 Developer
 
-## 🛠️ เครื่องมือที่แนะนำ (Zero Platform Standard)
+## 🛠️ เครื่องมือที่แนะนำ (Platform Template Standard)
 - **Frontend (`backoffice`):** `Vitest` + `React Testing Library` (มีการติดตั้งไว้พร้อมใช้งานแล้ว)
 - **Backend:** `Node.js Native Test Runner` (`node --test`) คู่กับ `node:assert` (อิงตาม Tech Stack ห้ามใช้ Jest)
 
