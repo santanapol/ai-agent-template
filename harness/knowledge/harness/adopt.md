@@ -32,7 +32,7 @@ repo/
 └── (no backend/ at repo root)
 ```
 
-After fork: sync skills → add code under `code-base/` → specs under `docs/specs/`.
+After fork: run `/setup` (or sync skills manually) → add code under `code-base/` → specs under `docs/specs/`.
 
 ---
 
@@ -59,7 +59,7 @@ repo/
    - `harness/` (knowledge, references, scripts, HARNESS-RUNBOOK.md)
    - `docs/specs/`, `docs/exec-plans/`, `docs/releases/` (README + structure)
    - `coding-standard/` (README — vendor org rules after fork)
-2. Run `./harness/scripts/agent/set-code-layout.sh root`
+2. Run `./harness/scripts/agent/set-code-layout.sh root` (or `/setup` to interview + apply)
 3. Run `./harness/scripts/agent/sync-agent-skills.sh`
 4. Run `node harness/scripts/ci/docs-lint.mjs`
 5. Add CI step for docs-lint if missing

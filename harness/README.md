@@ -31,7 +31,7 @@ Root keeps: `README.md`, `AGENTS.md`, `harness.config.yaml`, `.cursor/` (Cursor 
 
 **What sync never touches:** `agent-skills-standards/`, `local-skills/`, `local-commands/`, `code-base/`, `docs/`, `coding-standard/`
 
-Local-only commands (`/spec`, `/gc`, `/release`, `/plan`, `/build`) live in `harness/scripts/agent/local-commands/` and are copied to `.cursor/commands/` on sync.
+Local-only commands (`/setup`, `/spec`, `/gc`, `/release`, `/plan`, `/build`) live in `harness/scripts/agent/local-commands/` and are copied to `.cursor/commands/` on sync.
 
 ## CI — `harness/scripts/ci/`
 

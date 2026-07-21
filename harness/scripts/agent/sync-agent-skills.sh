@@ -223,6 +223,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Ship | `/ship` | shipping-and-launch + parallel personas |
 | Release | `/release` | release-notes-and-handoff |
 | GC | `/gc` | code-simplification + golden principles |
+| First boot | `/setup` | harness-bootstrap |
 
 ## Agent map
 
@@ -230,6 +231,7 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 
 ## Intent → skill (auto)
 
+- Just cloned / forked template / first boot → `harness-bootstrap` (`/setup`)
 - Vague ask → `interview-me` or `idea-refine`
 - New feature → `spec-driven-development` → `planning-and-task-breakdown` → `incremental-implementation` + `test-driven-development`
 - Bug / unexpected behavior → `debugging-and-error-recovery`
@@ -273,7 +275,7 @@ MDC
 |------|------|
 | \`harness/scripts/agent/agent-skills-standards/\` | Related Coding Standards per command |
 | \`harness/scripts/agent/local-skills/\` | ai-agent-template skills (restored after upstream sync) |
-| \`harness/scripts/agent/local-commands/\` | Local slash commands (\`/spec\`, \`/gc\`, \`/release\`, \`/plan\`, \`/build\`) |
+| \`harness/scripts/agent/local-commands/\` | Local slash commands (\`/setup\`, \`/spec\`, \`/gc\`, \`/release\`, \`/plan\`, \`/build\`) |
 | \`harness/scripts/agent/sync-local-agent-skills.sh\` | Copy local-skills → \`.cursor/skills/\` |
 | \`.cursor/commands/\` | Generated — upstream + standards + local |
 | \`.cursor/rules/agent-skills.mdc\` | Orchestration (regenerated each sync) |
@@ -305,6 +307,7 @@ Local overrides **replace** the upstream command body for `/spec`, `/plan`, and 
 | `/ship` | upstream + standards | [standards/ship.md](../../harness/scripts/agent/agent-skills-standards/ship.md) |
 | `/release` | [local-commands/release.md](../../harness/scripts/agent/local-commands/release.md) | — |
 | `/gc` | [local-commands/gc.md](../../harness/scripts/agent/local-commands/gc.md) | — |
+| `/setup` | [local-commands/setup.md](../../harness/scripts/agent/local-commands/setup.md) — first boot | — |
 CMDREADME
 
   cat >"$CURSOR/README.md" <<'README'
@@ -341,9 +344,13 @@ README
 ./harness/scripts/agent/sync-agent-skills.sh
 ```
 
+## First boot
+
+After cloning this template: `/setup` (`harness-bootstrap`)
+
 ## SDLC
 
-`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`
+`/setup` (once) → `/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`
 USAGE
 
   echo "Bootstrapped .cursor/rules, VENDOR.md, README"

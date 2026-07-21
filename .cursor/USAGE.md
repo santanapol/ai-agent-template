@@ -16,6 +16,10 @@
 ./harness/scripts/agent/sync-agent-skills.sh
 ```
 
+## First boot
+
+After cloning this template: `/setup` (`harness-bootstrap`)
+
 ## SDLC
 
-`/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`
+`/setup` (once) → `/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`

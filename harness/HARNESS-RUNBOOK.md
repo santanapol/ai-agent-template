@@ -8,7 +8,15 @@
 
 ## First-time setup
 
-หลัง clone หรือ fork template:
+หลัง clone หรือ fork template เปิดใน Cursor แล้วรัน:
+
+```text
+/setup
+```
+
+Agent จะถามทีละข้อ (layout, ชื่อโปรเจกต์, path โค้ด, sync skills) แล้ว setup ให้พร้อม `/spec`
+
+หรือทำมือ:
 
 ```bash
 # 1. Sync agent-skills → .cursor/ + harness/references/
@@ -19,6 +27,8 @@ node harness/scripts/ci/docs-lint.mjs
 ```
 
 จากนั้นเลือก layout และเติมโค้ดตาม [`harness.config.yaml`](../harness.config.yaml) — ดู [knowledge/harness/adopt.md](knowledge/harness/adopt.md)
+
+Skill: `harness-bootstrap` · Command: `/setup`
 
 ---
 
@@ -75,7 +85,7 @@ Orchestration rule (Cursor): [.cursor/rules/agent-skills.mdc](../.cursor/rules/a
 | Path | เนื้อหา |
 |------|---------|
 | `harness/scripts/agent/local-skills/` | skills เฉพาะ template |
-| `harness/scripts/agent/local-commands/` | `/spec`, `/gc`, `/release`, `/plan`, `/build` |
+| `harness/scripts/agent/local-commands/` | `/setup`, `/spec`, `/gc`, `/release`, `/plan`, `/build` |
 | `harness/scripts/agent/agent-skills-standards/` | Related Coding Standards ต่อ slash command |
 
 แก้ local skill แล้ว restore อย่างเดียว:

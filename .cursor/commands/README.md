@@ -17,3 +17,4 @@ Local overrides **replace** the upstream command body for `/spec`, `/plan`, and 
 | `/ship` | upstream + standards | [standards/ship.md](../../harness/scripts/agent/agent-skills-standards/ship.md) |
 | `/release` | [local-commands/release.md](../../harness/scripts/agent/local-commands/release.md) | — |
 | `/gc` | [local-commands/gc.md](../../harness/scripts/agent/local-commands/gc.md) | — |
+| `/setup` | [local-commands/setup.md](../../harness/scripts/agent/local-commands/setup.md) — first boot | — |

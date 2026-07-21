@@ -14,10 +14,18 @@
 
 ## 1. การเตรียมตัวครั้งแรก (onboarding)
 
-ทำครั้งเดียวหลัง clone repo:
+ทำครั้งเดียวหลัง clone repo — ใน Cursor เรียก:
+
+```text
+/setup
+```
+
+Agent ใช้ skill `harness-bootstrap` ถาม layout / ชื่อโปรเจกต์ / path แล้ว sync + docs-lint ให้
+
+หรือทำมือ:
 
 ```bash
-# 1. Sync agent-skills → .cursor/ + references/
+# 1. Sync agent-skills → .cursor/ + harness/references/
 ./harness/scripts/agent/sync-agent-skills.sh
 
 # 2. ตรวจ skeleton

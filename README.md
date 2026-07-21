@@ -18,23 +18,24 @@ Guide: [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md)
 ```bash
 # 1. Use this template on GitHub, then clone your new repo
 
-# 2. Sync agent skills → .cursor/ + harness/references/
-./harness/scripts/agent/sync-agent-skills.sh
+# 2. Open in Cursor and run first-boot setup (interview + sync + lint)
+#    /setup
 
-# 3. Verify skeleton structure
+#    Or manually:
+./harness/scripts/agent/sync-agent-skills.sh
 node harness/scripts/ci/docs-lint.mjs
 
-# 4. (Brownfield only) point harness at root code
+# 3. (Brownfield only) point harness at root code
 # ./harness/scripts/agent/set-code-layout.sh root
 
-# 5. Add application code — paths from harness.config.yaml
+# 4. Add application code — paths from harness.config.yaml
 #    greenfield: code-base/backend/, code-base/frontend/
 #    brownfield: backend/, frontend/ (existing)
 
-# 6. Add product docs as you build
+# 5. Add product docs as you build
 #    specs, exec-plans, releases → docs/
 
-# 7. (Optional) Vendor org coding rules
+# 6. (Optional) Vendor org coding rules
 #    → coding-standard/
 ```
 
@@ -59,6 +60,7 @@ Step-by-step harness ops: [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.m
 
 | Situation | Start with |
 |-----------|------------|
+| Just cloned template | `/setup` |
 | New feature | `/spec` → `/plan` → `/build` |
 | Before merge | `/ship` |
 | After ship GO | `/release` |

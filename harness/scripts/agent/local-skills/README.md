@@ -4,6 +4,7 @@ Skills here are **not** in upstream [agent-skills](https://github.com/addyosmani
 
 | Path | Skill / command |
 |------|-----------------|
+| `harness-bootstrap/` | First-boot interview + setup after clone (`/setup`) |
 | `release-notes-and-handoff/` | Release handoff after `/ship` — user + deploy notes, docs-lint, PR |
 | `harness-planning-conventions/` | Spec + plan output → `docs/specs/`, `docs/exec-plans/active/` (never repo root or `tasks/`) |
 

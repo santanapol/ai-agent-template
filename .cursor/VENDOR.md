@@ -15,7 +15,7 @@
 |------|------|
 | `harness/scripts/agent/agent-skills-standards/` | Related Coding Standards per command |
 | `harness/scripts/agent/local-skills/` | ai-agent-template skills (restored after upstream sync) |
-| `harness/scripts/agent/local-commands/` | Local slash commands (`/spec`, `/gc`, `/release`, `/plan`, `/build`) |
+| `harness/scripts/agent/local-commands/` | Local slash commands (`/setup`, `/spec`, `/gc`, `/release`, `/plan`, `/build`) |
 | `harness/scripts/agent/sync-local-agent-skills.sh` | Copy local-skills → `.cursor/skills/` |
 | `.cursor/commands/` | Generated — upstream + standards + local |
 | `.cursor/rules/agent-skills.mdc` | Orchestration (regenerated each sync) |

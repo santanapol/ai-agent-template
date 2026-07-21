@@ -20,7 +20,7 @@ Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.
 
 | Area | Entry | Content |
 |------|-------|---------|
-| **First boot** | [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) | Sync skills, verify skeleton, choose code layout |
+| **First boot** | [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) · `/setup` | Interview + sync skills, verify skeleton, choose code layout |
 | **Product docs** | [docs/README.md](docs/README.md) | Specs, exec-plans, releases — SDLC output |
 | **Code layouts** | [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md) | Greenfield (`code-base/`) vs brownfield (root) |
 | **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | Slash commands, layout |
@@ -29,6 +29,7 @@ Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.
 | **Workflows (deep)** | [harness/knowledge/harness/workflows.md](harness/knowledge/harness/workflows.md) | Step-by-step SDLC examples |
 | **Harness concepts** | [harness/knowledge/harness/README.md](harness/knowledge/harness/README.md) | Beliefs, skills ↔ harness |
 | **Harness ops** | [harness/README.md](harness/README.md) | Sync, local skills/commands, CI |
+| **Bootstrap skill** | [harness-bootstrap](harness/scripts/agent/local-skills/harness-bootstrap/SKILL.md) | `/setup` — Q&A then first-boot setup |
 | **Local planning skill** | [harness-planning-conventions](harness/scripts/agent/local-skills/harness-planning-conventions/SKILL.md) | Spec/plan paths + `harness.config.yaml` code zones |
 | **Local release skill** | [release-notes-and-handoff](harness/scripts/agent/local-skills/release-notes-and-handoff/SKILL.md) | `/release` handoff after `/ship` GO |
 
@@ -41,6 +42,7 @@ Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.
 
 | Situation | Start with |
 |-----------|------------|
+| Just cloned / forked template | `/setup` (`harness-bootstrap`) |
 | Vague ask | `interview-me` or `idea-refine` |
 | New feature | `/spec` → `/plan` → `/build` |
 | Bug / unexpected behavior | `debugging-and-error-recovery` |
