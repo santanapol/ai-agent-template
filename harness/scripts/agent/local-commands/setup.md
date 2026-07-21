@@ -10,16 +10,18 @@ This command is for **one-time setup** after the template is cloned, forked, or 
 
 ## Flow
 
-1. Detect current repo state (`harness.config.yaml`, existing app dirs, dirty tree).
-2. Interview one question at a time (layout, project name, code paths, sync, coding-standard, optional starter spec).
-3. Confirm the bootstrap plan; wait for explicit OK.
-4. Execute: `set-code-layout.sh` → optional `sync-agent-skills.sh` → README/docs placeholders → `node harness/scripts/ci/docs-lint.mjs`.
-5. Hand off with next steps: `/spec` → `/plan` → `/build`.
+1. **Preconditions** — repo root, Node.js, harness scripts; pre-sync if `harness-bootstrap` skill is missing.
+2. **Detect** — `harness.config.yaml`, app dirs, dirty tree, already-bootstrapped signals.
+3. **Interview** one question at a time (layout, project name → README title, code paths, sync, coding-standard source or later, optional starter spec).
+4. **Confirm** the bootstrap plan; wait for explicit OK.
+5. **Execute** — `set-code-layout.sh` → ensure code-zone placeholders → optional `sync-agent-skills.sh` (full skills install) → README/docs → optional vendor `coding-standard/` → `node harness/scripts/ci/docs-lint.mjs`.
+6. **Hand off** — include `skills synced: yes (N) | skipped | failed` and next steps `/spec` → `/plan` → `/build`.
 
 ## Do not
 
 - Start building features in this command
 - Move brownfield code into `code-base/`
+- Invent coding-standard content without a user-provided source
 - Commit or push unless the user asks
 
 Guide: `harness/HARNESS-RUNBOOK.md` · Layouts: `harness/knowledge/harness/adopt.md`

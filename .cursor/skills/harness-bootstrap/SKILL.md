@@ -28,31 +28,46 @@ Guide a human through **one-time setup** after this template lands in a target r
 
 Read before acting:
 
-1. `harness.config.yaml`
+1. `harness.config.yaml` (must exist at **repo root**)
 2. `harness/HARNESS-RUNBOOK.md` (First-time setup)
 3. `harness/knowledge/harness/adopt.md`
 4. `git status --short` and a quick tree of repo root (detect existing `backend/`, `frontend/`, `apps/`, `code-base/`)
+5. `README.md` first heading (for bootstrap detection)
 
 ## Process
 
-### Phase 0 — Detect (silent)
+### Phase 0 — Preconditions + detect (silent, then block if needed)
 
-Record:
+**Abort with a clear fix** if any precondition fails:
+
+| Check | Fail message |
+|-------|----------------|
+| Cwd is repo root | `harness.config.yaml` and `harness/scripts/agent/` missing — `cd` to the cloned repo root |
+| Node.js available | `node -v` fails — install Node 20+ (docs-lint / sync helpers need it) |
+| Harness scripts executable | `harness/scripts/agent/sync-agent-skills.sh` or `set-code-layout.sh` missing |
+
+**Chicken-and-egg:** if `.cursor/skills/harness-bootstrap/SKILL.md` is missing (partial copy without `.cursor/`):
+
+1. Tell the user you will run a **pre-sync** so `/setup` can continue
+2. Run `./harness/scripts/agent/sync-agent-skills.sh` immediately (needs network)
+3. Re-read this skill from `.cursor/skills/harness-bootstrap/SKILL.md`, then continue Phase 0 detect
+
+Record signals:
 
 | Signal | How |
 |--------|-----|
 | Existing app dirs at root | `backend/`, `frontend/`, `apps/`, `services/`, `api/`, `web/` |
-| Already configured | non-default `harness.config.yaml` or non-template `README.md` title |
-| Skills present | `.cursor/skills/` exists and is non-empty |
-| Working tree dirty | uncommitted changes — ask before rewriting files |
+| Skills present | count dirs under `.cursor/skills/` |
+| Working tree dirty | `git status --porcelain` non-empty — ask before rewriting README / config |
+| Already bootstrapped | **all** of: README H1 is **not** `ai-agent-template`; `.cursor/skills/spec-driven-development/SKILL.md` exists; `node harness/scripts/ci/docs-lint.mjs` would pass (or passed recently) |
 
-If this looks **already bootstrapped** (project-specific README + layout set + docs-lint would pass), say so and ask whether to **re-run** or **abort**.
+If already bootstrapped → say so and ask **re-run** or **abort**. Do not silently re-write.
 
 ### Phase 1 — Interview (one question at a time)
 
 Ask **one** question per turn. Prefer a short default guess. Wait for the answer before the next question.
 
-Order (skip a question only if already answered clearly or detected with high confidence — still confirm):
+Order (skip only if already answered clearly or detected with high confidence — still confirm the guess):
 
 1. **Mode**
    - Q: Greenfield (new app under `code-base/`) or brownfield (existing code stays where it is)?
@@ -60,25 +75,33 @@ Order (skip a question only if already answered clearly or detected with high co
 
 2. **Project name**
    - Q: What is the product / repo display name?
-   - GUESS: folder or git remote name
+   - GUESS: folder or `git remote` basename
+   - Effect: having a name ⇒ **Update README title: yes** (unless user says keep template README)
 
-3. **Code paths** (brownfield, or greenfield with non-default layout)
-   - Q: Paths for backend and frontend relative to repo root?
-   - GUESS: `backend` + `frontend`, or detected dirs; allow "backend only" / "frontend only" / monorepo paths like `apps/api`
+3. **Code paths** — ask when:
+   - **brownfield**, or
+   - greenfield but user already said they will not use default `code-base/backend` + `code-base/frontend`
+   - Q: Paths for backend and frontend relative to repo root? (or "defaults")
+   - GUESS: brownfield → detected dirs or `backend` + `frontend`; greenfield defaults → skip this question
+   - Allow "backend only" / "frontend only" / monorepo paths (`apps/api`, `apps/web`)
+   - **Note for greenfield `layout: code-base`:** docs-lint still requires **both** `code-base/backend/.gitkeep` and `code-base/frontend/.gitkeep`. If user is backend-only for now, still create the empty frontend placeholder (and vice versa) and say so in the plan.
 
 4. **Sync skills now?**
-   - Q: Run `./harness/scripts/agent/sync-agent-skills.sh` now? (needs network)
-   - GUESS: yes
+   - Q: Run `./harness/scripts/agent/sync-agent-skills.sh` now? (needs network; installs/refreshes all `.cursor/skills`, commands, agents, `harness/references/`)
+   - GUESS: **yes** (recommended even if `.cursor/` shipped with the template — pins upstream)
+   - If **no**: warn that day-to-day `/spec` may rely on incomplete or stale skills
 
 5. **Coding standards**
-   - Q: Vendor org rules into `coding-standard/` now, later, or skip?
-   - GUESS: later (keep README placeholder)
+   - Q: `coding-standard/` — **later**, **skip**, or **vendor now**?
+   - GUESS: **later** (keep `coding-standard/README.md` placeholder)
+   - If **vendor now**: ask **one follow-up** for the source (git URL, local path, or org repo). If they cannot provide a source → fall back to **later**. Do **not** invent rules.
+   - If **skip**: leave README placeholder; do not delete `coding-standard/`
 
 6. **Optional first slug**
-   - Q: Want a starter spec slug after setup (e.g. `hello-platform`), or stop at harness-ready?
+   - Q: Want a starter spec stub slug (e.g. `hello-platform`), or stop at harness-ready?
    - GUESS: stop at harness-ready (user runs `/spec` next)
 
-Do **not** ask about CI hosting, deploy, or stack choice here — out of scope for harness bootstrap.
+Do **not** ask about CI hosting, deploy, or application stack here.
 
 ### Phase 2 — Confirm plan
 
@@ -90,15 +113,17 @@ BOOTSTRAP PLAN
 - Layout: code-base | root
 - code.backend: …
 - code.frontend: …
+- Placeholders: both code zones ensured for docs-lint (yes/no note)
 - Sync agent-skills: yes | no
-- Update README title: yes | no
-- coding-standard: leave placeholder | (path notes)
+- Update README title: yes | no   # yes when project name set
+- coding-standard: later | skip | vendor from <url-or-path>
 - Starter spec: none | docs/specs/<slug>.md (stub only)
+- Dirty tree: clean | will touch: README, harness.config.yaml, …
 ```
 
 ### Phase 3 — Execute
 
-Run only what was approved. Prefer existing scripts.
+Run only what was approved. Prefer existing scripts. Stay at repo root.
 
 1. **Layout**
    ```bash
@@ -106,29 +131,41 @@ Run only what was approved. Prefer existing scripts.
    # or
    ./harness/scripts/agent/set-code-layout.sh root
    ```
-   If custom paths differ from defaults, edit `harness.config.yaml` `code.backend` / `code.frontend` after the script (do not invent new layout values — only `code-base` | `root`).
+   If custom paths differ from script defaults, edit `harness.config.yaml` `code.backend` / `code.frontend` afterward.  
+   Do **not** invent new `layout` values — only `code-base` | `root`.
 
-2. **Greenfield dirs** — ensure `code-base/backend/.gitkeep` and `code-base/frontend/.gitkeep` exist when `layout: code-base`.
+2. **Greenfield dirs** — when `layout: code-base`, ensure **both**:
+   - `code-base/backend/.gitkeep`
+   - `code-base/frontend/.gitkeep`  
+   even if the team will only fill one side initially (docs-lint requirement).
 
-3. **Brownfield** — do **not** move application code into `code-base/`. Leave existing trees in place.
+3. **Brownfield** — do **not** move application code into `code-base/`. Leave existing trees in place. Ensure configured `code.*` paths exist or warn before lint.
 
 4. **Sync** (if approved)
    ```bash
    ./harness/scripts/agent/sync-agent-skills.sh
    ```
+   - Needs network; may take ~1–2 minutes
+   - Overwrites `.cursor/skills|commands|agents|rules` then restores local skills/commands (including `/setup`)
+   - On failure: stop, report stderr, do not pretend skills are complete
+   - After success: count skill dirs under `.cursor/skills/` for handoff
 
-5. **README** — if approved, set the H1 / opening line to the project name while keeping a one-line pointer to `AGENTS.md` and `harness/HARNESS-RUNBOOK.md`. Do not delete the zone table wholesale.
+5. **README** — if Update README title = yes: set H1 (and a short opening line if needed) to the project name; keep pointers to `AGENTS.md` and `harness/HARNESS-RUNBOOK.md`. Do not delete the zone table wholesale.
 
-6. **Docs placeholders** — ensure these exist (create `.gitkeep` / keep READMEs if missing):
-   - `docs/specs/`
-   - `docs/exec-plans/active/`
-   - `docs/exec-plans/completed/`
+6. **Docs placeholders** — ensure:
+   - `docs/specs/` (+ `.gitkeep` if empty aside from README)
+   - `docs/exec-plans/active/`, `docs/exec-plans/completed/`
    - `docs/releases/`
-   - `coding-standard/README.md` (do not invent org rules)
+   - `coding-standard/README.md` and `coding-standard/.gitkeep`
 
-7. **Starter spec** (only if requested) — write a short stub `docs/specs/<slug>.md` with title + "TODO: run /spec to fill" — do not fake full requirements.
+7. **Vendor coding-standard** (only if approved + source given)
+   - Copy or subtree from the given source into `coding-standard/` without inventing content
+   - Preserve or refresh `coding-standard/README.md` as an index if missing
+   - If copy fails → leave placeholder and note in handoff
 
-8. **Verify**
+8. **Starter spec** (only if requested) — short stub `docs/specs/<slug>.md` with title + `TODO: run /spec to fill`. Do not fake full requirements.
+
+9. **Verify**
    ```bash
    node harness/scripts/ci/docs-lint.mjs
    ```
@@ -142,15 +179,18 @@ Print:
 HARNESS READY
 - layout: …
 - code zones: …
+- skills synced: yes (N skills under .cursor/skills/) | skipped | failed (summary)
+- note: sync refreshes .cursor/; /setup remains via local-commands restore
 - docs-lint: passed | failed (summary)
-- Next: open this folder in Cursor → /spec → /plan → /build
+- coding-standard: placeholder | vendored from …
+- Next: /spec → /plan → /build
 - Ops guide: harness/HARNESS-RUNBOOK.md
 - Agent map: AGENTS.md
 ```
 
-If the user chose a starter slug, say: run `/spec` to flesh out `docs/specs/<slug>.md`.
+If starter slug: remind to run `/spec` on `docs/specs/<slug>.md`.
 
-Do **not** start implementing application features in this skill unless the user explicitly asks after handoff.
+Do **not** start implementing application features unless the user explicitly asks after handoff.
 
 ## Rules
 
@@ -159,6 +199,7 @@ Do **not** start implementing application features in this skill unless the user
 - Never delete existing application code
 - Never write `SPEC.md` / `tasks/` at repo root
 - Prefer Thai or English to match the user's language in the interview
+- Prefer **later** for coding-standard over empty invented rules
 
 ## References
 
@@ -166,4 +207,5 @@ Do **not** start implementing application features in this skill unless the user
 - `harness/knowledge/harness/adopt.md`
 - `harness/scripts/agent/set-code-layout.sh`
 - `harness/scripts/agent/sync-agent-skills.sh`
+- `coding-standard/README.md`
 - `docs/README.md`
