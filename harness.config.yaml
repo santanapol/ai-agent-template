@@ -8,3 +8,8 @@ layout: code-base # code-base (greenfield) | root (existing codebase at repo roo
 code:
   backend: code-base/backend
   frontend: code-base/frontend
+
+optional_skills:
+  # Vercel React/Next.js + Design/UI — https://vercel.com/docs/agent-resources/skills
+  # Install: ./harness/scripts/agent/install-optional-skills.sh  (also re-run after sync)
+  vercel_react_ui: false

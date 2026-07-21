@@ -3,9 +3,10 @@ name: harness-bootstrap
 description: >-
   Interactive first-boot setup after cloning or forking ai-agent-template into a
   target repo. Interviews layout (greenfield vs brownfield), project name, code
-  paths, and coding-standard intent, then runs sync, set-code-layout, docs-lint,
-  and leaves the repo ready for /spec. Use when the user says setup template,
-  first boot, bootstrap harness, just cloned the template, or invokes /setup.
+  paths, coding-standard intent, and optional Vercel React/Next + Design/UI
+  skills, then runs sync, set-code-layout, docs-lint, and leaves the repo ready
+  for /spec. Use when the user says setup template, first boot, bootstrap
+  harness, just cloned the template, or invokes /setup.
 ---
 
 # Harness bootstrap (first boot)
@@ -91,17 +92,22 @@ Order (skip only if already answered clearly or detected with high confidence �
    - GUESS: **yes** (recommended even if `.cursor/` shipped with the template — pins upstream)
    - If **no**: warn that day-to-day `/spec` may rely on incomplete or stale skills
 
-5. **Coding standards**
+5. **Vercel React/Next.js + Design/UI skills?**
+   - Q: Also install Vercel [React and Next.js](https://vercel.com/docs/agent-resources/skills#react-and-next.js) + [Design and UI](https://vercel.com/docs/agent-resources/skills#design-and-ui) skills (`vercel-react-best-practices`, `web-design-guidelines` from `vercel-labs/agent-skills`)?
+   - GUESS: **yes** when the project has (or will have) a frontend; otherwise ask — still default **yes** for greenfield with `code-base/frontend`
+   - Effect: set `optional_skills.vercel_react_ui: true` in `harness.config.yaml` and run `./harness/scripts/agent/install-optional-skills.sh`
+
+6. **Coding standards**
    - Q: `coding-standard/` — **later**, **skip**, or **vendor now**?
    - GUESS: **later** (keep `coding-standard/README.md` placeholder)
    - If **vendor now**: ask **one follow-up** for the source (git URL, local path, or org repo). If they cannot provide a source → fall back to **later**. Do **not** invent rules.
    - If **skip**: leave README placeholder; do not delete `coding-standard/`
 
-6. **Optional first slug**
+7. **Optional first slug**
    - Q: Want a starter spec stub slug (e.g. `hello-platform`), or stop at harness-ready?
    - GUESS: stop at harness-ready (user runs `/spec` next)
 
-Do **not** ask about CI hosting, deploy, or application stack here.
+Do **not** ask about CI hosting, deploy, or full application stack choice beyond the Vercel frontend skills above.
 
 ### Phase 2 — Confirm plan
 
@@ -115,6 +121,7 @@ BOOTSTRAP PLAN
 - code.frontend: …
 - Placeholders: both code zones ensured for docs-lint (yes/no note)
 - Sync agent-skills: yes | no
+- Vercel React/UI skills: yes | no  # vercel-react-best-practices + web-design-guidelines
 - Update README title: yes | no   # yes when project name set
 - coding-standard: later | skip | vendor from <url-or-path>
 - Starter spec: none | docs/specs/<slug>.md (stub only)
@@ -133,6 +140,7 @@ Run only what was approved. Prefer existing scripts. Stay at repo root.
    ```
    If custom paths differ from script defaults, edit `harness.config.yaml` `code.backend` / `code.frontend` afterward.  
    Do **not** invent new `layout` values — only `code-base` | `root`.
+   If Vercel React/UI skills were approved, set `optional_skills.vercel_react_ui: true` in `harness.config.yaml` **after** this step (set-code-layout preserves the flag once set).
 
 2. **Greenfield dirs** — when `layout: code-base`, ensure **both**:
    - `code-base/backend/.gitkeep`
@@ -149,23 +157,40 @@ Run only what was approved. Prefer existing scripts. Stay at repo root.
    - Overwrites `.cursor/skills|commands|agents|rules` then restores local skills/commands (including `/setup`)
    - On failure: stop, report stderr, do not pretend skills are complete
    - After success: count skill dirs under `.cursor/skills/` for handoff
+   - If `optional_skills.vercel_react_ui: true`, sync already calls `install-optional-skills.sh` at the end
 
-5. **README** — if Update README title = yes: set H1 (and a short opening line if needed) to the project name; keep pointers to `AGENTS.md` and `harness/HARNESS-RUNBOOK.md`. Do not delete the zone table wholesale.
+5. **Vercel React/UI skills** (if approved)
+   - Ensure `harness.config.yaml` has:
+     ```yaml
+     optional_skills:
+       vercel_react_ui: true
+     ```
+   - If sync was skipped or flag was just turned on, run:
+     ```bash
+     ./harness/scripts/agent/install-optional-skills.sh --force
+     ```
+   - Installs into `.cursor/skills/`:
+     - `vercel-react-best-practices` ([React and Next.js](https://vercel.com/docs/agent-resources/skills#react-and-next.js))
+     - `web-design-guidelines` ([Design and UI](https://vercel.com/docs/agent-resources/skills#design-and-ui))
+   - Source: `vercel-labs/agent-skills` via `npx skills add` (needs network)
+   - On failure: note in handoff; do not fail the whole bootstrap unless the user required these skills
 
-6. **Docs placeholders** — ensure:
+6. **README** — if Update README title = yes: set H1 (and a short opening line if needed) to the project name; keep pointers to `AGENTS.md` and `harness/HARNESS-RUNBOOK.md`. Do not delete the zone table wholesale.
+
+7. **Docs placeholders** — ensure:
    - `docs/specs/` (+ `.gitkeep` if empty aside from README)
    - `docs/exec-plans/active/`, `docs/exec-plans/completed/`
    - `docs/releases/`
    - `coding-standard/README.md` and `coding-standard/.gitkeep`
 
-7. **Vendor coding-standard** (only if approved + source given)
+8. **Vendor coding-standard** (only if approved + source given)
    - Copy or subtree from the given source into `coding-standard/` without inventing content
    - Preserve or refresh `coding-standard/README.md` as an index if missing
    - If copy fails → leave placeholder and note in handoff
 
-8. **Starter spec** (only if requested) — short stub `docs/specs/<slug>.md` with title + `TODO: run /spec to fill`. Do not fake full requirements.
+9. **Starter spec** (only if requested) — short stub `docs/specs/<slug>.md` with title + `TODO: run /spec to fill`. Do not fake full requirements.
 
-9. **Verify**
+10. **Verify**
    ```bash
    node harness/scripts/ci/docs-lint.mjs
    ```
@@ -180,7 +205,8 @@ HARNESS READY
 - layout: …
 - code zones: …
 - skills synced: yes (N skills under .cursor/skills/) | skipped | failed (summary)
-- note: sync refreshes .cursor/; /setup remains via local-commands restore
+- vercel react/ui skills: yes (vercel-react-best-practices, web-design-guidelines) | skipped | failed
+- note: sync refreshes .cursor/; /setup remains via local-commands restore; optional Vercel skills re-applied when flag is true
 - docs-lint: passed | failed (summary)
 - coding-standard: placeholder | vendored from …
 - Next: /spec → /plan → /build
@@ -207,5 +233,7 @@ Do **not** start implementing application features unless the user explicitly as
 - `harness/knowledge/harness/adopt.md`
 - `harness/scripts/agent/set-code-layout.sh`
 - `harness/scripts/agent/sync-agent-skills.sh`
+- `harness/scripts/agent/install-optional-skills.sh`
+- https://vercel.com/docs/agent-resources/skills
 - `coding-standard/README.md`
 - `docs/README.md`

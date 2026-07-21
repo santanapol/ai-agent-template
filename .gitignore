@@ -48,5 +48,8 @@ dist-ssr/
 # Ephemeral agent planning scratch (durable plans live in docs/exec-plans/)
 tasks/
 
+# skills CLI scratch (canonical Cursor copies live in .cursor/skills/)
+.agents/
+
 # Server credentials (SSH passwords, staging logins — never commit)
 dev-ops/**/credential.md

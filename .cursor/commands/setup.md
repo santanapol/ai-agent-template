@@ -14,8 +14,8 @@ This command is for **one-time setup** after the template is cloned, forked, or 
 2. **Detect** — `harness.config.yaml`, app dirs, dirty tree, already-bootstrapped signals.
 3. **Interview** one question at a time (layout, project name → README title, code paths, sync, coding-standard source or later, optional starter spec).
 4. **Confirm** the bootstrap plan; wait for explicit OK.
-5. **Execute** — `set-code-layout.sh` → ensure code-zone placeholders → optional `sync-agent-skills.sh` (full skills install) → README/docs → optional vendor `coding-standard/` → `node harness/scripts/ci/docs-lint.mjs`.
-6. **Hand off** — include `skills synced: yes (N) | skipped | failed` and next steps `/spec` → `/plan` → `/build`.
+5. **Execute** — `set-code-layout.sh` → ensure code-zone placeholders → optional `sync-agent-skills.sh` → optional Vercel React/UI skills (`install-optional-skills.sh`) → README/docs → optional vendor `coding-standard/` → `node harness/scripts/ci/docs-lint.mjs`.
+6. **Hand off** — include `skills synced` + `vercel react/ui skills` lines and next steps `/spec` → `/plan` → `/build`.
 
 ## Do not
 

@@ -393,6 +393,11 @@ patch_cursor_skills
 SHA="$(git -C "$UPSTREAM" rev-parse HEAD 2>/dev/null || echo unknown)"
 bootstrap_cursor_meta "$SHA"
 
+if [[ -x "$SCRIPT_DIR/install-optional-skills.sh" ]]; then
+  echo "Installing optional skills (if enabled in harness.config.yaml)..."
+  "$SCRIPT_DIR/install-optional-skills.sh" || echo "warn: optional skills install failed (non-fatal)"
+fi
+
 echo ""
 echo "Done. Upstream commit: $SHA"
 echo "Edit standards only: harness/scripts/agent/agent-skills-standards/<command>.md"

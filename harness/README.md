@@ -21,6 +21,7 @@ Root keeps: `README.md`, `AGENTS.md`, `harness.config.yaml`, `.cursor/` (Cursor 
 | [`sync-agent-skills.sh`](./scripts/agent/sync-agent-skills.sh) | Sync [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) into `.cursor/` and `harness/references/` |
 | [`sync-local-agent-skills.sh`](./scripts/agent/sync-local-agent-skills.sh) | Copy `local-skills/` → `.cursor/skills/` |
 | [`set-code-layout.sh`](./scripts/agent/set-code-layout.sh) | Switch `harness.config.yaml` between `code-base` and `root` |
+| [`install-optional-skills.sh`](./scripts/agent/install-optional-skills.sh) | Vercel React/Next + Design/UI skills when `optional_skills.vercel_react_ui: true` |
 | [`agent-skills-standards/`](./scripts/agent/agent-skills-standards/) | **Related Coding Standards** per slash command — **you edit this** |
 
 ```bash

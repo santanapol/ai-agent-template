@@ -30,6 +30,8 @@ node harness/scripts/ci/docs-lint.mjs
 
 Skill: `harness-bootstrap` · Command: `/setup`
 
+Optional during setup: Vercel [React/Next.js](https://vercel.com/docs/agent-resources/skills#react-and-next.js) + [Design/UI](https://vercel.com/docs/agent-resources/skills#design-and-ui) skills → sets `optional_skills.vercel_react_ui: true` and runs `./harness/scripts/agent/install-optional-skills.sh`
+
 ---
 
 ## Code layout
