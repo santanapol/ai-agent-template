@@ -4,7 +4,7 @@
 
 **ai-agent-template** — skeleton repo for Cursor agent workflows. No runnable application stack is shipped; add code per [`harness.config.yaml`](harness.config.yaml) (`code-base/` or root layout) and docs under `docs/` after fork.
 
-Human overview: [README.md](README.md) · Harness ops: [HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) · Layouts: [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md)
+Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) · Layouts: [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md)
 
 ## Repository zones
 
@@ -20,7 +20,7 @@ Human overview: [README.md](README.md) · Harness ops: [HARNESS-RUNBOOK.md](harn
 
 | Area | Entry | Content |
 |------|-------|---------|
-| **First boot** | [HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) | Sync skills, verify skeleton, choose code layout |
+| **First boot** | [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) | Sync skills, verify skeleton, choose code layout |
 | **Product docs** | [docs/README.md](docs/README.md) | Specs, exec-plans, releases — SDLC output |
 | **Code layouts** | [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md) | Greenfield (`code-base/`) vs brownfield (root) |
 | **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | Slash commands, layout |
@@ -62,7 +62,7 @@ Do **not** improvise workflows when a matching skill exists — read `.cursor/sk
 ## Progressive disclosure
 
 1. Start here (`AGENTS.md`) for orientation.
-2. [HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) — first-time sync + choose layout via [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md).
+2. [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) — first-time sync + choose layout via [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md).
 3. [docs/README.md](docs/README.md) — product specs and plans · [harness/knowledge/harness/README.md](harness/knowledge/harness/README.md) — harness concepts.
 4. Before changing a service: read `harness.config.yaml` for code zones; spec in `docs/specs/` (+ service `docs/spec.md` under code zones) + vendored `coding-standard/` (when added) + active plan in `docs/exec-plans/active/`. **No SDLC artifacts at repo root** (`SPEC.md`, `spec/`, `tasks/`).
 5. Checklists: `harness/references/` · command standards: `harness/scripts/agent/agent-skills-standards/`.

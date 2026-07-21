@@ -38,13 +38,13 @@ node harness/scripts/ci/docs-lint.mjs
 #    → coding-standard/
 ```
 
-Step-by-step harness ops: [HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md).
+Step-by-step harness ops: [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md).
 
 ## What's included
 
 | Zone | Path | Contents |
 |------|------|----------|
-| **Code** | [`harness.config.yaml`](harness.config.yaml) | `code-base/` (default) or root — see [adopt.md](harness/knowledge/harness/adopt.md) |
+| **Code** | [`harness.config.yaml`](harness.config.yaml) | `code-base/` (default) or root — see [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md) |
 | **Product docs** | [`docs/`](docs/README.md) | Specs, exec-plans, releases (SDLC) |
 | **Harness** | [`harness/`](harness/README.md) | harness runbook, knowledge, references, scripts |
 | **Domain standards (empty)** | [`coding-standard/`](coding-standard/README.md) | Vendor org coding rules after fork |
@@ -79,7 +79,7 @@ Runs on every PR via [.github/workflows/ci-check.yml](.github/workflows/ci-check
 | Audience | Start here |
 |----------|------------|
 | Agents | [AGENTS.md](AGENTS.md) |
-| Humans (harness ops) | [HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) |
+| Humans (harness ops) | [harness/HARNESS-RUNBOOK.md](harness/HARNESS-RUNBOOK.md) |
 | Product docs | [docs/README.md](docs/README.md) |
 | Code layouts | [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md) |
 | Harness concepts | [harness/knowledge/harness/README.md](harness/knowledge/harness/README.md) |

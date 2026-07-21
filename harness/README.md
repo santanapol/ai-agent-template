@@ -14,7 +14,7 @@ harness/
 
 Root keeps: `README.md`, `AGENTS.md`, `harness.config.yaml`, `.cursor/` (Cursor runtime), `docs/`, `code-base/` or app at root.
 
-## Agent-skills (Cursor) — `scripts/agent/`
+## Agent-skills (Cursor) — `harness/scripts/agent/`
 
 | Script / path | Role |
 |---------------|------|
@@ -31,12 +31,12 @@ Root keeps: `README.md`, `AGENTS.md`, `harness.config.yaml`, `.cursor/` (Cursor 
 
 **What sync never touches:** `agent-skills-standards/`, `local-skills/`, `local-commands/`, `code-base/`, `docs/`, `coding-standard/`
 
-Local-only commands (`/spec`, `/gc`, `/release`, `/plan`, `/build`) live in `scripts/agent/local-commands/` and are copied to `.cursor/commands/` on sync.
+Local-only commands (`/spec`, `/gc`, `/release`, `/plan`, `/build`) live in `harness/scripts/agent/local-commands/` and are copied to `.cursor/commands/` on sync.
 
-## CI — `scripts/ci/`
+## CI — `harness/scripts/ci/`
 
 | Script | Role |
 |--------|------|
 | [`docs-lint.mjs`](./scripts/ci/docs-lint.mjs) | Validate skeleton structure + link integrity |
 
-See [AGENTS.md](../AGENTS.md) and [harness/knowledge/harness/README.md](./knowledge/harness/README.md).
+See [AGENTS.md](../AGENTS.md) and [knowledge/harness/README.md](./knowledge/harness/README.md).

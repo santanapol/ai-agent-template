@@ -140,7 +140,7 @@ coding-standard/             ← org build rules (vendor after fork)
 | Docs skeleton | `node harness/scripts/ci/docs-lint.mjs` |
 | Package CI | `npm run ci` (เมื่อมีโค้ดใน `code-base/`) |
 
-รายละเอียด: [HARNESS-RUNBOOK.md](../../HARNESS-RUNBOOK.md) · [harness/README.md](../../README.md)
+รายละเอียด: [HARNESS-RUNBOOK.md](../../HARNESS-RUNBOOK.md) · [README.md](../../README.md)
 
 ---
 

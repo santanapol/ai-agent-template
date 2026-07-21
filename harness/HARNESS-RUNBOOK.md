@@ -18,7 +18,7 @@
 node harness/scripts/ci/docs-lint.mjs
 ```
 
-จากนั้นเลือก layout และเติมโค้ดตาม [`harness.config.yaml`](../harness.config.yaml) — ดู [harness/knowledge/harness/adopt.md](knowledge/harness/adopt.md)
+จากนั้นเลือก layout และเติมโค้ดตาม [`harness.config.yaml`](../harness.config.yaml) — ดู [knowledge/harness/adopt.md](knowledge/harness/adopt.md)
 
 ---
 
@@ -51,7 +51,7 @@ Workflow docs (`docs/specs/`, `docs/exec-plans/`) เหมือนกันท
 | [`harness/`](../harness/README.md) | harness runbook, knowledge, references, scripts |
 | `.cursor/` | skills, commands, agents, rules (generated + local) |
 | `coding-standard/` | org coding rules — see [coding-standard/README.md](../coding-standard/README.md) |
-| [adopt.md](knowledge/harness/adopt.md) | code layout greenfield vs brownfield (`harness/knowledge/harness/adopt.md`) |
+| [knowledge/harness/adopt.md](knowledge/harness/adopt.md) | code layout greenfield vs brownfield |
 
 Orchestration rule (Cursor): [.cursor/rules/agent-skills.mdc](../.cursor/rules/agent-skills.mdc)
 
@@ -128,7 +128,7 @@ GitHub Actions: [.github/workflows/ci-check.yml](../.github/workflows/ci-check.y
 | หลัง ship GO | `/release` → `docs/releases/` + docs-lint |
 | รอบทำความสะอาด | `/gc` |
 
-อ่าน workflow ละเอียด: [harness/knowledge/harness/workflows.md](knowledge/harness/workflows.md)
+อ่าน workflow ละเอียด: [knowledge/harness/workflows.md](knowledge/harness/workflows.md)
 
 Slash commands: [.cursor/USAGE.md](../.cursor/USAGE.md)
 
@@ -141,4 +141,4 @@ Slash commands: [.cursor/USAGE.md](../.cursor/USAGE.md)
 | หัวข้อ | ลิงก์ |
 |--------|-------|
 | Agent map | [AGENTS.md](../AGENTS.md) |
-| Harness แนวคิด | [harness/knowledge/harness/README.md](knowledge/harness/README.md) |
+| Harness แนวคิด | [knowledge/harness/README.md](knowledge/harness/README.md) |
