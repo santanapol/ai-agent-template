@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sync agent-skills from upstream into .cursor/ and references/, then append Related Coding Standards to commands.
+# Sync agent-skills from upstream into .cursor/ and harness/references/, then append Related Coding Standards to commands.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -130,11 +130,19 @@ patch_cursor_commands() {
   local f
   for f in "$CURSOR/commands/"*.md; do
     [[ -f "$f" ]] || continue
+    # Relative links in harness/scripts/agent/{local-commands,agent-skills-standards}
+    # use ../../../../ to reach repo root. After copy/append into .cursor/commands/,
+    # only ../../ is needed — rewrite here so markdown links stay valid.
     sed -i \
       -e 's/Read CLAUDE\.md and study project conventions/Read [agent-skills.mdc](..\/rules\/agent-skills.mdc) and [AGENTS.md](..\/..\/AGENTS.md) for project conventions/g' \
       -e 's/Read CLAUDE\.md \/ project conventions/Read agent-skills.mdc and AGENTS.md for project conventions/g' \
       -e 's/\.claude\/agents\//.cursor\/agents\//g' \
       -e 's/ or `~\/\.claude\/agents\/`//g' \
+      -e 's|](../../../../|](../../|g' \
+      -e 's|](../../../harness/|](../../harness/|g' \
+      -e 's|`harness/references/|`__HARNESS_REFS__/|g' \
+      -e 's|`references/|`harness/references/|g' \
+      -e 's|`__HARNESS_REFS__/|`harness/references/|g' \
       "$f"
   done
 }
@@ -280,24 +288,24 @@ VENDOR
   cat >"$CURSOR/commands/README.md" <<'CMDREADME'
 # Commands index (Cursor)
 
-**Generated** by [`../../../harness/scripts/agent/sync-agent-skills.sh`](../../../harness/scripts/agent/sync-agent-skills.sh) — upstream English + [agent-skills-standards](../../../harness/scripts/agent/agent-skills-standards/).
+**Generated** by [`../../harness/scripts/agent/sync-agent-skills.sh`](../../harness/scripts/agent/sync-agent-skills.sh) — upstream English + [agent-skills-standards](../../harness/scripts/agent/agent-skills-standards/).
 
 | Command | Standards |
 |---------|-----------|
-| `/spec` | [spec.md](../../../harness/scripts/agent/agent-skills-standards/spec.md) |
-| `/plan` | [plan.md](../../../harness/scripts/agent/agent-skills-standards/plan.md) |
-| `/build` | [build.md](../../../harness/scripts/agent/agent-skills-standards/build.md) |
+| `/spec` | [spec.md](../../harness/scripts/agent/agent-skills-standards/spec.md) |
+| `/plan` | [plan.md](../../harness/scripts/agent/agent-skills-standards/plan.md) |
+| `/build` | [build.md](../../harness/scripts/agent/agent-skills-standards/build.md) |
 | `/code-build` | alias of `/build` |
-| `/test` | [test.md](../../../harness/scripts/agent/agent-skills-standards/test.md) |
-| `/review` | [review.md](../../../harness/scripts/agent/agent-skills-standards/review.md) |
-| `/webperf` | [webperf.md](../../../harness/scripts/agent/agent-skills-standards/webperf.md) |
-| `/code-simplify` | [code-simplify.md](../../../harness/scripts/agent/agent-skills-standards/code-simplify.md) |
-| `/ship` | [ship.md](../../../harness/scripts/agent/agent-skills-standards/ship.md) |
-| `/release` | local — [release.md](../../../harness/scripts/agent/local-commands/release.md) |
-| `/gc` | local — [gc.md](../../../harness/scripts/agent/local-commands/gc.md) |
-| `/spec` | local — [spec.md](../../../harness/scripts/agent/local-commands/spec.md) → `docs/specs/` |
-| `/plan` | local — [plan.md](../../../harness/scripts/agent/local-commands/plan.md) → `docs/exec-plans/active/` |
-| `/build` | local — [build.md](../../../harness/scripts/agent/local-commands/build.md) |
+| `/test` | [test.md](../../harness/scripts/agent/agent-skills-standards/test.md) |
+| `/review` | [review.md](../../harness/scripts/agent/agent-skills-standards/review.md) |
+| `/webperf` | [webperf.md](../../harness/scripts/agent/agent-skills-standards/webperf.md) |
+| `/code-simplify` | [code-simplify.md](../../harness/scripts/agent/agent-skills-standards/code-simplify.md) |
+| `/ship` | [ship.md](../../harness/scripts/agent/agent-skills-standards/ship.md) |
+| `/release` | local — [release.md](../../harness/scripts/agent/local-commands/release.md) |
+| `/gc` | local — [gc.md](../../harness/scripts/agent/local-commands/gc.md) |
+| `/spec` | local — [spec.md](../../harness/scripts/agent/local-commands/spec.md) → `docs/specs/` |
+| `/plan` | local — [plan.md](../../harness/scripts/agent/local-commands/plan.md) → `docs/exec-plans/active/` |
+| `/build` | local — [build.md](../../harness/scripts/agent/local-commands/build.md) |
 CMDREADME
 
   cat >"$CURSOR/README.md" <<'README'

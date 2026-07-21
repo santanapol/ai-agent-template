@@ -233,8 +233,12 @@ const linkFiles = [
   'code-base/README.md',
   'coding-standard/README.md',
   '.cursor/rules/agent-skills.mdc',
+  '.cursor/USAGE.md',
+  '.cursor/VENDOR.md',
+  '.cursor/README.md',
   ...walkMarkdown('harness/knowledge'),
   ...walkMarkdown('docs'),
+  ...walkMarkdown('.cursor/commands'),
 ];
 checkLinks(linkFiles);
 

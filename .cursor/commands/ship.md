@@ -24,7 +24,7 @@ In other harnesses without an Agent tool, invoke each persona's system prompt se
 Constraints (from Claude Code's subagent model):
 - Subagents cannot spawn other subagents — do not let one persona delegate to another.
 - Each subagent gets its own context window and returns only its report to this main session.
-- If you need teammates that talk to each other instead of just reporting back, use Claude Code Agent Teams and reference these personas as teammate types (see `references/orchestration-patterns.md`).
+- If you need teammates that talk to each other instead of just reporting back, use Claude Code Agent Teams and reference these personas as teammate types (see `harness/references/orchestration-patterns.md`).
 
 **Persona resolution.** If you've defined your own `code-reviewer`, `security-auditor`, or `test-engineer` in `.cursor/agents/` or `~/.cursor/agents/`, those take precedence over this plugin's versions — `/ship` picks up your customizations automatically. This is intentional: plugin subagents sit at the bottom of Claude Code's scope priority table, so user-level definitions win by design.
 
@@ -82,7 +82,7 @@ Before GO decision:
 2. `npm run ci` in all touched packages under configured code zones (`harness.config.yaml` → `code.backend`, `code.frontend`) when application code exists
 3. Run project-specific smoke/integration tests if the repo defines them
 
-See [AGENTS.md](../../../../AGENTS.md).
+See [AGENTS.md](../../AGENTS.md).
 
 ## Related Coding Standards
 

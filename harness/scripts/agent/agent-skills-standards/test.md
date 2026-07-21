@@ -6,7 +6,7 @@ When verifying a specific change (affected packages only):
 2. Run project-specific integration/smoke tests if defined in the repo
 3. `node harness/scripts/ci/docs-lint.mjs`
 
-See [AGENTS.md](../../AGENTS.md).
+See [AGENTS.md](../../../../AGENTS.md).
 
 ## Related Coding Standards
 

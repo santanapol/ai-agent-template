@@ -38,7 +38,7 @@ services: [staff]   # [] for repo-wide / harness work
 ---
 ```
 
-- **Body sections** per [docs/exec-plans/README.md](../../../../docs/exec-plans/README.md): Objective, Progress log, Decision log, Tasks (`- [ ]` with acceptance + verify steps), Risks, Checkpoints.
+- **Body sections** per [docs/exec-plans/README.md](../../docs/exec-plans/README.md): Objective, Progress log, Decision log, Tasks (`- [ ]` with acceptance + verify steps), Risks, Checkpoints.
 - **Do not** create `tasks/plan.md`, `tasks/todo.md`, or any file under `tasks/` — that directory is gitignored and not the source of truth.
 
 After human approval, `/build` reads the active exec plan from `docs/exec-plans/active/`.
