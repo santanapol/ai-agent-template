@@ -1,6 +1,10 @@
 ---
 name: release-notes-and-handoff
-description: After ship GO — version, release notes, docs-lint, PR, and post-deploy git tag.
+description: >-
+  Produces versioned release handoff after /ship GO — user notes, deploy notes
+  under docs/releases/, docs-lint, PR, and git tag after deploy smoke. Use when
+  the user invokes /release, asks for release notes, or needs handoff after a
+  ship go decision.
 ---
 
 # Release Notes and Handoff

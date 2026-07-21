@@ -1,6 +1,10 @@
 ---
 name: harness-planning-conventions
-description: ai-agent-template override for spec, plan, and code paths. Read before /spec, /plan, /build — read harness.config.yaml for code zones; docs workflow is always under docs/, never repo root or tasks/.
+description: >-
+  Overrides upstream agent-skills output paths for this repo — specs under
+  docs/specs/, plans under docs/exec-plans/active/, code zones from
+  harness.config.yaml. Use when running /spec, /plan, or /build, or when choosing
+  where to write specs, exec plans, or application code in ai-agent-template.
 ---
 
 # Harness output conventions (ai-agent-template)
