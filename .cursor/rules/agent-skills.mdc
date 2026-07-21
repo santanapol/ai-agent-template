@@ -11,8 +11,8 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 
 | Phase | Command | Underlying skill(s) |
 |-------|---------|---------------------|
-| Define | `/spec` | spec-driven-development |
-| Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown (local — exec-plans/active/) |
+| Define | `/spec` | harness-planning-conventions + spec-driven-development | `docs/specs/` |
+| Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown | `docs/exec-plans/active/` |
 | Build | `/build` or `/code-build` | incremental-implementation + test-driven-development |
 | Verify | `/test` | test-driven-development |
 | Review | `/review` | code-review-and-quality |
@@ -24,7 +24,7 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 
 ## Agent map
 
-Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [knowledge/harness/README.md](../../knowledge/harness/README.md).
+Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:** [harness/knowledge/harness/README.md](../../harness/knowledge/harness/README.md).
 
 ## Intent → skill (auto)
 
@@ -47,7 +47,7 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 ## References
 
 - Skills: `.cursor/skills/<name>/SKILL.md`
-- Checklists: `references/`
-- Command standards: `scripts/agent/agent-skills-standards/`
+- Checklists: `harness/references/`
+- Command standards: `harness/scripts/agent/agent-skills-standards/`
 - Team guide: `.cursor/USAGE.md`
 - Vendor pin: `.cursor/VENDOR.md`

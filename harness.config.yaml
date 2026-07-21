@@ -1,0 +1,10 @@
+# Code layout for this repository.
+# Switch: ./harness/scripts/agent/set-code-layout.sh code-base|root
+# Guide: harness/knowledge/harness/adopt.md
+
+version: 1
+layout: code-base # code-base (greenfield) | root (existing codebase at repo root)
+
+code:
+  backend: code-base/backend
+  frontend: code-base/frontend

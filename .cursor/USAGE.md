@@ -4,16 +4,16 @@
 
 | Layer | Location |
 |-------|----------|
-| Standards (edit) | `scripts/agent/agent-skills-standards/` |
+| Standards (edit) | `harness/scripts/agent/agent-skills-standards/` |
 | Commands (generated) | `.cursor/commands/` |
 | Skills | `.cursor/skills/` |
 | Agents | `.cursor/agents/` |
-| References | `references/` |
+| References | `harness/references/` |
 
 ## Sync
 
 ```bash
-./scripts/agent/sync-agent-skills.sh
+./harness/scripts/agent/sync-agent-skills.sh
 ```
 
 ## SDLC

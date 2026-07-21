@@ -4,7 +4,9 @@ description: Implement tasks incrementally — build, test, verify, commit. Add 
 disable-model-invocation: true
 ---
 
-Read **harness-planning-conventions** (`.cursor/skills/harness-planning-conventions/SKILL.md`) for where plans live in this repo.
+Read **harness-planning-conventions** (`.cursor/skills/harness-planning-conventions/SKILL.md`) for where plans and code zones live in this repo.
+
+Read `harness.config.yaml` at repo root before implementing — use `code.backend` and `code.frontend` as the application code zones.
 
 Read and follow **incremental-implementation** (`.cursor/skills/incremental-implementation/SKILL.md`) completely, alongside **test-driven-development** (`.cursor/skills/test-driven-development/SKILL.md`).
 
@@ -39,8 +41,8 @@ Pick the next pending task from the active exec plan. Then:
 
 ## Autonomous: the whole plan (`/build auto`)
 
-1. **Require a spec.** Look for a spec at `docs/specs/`, service `*-spec.md`, `SPEC.md` at repo root, `docs/SPEC.md`, or under `spec/`. If none exists, stop and tell the user to run `/spec` first.
-2. **Establish a clean baseline.** Run `git status --porcelain`. If there are uncommitted changes outside expected planning artifacts (`docs/exec-plans/active/*.md`, `docs/specs/**`, `SPEC.md`, `spec/*`), stop and ask the user to commit, stash, or confirm.
+1. **Require a spec.** Look under `docs/specs/` or `<code.backend|frontend>/**/docs/spec.md` (from `harness.config.yaml`). If none exists, stop and tell the user to run `/spec` first.
+2. **Establish a clean baseline.** Run `git status --porcelain`. If there are uncommitted changes outside expected planning artifacts (`docs/exec-plans/active/*.md`, `docs/specs/**`, and service specs under configured code zones), stop and ask the user to commit, stash, or confirm.
 3. **Plan if needed.** If there is no suitable file in `docs/exec-plans/active/`, follow **planning-and-task-breakdown** + **harness-planning-conventions** to create one.
 4. **Single checkpoint.** Present the full plan and wait for unambiguous approval. If you created a new exec plan, commit it as a single preparatory commit before the first implementation commit.
 5. **Execute every task in dependency order** — RED → GREEN → regression → build → commit → mark complete in the exec plan. One commit per task; stage only files that task touched.
@@ -52,5 +54,3 @@ If any step fails, follow **debugging-and-error-recovery** (`.cursor/skills/debu
 ## Related Coding Standards
 
 `coding-standard/` is empty in this template — vendor org standards after fork, then read applicable paths under `coding-standard/<domain>/` before implementing.
-
-**Software testing** (included): `knowledge/software-testing/<topic>/README.md`

@@ -23,7 +23,7 @@ Structure context from most persistent to most transient:
 
 ```
 ┌─────────────────────────────────────┐
-│  1. Rules Files (.cursor/rules/*.mdc, etc.) │ ← Always loaded, project-wide
+│  1. Rules Files (.cursor/rules/*.mdc, etc.)   │ ← Always loaded, project-wide
 ├─────────────────────────────────────┤
 │  2. Spec / Architecture Docs        │ ← Loaded per feature/session
 ├─────────────────────────────────────┤
@@ -39,7 +39,7 @@ Structure context from most persistent to most transient:
 
 Create a rules file that persists across sessions. This is the highest-leverage context you can provide.
 
-**This repo (Cursor):** start with `.cursor/rules/agent-skills.mdc` and [AGENTS.md](../../../AGENTS.md). Example rules-file pattern:
+**This repo (Cursor):** start with `.cursor/rules/agent-skills.mdc` and `AGENTS.md`. Example rules-file pattern:
 ```markdown
 # Project: [Name]
 

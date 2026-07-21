@@ -30,7 +30,7 @@ Before writing any code, operate in read-only mode:
 - Map dependencies between components
 - Note risks and unknowns
 
-**Do NOT write code during planning.** The output is a plan document saved to `tasks/plan.md` and a task list saved to `tasks/todo.md`, not implementation.
+**Do NOT write code during planning.** The output is a plan document saved to `docs/exec-plans/active/<slug>.md` (one file with a ## Tasks section — see harness-planning-conventions), not implementation.
 
 ### Step 2: Identify the Dependency Graph
 
@@ -142,8 +142,8 @@ If a task is L or larger, it should be broken into smaller tasks. An agent perfo
 
 ## Output Files
 
-- **Plan document:** Save the implementation plan to `tasks/plan.md`.
-- **Task list:** Save the checklist-style task list to `tasks/todo.md`.
+- **Plan document:** Save the implementation plan to `docs/exec-plans/active/<slug>.md`.
+- **Task list:** Put tasks in `## Tasks` inside the same exec plan file — do not create `tasks/todo.md`.
 
 Create the `tasks/` directory if it does not exist. These paths are the convention expected by the `/build` command and other downstream tooling.
 
@@ -231,4 +231,4 @@ Before starting implementation, confirm:
 
 ## See Also
 
-Acceptance criteria are per-task and answer "did we build the right thing?". They sit on top of the project-wide Definition of Done, the standing bar every task clears before it counts as done. See `references/definition-of-done.md`.
+Acceptance criteria are per-task and answer "did we build the right thing?". They sit on top of the project-wide Definition of Done, the standing bar every task clears before it counts as done. See `harness/references/definition-of-done.md`.
