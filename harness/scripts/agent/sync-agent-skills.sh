@@ -12,18 +12,27 @@ REFS="$ROOT/harness/references"
 
 usage() {
   cat <<'EOF'
-Usage: ./harness/scripts/agent/sync-agent-skills.sh [UPSTREAM_PATH]
+Usage: ./harness/scripts/agent/sync-agent-skills.sh [UPSTREAM_PATH|--local-only]
 
 1. Syncs upstream skills/, agents/, references/ into .cursor/ and harness/references/
 2. Converts .claude/commands/ (upstream) → .cursor/commands/ (Cursor format)
 3. Appends Related Coding Standards from harness/scripts/agent/agent-skills-standards/<command>.md
 4. Regenerates `.cursor/rules/agent-skills.mdc` (orchestration)
+
+--local-only  Skip upstream clone/rsync. Re-apply local skills, commands, agents,
+              and Cursor patches only (use after editing harness/scripts/agent/local-*).
 EOF
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
+fi
+
+LOCAL_ONLY=0
+if [[ "${1:-}" == "--local-only" ]]; then
+  LOCAL_ONLY=1
+  UPSTREAM=""
 fi
 
 adapt_upstream_command_body() {
@@ -139,6 +148,25 @@ sync_local_agents() {
   fi
 }
 
+# Upstream agent-skills used bare `references/<checklist>.md` for repo checklists.
+# This template keeps those under harness/references/. Do NOT rewrite every
+# `references/` — local QA skills ship their own `.cursor/skills/<name>/references/`.
+rewrite_harness_checklist_refs() {
+  local f="$1"
+  local name
+  for name in \
+    accessibility-checklist.md \
+    definition-of-done.md \
+    observability-checklist.md \
+    orchestration-patterns.md \
+    performance-checklist.md \
+    security-checklist.md \
+    testing-patterns.md
+  do
+    sed -i -e "s|\`references/${name}|\`harness/references/${name}|g" "$f"
+  done
+}
+
 patch_cursor_commands() {
   echo "Patching commands for ai-agent-template (Cursor-only)..."
   local f
@@ -154,10 +182,8 @@ patch_cursor_commands() {
       -e 's/ or `~\/\.claude\/agents\/`//g' \
       -e 's|](../../../../|](../../|g' \
       -e 's|](../../../harness/|](../../harness/|g' \
-      -e 's|`harness/references/|`__HARNESS_REFS__/|g' \
-      -e 's|`references/|`harness/references/|g' \
-      -e 's|`__HARNESS_REFS__/|`harness/references/|g' \
       "$f"
+    rewrite_harness_checklist_refs "$f"
   done
 }
 
@@ -172,16 +198,15 @@ patch_cursor_skills() {
       -e 's/checked against CLAUDE\.md or equivalent/checked against agent-skills.mdc \/ AGENTS.md or equivalent/g' \
       -e 's/\*\*CLAUDE\.md \/ rules files\*\*/**\`.cursor\/rules\` \/ AGENTS.md**/g' \
       -e 's/Rules files (CLAUDE\.md etc\.)/Rules files (agent-skills.mdc, AGENTS.md, etc.)/g' \
-      -e 's|`references/|`harness/references/|g' \
-      -e 's| see `references/| see `harness/references/|g' \
       "$f"
+    rewrite_harness_checklist_refs "$f"
   done < <(find "$CURSOR/skills" -name 'SKILL.md' -print0 2>/dev/null)
 
   local agents_dir
   for agents_dir in "$CURSOR/agents" "$ROOT/harness/references"; do
     [[ -d "$agents_dir" ]] || continue
     while IFS= read -r -d '' f; do
-      sed -i -e 's|`references/|`harness/references/|g' "$f"
+      rewrite_harness_checklist_refs "$f"
     done < <(find "$agents_dir" -name '*.md' -print0 2>/dev/null)
   done
 
@@ -400,6 +425,18 @@ USAGE
 
   echo "Bootstrapped .cursor/rules, VENDOR.md, README"
 }
+
+if [[ "$LOCAL_ONLY" -eq 1 ]]; then
+  echo "Local-only sync (no upstream)..."
+  sync_local_agents
+  sync_local_commands
+  patch_cursor_commands
+  sync_local_agent_skills
+  patch_cursor_skills
+  echo ""
+  echo "Done (local-only). Upstream pin unchanged."
+  exit 0
+fi
 
 if [[ -z "$UPSTREAM" ]]; then
   TMP="$(mktemp -d)"

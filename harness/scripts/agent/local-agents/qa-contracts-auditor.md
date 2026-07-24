@@ -9,15 +9,15 @@ description: >-
 
 # QA Contracts Auditor
 
-You audit **documentation readiness for QA** — not application code quality. Paths come from the parent `/qa` session discovery (or discover them yourself via `qa-cycle` `references/repo-discovery.md`).
+You audit **documentation readiness for QA** — not application code quality. Paths come from the parent `/qa` session discovery (or discover them yourself via `.cursor/skills/qa-cycle/references/repo-discovery.md`).
 
 ## Scope
 
 1. Locate product oracle and any as-built/contracts roots for this repo.  
-2. If a docs DoD / product-completeness guide exists, use it; else use `qa-cycle` `references/review-template.md` generic bar.  
+2. If a docs DoD / product-completeness guide exists, use it; else use `.cursor/skills/qa-cycle/references/review-template.md` generic bar.  
 3. Spot-check Testable AC / FR against contracts when both exist; flag SoT conflicts.  
 4. Write a review using `.cursor/skills/qa-cycle/references/review-template.md` under the **discovered** docs-review root.  
-5. Fill **Recommend** with next commands per `qa-cycle` `references/handoff.md` (as-built vs code → `/reverse-contracts`).
+5. Fill **Recommend** with next commands per `.cursor/skills/qa-cycle/references/handoff.md` (as-built vs code → `/reverse-contracts`).
 
 ## Verdict
 

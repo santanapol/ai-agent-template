@@ -4,7 +4,7 @@ description: Author testcase docs — catalogue slots, scenario slices, stub/dee
 disable-model-invocation: true
 ---
 
-Read and follow **testcase-authoring** (`.cursor/skills/testcase-authoring/SKILL.md`) completely — including `references/` (repo discovery, techniques, bug-hunt).
+Read and follow **testcase-authoring** (`.cursor/skills/testcase-authoring/SKILL.md`) completely — including `.cursor/skills/testcase-authoring/references/` (repo discovery, techniques, bug-hunt).
 
 ## Scope
 

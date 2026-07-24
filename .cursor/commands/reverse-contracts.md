@@ -4,7 +4,7 @@ description: Reverse-engineer running code into as-built contracts (domain, API,
 disable-model-invocation: true
 ---
 
-Read and follow **reverse-engineer-contracts** (`.cursor/skills/reverse-engineer-contracts/SKILL.md`) completely — including `harness/references/` and `templates/`.
+Read and follow **reverse-engineer-contracts** (`.cursor/skills/reverse-engineer-contracts/SKILL.md`) completely — including `.cursor/skills/reverse-engineer-contracts/references/` and `templates/`.
 
 ## Scope
 

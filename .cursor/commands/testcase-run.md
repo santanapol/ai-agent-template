@@ -4,7 +4,7 @@ description: Execute scenario testcases — run per Automated column, write Resu
 disable-model-invocation: true
 ---
 
-Read and follow **testcase-execution** (`.cursor/skills/testcase-execution/SKILL.md`) completely — including `harness/references/` (repo discovery, run order, result rules).
+Read and follow **testcase-execution** (`.cursor/skills/testcase-execution/SKILL.md`) completely — including `.cursor/skills/testcase-execution/references/` (repo discovery, run order, result rules).
 
 ## Scope
 

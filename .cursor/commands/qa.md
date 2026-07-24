@@ -4,7 +4,7 @@ description: Portable QA cycle — docs, scenarios, discovered CI/smoke, (pre-sh
 disable-model-invocation: true
 ---
 
-Read and follow **qa-cycle** (`.cursor/skills/qa-cycle/SKILL.md`) completely — including `harness/references/` (repo discovery first).
+Read and follow **qa-cycle** (`.cursor/skills/qa-cycle/SKILL.md`) completely — including `.cursor/skills/qa-cycle/references/` (repo discovery first).
 
 ## Modes
 
@@ -23,7 +23,7 @@ Discover first. Only `pre-ship` issues READY|NOT READY. Do not assume a product 
 
 - Orchestrate QA evidence until QA Gate (pre-ship) or the lighter mode’s exit
 - Hop `testcase-authoring` / `testcase-execution` as the skill directs
-- Hop `reverse-engineer-contracts` (`/reverse-contracts`) when docs-review needs **as-built fixes from code** — after writing the review, not inside it (see `qa-cycle` `harness/references/handoff.md`)
+- Hop `reverse-engineer-contracts` (`/reverse-contracts`) when docs-review needs **as-built fixes from code** — after writing the review, not inside it (see `.cursor/skills/qa-cycle/references/handoff.md`)
 - Spawn `qa-contracts-auditor` for docs; in `pre-ship` fan-out `security-auditor` + `test-engineer` **after** Results
 
 ## Do not
