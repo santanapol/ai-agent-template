@@ -14,6 +14,7 @@ Edit these files only — `.cursor/commands/` is regenerated each sync.
 | `webperf.md` | `/webperf` |
 | `ship.md` | `/ship` |
 | `code-simplify.md` | `/code-simplify` |
+| `qa.md` | `/qa` (local command) |
 
 `code-build` reuses `build.md` standards.
 

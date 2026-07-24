@@ -25,18 +25,22 @@ Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.
 | **Code layouts** | [harness/knowledge/harness/adopt.md](harness/knowledge/harness/adopt.md) | Greenfield (`code-base/`) vs brownfield (root) |
 | **Cursor SDLC** | [.cursor/USAGE.md](.cursor/USAGE.md) | Slash commands, layout |
 | **Orchestration** | [.cursor/rules/agent-skills.mdc](.cursor/rules/agent-skills.mdc) | Intent → skill, command routing |
-| **Subagents** | `.cursor/agents/` | `code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor` |
+| **Subagents** | `.cursor/agents/` | `code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor`, `qa-contracts-auditor` |
 | **Workflows (deep)** | [harness/knowledge/harness/workflows.md](harness/knowledge/harness/workflows.md) | Step-by-step SDLC examples |
 | **Harness concepts** | [harness/knowledge/harness/README.md](harness/knowledge/harness/README.md) | Beliefs, skills ↔ harness |
 | **Harness ops** | [harness/README.md](harness/README.md) | Sync, local skills/commands, CI |
 | **Bootstrap skill** | [harness-bootstrap](harness/scripts/agent/local-skills/harness-bootstrap/SKILL.md) | `/setup` — Q&A then first-boot setup |
 | **Local planning skill** | [harness-planning-conventions](harness/scripts/agent/local-skills/harness-planning-conventions/SKILL.md) | Spec/plan paths + `harness.config.yaml` code zones |
 | **Local release skill** | [release-notes-and-handoff](harness/scripts/agent/local-skills/release-notes-and-handoff/SKILL.md) | `/release` handoff after `/ship` GO |
+| **Testcase author** | [testcase-authoring](harness/scripts/agent/local-skills/testcase-authoring/SKILL.md) | `/testcase-author` — catalogue + scenarios |
+| **Testcase run** | [testcase-execution](harness/scripts/agent/local-skills/testcase-execution/SKILL.md) | `/testcase-run` — Result / reports |
+| **QA cycle** | [qa-cycle](harness/scripts/agent/local-skills/qa-cycle/SKILL.md) | `/qa` — docs → scenarios → pre-ship gate |
+| **As-built contracts** | [reverse-engineer-contracts](harness/scripts/agent/local-skills/reverse-engineer-contracts/SKILL.md) | `/reverse-contracts` — contracts from code |
 
 ## Agent workflow (SDLC)
 
 ```
-/spec → /plan → /build → /test → /review → /code-simplify → /ship → /release
+/spec → /plan → /build → /test → /review → /code-simplify → /qa (pre-ship) → /ship → /release
                                                           ↘ /gc
 ```
 
@@ -46,6 +50,10 @@ Human overview: [README.md](README.md) · Harness ops: [harness/HARNESS-RUNBOOK.
 | Vague ask | `interview-me` or `idea-refine` |
 | New feature | `/spec` → `/plan` → `/build` |
 | Bug / unexpected behavior | `debugging-and-error-recovery` |
+| Write / expand testcase docs | `/testcase-author` |
+| Run scenario Result / report | `/testcase-run` |
+| As-built contracts from code | `/reverse-contracts` |
+| QA evidence / pre-ship gate | `/qa` |
 | Before merge | `/ship` |
 | After ship GO | `/release` → `docs/releases/` |
 | Drift / cleanup | `/gc` |

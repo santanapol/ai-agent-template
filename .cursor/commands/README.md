@@ -18,3 +18,7 @@ Local overrides **replace** the upstream command body for `/spec`, `/plan`, and 
 | `/release` | [local-commands/release.md](../../harness/scripts/agent/local-commands/release.md) | — |
 | `/gc` | [local-commands/gc.md](../../harness/scripts/agent/local-commands/gc.md) | — |
 | `/setup` | [local-commands/setup.md](../../harness/scripts/agent/local-commands/setup.md) — first boot | — |
+| `/testcase-author` | [local-commands/testcase-author.md](../../harness/scripts/agent/local-commands/testcase-author.md) | — |
+| `/testcase-run` | [local-commands/testcase-run.md](../../harness/scripts/agent/local-commands/testcase-run.md) | — |
+| `/reverse-contracts` | [local-commands/reverse-contracts.md](../../harness/scripts/agent/local-commands/reverse-contracts.md) | — |
+| `/qa` | [local-commands/qa.md](../../harness/scripts/agent/local-commands/qa.md) | [standards/qa.md](../../harness/scripts/agent/agent-skills-standards/qa.md) |

@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: '{System} API — {Actor} (as-built)'
+  description: >
+    As-built operations for {Actor}. Paths and schemas must match running
+    handlers. as-built-of: {as-built-of}
+  version: 0.1.0
+servers:
+  - url: '{api-base-path}'
+    description: Application-relative
+tags:
+  - name: '{Actor}'
+    description: Fill from route groups
+paths: {}
+# Add paths from code, e.g.:
+# /resource:
+#   get:
+#     tags: ['{Actor}']
+#     operationId: getResource
+#     responses:
+#       '200':
+#         description: OK
+#         content:
+#           application/json:
+#             schema:
+#               allOf:
+#                 - $ref: ./_components.openapi.yaml#/components/schemas/SuccessEnvelope
+components:
+  schemas: {}

@@ -12,18 +12,27 @@ REFS="$ROOT/harness/references"
 
 usage() {
   cat <<'EOF'
-Usage: ./harness/scripts/agent/sync-agent-skills.sh [UPSTREAM_PATH]
+Usage: ./harness/scripts/agent/sync-agent-skills.sh [UPSTREAM_PATH|--local-only]
 
 1. Syncs upstream skills/, agents/, references/ into .cursor/ and harness/references/
 2. Converts .claude/commands/ (upstream) → .cursor/commands/ (Cursor format)
 3. Appends Related Coding Standards from harness/scripts/agent/agent-skills-standards/<command>.md
 4. Regenerates `.cursor/rules/agent-skills.mdc` (orchestration)
+
+--local-only  Skip upstream clone/rsync. Re-apply local skills, commands, agents,
+              and Cursor patches only (use after editing harness/scripts/agent/local-*).
 EOF
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
+fi
+
+LOCAL_ONLY=0
+if [[ "${1:-}" == "--local-only" ]]; then
+  LOCAL_ONLY=1
+  UPSTREAM=""
 fi
 
 adapt_upstream_command_body() {
@@ -108,6 +117,7 @@ sync_commands() {
 
 sync_local_commands() {
   local src="$SCRIPT_DIR/local-commands"
+  local cmd dest name
   if [[ ! -d "$src" ]]; then
     return 0
   fi
@@ -115,14 +125,46 @@ sync_local_commands() {
   mkdir -p "$CURSOR/commands"
   for cmd in "$src"/*.md; do
     [[ -f "$cmd" ]] || continue
-    cp -f "$cmd" "$CURSOR/commands/$(basename "$cmd")"
-    echo "  $(basename "$cmd") (local)"
+    name="$(basename "$cmd")"
+    dest="$CURSOR/commands/$name"
+    cp -f "$cmd" "$dest"
+    if append_coding_standards "${name%.md}" "$dest"; then
+      echo "  $name (local + agent-skills-standards/${name%.md}.md)"
+    else
+      echo "  $name (local)"
+    fi
   done
   if [[ -f "$CURSOR/commands/build.md" ]]; then
     cp -f "$CURSOR/commands/build.md" "$CURSOR/commands/code-build.md"
     sed -i 's/^name: build$/name: code-build/' "$CURSOR/commands/code-build.md"
     echo "  code-build.md (alias of local build)"
   fi
+}
+
+sync_local_agents() {
+  if [[ -x "$SCRIPT_DIR/sync-local-agents.sh" ]]; then
+    echo "Syncing local agents..."
+    "$SCRIPT_DIR/sync-local-agents.sh"
+  fi
+}
+
+# Upstream agent-skills used bare `references/<checklist>.md` for repo checklists.
+# This template keeps those under harness/references/. Do NOT rewrite every
+# `references/` — local QA skills ship their own `.cursor/skills/<name>/references/`.
+rewrite_harness_checklist_refs() {
+  local f="$1"
+  local name
+  for name in \
+    accessibility-checklist.md \
+    definition-of-done.md \
+    observability-checklist.md \
+    orchestration-patterns.md \
+    performance-checklist.md \
+    security-checklist.md \
+    testing-patterns.md
+  do
+    sed -i -e "s|\`references/${name}|\`harness/references/${name}|g" "$f"
+  done
 }
 
 patch_cursor_commands() {
@@ -140,10 +182,8 @@ patch_cursor_commands() {
       -e 's/ or `~\/\.claude\/agents\/`//g' \
       -e 's|](../../../../|](../../|g' \
       -e 's|](../../../harness/|](../../harness/|g' \
-      -e 's|`harness/references/|`__HARNESS_REFS__/|g' \
-      -e 's|`references/|`harness/references/|g' \
-      -e 's|`__HARNESS_REFS__/|`harness/references/|g' \
       "$f"
+    rewrite_harness_checklist_refs "$f"
   done
 }
 
@@ -158,16 +198,15 @@ patch_cursor_skills() {
       -e 's/checked against CLAUDE\.md or equivalent/checked against agent-skills.mdc \/ AGENTS.md or equivalent/g' \
       -e 's/\*\*CLAUDE\.md \/ rules files\*\*/**\`.cursor\/rules\` \/ AGENTS.md**/g' \
       -e 's/Rules files (CLAUDE\.md etc\.)/Rules files (agent-skills.mdc, AGENTS.md, etc.)/g' \
-      -e 's|`references/|`harness/references/|g' \
-      -e 's| see `references/| see `harness/references/|g' \
       "$f"
+    rewrite_harness_checklist_refs "$f"
   done < <(find "$CURSOR/skills" -name 'SKILL.md' -print0 2>/dev/null)
 
   local agents_dir
   for agents_dir in "$CURSOR/agents" "$ROOT/harness/references"; do
     [[ -d "$agents_dir" ]] || continue
     while IFS= read -r -d '' f; do
-      sed -i -e 's|`references/|`harness/references/|g' "$f"
+      rewrite_harness_checklist_refs "$f"
     done < <(find "$agents_dir" -name '*.md' -print0 2>/dev/null)
   done
 
@@ -217,6 +256,10 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown | `docs/exec-plans/active/` |
 | Build | `/build` or `/code-build` | incremental-implementation + test-driven-development |
 | Verify | `/test` | test-driven-development |
+| TC docs | `/testcase-author` | testcase-authoring |
+| TC run | `/testcase-run` | testcase-execution |
+| QA | `/qa` | qa-cycle |
+| As-built contracts | `/reverse-contracts` | reverse-engineer-contracts |
 | Review | `/review` | code-review-and-quality |
 | Web perf | `/webperf` | performance-optimization + web-performance-auditor |
 | Simplify | `/code-simplify` | code-simplification |
@@ -241,12 +284,18 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 - UI work → `frontend-ui-engineering`
 - Session start / which skill? → `using-agent-skills`
 - After `/ship` GO → `/release` → `release-notes-and-handoff`
+- Write / expand testcase docs, catalogue gaps, stub/deep/bug-hunt → `testcase-authoring` (`/testcase-author`)
+- Run scenario testcases, record Pass/Fail/Skip, test reports → `testcase-execution` (`/testcase-run`)
+- `/test` remains **test-driven-development** (implement automated tests) — not scenario Result runs
+- Full QA cycle / docs review / pre-ship gate → `qa-cycle` (`/qa`)
+- Reverse-engineer / refresh as-built contracts from code · close QA contract DoD → `reverse-engineer-contracts` (`/reverse-contracts`)
 
 ## Subagents (`.cursor/agents/`)
 
-- `code-reviewer`, `security-auditor`, `test-engineer` — invoke directly or via `/ship` fan-out
+- `code-reviewer`, `security-auditor`, `test-engineer` — invoke directly or via `/ship` / `/qa` fan-out
+- `qa-contracts-auditor` — docs dimension via `/qa` (Recommend `/reverse-contracts` for as-built gaps)
 - `web-performance-auditor` — invoke via `/webperf`
-- Personas do not call other personas; only the user or `/ship` orchestrates
+- Personas do not call other personas; only the user or `/qa` / `/ship` orchestrates
 
 ## References
 
@@ -275,8 +324,10 @@ MDC
 |------|------|
 | \`harness/scripts/agent/agent-skills-standards/\` | Related Coding Standards per command |
 | \`harness/scripts/agent/local-skills/\` | ai-agent-template skills (restored after upstream sync) |
-| \`harness/scripts/agent/local-commands/\` | Local slash commands (\`/setup\`, \`/spec\`, \`/gc\`, \`/release\`, \`/plan\`, \`/build\`) |
+| \`harness/scripts/agent/local-commands/\` | Local slash commands (\`/setup\`, \`/spec\`, \`/qa\`, \`/testcase-*\`, …) |
+| \`harness/scripts/agent/local-agents/\` | Local personas (restored after upstream agents rsync) |
 | \`harness/scripts/agent/sync-local-agent-skills.sh\` | Copy local-skills → \`.cursor/skills/\` |
+| \`harness/scripts/agent/sync-local-agents.sh\` | Copy local-agents → \`.cursor/agents/\` |
 | \`.cursor/commands/\` | Generated — upstream + standards + local |
 | \`.cursor/rules/agent-skills.mdc\` | Orchestration (regenerated each sync) |
 
@@ -308,6 +359,10 @@ Local overrides **replace** the upstream command body for `/spec`, `/plan`, and 
 | `/release` | [local-commands/release.md](../../harness/scripts/agent/local-commands/release.md) | — |
 | `/gc` | [local-commands/gc.md](../../harness/scripts/agent/local-commands/gc.md) | — |
 | `/setup` | [local-commands/setup.md](../../harness/scripts/agent/local-commands/setup.md) — first boot | — |
+| `/testcase-author` | [local-commands/testcase-author.md](../../harness/scripts/agent/local-commands/testcase-author.md) | — |
+| `/testcase-run` | [local-commands/testcase-run.md](../../harness/scripts/agent/local-commands/testcase-run.md) | — |
+| `/reverse-contracts` | [local-commands/reverse-contracts.md](../../harness/scripts/agent/local-commands/reverse-contracts.md) | — |
+| `/qa` | [local-commands/qa.md](../../harness/scripts/agent/local-commands/qa.md) | [standards/qa.md](../../harness/scripts/agent/agent-skills-standards/qa.md) |
 CMDREADME
 
   cat >"$CURSOR/README.md" <<'README'
@@ -350,11 +405,38 @@ After cloning this template: `/setup` (`harness-bootstrap`)
 
 ## SDLC
 
-`/setup` (once) → `/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/ship` → `/release`
+`/setup` (once) → `/spec` → `/plan` → `/build` → `/test` → `/review` → `/code-simplify` → `/qa` (pre-ship) → `/ship` → `/release`
+
+## Testcase docs + QA (separate from `/test`)
+
+| Command | Skill | Role |
+|---------|-------|------|
+| `/testcase-author` | `testcase-authoring` | Catalogue + scenario docs · stub / deep / bug-hunt |
+| `/testcase-run` | `testcase-execution` | Run rows · Result / Last run · optional reports |
+| `/reverse-contracts` | `reverse-engineer-contracts` | As-built contracts from code · bootstrap / audit / QA follow-up |
+| `/qa` | `qa-cycle` | Docs → scenarios → CI/smoke → (pre-ship) security/test → QA Gate |
+| `/test` | `test-driven-development` | Implement automated tests (`it` / suite) — not scenario Result |
+
+`/qa` **consumes** contracts (+ product) for review/gate. `/reverse-contracts` **produces** as-built from code. After Conditional Pass on as-built DoD: `/reverse-contracts` → re-`/qa` `docs-review`.
+
+SoT for local skills: `harness/scripts/agent/local-skills/` → `./harness/scripts/agent/sync-local-agent-skills.sh`  
+Local personas: `harness/scripts/agent/local-agents/` → `./harness/scripts/agent/sync-local-agents.sh`
 USAGE
 
   echo "Bootstrapped .cursor/rules, VENDOR.md, README"
 }
+
+if [[ "$LOCAL_ONLY" -eq 1 ]]; then
+  echo "Local-only sync (no upstream)..."
+  sync_local_agents
+  sync_local_commands
+  patch_cursor_commands
+  sync_local_agent_skills
+  patch_cursor_skills
+  echo ""
+  echo "Done (local-only). Upstream pin unchanged."
+  exit 0
+fi
 
 if [[ -z "$UPSTREAM" ]]; then
   TMP="$(mktemp -d)"
@@ -379,6 +461,7 @@ done
 echo "Syncing agents..."
 mkdir -p "$CURSOR/agents"
 rsync -a "$UPSTREAM/agents/" "$CURSOR/agents/"
+sync_local_agents
 
 echo "Syncing references..."
 mkdir -p "$REFS"

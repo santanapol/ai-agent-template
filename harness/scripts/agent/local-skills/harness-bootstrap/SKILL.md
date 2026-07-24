@@ -209,7 +209,7 @@ HARNESS READY
 - note: sync refreshes .cursor/; /setup remains via local-commands restore; optional Vercel skills re-applied when flag is true
 - docs-lint: passed | failed (summary)
 - coding-standard: placeholder | vendored from …
-- Next: /spec → /plan → /build
+- Next: /spec → /plan → /build → … → /qa (pre-ship) → /ship → /release
 - Ops guide: harness/HARNESS-RUNBOOK.md
 - Agent map: AGENTS.md
 ```
