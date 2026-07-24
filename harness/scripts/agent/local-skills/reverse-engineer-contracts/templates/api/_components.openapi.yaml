@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: '{System} API — shared components (as-built)'
+  description: >
+    Shared schemas for actor OpenAPI files. Fill from code (envelope helpers,
+    validators, serializers). as-built-of: {as-built-of}
+  version: 0.1.0
+
+components:
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data: {}
+        warning:
+          type: object
+          additionalProperties: true
+          nullable: true
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    ErrorEnvelope:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          $ref: '#/components/schemas/ApiError'
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+        field:
+          type: string
+          nullable: true
+    ErrorCode:
+      type: string
+      description: Replace enum values with codes from the codebase
+      enum:
+        - VALIDATION_ERROR
+        - UNAUTHORIZED
+        - NOT_FOUND
+        - INTERNAL_ERROR
+  securitySchemes:
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: '{session-cookie-name}'
+      description: Replace with the repo’s real auth scheme (cookie, bearer, …)

@@ -15,6 +15,10 @@ This repo ships [agent-skills](https://github.com/addyosmani/agent-skills) for C
 | Plan | `/plan` | harness-planning-conventions + planning-and-task-breakdown | `docs/exec-plans/active/` |
 | Build | `/build` or `/code-build` | incremental-implementation + test-driven-development |
 | Verify | `/test` | test-driven-development |
+| TC docs | `/testcase-author` | testcase-authoring |
+| TC run | `/testcase-run` | testcase-execution |
+| QA | `/qa` | qa-cycle |
+| As-built contracts | `/reverse-contracts` | reverse-engineer-contracts |
 | Review | `/review` | code-review-and-quality |
 | Web perf | `/webperf` | performance-optimization + web-performance-auditor |
 | Simplify | `/code-simplify` | code-simplification |
@@ -39,12 +43,18 @@ Start at repo root [AGENTS.md](../../AGENTS.md) for document map. **How we work:
 - UI work → `frontend-ui-engineering`
 - Session start / which skill? → `using-agent-skills`
 - After `/ship` GO → `/release` → `release-notes-and-handoff`
+- Write / expand testcase docs, catalogue gaps, stub/deep/bug-hunt → `testcase-authoring` (`/testcase-author`)
+- Run scenario testcases, record Pass/Fail/Skip, test reports → `testcase-execution` (`/testcase-run`)
+- `/test` remains **test-driven-development** (implement automated tests) — not scenario Result runs
+- Full QA cycle / docs review / pre-ship gate → `qa-cycle` (`/qa`)
+- Reverse-engineer / refresh as-built contracts from code · close QA contract DoD → `reverse-engineer-contracts` (`/reverse-contracts`)
 
 ## Subagents (`.cursor/agents/`)
 
-- `code-reviewer`, `security-auditor`, `test-engineer` — invoke directly or via `/ship` fan-out
+- `code-reviewer`, `security-auditor`, `test-engineer` — invoke directly or via `/ship` / `/qa` fan-out
+- `qa-contracts-auditor` — docs dimension via `/qa` (Recommend `/reverse-contracts` for as-built gaps)
 - `web-performance-auditor` — invoke via `/webperf`
-- Personas do not call other personas; only the user or `/ship` orchestrates
+- Personas do not call other personas; only the user or `/qa` / `/ship` orchestrates
 
 ## References
 
